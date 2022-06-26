@@ -33,6 +33,10 @@ struct Install: AsyncParsableCommand {
             return try .stable(release.parse())
 
         case let .stable(major, minor, patch):
+            guard let minor else {
+                throw Error(message: "Need to provide at least major and minor versions when installing a release toolchain.")
+            }
+
             if let patch {
                 return .stable(ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch))
             }

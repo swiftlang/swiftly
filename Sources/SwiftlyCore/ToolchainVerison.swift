@@ -2,12 +2,12 @@ import _StringProcessing
 
 /// Enum representing a toolchain version.
 public enum ToolchainVersion {
-    public enum SnapshotBranch: Equatable {
+    public enum SnapshotBranch: Equatable, Hashable {
         case main
         case release(major: Int, minor: Int)
     }
 
-    public struct StableRelease: Equatable, Comparable {
+    public struct StableRelease: Equatable, Comparable, Hashable {
         public let major: Int
         public let minor: Int
         public let patch: Int
@@ -124,6 +124,8 @@ extension ToolchainVersion: Comparable {
     }
 }
 
+extension ToolchainVersion: Hashable {}
+
 /// Enum modeling a partially or fully supplied selector of a toolchain version.
 public enum ToolchainSelector {
     /// Select the latest stable toolchain.
@@ -133,7 +135,7 @@ public enum ToolchainSelector {
     ///
     /// If the patch is not provided, this will select the latest patch release
     /// associated with the given major/minor version pair.
-    case stable(major: Int, minor: Int, patch: Int?)
+    case stable(major: Int, minor: Int?, patch: Int?)
 
     /// Select a snapshot toolchain.
     ///
@@ -152,6 +154,53 @@ public enum ToolchainSelector {
 
         throw Error(message: "invalid toolchain selector: \"\(input)\"")
     }
+
+    public func isReleaseSelector() -> Bool {
+        switch self {
+        case .latest, .stable:
+            return true
+        case .snapshot:
+            return false
+        }
+    }
+
+    public func isSnapshotSelector() -> Bool {
+        return !self.isReleaseSelector()
+    }
+
+    public func matches(toolchain: ToolchainVersion) -> Bool {
+        switch (self, toolchain) {
+        case let (.stable(major, minor, patch), .stable(release)):
+            guard release.major == major else {
+                return false
+            }
+            if let minor {
+                guard release.minor == minor else {
+                    return false
+                }
+            }
+            if let patch {
+                guard release.patch == patch else {
+                    return false
+                }
+            }
+            return true
+
+        case let (.snapshot(selectorBranch, selectorDate), .snapshot(releaseBranch, releaseDate)):
+            guard selectorBranch == releaseBranch else {
+                return false
+            }
+            if let selectorDate {
+                guard selectorDate == releaseDate else {
+                    return false
+                }
+            }
+            return true
+
+        default:
+            return false
+        }
+    }
 }
 
 /// Protocol used to facilitate parsing `ToolchainSelector`s from strings.
@@ -161,7 +210,7 @@ protocol ToolchainSelectorParser {
 
 /// List of all the available selector parsers.
 private let parsers: [any ToolchainSelectorParser] = [
-    StableVersionParser(),
+    StableReleaseParser(),
     ReleaseSnapshotParser(),
     MainSnapshotParser()
 ]
@@ -170,8 +219,9 @@ private let parsers: [any ToolchainSelectorParser] = [
 ///    - latest
 ///    - a.b.c
 ///    - a.b
-struct StableVersionParser: ToolchainSelectorParser {
-    static let regex: Regex<(Substring, Substring, Substring, Substring?)> = try! Regex("^(\\d+)\\.(\\d+)(?:\\.(\\d+))?$")
+struct StableReleaseParser: ToolchainSelectorParser {
+    static let regex: Regex<(Substring, Substring, Substring?, Substring?)> =
+        try! Regex("^(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?$")
 
     func parse(_ input: String) throws -> ToolchainSelector? {
         if input == "latest" {
@@ -183,16 +233,10 @@ struct StableVersionParser: ToolchainSelectorParser {
         }
 
         let major = Int(match.output.1)!
-        let minor = Int(match.output.2)!
+        let minor = match.output.2.flatMap { Int($0) }
+        let patch = match.output.3.flatMap { Int($0) }
 
-        if let patch = match.output.3 {
-            guard let patchNumber = Int(patch) else {
-                throw Error(message: "invalid patch version: \(patch)")
-            }
-            return .stable(major: major, minor: minor, patch: patchNumber)
-        } else {
-            return .stable(major: major, minor: minor, patch: nil)
-        }
+        return .stable(major: major, minor: minor, patch: patch)
     }
 }
 

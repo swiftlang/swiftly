@@ -14,18 +14,29 @@ struct Uninstall: ParsableCommand {
             return
         }
 
-        print("Uninstall the following toolchains?")
+        print("The following toolchains will be uninstalled:")
 
         for toolchain in toolchains {
-            print("    \(toolchain)")
+            print("  \(toolchain)")
         }
 
-        print("Y/n")
+        print("Proceed? (y/n)", terminator: ": ")
+        let proceed = readLine(strippingNewline: true) ?? "n"
+
+        guard proceed == "y" else {
+            print("aborting uninstall")
+            return
+        }
+
+        print()
 
         for toolchain in toolchains {
-            print("Uninstalling \(toolchain)...")
+            print("Uninstalling \(toolchain)...", terminator: "")
             try currentPlatform.uninstall(version: toolchain)
-            print("done!")
+            print("done")
         }
+
+        print()
+        print("\(toolchains.count) toolchain(s) successfully uninstalled")
     }
 }

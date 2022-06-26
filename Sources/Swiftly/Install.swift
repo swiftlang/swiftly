@@ -19,7 +19,13 @@ enum ToolchainVersion {
         case release(major: Int, minor: Int)
     }
 
-    case stable(major: Int, minor: Int, patch: Int)
+    struct StableRelease {
+        let major: Int
+        let minor: Int
+        let patch: Int
+    }
+
+    case stable(StableRelease)
     case snapshot(branch: SnapshotBranch, date: String)
 
     static let versionResolvers: [any ToolchainVersionResolver] = [
@@ -42,8 +48,8 @@ enum ToolchainVersion {
 extension ToolchainVersion: CustomStringConvertible {
     var description: String {
         switch self {
-        case let .stable(major, minor, patch):
-            return "\(major).\(minor).\(patch)"
+        case let .stable(release):
+            return "\(release.major).\(release.minor).\(release.patch)"
         case let .snapshot(.main, date):
             return "main-snapshot-\(date)"
         case let .snapshot(.release(major, minor), date):
@@ -64,13 +70,61 @@ protocol ToolchainVersionResolver {
 /// to resolve the version to the latest patch release associated with the given a.b
 /// major/minor version pair.
 struct StableVersionResolver: ToolchainVersionResolver {
-    struct Release: Decodable {
+    /// Model of a GitHub REST API release object.
+    struct GitHubRelease: Decodable {
+        /// The name of the release.
+        /// e.g. "Swift a.b[.c] Release".
         let name: String
+
+        func parse() throws -> ToolchainVersion.StableRelease {
+            // names look like Swift a.b.c Release
+            let parts = self.name.split(separator: " ")
+            guard parts.count >= 2 else {
+                throw Error(message: "Malformatted release name from GitHub API: \(self.name)")
+            }
+
+            // versions can be a.b.c or a.b for .0 releases
+            let versionParts = parts[1].split(separator: ".")
+            guard
+                versionParts.count >= 2,
+                let major = Int(versionParts[0]),
+                let minor = Int(versionParts[1])
+            else {
+                throw Error(message: "Malformatted release version from GitHub API: \(parts[1])")
+            }
+
+            let patch: Int
+            if versionParts.count == 3 {
+                guard let p = Int(versionParts[2]) else {
+                    throw Error(message: "Malformatted patch version from GitHub API: \(versionParts[2])")
+                }
+                patch = p
+            } else {
+                patch = 0
+            }
+
+            return ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch)
+        }
     }
 
     static let regex: Regex<(Substring, Substring, Substring, Substring?)> = try! Regex("^(\\d+)\\.(\\d+)(?:\\.(\\d+))?$")
 
+    func getLatestReleases(numberOfReleases n: Int? = nil) async throws -> [GitHubRelease] {
+        var url = "https://api.github.com/repos/apple/swift/releases"
+        if let n {
+            url += "?per_page=\(n)"
+        }
+        return try await HTTP().getFromJSON(url: url, type: [GitHubRelease].self)
+    }
+
     func resolve(version: String) async throws -> ToolchainVersion? {
+        if version == "latest" {
+            guard let release = try await self.getLatestReleases(numberOfReleases: 1).first else {
+                return nil
+            }
+            return try .stable(release.parse())
+        }
+
         guard let matches = try Self.regex.wholeMatch(in: version) else {
             return nil
         }
@@ -79,29 +133,23 @@ struct StableVersionResolver: ToolchainVersionResolver {
         let minor = Int(matches.2)!
 
         if let patch = matches.3 {
-            return .stable(major: major, minor: minor, patch: Int(patch)!)
+            return .stable(ToolchainVersion.StableRelease(major: major, minor: minor, patch: Int(patch)!))
         }
 
-        let httpClient = HTTP()
-        let releases = try await httpClient.getFromJSON(url: "https://api.github.com/repos/apple/swift/releases", type: [Release].self)
+        let releases = try await self.getLatestReleases()
 
-        let release = releases.first { release in
-            release.name.contains("\(major).\(minor)")
+        for release in releases {
+            let parsed = try release.parse()
+            guard
+                parsed.major == major,
+                parsed.minor == minor
+            else {
+                continue
+            }
+            return .stable(parsed)
         }
 
-        guard let release = release else {
-            throw Error(message: "No release found matching \(major).\(minor)")
-        }
-
-        let parts = release.name.split(separator: " ")[1].split(separator: ".")
-        let patch: Int
-        if parts.count == 2 {
-            patch = 0
-        } else {
-            patch = Int(parts[2])!
-        }
-
-        return .stable(major: major, minor: minor, patch: patch)
+        throw Error(message: "No release found matching \(major).\(minor)")
     }
 }
 

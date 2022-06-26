@@ -16,6 +16,7 @@ public struct Swiftly: AsyncParsableCommand {
             Use.self,
             Uninstall.self,
             Update.self,
+            List.self
         ]
     )
 

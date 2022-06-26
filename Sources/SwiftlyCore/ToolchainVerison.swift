@@ -69,6 +69,20 @@ public enum ToolchainVersion {
             throw Error(message: "invalid toolchain version: \"\(string)\"")
         }
     }
+
+    public func isStableRelease() -> Bool {
+        guard case .stable = self else {
+            return false
+        }
+        return true
+    }
+
+    public func isSnapshot() -> Bool {
+        guard case .snapshot = self else {
+            return false
+        }
+        return true
+    }
 }
 
 extension ToolchainVersion: LosslessStringConvertible {

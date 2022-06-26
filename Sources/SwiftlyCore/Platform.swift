@@ -17,7 +17,7 @@ public protocol Platform {
     ///
     /// This will likely be the same on all platforms, so it’ll either have a default implementation
     /// or be omitted from the actual protocol.
-    func download(version: String) async throws -> URL
+    func download(version: ToolchainVersion) async throws -> URL
 
     /// Checks whether a given system dependency has been installed yet or not.
     /// This will only really be used on Linux.
@@ -25,14 +25,14 @@ public protocol Platform {
 
     /// Installs a toolchain from a file on disk pointed to by the given URL.
     /// After this completes, a user can “use” the toolchain.
-    func install(from: URL, version: String) throws
+    func install(from: URL, version: ToolchainVersion) throws
 
     /// Uninstalls a toolchain associated with the given version.
     /// If this version is in use, the next latest version will be used afterwards.
-    func uninstall(version: String) throws
+    func uninstall(version: ToolchainVersion) throws
 
     /// Select the toolchain associated with the given version.
-    func use(version: String) throws
+    func use(version: ToolchainVersion) throws
 
     /// List the installed toolchains.
     func listToolchains(selector: ToolchainSelector?) -> [ToolchainVersion]
@@ -40,7 +40,7 @@ public protocol Platform {
     /// Get a list of snapshot builds for the platform. If a version is specified, only
     /// return snapshots associated with the version.
     /// This will likely have a default implementation.
-    func listAvailableSnapshots(version: String) async -> [Snapshot]
+    func listAvailableSnapshots(version: String?) async -> [Snapshot]
 
     /// Update swiftly itself, if a new version has been released.
     /// This will likely have a default implementation.

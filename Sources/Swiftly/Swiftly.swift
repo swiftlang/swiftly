@@ -1,4 +1,6 @@
 import ArgumentParser
+import LinuxPlatform
+import SwiftlyCore
 
 @main
 @available(macOS 10.15, *)
@@ -22,3 +24,5 @@ public struct Swiftly: AsyncParsableCommand {
         print("hello")
     }
 }
+
+internal let currentPlatform: any Platform = Linux(name: "ubuntu2004", namePretty: "Ubuntu 20.04")

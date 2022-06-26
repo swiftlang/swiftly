@@ -5,12 +5,12 @@ public struct Linux: Platform {
     public let name: String
     public let namePretty: String
 
-    init(name: String, namePretty: String) {
+    public init(name: String, namePretty: String) {
         self.name = name
         self.namePretty = namePretty
     }
 
-    public func download(version _: String) async throws -> URL {
+    public func download(version _: ToolchainVersion) async throws -> URL {
         throw Error(message: "TODO")
     }
 
@@ -18,17 +18,17 @@ public struct Linux: Platform {
         true
     }
 
-    public func install(from _: URL, version _: String) throws {}
+    public func install(from _: URL, version _: ToolchainVersion) throws {}
 
-    public func uninstall(version _: String) throws {}
+    public func uninstall(version _: ToolchainVersion) throws {}
 
-    public func use(version _: String) throws {}
+    public func use(version _: ToolchainVersion) throws {}
 
     public func listToolchains(selector _: ToolchainSelector?) -> [ToolchainVersion] {
         []
     }
 
-    public func listAvailableSnapshots(version _: String) async -> [Snapshot] {
+    public func listAvailableSnapshots(version _: String?) async -> [Snapshot] {
         []
     }
 

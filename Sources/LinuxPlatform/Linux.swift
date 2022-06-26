@@ -33,4 +33,6 @@ public struct Linux: Platform {
     }
 
     public func selfUpdate() async throws {}
+
+    public func currentToolchain() throws -> ToolchainVersion? { nil }
 }

@@ -2,12 +2,12 @@ import _StringProcessing
 
 /// Enum representing a toolchain version.
 public enum ToolchainVersion {
-    public enum SnapshotBranch {
+    public enum SnapshotBranch: Equatable {
         case main
         case release(major: Int, minor: Int)
     }
 
-    public struct StableRelease {
+    public struct StableRelease: Equatable, Comparable {
         public let major: Int
         public let minor: Int
         public let patch: Int
@@ -16,6 +16,16 @@ public enum ToolchainVersion {
             self.major = major
             self.minor = minor
             self.patch = patch
+        }
+
+        public static func < (lhs: Self, rhs: Self) -> Bool {
+            if lhs.major != rhs.major {
+                return lhs.major < rhs.major
+            } else if lhs.minor != rhs.minor {
+                return lhs.minor < rhs.minor
+            } else {
+                return lhs.patch < rhs.patch
+            }
         }
     }
 
@@ -32,6 +42,23 @@ extension ToolchainVersion: CustomStringConvertible {
             return "main-snapshot-\(date)"
         case let .snapshot(.release(major, minor), date):
             return "\(major).\(minor)-snapshot-\(date)"
+        }
+    }
+}
+
+extension ToolchainVersion: Equatable {}
+
+extension ToolchainVersion: Comparable {
+    public static func < (lhs: Self, rhs: Self) -> Bool {
+        switch (lhs, rhs) {
+        case let (.stable(lhsRelease), .stable(rhsRelease)):
+            return lhsRelease < rhsRelease
+        case let (.snapshot(.main, lhsDate), .snapshot(branch: .main, rhsDate)):
+            return lhsDate < rhsDate
+        case let (.snapshot(.release, lhsDate), .snapshot(branch: .release, rhsDate)):
+            return lhsDate < rhsDate
+        default:
+            return false
         }
     }
 }

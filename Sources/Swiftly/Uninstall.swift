@@ -2,15 +2,15 @@ import ArgumentParser
 import SwiftlyCore
 
 struct Uninstall: ParsableCommand {
-    @Argument(help: "The toolchain to uninstall.")
-    var version: String
+    @Argument(help: "The toolchain(s) to uninstall.")
+    var toolchain: String
 
     mutating func run() throws {
-        let selector = try ToolchainSelector(parsing: self.version)
+        let selector = try ToolchainSelector(parsing: self.toolchain)
         let toolchains = currentPlatform.listToolchains(selector: selector)
 
         guard !toolchains.isEmpty else {
-            print("no toolchains matched \"\(self.version)\"")
+            print("no toolchains matched \"\(self.toolchain)\"")
             return
         }
 

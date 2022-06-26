@@ -45,6 +45,9 @@ public protocol Platform {
     /// Update swiftly itself, if a new version has been released.
     /// This will likely have a default implementation.
     func selfUpdate() async throws
+
+    /// Get the toolchain that is currently "in use", if any.
+    func currentToolchain() throws -> ToolchainVersion?
 }
 
 public struct SystemDependency {}

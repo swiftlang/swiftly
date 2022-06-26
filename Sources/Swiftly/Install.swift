@@ -8,7 +8,7 @@ struct Install: AsyncParsableCommand {
     var version: String
 
     mutating func run() async throws {
-        let toolchainVersion = try await ToolchainVersion.resolve(version)
+        let toolchainVersion = try await ToolchainVersion.resolve(self.version)
         print("installing \(toolchainVersion)")
     }
 }

@@ -6,7 +6,7 @@ class HTTP {
     let client: HTTPClient
 
     init() {
-        client = HTTPClient(eventLoopGroupProvider: .createNew)
+        self.client = HTTPClient(eventLoopGroupProvider: .createNew)
     }
 
     deinit {

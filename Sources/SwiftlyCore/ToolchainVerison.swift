@@ -1,16 +1,22 @@
 import _StringProcessing
 
 /// Enum representing a toolchain version.
-enum ToolchainVersion {
-    enum SnapshotBranch {
+public enum ToolchainVersion {
+    public enum SnapshotBranch {
         case main
         case release(major: Int, minor: Int)
     }
 
-    struct StableRelease {
-        let major: Int
-        let minor: Int
-        let patch: Int
+    public struct StableRelease {
+        public let major: Int
+        public let minor: Int
+        public let patch: Int
+
+        public init(major: Int, minor: Int, patch: Int) {
+            self.major = major
+            self.minor = minor
+            self.patch = patch
+        }
     }
 
     case stable(StableRelease)
@@ -18,7 +24,7 @@ enum ToolchainVersion {
 }
 
 extension ToolchainVersion: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         switch self {
         case let .stable(release):
             return "\(release.major).\(release.minor).\(release.patch)"
@@ -31,7 +37,7 @@ extension ToolchainVersion: CustomStringConvertible {
 }
 
 /// Enum modeling a partially or fully supplied selector of a toolchain version.
-enum ToolchainSelector {
+public enum ToolchainSelector {
     /// Select the latest stable toolchain.
     case latest
 
@@ -47,7 +53,7 @@ enum ToolchainSelector {
     /// associated with the given branch.
     case snapshot(branch: ToolchainVersion.SnapshotBranch, date: String?)
 
-    init(parsing input: String) throws {
+    public init(parsing input: String) throws {
         for parser in parsers {
             guard let selector = try parser.parse(input) else {
                 continue

@@ -2,10 +2,10 @@ import AsyncHTTPClient
 import Foundation
 import NIOFoundationCompat
 
-class HTTP {
+public class HTTP {
     let client: HTTPClient
 
-    init() {
+    public init() {
         self.client = HTTPClient(eventLoopGroupProvider: .createNew)
     }
 
@@ -13,7 +13,7 @@ class HTTP {
         try? self.client.syncShutdown()
     }
 
-    func getFromJSON<T: Decodable>(url: String, type: T.Type) async throws -> T {
+    public func getFromJSON<T: Decodable>(url: String, type: T.Type) async throws -> T {
         var request = HTTPClientRequest(url: url)
         request.headers.add(name: "User-Agent", value: "swiftly")
         let response = try await client.execute(request, timeout: .seconds(30))

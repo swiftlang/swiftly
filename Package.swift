@@ -25,8 +25,21 @@ let package = Package(
             name: "Swiftly",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .target(name: "SwiftlyCore"),
+                .target(name: "LinuxPlatform")
+            ]
+        ),
+        .target(
+            name: "SwiftlyCore",
+            dependencies: [
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "NIOFoundationCompat", package: "swift-nio"),
+            ]
+        ),
+        .target(
+            name: "LinuxPlatform",
+            dependencies: [
+                "SwiftlyCore"
             ]
         ),
         .testTarget(

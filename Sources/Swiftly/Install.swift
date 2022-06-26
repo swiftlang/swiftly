@@ -1,7 +1,8 @@
 import _StringProcessing
 import ArgumentParser
-import AsyncHTTPClient
 import Foundation
+
+import SwiftlyCore
 
 struct Install: AsyncParsableCommand {
     @Argument(help: "The version of the toolchain to install.")

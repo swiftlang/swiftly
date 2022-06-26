@@ -7,54 +7,25 @@ struct Install: AsyncParsableCommand {
     @Argument(help: "The version of the toolchain to install.")
     var version: String
 
-    mutating func run() async throws {
-        let toolchainVersion = try await ToolchainVersion.resolve(self.version)
-        print("installing \(toolchainVersion)")
-    }
-}
-
-enum ToolchainVersion {
-    enum SnapshotBranch {
-        case main
-        case release(major: Int, minor: Int)
-    }
-
-    struct StableRelease {
-        let major: Int
-        let minor: Int
-        let patch: Int
-    }
-
-    case stable(StableRelease)
-    case snapshot(branch: SnapshotBranch, date: String)
-
     static let versionResolvers: [any ToolchainVersionResolver] = [
         StableVersionResolver(),
         ReleaseSnapshotResolver(),
         MainSnapshotResolver(),
     ]
 
-    static func resolve(_ version: String) async throws -> ToolchainVersion {
+    mutating func run() async throws {
+        let toolchainVersion = try await self.resolve()
+        print("installing \(toolchainVersion)")
+    }
+
+    func resolve() async throws -> ToolchainVersion {
         for resolver in Self.versionResolvers {
             guard let resolvedVersion = try await resolver.resolve(version: version) else {
                 continue
             }
             return resolvedVersion
         }
-        throw Error(message: "invalid version specification: \"\(version)\"")
-    }
-}
-
-extension ToolchainVersion: CustomStringConvertible {
-    var description: String {
-        switch self {
-        case let .stable(release):
-            return "\(release.major).\(release.minor).\(release.patch)"
-        case let .snapshot(.main, date):
-            return "main-snapshot-\(date)"
-        case let .snapshot(.release(major, minor), date):
-            return "\(major).\(minor)-snapshot-\(date)"
-        }
+        throw Error(message: "invalid version specification: \"\(self.version)\"")
     }
 }
 

@@ -13,7 +13,11 @@ struct Use: ParsableCommand {
         }
 
         let old = try currentPlatform.currentToolchain()
+
         try currentPlatform.use(toolchain)
+        try Config.update { config in
+            config.inUse = toolchain
+        }
 
         var message = "The current toolchain is now \(toolchain)"
         if let old {

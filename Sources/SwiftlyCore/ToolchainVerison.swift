@@ -35,6 +35,49 @@ public enum ToolchainVersion {
     public init(major: Int, minor: Int, patch: Int) {
         self = .stable(StableRelease(major: major, minor: minor, patch: patch))
     }
+
+    static let stableRegex: Regex<(Substring, Substring, Substring, Substring)> =
+        try! Regex("^(\\d+)\\.(\\d+)\\.(\\d+)$")
+
+    static let mainSnapshotRegex: Regex<(Substring, Substring)> =
+        try! Regex("^main-snapshot-(\\d{4}-\\d{2}-\\d{2})$")
+
+    static let releaseSnapshotRegex: Regex<(Substring, Substring, Substring, Substring)> =
+        try! Regex("^(\\d+)\\.(\\d+)-snapshot-(\\d{4}-\\d{2}-\\d{2})$")
+
+    public init(parsing string: String) throws {
+        if let match = try Self.stableRegex.wholeMatch(in: string) {
+            guard
+                let major = Int(match.output.1),
+                let minor = Int(match.output.2),
+                let patch = Int(match.output.3)
+            else {
+                throw Error(message: "invalid stable version: \(string)")
+            }
+            self = ToolchainVersion(major: major, minor: minor, patch: patch)
+        } else if let match = try Self.mainSnapshotRegex.wholeMatch(in: string) {
+            self = .snapshot(branch: .main, date: String(match.output.1))
+        } else if let match = try Self.releaseSnapshotRegex.wholeMatch(in: string) {
+            guard
+                let major = Int(match.output.1),
+                let minor = Int(match.output.2)
+            else {
+                throw Error(message: "invalid release snapshot version: \(string)")
+            }
+            self = .snapshot(branch: .release(major: major, minor: minor), date: String(match.output.3))
+        } else {
+            throw Error(message: "invalid toolchain version: \"\(string)\"")
+        }
+    }
+}
+
+extension ToolchainVersion: LosslessStringConvertible {
+    public init?(_ string: String) {
+        guard let v = try? ToolchainVersion(parsing: string) else {
+            return nil
+        }
+        self = v
+    }
 }
 
 extension ToolchainVersion: CustomStringConvertible {

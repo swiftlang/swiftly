@@ -22,7 +22,7 @@ public struct Linux: Platform {
 
     public func uninstall(version _: ToolchainVersion) throws {}
 
-    public func use(version _: ToolchainVersion) throws {}
+    public func use(_: ToolchainVersion) throws {}
 
     public func listToolchains(selector _: ToolchainSelector?) -> [ToolchainVersion] {
         []

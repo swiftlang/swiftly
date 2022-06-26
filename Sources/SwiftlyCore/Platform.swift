@@ -32,7 +32,7 @@ public protocol Platform {
     func uninstall(version: ToolchainVersion) throws
 
     /// Select the toolchain associated with the given version.
-    func use(version: ToolchainVersion) throws
+    func use(_ version: ToolchainVersion) throws
 
     /// List the installed toolchains.
     func listToolchains(selector: ToolchainSelector?) -> [ToolchainVersion]

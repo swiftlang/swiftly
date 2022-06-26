@@ -31,6 +31,10 @@ public enum ToolchainVersion {
 
     case stable(StableRelease)
     case snapshot(branch: SnapshotBranch, date: String)
+
+    public init(major: Int, minor: Int, patch: Int) {
+        self = .stable(StableRelease(major: major, minor: minor, patch: patch))
+    }
 }
 
 extension ToolchainVersion: CustomStringConvertible {

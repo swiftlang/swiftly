@@ -1,7 +1,8 @@
 import ArgumentParser
 
 @main
-public struct Swiftly: ParsableCommand {
+@available(macOS 10.15, *)
+public struct Swiftly: AsyncParsableCommand {
     public static var configuration = CommandConfiguration(
         abstract: "A utility for insalling and managing Swift toolchains.",
 
@@ -11,13 +12,13 @@ public struct Swiftly: ParsableCommand {
             Install.self,
             Use.self,
             Uninstall.self,
-            Update.self
+            Update.self,
         ]
     )
 
     public init() {}
 
-    public mutating func run() throws {
+    public mutating func run() async throws {
         print("hello")
     }
 }

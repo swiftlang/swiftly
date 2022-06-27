@@ -5,7 +5,41 @@ import Foundation
 import SwiftlyCore
 
 struct Install: AsyncParsableCommand {
-    @Argument(help: "The version of the toolchain to install.")
+    public static var configuration = CommandConfiguration(
+        abstract: "Install a new toolchain."
+    )
+
+    @Argument(help: ArgumentHelp(
+        "The version of the toolchain to install.",
+        discussion: """
+
+        The string "latest" can be provided to install the most recent stable version release:
+
+            $ swiftly install latest
+
+        A specific toolchain can be installed by providing a full toolchain name, for example \
+        a stable release version with patch (e.g. a.b.c):
+
+            $ swiftly install 5.4.2
+
+        Or a snapshot with date:
+
+            $ swiftly install 5.7-snapshot-2022-06-20
+            $ swiftly install main-snapshot-2022-06-20
+
+        The latest patch release of a specific minor version can be installed by omitting the \
+        patch version:
+
+            $ swiftly install 5.6
+
+        Likewise, the latest snapshot associated with a given development branch can be \
+        installed by omitting the date:
+
+            $ swiftly install 5.7-snapshot
+            $ swiftly install main-snapshot
+        """
+    ))
+
     var version: String
 
     mutating func run() async throws {

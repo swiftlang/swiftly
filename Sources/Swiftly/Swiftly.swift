@@ -17,15 +17,14 @@ public struct Swiftly: AsyncParsableCommand {
             Uninstall.self,
             Update.self,
             List.self,
-            ListAvailable.self
+            ListAvailable.self,
+            SelfUpdate.self
         ]
     )
 
     public init() {}
 
-    public mutating func run() async throws {
-        print("hello")
-    }
+    public mutating func run() async throws {}
 }
 
 internal let currentPlatform: any Platform =

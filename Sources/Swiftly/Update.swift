@@ -2,7 +2,42 @@ import ArgumentParser
 import SwiftlyCore
 
 struct Update: AsyncParsableCommand {
-    @Argument(help: "The toolchain to update.")
+    public static var configuration = CommandConfiguration(
+        abstract: "Update an installed toolchain to a newer version."
+    )
+
+    @Argument(help: ArgumentHelp(
+        "The installed toolchain to update.",
+        discussion: """
+
+        Updating a toolchain involves uninstalling it and installing a new toolchain that is \
+        newer than it.
+
+        The string "latest" can be provided to update the installed stable release toolchain \
+        with the newest version to the latest available stable release. This may update the \
+        toolchain to later major, minor, or patch versions.
+
+            $ swiftly update latest
+
+        A specific stable release can be updated to the latest patch version for that release by \
+        specifying the entire version:
+
+            $ swiftly update 5.6.0
+
+        Omitting the patch in the specified version will update the latest installed toolchain for \
+        the provided minor version to the latest available release for that minor version. For \
+        example, the following will update the latest installed Swift 5.4 release toolchain to \
+        the latest available Swift 5.4 release:
+
+            $ swiftly update 5.4
+
+        The latest snapshot toolchain for a given development branch can be updated to \
+        the latest available snapshot for that branch by specifying just the branch:
+
+            $ swiflty update 5.7-snapshot
+            $ swiftly update main-snapshot
+        """
+    ))
     var toolchain: String?
 
     public mutating func run() async throws {

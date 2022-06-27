@@ -2,7 +2,35 @@ import ArgumentParser
 import SwiftlyCore
 
 struct ListAvailable: AsyncParsableCommand {
-    @Argument(help: "A filter to use when listing toolchains.")
+    public static var configuration = CommandConfiguration(
+        abstract: "List toolchains available for install."
+    )
+
+    @Argument(help: ArgumentHelp(
+        "A filter to use when listing toolchains.",
+        discussion: """
+
+        The toolchain selector determines which toolchains to list. If no selector \
+        is provided, all available toolchains will be listed:
+
+            $ swiftly list-available
+
+        The available toolchains associated with a given major version can be listed by \
+        specifying the major version as the selector: 
+
+            $ swiftly list-available 5
+
+        Likewise, the available toolchains associated with a given minor version can be listed \
+        by specifying the minor version as the selector:
+
+            $ swiftly list-available 5.2
+
+        The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
+
+            $ swiftly list-available main-snapshot
+            $ swiftly list-available 5.7-snapshot
+        """
+    ))
     var toolchainSelector: String?
 
     internal mutating func run() async throws {

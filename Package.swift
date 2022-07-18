@@ -70,7 +70,7 @@ let package = Package(
             swiftSettings: linuxSwiftSettings
         ),
         .testTarget(
-            name: "swiftlyTests",
+            name: "SwiftlyTests",
             dependencies: ["Swiftly"]
         ),
     ]

@@ -35,7 +35,7 @@ struct Uninstall: ParsableCommand {
 
     mutating func run() throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
-        let toolchains = currentPlatform.listToolchains(selector: selector)
+        let toolchains = Swiftly.currentPlatform.listToolchains(selector: selector)
 
         guard !toolchains.isEmpty else {
             print("no toolchains matched \"\(self.toolchain)\"")
@@ -60,7 +60,7 @@ struct Uninstall: ParsableCommand {
 
         for toolchain in toolchains {
             print("Uninstalling \(toolchain)...", terminator: "")
-            try currentPlatform.uninstall(version: toolchain)
+            try Swiftly.currentPlatform.uninstall(version: toolchain)
             print("done")
         }
 

@@ -40,14 +40,14 @@ struct Use: ParsableCommand {
 
     internal mutating func run() throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
-        guard let toolchain = currentPlatform.listToolchains(selector: selector).max() else {
+        guard let toolchain = Swiftly.currentPlatform.listToolchains(selector: selector).max() else {
             print("no installed toolchains match \"\(self.toolchain)\"")
             return
         }
 
-        let old = try currentPlatform.currentToolchain()
+        let old = try Swiftly.currentPlatform.currentToolchain()
 
-        try currentPlatform.use(toolchain)
+        try Swiftly.currentPlatform.use(toolchain)
         try Config.update { config in
             config.inUse = toolchain
         }

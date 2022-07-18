@@ -7,6 +7,6 @@ internal struct SelfUpdate: AsyncParsableCommand {
 
     internal mutating func run() async throws {
         print("updating swiftly")
-        try await currentPlatform.selfUpdate()
+        try await Swiftly.currentPlatform.selfUpdate()
     }
 }

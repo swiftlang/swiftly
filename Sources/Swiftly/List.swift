@@ -38,8 +38,8 @@ struct List: ParsableCommand {
             try ToolchainSelector(parsing: input)
         }
 
-        let toolchains = currentPlatform.listToolchains(selector: selector)
-        let activeToolchain = try currentPlatform.currentToolchain()
+        let toolchains = Swiftly.currentPlatform.listToolchains(selector: selector)
+        let activeToolchain = try Swiftly.currentPlatform.currentToolchain()
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"

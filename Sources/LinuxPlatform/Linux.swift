@@ -35,4 +35,14 @@ public struct Linux: Platform {
     public func selfUpdate() async throws {}
 
     public func currentToolchain() throws -> ToolchainVersion? { nil }
+
+    #if UBUNTU_1804
+        public static let currentPlatform: any Platform =
+            Linux(name: "ubuntu1804", namePretty: "Ubuntu 18.04")
+    #elseif UBUNTU_2004
+        public static let currentPlatform: any Platform =
+            Linux(name: "ubuntu2004", namePretty: "Ubuntu 20.04")
+    #else
+        public static let currentPlatform: any Platform = fatalError("No linux distribution specified")
+    #endif
 }

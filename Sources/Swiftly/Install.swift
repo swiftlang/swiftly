@@ -53,8 +53,8 @@ struct Install: AsyncParsableCommand {
     }
 
     internal static func execute(version: ToolchainVersion) async throws {
-        let file = try await currentPlatform.download(version: version)
-        try currentPlatform.install(from: file, version: version)
+        let file = try await Swiftly.currentPlatform.download(version: version)
+        try Swiftly.currentPlatform.install(from: file, version: version)
     }
 
     func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {

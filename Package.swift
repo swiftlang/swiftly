@@ -1,7 +1,38 @@
 // swift-tools-version:5.5
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
+import class Foundation.ProcessInfo
 import PackageDescription
+
+var linuxSwiftSettings: [SwiftSetting] = []
+
+#if os(Linux)
+    enum LinuxDistro: String {
+        case ubuntu1804
+        case ubuntu2004
+
+        func define() -> String {
+            switch self {
+            case .ubuntu1804:
+                return "UBUNTU_1804"
+            case .ubuntu2004:
+                return "UBUNTU_2004"
+            }
+        }
+    }
+
+    let linuxDistroEnvVar = "SWIFTLY_LINUX_DISTRIBUTION"
+
+    guard let distroString = ProcessInfo.processInfo.environment[linuxDistroEnvVar] else {
+        fatalError("please set \(linuxDistroEnvVar)")
+    }
+
+    guard let distro = LinuxDistro(rawValue: distroString) else {
+        fatalError("unsupported linux distribution: \(distroString)")
+    }
+
+    linuxSwiftSettings.append(.define(distro.define()))
+#endif
 
 let package = Package(
     name: "swiftly",
@@ -26,7 +57,7 @@ let package = Package(
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .target(name: "SwiftlyCore"),
-                .target(name: "LinuxPlatform")
+                .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
             ]
         ),
         .target(
@@ -39,8 +70,9 @@ let package = Package(
         .target(
             name: "LinuxPlatform",
             dependencies: [
-                "SwiftlyCore"
-            ]
+                "SwiftlyCore",
+            ],
+            swiftSettings: linuxSwiftSettings
         ),
         .testTarget(
             name: "swiftlyTests",

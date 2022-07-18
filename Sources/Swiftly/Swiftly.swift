@@ -1,6 +1,8 @@
 import ArgumentParser
 import Foundation
+#if os(Linux)
 import LinuxPlatform
+#endif
 import SwiftlyCore
 
 @main
@@ -18,14 +20,15 @@ public struct Swiftly: AsyncParsableCommand {
             Update.self,
             List.self,
             ListAvailable.self,
-            SelfUpdate.self
+            SelfUpdate.self,
         ]
     )
 
     public init() {}
 
     public mutating func run() async throws {}
-}
 
-internal let currentPlatform: any Platform =
-    Linux(name: "ubuntu2004", namePretty: "Ubuntu 20.04")
+#if os(Linux)
+    internal static let currentPlatform = Linux.currentPlatform
+#endif
+}

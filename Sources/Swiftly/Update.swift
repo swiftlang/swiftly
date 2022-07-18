@@ -57,17 +57,17 @@ struct Update: AsyncParsableCommand {
 
         print("updating \(oldToolchain) -> \(newToolchain)")
         try await Install.execute(version: newToolchain)
-        try currentPlatform.uninstall(version: oldToolchain)
+        try Swiftly.currentPlatform.uninstall(version: oldToolchain)
         print("successfully updated \(oldToolchain) -> \(newToolchain)")
     }
 
     private func oldToolchain() throws -> ToolchainVersion? {
         guard let input = self.toolchain else {
-            return try currentPlatform.currentToolchain()
+            return try Swiftly.currentPlatform.currentToolchain()
         }
 
         let selector = try ToolchainSelector(parsing: input)
-        let toolchains = currentPlatform.listToolchains(selector: selector)
+        let toolchains = Swiftly.currentPlatform.listToolchains(selector: selector)
 
         // When multiple toolchains are matched, update the latest one.
         // This is for situations such as `swiftly update 5.5` when both

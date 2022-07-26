@@ -1,6 +1,9 @@
 import Foundation
 import SwiftlyCore
 
+/// `Platform` implementation for Linux systems.
+/// This implementation can be reused for any supported Linux platform.
+/// TODO: replace dummy implementations
 public struct Linux: Platform {
     public let name: String
     public let namePretty: String

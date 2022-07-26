@@ -2,6 +2,7 @@ import AsyncHTTPClient
 import Foundation
 import NIOFoundationCompat
 
+/// HTTPClient wrapper used for interfacing with various APIs and downloading things.
 public class HTTP {
     let client: HTTPClient
 
@@ -13,6 +14,8 @@ public class HTTP {
         try? self.client.syncShutdown()
     }
 
+    /// Decode the provided type `T` from the JSON body of the response from a GET request
+    /// to the given URL.
     public func getFromJSON<T: Decodable>(url: String, type: T.Type) async throws -> T {
         var request = HTTPClientRequest(url: url)
         request.headers.add(name: "User-Agent", value: "swiftly")
@@ -25,6 +28,7 @@ public class HTTP {
         return try JSONDecoder().decode(type.self, from: buffer)
     }
 
+    /// Get the latest `n` stable releases of Swift via the GitHub API.
     public func getLatestReleases(numberOfReleases n: Int? = nil) async throws -> [GitHubRelease] {
         var url = "https://api.github.com/repos/apple/swift/releases"
         if let n {

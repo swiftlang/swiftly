@@ -57,6 +57,8 @@ struct Install: AsyncParsableCommand {
         try Swiftly.currentPlatform.install(from: file, version: version)
     }
 
+    /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
+    /// TODO: update this to use an official Apple API
     func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:

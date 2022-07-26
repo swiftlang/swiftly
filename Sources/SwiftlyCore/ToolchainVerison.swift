@@ -1,6 +1,6 @@
 import _StringProcessing
 
-/// Enum representing a toolchain version.
+/// Enum representing a fully resolved toolchain version (e.g. 5.6.7 or 5.7-snapshot-2022-07-05).
 public enum ToolchainVersion {
     public enum SnapshotBranch: Equatable, Hashable {
         case main
@@ -45,6 +45,7 @@ public enum ToolchainVersion {
     static let releaseSnapshotRegex: Regex<(Substring, Substring, Substring, Substring)> =
         try! Regex("^(\\d+)\\.(\\d+)-snapshot-(\\d{4}-\\d{2}-\\d{2})$")
 
+    /// Parse a toolchain version from the provided string.
     public init(parsing string: String) throws {
         if let match = try Self.stableRegex.wholeMatch(in: string) {
             guard
@@ -168,6 +169,7 @@ public enum ToolchainSelector {
         return !self.isReleaseSelector()
     }
 
+    /// Returns whether or not this selector "matches" the provided toolchain.
     public func matches(toolchain: ToolchainVersion) -> Bool {
         switch (self, toolchain) {
         case let (.stable(major, minor, patch), .stable(release)):

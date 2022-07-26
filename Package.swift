@@ -1,37 +1,6 @@
 // swift-tools-version:5.7
 
-import class Foundation.ProcessInfo
 import PackageDescription
-
-var linuxSwiftSettings: [SwiftSetting] = []
-
-#if os(Linux)
-    enum LinuxDistro: String {
-        case ubuntu1804
-        case ubuntu2004
-
-        func define() -> String {
-            switch self {
-            case .ubuntu1804:
-                return "UBUNTU_1804"
-            case .ubuntu2004:
-                return "UBUNTU_2004"
-            }
-        }
-    }
-
-    let linuxDistroEnvVar = "SWIFTLY_LINUX_DISTRIBUTION"
-
-    guard let distroString = ProcessInfo.processInfo.environment[linuxDistroEnvVar] else {
-        fatalError("please set \(linuxDistroEnvVar)")
-    }
-
-    guard let distro = LinuxDistro(rawValue: distroString) else {
-        fatalError("unsupported linux distribution: \(distroString)")
-    }
-
-    linuxSwiftSettings.append(.define(distro.define()))
-#endif
 
 let package = Package(
     name: "swiftly",
@@ -66,8 +35,7 @@ let package = Package(
             name: "LinuxPlatform",
             dependencies: [
                 "SwiftlyCore",
-            ],
-            swiftSettings: linuxSwiftSettings
+            ]
         ),
         .testTarget(
             name: "SwiftlyTests",

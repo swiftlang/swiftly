@@ -1,8 +1,14 @@
 import Foundation
 
 public struct Config: Codable {
+    public struct PlatformDefinition: Codable {
+        public let name: String
+        public let namePretty: String
+    }
+
     public var inUse: ToolchainVersion?
     public var installedToolchains: [ToolchainVersion]
+    public var platform: PlatformDefinition
 
     // TODO: support other locations
     private static let url = URL(fileURLWithPath: "~/.swiftly/config.json")

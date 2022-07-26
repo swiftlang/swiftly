@@ -36,13 +36,12 @@ public struct Linux: Platform {
 
     public func currentToolchain() throws -> ToolchainVersion? { nil }
 
-#if UBUNTU_1804
-    public static let currentPlatform: any Platform =
-        Linux(name: "ubuntu1804", namePretty: "Ubuntu 18.04")
-#elseif UBUNTU_2004
-    public static let currentPlatform: any Platform =
-        Linux(name: "ubuntu2004", namePretty: "Ubuntu 20.04")
-#else
-    public static let currentPlatform: any Platform = fatalError("No linux distribution specified")
-#endif
+    public static let currentPlatform: any Platform = {
+        do {
+            let config = try Config.load()
+            return Linux(name: config.platform.name, namePretty: config.platform.namePretty)
+        } catch {
+            fatalError("error loading config: \(error)")
+        }
+    }()
 }

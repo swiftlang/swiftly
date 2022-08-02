@@ -78,7 +78,7 @@ struct Update: AsyncParsableCommand {
     private func newToolchain(old: ToolchainVersion) async throws -> ToolchainVersion? {
         switch old {
         case let .stable(oldRelease):
-            let releases = try await HTTP().getLatestReleases()
+            let releases = try await HTTP.getLatestReleases()
             return releases
                 .compactMap { try? $0.parse() }
                 .filter { release in

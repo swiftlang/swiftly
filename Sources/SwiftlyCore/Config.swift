@@ -7,6 +7,7 @@ import Foundation
 public struct Config: Codable {
     public struct PlatformDefinition: Codable {
         public let name: String
+        public let fullName: String
         public let namePretty: String
     }
 
@@ -15,10 +16,11 @@ public struct Config: Codable {
     public var platform: PlatformDefinition
 
     // TODO: support other locations
-    private static let url = URL(fileURLWithPath: "~/.swiftly/config.json")
+    private static let url = URL(fileURLWithPath: "~/.swiftly/config.json".expandingTildeInPath)
 
     /// Read the config file from disk.
     public static func load() throws -> Config {
+        print("loading \(url)")
         let data = try Data(contentsOf: Config.url)
         return try JSONDecoder().decode(Config.self, from: data)
     }

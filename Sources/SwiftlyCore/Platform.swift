@@ -9,6 +9,11 @@ public protocol Platform {
     /// A human-readable / pretty-printed version of the platform’s name, used for terminal
     /// output and logging.
     /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
+    var fullName: String { get }
+
+    /// A human-readable / pretty-printed version of the platform’s name, used for terminal
+    /// output and logging.
+    /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
     var namePretty: String { get }
 
     /// Downloads a toolchain associated with the given version and returns

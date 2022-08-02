@@ -38,7 +38,7 @@ struct ListAvailable: AsyncParsableCommand {
             try ToolchainSelector(parsing: input)
         }
 
-        let toolchains = try await HTTP().getLatestReleases()
+        let toolchains = try await HTTP.getLatestReleases()
             .compactMap { (try? $0.parse()).map(ToolchainVersion.stable) }
             .filter { selector?.matches(toolchain: $0) ?? true }
 

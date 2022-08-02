@@ -1,19 +1,47 @@
 import Foundation
 import SwiftlyCore
-
 /// `Platform` implementation for Linux systems.
 /// This implementation can be reused for any supported Linux platform.
 /// TODO: replace dummy implementations
 public struct Linux: Platform {
-    public let name: String
-    public let namePretty: String
+    private let platform: Config.PlatformDefinition
 
-    public init(name: String, namePretty: String) {
-        self.name = name
-        self.namePretty = namePretty
+    public init(platform: Config.PlatformDefinition) {
+        self.platform = platform
     }
 
-    public func download(version _: ToolchainVersion) async throws -> URL {
+    public var name: String {
+        self.platform.name
+    }
+
+    public var fullName: String {
+        self.platform.fullName
+    }
+
+    public var namePretty: String {
+        self.platform.namePretty
+    }
+
+    public func download(version: ToolchainVersion) async throws -> URL {
+        // switch version {
+        // case let .stable(stableVersion):
+        //     let versionString = "\(stableVersion.major).\(stableVersion.minor).\(stableVersion.patch)"
+        //     let url = "https://download.swift.org/swift-\(versionString)-release/\(self.name)/swift-\(versionString)-RELEASE/swift-\(versionString)-RELEASE-\(self.platform.fullName).tar.gz"
+        //     print("downloading from \(url)")
+        //     // throw Error(message: "TODO")
+        //     let filename = "\(UUID()).tar.gz"
+        //     let tmpFile = "/tmp/\(filename)"
+        //     try await HTTP.downloadFile(
+        //         url: url,
+        //         to: tmpFile,
+        //         reportProgress: { _ in
+                    
+        //         }
+        //     )
+        //     print("successfully downloaded \(filename)")
+        // default:
+        //     fatalError("")
+        // }
         throw Error(message: "TODO")
     }
 
@@ -42,7 +70,7 @@ public struct Linux: Platform {
     public static let currentPlatform: any Platform = {
         do {
             let config = try Config.load()
-            return Linux(name: config.platform.name, namePretty: config.platform.namePretty)
+            return Linux(platform: config.platform)
         } catch {
             fatalError("error loading config: \(error)")
         }

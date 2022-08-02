@@ -53,8 +53,37 @@ struct Install: AsyncParsableCommand {
     }
 
     internal static func execute(version: ToolchainVersion) async throws {
-        let file = try await Swiftly.currentPlatform.download(version: version)
-        try Swiftly.currentPlatform.install(from: file, version: version)
+        // let file = try await Swiftly.currentPlatform.download(version: version)
+
+        switch version {
+        case let .stable(stableVersion):
+            let versionString = "\(stableVersion.major).\(stableVersion.minor).\(stableVersion.patch)"
+
+            var url = "https://download.swift.org/"
+            url += "swift-\(versionString)-release/"
+            url += "\(Swiftly.currentPlatform.name)/"
+            url += "swift-\(versionString)-RELEASE/"
+            url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.fullName).tar.gz"
+
+            print("downloading from \(url)")
+            // throw Error(message: "TODO")
+            let filename = "\(UUID()).tar.gz"
+            let tmpFile = "/tmp/\(filename)"
+
+            try await HTTP.downloadFile(
+                url: url,
+                to: tmpFile,
+                reportProgress: { progress in
+                    // TODO: implement this
+                }
+            )
+            print("successfully downloaded \(filename)")
+        default:
+            fatalError("")
+        }
+        throw Error(message: "TODO")
+
+        // try Swiftly.currentPlatform.install(from: file, version: version)
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
@@ -63,7 +92,7 @@ struct Install: AsyncParsableCommand {
         switch selector {
         case .latest:
             // get the latest stable release
-            guard let release = try await HTTP().getLatestReleases(numberOfReleases: 1).first else {
+            guard let release = try await HTTP.getLatestReleases(numberOfReleases: 1).first else {
                 throw Error(message: "couldnt get latest releases")
             }
             return try .stable(release.parse())
@@ -79,7 +108,7 @@ struct Install: AsyncParsableCommand {
 
             // if no patch was provided, perform a network lookup to get the latest patch release
             // of the provided major/minor version pair.
-            for release in try await HTTP().getLatestReleases() {
+            for release in try await HTTP.getLatestReleases() {
                 let parsed = try release.parse()
                 guard
                     parsed.major == major,

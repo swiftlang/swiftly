@@ -1,5 +1,7 @@
 import Foundation
 
+public let swiftlyHomeDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly", isDirectory: true)
+
 /// Struct modelling the config.json file used to track installed toolchains,
 /// the current in-use tooolchain, and information about the platform.
 ///
@@ -16,11 +18,11 @@ public struct Config: Codable {
     public var platform: PlatformDefinition
 
     // TODO: support other locations
-    private static let url = URL(fileURLWithPath: "~/.swiftly/config.json".expandingTildeInPath)
+    public static let fileName = "config.json"
+    private static let url = swiftlyHomeDir.appendingPathComponent(Self.fileName)
 
     /// Read the config file from disk.
     public static func load() throws -> Config {
-        print("loading \(url)")
         let data = try Data(contentsOf: Config.url)
         return try JSONDecoder().decode(Config.self, from: data)
     }

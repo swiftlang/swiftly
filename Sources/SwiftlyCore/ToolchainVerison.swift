@@ -99,7 +99,7 @@ extension ToolchainVersion: CustomStringConvertible {
     public var description: String {
         switch self {
         case let .stable(release):
-            return "\(release.major).\(release.minor).\(release.patch)"
+            return "Swift \(release.major).\(release.minor).\(release.patch)"
         case let .snapshot(.main, date):
             return "main-snapshot-\(date)"
         case let .snapshot(.release(major, minor), date):

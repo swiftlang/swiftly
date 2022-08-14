@@ -22,27 +22,8 @@ public struct Linux: Platform {
         self.platform.namePretty
     }
 
-    public func download(version: ToolchainVersion) async throws -> URL {
-        // switch version {
-        // case let .stable(stableVersion):
-        //     let versionString = "\(stableVersion.major).\(stableVersion.minor).\(stableVersion.patch)"
-        //     let url = "https://download.swift.org/swift-\(versionString)-release/\(self.name)/swift-\(versionString)-RELEASE/swift-\(versionString)-RELEASE-\(self.platform.fullName).tar.gz"
-        //     print("downloading from \(url)")
-        //     // throw Error(message: "TODO")
-        //     let filename = "\(UUID()).tar.gz"
-        //     let tmpFile = "/tmp/\(filename)"
-        //     try await HTTP.downloadFile(
-        //         url: url,
-        //         to: tmpFile,
-        //         reportProgress: { _ in
-                    
-        //         }
-        //     )
-        //     print("successfully downloaded \(filename)")
-        // default:
-        //     fatalError("")
-        // }
-        throw Error(message: "TODO")
+    public var toolchainFileExtension: String {
+        "tar.gz"
     }
 
     public func isSystemDependencyPresent(_: SystemDependency) -> Bool {
@@ -66,6 +47,10 @@ public struct Linux: Platform {
     public func selfUpdate() async throws {}
 
     public func currentToolchain() throws -> ToolchainVersion? { nil }
+
+    public func getTempFilePath() -> URL {
+        return URL(fileURLWithPath: "/tmp/swiftly-\(UUID())")
+    }
 
     public static let currentPlatform: any Platform = {
         do {

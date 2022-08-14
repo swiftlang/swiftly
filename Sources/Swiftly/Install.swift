@@ -1,6 +1,8 @@
 import _StringProcessing
 import ArgumentParser
 import Foundation
+import TSCUtility
+import TSCBasic
 
 import SwiftlyCore
 
@@ -45,7 +47,7 @@ struct Install: AsyncParsableCommand {
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.version)
         let toolchainVersion = try await self.resolve(selector: selector)
-        print("installing \(toolchainVersion)")
+        print("Installing \(toolchainVersion)")
 
         try await Self.execute(version: toolchainVersion)
 
@@ -53,7 +55,7 @@ struct Install: AsyncParsableCommand {
     }
 
     internal static func execute(version: ToolchainVersion) async throws {
-        // let file = try await Swiftly.currentPlatform.download(version: version)
+        let tmpFile = Swiftly.currentPlatform.getTempFilePath()
 
         switch version {
         case let .stable(stableVersion):
@@ -63,27 +65,33 @@ struct Install: AsyncParsableCommand {
             url += "swift-\(versionString)-release/"
             url += "\(Swiftly.currentPlatform.name)/"
             url += "swift-\(versionString)-RELEASE/"
-            url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.fullName).tar.gz"
+            url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
 
-            print("downloading from \(url)")
-            // throw Error(message: "TODO")
-            let filename = "\(UUID()).tar.gz"
-            let tmpFile = "/tmp/\(filename)"
+            let tmpFile = Swiftly.currentPlatform.getTempFilePath()
+            let animation = PercentProgressAnimation(
+                stream: stdoutStream,
+                header: "Downloading \(url)"
+            )
 
             try await HTTP.downloadFile(
                 url: url,
-                to: tmpFile,
+                to: tmpFile.path,
                 reportProgress: { progress in
-                    // TODO: implement this
+                    let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
+                    let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
+
+                    animation.update(
+                        step: progress.receivedBytes,
+                        total: progress.totalBytes!,
+                        text: "\(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
+                    )
                 }
             )
-            print("successfully downloaded \(filename)")
         default:
             fatalError("")
         }
-        throw Error(message: "TODO")
 
-        // try Swiftly.currentPlatform.install(from: file, version: version)
+        try Swiftly.currentPlatform.install(from: tmpFile, version: version)
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.

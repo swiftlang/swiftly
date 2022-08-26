@@ -84,6 +84,17 @@ public enum ToolchainVersion {
         }
         return true
     }
+
+    public var name: String {
+        switch self {
+        case let .stable(release):
+            return "\(release.major).\(release.minor).\(release.patch)"
+        case let .snapshot(.main, date):
+            return "main-snapshot-\(date)"
+        case let .snapshot(.release(major, minor), date):
+            return "\(major).\(minor)-snapshot-\(date)"
+        }
+    }
 }
 
 extension ToolchainVersion: LosslessStringConvertible {

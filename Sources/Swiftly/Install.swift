@@ -55,7 +55,10 @@ struct Install: AsyncParsableCommand {
     }
 
     internal static func execute(version: ToolchainVersion) async throws {
-        let tmpFile = Swiftly.currentPlatform.getTempFilePath()
+        // let tmpFile = Swiftly.currentPlatform.getTempFilePath()
+        // let tmpFile = URL(fileURLWithPath: "/home/patrick/scratch/foo.tar.gz")
+        // let tmpFile = URL(fileURLWithPath: "/home/patrick/swiftly/toolchain.tar.gz")
+        // let tmpFile = URL(fileURLWithPath: "/tmp/swiftly-316D140F-2407-4D0B-B7DC-8F36487B47C0")
 
         switch version {
         case let .stable(stableVersion):
@@ -67,16 +70,25 @@ struct Install: AsyncParsableCommand {
             url += "swift-\(versionString)-RELEASE/"
             url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
 
-            let tmpFile = Swiftly.currentPlatform.getTempFilePath()
             let animation = PercentProgressAnimation(
                 stream: stdoutStream,
                 header: "Downloading \(url)"
             )
 
+            var lastUpdate = Date()
+
             try await HTTP.downloadFile(
                 url: url,
                 to: tmpFile.path,
                 reportProgress: { progress in
+                    let now = Date()
+
+                    guard lastUpdate.distance(to: now) > 0.25 else {
+                        return
+                    }
+
+                    lastUpdate = Date()
+
                     let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
                     let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
 

@@ -54,7 +54,6 @@ public class HTTP {
         let request = try Self.makeRequest(url: url)
         let delegateTask = Self.client.inner.execute(request: request, delegate: delegate)
         let idk = try await delegateTask.futureResult.get()
-        print("downloaded \(idk.totalBytes)")
     }
 }
 

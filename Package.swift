@@ -15,8 +15,6 @@ let package = Package(
         .package(url: "https://github.com/swift-server/async-http-client", from: "1.9.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.38.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
-        .package(url: "https://github.com/tsolomko/SWCompression.git", from: "4.7.0"),
-        .package(url: "https://github.com/1024jp/GzipSwift", from: "5.2.0"),
     ],
     targets: [
         .executableTarget(
@@ -39,8 +37,14 @@ let package = Package(
             name: "LinuxPlatform",
             dependencies: [
                 "SwiftlyCore",
-                "SWCompression",
-                .product(name: "Gzip", package: "GzipSwift"),
+                "CLibArchive",
+            ]
+        ),
+        .systemLibrary(
+            name: "CLibArchive",
+            pkgConfig: "libarchive",
+            providers: [
+                .apt(["libarchive-dev"])
             ]
         ),
         .testTarget(

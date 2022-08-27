@@ -55,10 +55,7 @@ struct Install: AsyncParsableCommand {
     }
 
     internal static func execute(version: ToolchainVersion) async throws {
-        // let tmpFile = Swiftly.currentPlatform.getTempFilePath()
-        // let tmpFile = URL(fileURLWithPath: "/home/patrick/scratch/foo.tar.gz")
-        // let tmpFile = URL(fileURLWithPath: "/home/patrick/swiftly/toolchain.tar.gz")
-        // let tmpFile = URL(fileURLWithPath: "/tmp/swiftly-316D140F-2407-4D0B-B7DC-8F36487B47C0")
+        let tmpFile = Swiftly.currentPlatform.getTempFilePath()
 
         switch version {
         case let .stable(stableVersion):
@@ -100,7 +97,7 @@ struct Install: AsyncParsableCommand {
                 }
             )
         default:
-            fatalError("")
+            fatalError("TODO: snapshots")
         }
 
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)

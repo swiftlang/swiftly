@@ -1,7 +1,5 @@
 import Foundation
 import SwiftlyCore
-import SWCompression
-import Gzip
 
 /// `Platform` implementation for Linux systems.
 /// This implementation can be reused for any supported Linux platform.
@@ -47,27 +45,13 @@ public struct Linux: Platform {
 
         // extract files
         print("Extracting toolchain...")
-        let gzData = try Data(contentsOf: tmpFile)
-        let tarData = try gzData.gunzipped()
-        let tarEntries = try TarContainer.open(container: tarData)
-
         let toolchainDir = toolchainsDir.appendingPathComponent(version.name)
-        for entry in tarEntries {
-            let relativePath = entry.info.name.drop { c in c != "/" }.dropFirst()
-            let fileURL = toolchainDir.appendingPathComponent(String(relativePath))
+        try extractArchive(atPath: tmpFile) { name in
+            // drop swift-a.b.c-RELEASE etc name from the extracted files.
+            let relativePath = name.drop { c in c != "/" }.dropFirst()
 
-            if let data = entry.data {
-                try data.write(to: fileURL, options: .atomic)
-
-                if let permissions = entry.info.permissions {
-                    try FileManager.default.setAttributes(
-                        [.posixPermissions: permissions.rawValue],
-                        ofItemAtPath: fileURL.path
-                    )
-                }
-            } else {
-                try FileManager.default.createDirectory(at: fileURL, withIntermediateDirectories: true)
-            }
+            // prepend ~/.swiftly/toolchains/<toolchain> to each file name
+            return toolchainDir.appendingPathComponent(String(relativePath))
         }
 
         // copy to ~/.swiftly/toolchains/<name>

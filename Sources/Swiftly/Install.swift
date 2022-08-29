@@ -57,23 +57,45 @@ struct Install: AsyncParsableCommand {
     internal static func execute(version: ToolchainVersion) async throws {
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
 
+        var url: String = "https://download.swift.org/"
         switch version {
         case let .stable(stableVersion):
-            let versionString = "\(stableVersion.major).\(stableVersion.minor).\(stableVersion.patch)"
-
-            var url = "https://download.swift.org/"
+            // Building URL path that looks like:
+            // swift-5.6.2-release/ubuntu2004/swift-5.6.2-RELEASE/swift-5.6.2-RELEASE-ubuntu20.04.tar.gz
+            var versionString = "\(stableVersion.major).\(stableVersion.minor)"
+            if stableVersion.patch != 0 {
+                versionString += ".\(stableVersion.patch)"
+            }
             url += "swift-\(versionString)-release/"
             url += "\(Swiftly.currentPlatform.name)/"
             url += "swift-\(versionString)-RELEASE/"
             url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
+        case let .snapshot(branch, date):
+            // Building URL path that looks like:
+            // development/ubuntu1804/swift-DEVELOPMENT-SNAPSHOT-2022-08-24-a/swift-DEVELOPMENT-SNAPSHOT-2022-08-24-a-ubuntu18.04.tar.gz
 
-            let animation = PercentProgressAnimation(
-                stream: stdoutStream,
-                header: "Downloading \(url)"
-            )
+            url += "\(Swiftly.currentPlatform.name)/"
 
-            var lastUpdate = Date()
+            let branchString: String
+            switch branch {
+            case let .release(major, minor):
+                branchString = "swift-\(major).\(minor)-DEVELOPMENT-SNAPSHOT"
+            case .main:
+                branchString = "swift-DEVELOPMENT-SNAPSHOT"
+            }
 
+            url += "\(branchString)-\(date)-a/"
+            url += "\(branchString)-\(date)-a-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
+        }
+
+        let animation = PercentProgressAnimation(
+            stream: stdoutStream,
+            header: "Downloading \(url)"
+        )
+
+        var lastUpdate = Date()
+
+        do {
             try await HTTP.downloadFile(
                 url: url,
                 to: tmpFile.path,
@@ -92,13 +114,16 @@ struct Install: AsyncParsableCommand {
                     animation.update(
                         step: progress.receivedBytes,
                         total: progress.totalBytes!,
-                        text: "\(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
+                        text: "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
                     )
                 }
             )
-        default:
-            fatalError("TODO: snapshots")
+        } catch {
+            animation.complete(success: false)
+            throw error
         }
+
+        animation.complete(success: true)
 
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)
     }

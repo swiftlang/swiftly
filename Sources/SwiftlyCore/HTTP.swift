@@ -42,14 +42,7 @@ public class HTTP {
     public static func downloadFile(url: String, to destination: String, reportProgress: @escaping (FileDownloadDelegate.Progress) -> Void) async throws {
         let delegate = try FileDownloadDelegate(
             path: destination,
-            reportProgress: reportProgress // { progress in
-            //     if let total = progress.totalBytes {
-            //         let progressPercentage = Int(Double(progress.receivedBytes) / Double(total) * 100.0)
-            //         print("download \(Double(progress.receivedBytes) / Double(total) * 100.0)% complete")
-            //     } else {
-            //         print("downloaded \(progress.receivedBytes) bytes")
-            //     }
-            // }
+            reportProgress: reportProgress
         )
         let request = try Self.makeRequest(url: url)
         let delegateTask = Self.client.inner.execute(request: request, delegate: delegate)

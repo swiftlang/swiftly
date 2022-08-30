@@ -14,12 +14,18 @@ public struct Config: Codable {
     }
 
     public var inUse: ToolchainVersion?
-    public var installedToolchains: [ToolchainVersion]
+    public var installedToolchains: Set<ToolchainVersion>
     public var platform: PlatformDefinition
 
     // TODO: support other locations
     public static let fileName = "config.json"
     private static let url = swiftlyHomeDir.appendingPathComponent(Self.fileName)
+
+    private static func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted]
+        return encoder
+    }
 
     /// Read the config file from disk.
     public static func load() throws -> Config {
@@ -29,7 +35,7 @@ public struct Config: Codable {
 
     /// Write the contents of this `Config` struct to disk.
     public func save() throws {
-        let outData = try JSONEncoder().encode(self)
+        let outData = try Self.makeEncoder().encode(self)
         try outData.write(to: Config.url, options: .atomic)
     }
 
@@ -46,7 +52,7 @@ public struct Config: Codable {
 extension ToolchainVersion: Encodable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        try container.encode(String(describing: self))
+        try container.encode(self.name)
     }
 }
 

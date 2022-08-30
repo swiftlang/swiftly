@@ -47,14 +47,16 @@ struct Install: AsyncParsableCommand {
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.version)
         let toolchainVersion = try await self.resolve(selector: selector)
-        print("Installing \(toolchainVersion)")
-
         try await Self.execute(version: toolchainVersion)
-
-        print("\(toolchainVersion) installed successfully!")
     }
 
     internal static func execute(version: ToolchainVersion) async throws {
+        guard try !Config.load().installedToolchains.contains(version) else {
+            print("\(version) is already installed, exiting.")
+            return
+        }
+        print("Installing \(version)")
+
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
 
         var url: String = "https://download.swift.org/"
@@ -71,10 +73,6 @@ struct Install: AsyncParsableCommand {
             url += "swift-\(versionString)-RELEASE/"
             url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
         case let .snapshot(branch, date):
-            // Building URL path that looks like:
-            // development/ubuntu1804/swift-DEVELOPMENT-SNAPSHOT-2022-08-24-a/swift-DEVELOPMENT-SNAPSHOT-2022-08-24-a-ubuntu18.04.tar.gz
-
-
             let snapshotString: String
             switch branch {
             case let .release(major, minor):
@@ -128,6 +126,12 @@ struct Install: AsyncParsableCommand {
         animation.complete(success: true)
 
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)
+
+        try Config.update { config in
+            config.installedToolchains.insert(version)
+        }
+
+        print("\(version) installed successfully!")
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.

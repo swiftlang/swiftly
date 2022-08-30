@@ -74,23 +74,25 @@ struct Install: AsyncParsableCommand {
             // Building URL path that looks like:
             // development/ubuntu1804/swift-DEVELOPMENT-SNAPSHOT-2022-08-24-a/swift-DEVELOPMENT-SNAPSHOT-2022-08-24-a-ubuntu18.04.tar.gz
 
-            url += "\(Swiftly.currentPlatform.name)/"
 
-            let branchString: String
+            let snapshotString: String
             switch branch {
             case let .release(major, minor):
-                branchString = "swift-\(major).\(minor)-DEVELOPMENT-SNAPSHOT"
+                url += "swift-\(major).\(minor)-branch/"
+                snapshotString = "swift-\(major).\(minor)-DEVELOPMENT-SNAPSHOT"
             case .main:
-                branchString = "swift-DEVELOPMENT-SNAPSHOT"
+                url += "development/"
+                snapshotString = "swift-DEVELOPMENT-SNAPSHOT"
             }
 
-            url += "\(branchString)-\(date)-a/"
-            url += "\(branchString)-\(date)-a-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            url += "\(Swiftly.currentPlatform.name)/"
+            url += "\(snapshotString)-\(date)-a/"
+            url += "\(snapshotString)-\(date)-a-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
         }
 
         let animation = PercentProgressAnimation(
             stream: stdoutStream,
-            header: "Downloading \(url)"
+            header: "Downloading \(version)"
         )
 
         var lastUpdate = Date()
@@ -102,14 +104,14 @@ struct Install: AsyncParsableCommand {
                 reportProgress: { progress in
                     let now = Date()
 
-                    guard lastUpdate.distance(to: now) > 0.25 else {
+                    guard lastUpdate.distance(to: now) > 0.25 || progress.receivedBytes == progress.totalBytes else {
                         return
                     }
 
-                    lastUpdate = Date()
-
                     let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
                     let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
+
+                    lastUpdate = Date()
 
                     animation.update(
                         step: progress.receivedBytes,

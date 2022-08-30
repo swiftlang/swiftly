@@ -1,0 +1,8 @@
+{
+    "platform": {
+        "name": "ubuntu2004",
+        "fullName": "ubuntu20.04",
+        "namePretty": "Ubuntu 20.04"
+    },
+    "installedToolchains": []
+}

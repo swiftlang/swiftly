@@ -149,7 +149,8 @@ struct Install: AsyncParsableCommand {
     func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:
-            // Look up the latest stable release.
+            print("Fetching the latest stable Swift release...")
+
             guard let release = try await HTTP.getReleaseToolchains(limit: 1).first else {
                 throw Error(message: "couldn't get latest releases")
             }
@@ -166,6 +167,7 @@ struct Install: AsyncParsableCommand {
                 return .stable(ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch))
             }
 
+            print("Fetching the latest stable Swift \(major).\(minor) release...")
             // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
             let toolchain = try await HTTP.getReleaseToolchains(limit: 1) { release in
@@ -183,6 +185,7 @@ struct Install: AsyncParsableCommand {
                 return ToolchainVersion(snapshotBranch: branch, date: date)
             }
 
+            print("Fetching the latest \(branch) branch snapshot...")
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.
             let snapshot = try await HTTP.getSnapshotToolchains(limit: 1) { snapshot in

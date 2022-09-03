@@ -4,10 +4,20 @@ import _StringProcessing
 public enum ToolchainVersion {
 
     public struct Snapshot: Equatable, Hashable {
-        public enum Branch: Equatable, Hashable {
+        public enum Branch: Equatable, Hashable, CustomStringConvertible {
             case main
             case release(major: Int, minor: Int)
+
+            public var description: String {
+                switch self {
+                case .main:
+                    return "main"
+                case let .release(major, minor):
+                    return "\(major).\(minor) development"
+                }
+            }
         }
+
         public let branch: Branch
         public let date: String
     }

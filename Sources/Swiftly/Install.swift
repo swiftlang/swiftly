@@ -72,9 +72,9 @@ struct Install: AsyncParsableCommand {
             url += "\(Swiftly.currentPlatform.name)/"
             url += "swift-\(versionString)-RELEASE/"
             url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
-        case let .snapshot(branch, date):
+        case let .snapshot(release):
             let snapshotString: String
-            switch branch {
+            switch release.branch {
             case let .release(major, minor):
                 url += "swift-\(major).\(minor)-branch/"
                 snapshotString = "swift-\(major).\(minor)-DEVELOPMENT-SNAPSHOT"
@@ -84,8 +84,8 @@ struct Install: AsyncParsableCommand {
             }
 
             url += "\(Swiftly.currentPlatform.name)/"
-            url += "\(snapshotString)-\(date)-a/"
-            url += "\(snapshotString)-\(date)-a-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            url += "\(snapshotString)-\(release.date)-a/"
+            url += "\(snapshotString)-\(release.date)-a-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
         }
 
         let animation = PercentProgressAnimation(
@@ -139,42 +139,51 @@ struct Install: AsyncParsableCommand {
     func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:
-            // get the latest stable release
-            guard let release = try await HTTP.getLatestReleases(numberOfReleases: 1).first else {
-                throw Error(message: "couldnt get latest releases")
+            // Look up the latest stable release.
+            guard let release = try await HTTP.getReleaseToolchains(limit: 1).first else {
+                throw Error(message: "couldn't get latest releases")
             }
-            return try .stable(release.parse())
+            return .stable(release)
 
         case let .stable(major, minor, patch):
             guard let minor else {
-                throw Error(message: "Need to provide at least major and minor versions when installing a release toolchain.")
+                throw Error(
+                    message: "Need to provide at least major and minor versions when installing a release toolchain."
+                )
             }
 
             if let patch {
                 return .stable(ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch))
             }
 
-            // if no patch was provided, perform a network lookup to get the latest patch release
+            // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
-            for release in try await HTTP.getLatestReleases() {
-                let parsed = try release.parse()
-                guard
-                    parsed.major == major,
-                    parsed.minor == minor
-                else {
-                    continue
-                }
-                return .stable(parsed)
+            let toolchain = try await HTTP.getReleaseToolchains(limit: 1) { release in
+                release.major == major && release.minor == minor
+            }.first
+
+            guard let toolchain else {
+                throw Error(message: "No release toolchain found matching \(major).\(minor)")
             }
 
-            throw Error(message: "No release found matching \(major).\(minor)")
+            return .stable(toolchain)
 
         case let .snapshot(branch, date):
             if let date {
-                return .snapshot(branch: branch, date: date)
+                return ToolchainVersion(snapshotBranch: branch, date: date)
             }
-            // TODO: get latest snapshot if no date provided
-            throw Error(message: "TODO get latest snapshot")
+
+            // If a date was not provided, perform a lookup to find the most recent snapshot
+            // for the given branch.
+            let snapshot = try await HTTP.getSnapshotToolchains(limit: 1) { snapshot in
+                snapshot.branch == branch
+            }.first
+
+            guard let snapshot else {
+                throw Error(message: "No snapshot toolchain found for branch \(branch)")
+            }
+
+            return .snapshot(snapshot)
         }
     }
 }

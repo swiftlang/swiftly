@@ -41,11 +41,21 @@ struct Install: AsyncParsableCommand {
             $ swiftly install main-snapshot
         """
     ))
-
     var version: String
+
+    @Option(help: ArgumentHelp(
+                "A GitHub authentiation token to use for any GitHub API requests.",
+                discussion: """
+
+                This is useful to avoid GitHub's low rate limits. If an installation
+                fails with an \"unauthorized\" status code, it likely means the rate limit has been hit.
+                """
+            ))
+    var token: String?
 
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.version)
+        HTTP.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
         try await Self.execute(version: toolchainVersion)
     }

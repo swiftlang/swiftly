@@ -9,6 +9,9 @@ import _StringProcessing
 public class HTTP {
     private static let client = HTTPClientWrapper()
 
+    /// The GitHub authentication token to use for any requests made to the GitHub API.
+    public static var githubToken: String? = nil
+
     private struct Response {
         let status: HTTPResponseStatus
         let buffer: ByteBuffer
@@ -20,9 +23,14 @@ public class HTTP {
         return request
     }
 
-    private static func get(url: String) async throws -> Response {
+    private static func get(url: String, headers: [String: String]) async throws -> Response {
         var request = HTTPClientRequest(url: url)
         request.headers.add(name: "User-Agent", value: "swiftly")
+
+        for (k, v) in headers {
+            request.headers.add(name: k, value: v)
+        }
+
         let response = try await Self.client.inner.execute(request, timeout: .seconds(30))
 
         // if defined, the content-length headers announces the size of the body
@@ -32,8 +40,12 @@ public class HTTP {
 
     /// Decode the provided type `T` from the JSON body of the response from a GET request
     /// to the given URL.
-    public static func getFromJSON<T: Decodable>(url: String, type: T.Type) async throws -> T {
-        let response = try await Self.get(url: url)
+    public static func getFromJSON<T: Decodable>(
+        url: String,
+        type: T.Type,
+        headers: [String: String] = [:]
+    ) async throws -> T {
+        let response = try await Self.get(url: url, headers: headers)
 
         guard case .ok = response.status else {
             var message = "received status \"\(response.status)\" when reaching \(url)"
@@ -81,6 +93,17 @@ public class HTTP {
         }
     }
 
+    /// Get a JSON response from the GitHub REST API.
+    /// This will use the authorization token set, if any.
+    private static func getFromGitHub<T: Decodable>(url: String) async throws -> T {
+        var headers: [String: String] = [:]
+        if let token = Self.githubToken {
+            headers["Authorization"] = "Bearer \(token)"
+        }
+
+        return try await Self.getFromJSON(url: url, type: T.self, headers: headers)
+    }
+
     /// Get a list of releases on the apple/swift GitHub repository.
     /// The releases are returned in "pages" of `perPage` releases (default 100). The page argument specifies the
     /// page number.
@@ -88,11 +111,13 @@ public class HTTP {
     /// The results are returned in lexicographic order.
     private static func getReleases(page: Int, perPage: Int = 100) async throws -> [GitHubTag] {
         let url = "https://api.github.com/repos/apple/swift/releases?per_page=\(perPage)&page=\(page)"
-        return try await Self.getFromJSON(url: url, type: [GitHubTag].self)
+        return try await Self.getFromGitHub(url: url)
     }
 
     /// Return an array of released Swift versions that match the given filter, up to the provided
     /// limit (default unlimited).
+    ///
+    /// TODO: retrieve these directly from Apple instead of through GitHub.
     public static func getReleaseToolchains(
         limit: Int? = nil,
         filter: ((ToolchainVersion.StableRelease) -> Bool)? = nil
@@ -120,11 +145,13 @@ public class HTTP {
     /// The results are returned in lexicographic order.
     private static func getTags(page: Int) async throws -> [GitHubTag] {
         let url = "https://api.github.com/repos/apple/swift/tags?per_page=100&page=\(page)"
-        return try await Self.getFromJSON(url: url, type: [GitHubTag].self)
+        return try await Self.getFromGitHub(url: url)
     }
 
     /// Return an array of Swift snapshots that match the given filter, up to the provided
     /// limit (default unlimited).
+    ///
+    /// TODO: retrieve these directly from Apple instead of through GitHub.
     public static func getSnapshotToolchains(
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil

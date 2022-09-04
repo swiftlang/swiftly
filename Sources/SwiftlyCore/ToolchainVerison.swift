@@ -3,7 +3,7 @@ import _StringProcessing
 /// Enum representing a fully resolved toolchain version (e.g. 5.6.7 or 5.7-snapshot-2022-07-05).
 public enum ToolchainVersion {
 
-    public struct Snapshot: Equatable, Hashable {
+    public struct Snapshot: Equatable, Hashable, CustomStringConvertible {
         public enum Branch: Equatable, Hashable, CustomStringConvertible {
             case main
             case release(major: Int, minor: Int)
@@ -20,6 +20,20 @@ public enum ToolchainVersion {
 
         public let branch: Branch
         public let date: String
+
+        public init(branch: Branch, date: String) {
+            self.branch = branch
+            self.date = date
+        }
+
+        public var description: String {
+            switch self.branch {
+            case .main:
+                return "main-snapshot-\(self.date)"
+            case let .release(major, minor):
+                return "\(major).\(minor)-snapshot-\(self.date)"
+            }
+        }
     }
 
     public struct StableRelease: Equatable, Comparable, Hashable, CustomStringConvertible {
@@ -137,8 +151,8 @@ extension ToolchainVersion: CustomStringConvertible {
         switch self {
         case let .stable(release):
             return "\(release)"
-        case .snapshot:
-            return self.name
+        case let .snapshot(snapshot):
+            return "\(snapshot)"
         }
     }
 }

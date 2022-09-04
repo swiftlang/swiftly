@@ -17,8 +17,8 @@ public class HTTP {
         let buffer: ByteBuffer
     }
 
-    private static func makeRequest(url: String) throws -> HTTPClient.Request {
-        var request = try HTTPClient.Request(url: url)
+    private static func makeRequest(url: String) -> HTTPClientRequest {
+        var request = HTTPClientRequest(url: url)
         request.headers.add(name: "User-Agent", value: "swiftly")
         return request
     }

@@ -19,7 +19,7 @@ struct ExtractError: Error {
 }
 
 /// Write the data from the given readArchive into the writeArchive.
-func copy_data(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws {
+func copyData(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws {
     var r = 0
     var buff: UnsafeRawPointer? = nil
     var size = 0
@@ -45,7 +45,6 @@ func copy_data(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws
 ///
 /// This uses libarchive under the hood, so a wide variety of archive formats are supported (e.g. .tar.gz).
 internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws {
-    /* Select which attributes we want to restore. */
     var flags = Int32(0);
     flags = ARCHIVE_EXTRACT_TIME;
     flags |= ARCHIVE_EXTRACT_PERM;
@@ -67,7 +66,7 @@ internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL
         archive_write_free(ext);
     }
 
-    if (archive_read_open_filename(a, archivePath.path, 10240) != 0) {
+    if archive_read_open_filename(a, archivePath.path, 10240) != 0 {
         throw ExtractError(message: "Failed to open \"\(archivePath.path)\"")
     }
 
@@ -89,8 +88,8 @@ internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL
             throw ExtractError(archive: ext)
         }
 
-        if (archive_entry_size(entry) > 0) {
-            try copy_data(readArchive: a, writeArchive: ext)
+        if archive_entry_size(entry) > 0 {
+            try copyData(readArchive: a, writeArchive: ext)
         }
 
         r = archive_write_finish_entry(ext);

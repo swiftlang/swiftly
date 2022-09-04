@@ -123,7 +123,9 @@ public class HTTP {
         filter: ((ToolchainVersion.StableRelease) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.StableRelease] {
         let filterMap = { (gh: GitHubTag) -> ToolchainVersion.StableRelease? in
-            let release = try gh.parseStableRelease()
+            guard let release = try gh.parseStableRelease() else {
+                return nil
+            }
 
             if let filter {
                 guard filter(release) else {
@@ -204,11 +206,11 @@ private struct GitHubTag: Decodable {
     /// e.g. "Swift a.b[.c] Release" or "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-08-30-a".
     let name: String
 
-    fileprivate func parseStableRelease() throws -> ToolchainVersion.StableRelease {
+    fileprivate func parseStableRelease() throws -> ToolchainVersion.StableRelease? {
         // names look like Swift a.b.c Release
         let parts = self.name.split(separator: " ")
         guard parts.count >= 2 else {
-            throw Error(message: "Malformatted release name from GitHub API: \(self.name)")
+            return nil
         }
 
         // versions can be a.b.c or a.b for .0 releases
@@ -218,13 +220,13 @@ private struct GitHubTag: Decodable {
             let major = Int(versionParts[0]),
             let minor = Int(versionParts[1])
         else {
-            throw Error(message: "Malformatted release version from GitHub API: \(parts[1])")
+            return nil
         }
 
         let patch: Int
         if versionParts.count == 3 {
             guard let p = Int(versionParts[2]) else {
-                throw Error(message: "Malformatted patch version from GitHub API: \(versionParts[2])")
+                return nil
             }
             patch = p
         } else {

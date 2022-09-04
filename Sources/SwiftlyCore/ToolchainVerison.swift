@@ -22,7 +22,7 @@ public enum ToolchainVersion {
         public let date: String
     }
 
-    public struct StableRelease: Equatable, Comparable, Hashable {
+    public struct StableRelease: Equatable, Comparable, Hashable, CustomStringConvertible {
         public let major: Int
         public let minor: Int
         public let patch: Int
@@ -31,6 +31,10 @@ public enum ToolchainVersion {
             self.major = major
             self.minor = minor
             self.patch = patch
+        }
+
+        public var description: String {
+            return "Swift \(self.major).\(self.minor).\(self.patch)"
         }
 
         public static func < (lhs: Self, rhs: Self) -> Bool {
@@ -132,7 +136,7 @@ extension ToolchainVersion: CustomStringConvertible {
     public var description: String {
         switch self {
         case let .stable(release):
-            return "Swift \(release.major).\(release.minor).\(release.patch)"
+            return "\(release)"
         case .snapshot:
             return self.name
         }

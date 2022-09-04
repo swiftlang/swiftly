@@ -34,7 +34,7 @@ public struct Linux: Platform {
     public func install(from tmpFile: URL, version: ToolchainVersion) throws {
         // check if file exists
         guard tmpFile.fileExists() else {
-            fatalError("\(tmpFile) doesn't exist")
+            throw Error(message: "\(tmpFile) doesn't exist")
         }
 
         // ensure ~/.swiftly/toolchains exists
@@ -54,8 +54,7 @@ public struct Linux: Platform {
             return toolchainDir.appendingPathComponent(String(relativePath))
         }
 
-        // copy to ~/.swiftly/toolchains/<name>
-        // if config doesn't have an active toolchain, set it to that
+        // TODO: if config doesn't have an active toolchain, set it to that
     }
 
     public func uninstall(version _: ToolchainVersion) throws {}
@@ -75,7 +74,9 @@ public struct Linux: Platform {
     public func currentToolchain() throws -> ToolchainVersion? { nil }
 
     public func getTempFilePath() -> URL {
-        return URL(fileURLWithPath: "/tmp/swiftly-\(UUID())")
+        let path = URL(fileURLWithPath: "/tmp/swiftly-\(UUID())")
+        FileManager.default.createFile(atPath: path.path, contents: nil)
+        return path
     }
 
     public static let currentPlatform: any Platform = {

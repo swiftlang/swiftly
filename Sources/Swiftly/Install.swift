@@ -106,7 +106,7 @@ struct Install: AsyncParsableCommand {
         var lastUpdate = Date()
 
         do {
-            try await HTTP.downloadFile(
+            try await HTTP.downloadToolchain(
                 url: url,
                 to: tmpFile.path,
                 reportProgress: { progress in
@@ -128,6 +128,9 @@ struct Install: AsyncParsableCommand {
                     )
                 }
             )
+        } catch _ as HTTP.DownloadNotFoundError {
+            print("\(version) does not exist, exiting")
+            return
         } catch {
             animation.complete(success: false)
             throw error

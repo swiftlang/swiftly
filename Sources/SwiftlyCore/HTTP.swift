@@ -24,8 +24,7 @@ public class HTTP {
     }
 
     private static func get(url: String, headers: [String: String]) async throws -> Response {
-        var request = HTTPClientRequest(url: url)
-        request.headers.add(name: "User-Agent", value: "swiftly")
+        var request = Self.makeRequest(url: url)
 
         for (k, v) in headers {
             request.headers.add(name: k, value: v)
@@ -177,18 +176,50 @@ public class HTTP {
         }
     }
 
-    public static func downloadFile(
+    public struct DownloadProgress {
+        public let receivedBytes: Int
+        public let totalBytes: Int?
+    }
+
+    public struct DownloadNotFoundError: LocalizedError {
+        public let url: String
+    }
+
+    public static func downloadToolchain(
         url: String,
         to destination: String,
-        reportProgress: @escaping (FileDownloadDelegate.Progress) -> Void
+        reportProgress: @escaping (DownloadProgress) -> Void
     ) async throws {
-        let delegate = try FileDownloadDelegate(
-            path: destination,
-            reportProgress: reportProgress
-        )
-        let request = try Self.makeRequest(url: url)
-        let delegateTask = Self.client.inner.execute(request: request, delegate: delegate)
-        let _ = try await delegateTask.futureResult.get()
+        let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: destination))
+        defer {
+            try? fileHandle.close()
+        }
+
+        let request = self.makeRequest(url: url)
+        let response = try await Self.client.inner.execute(request, timeout: .seconds(30))
+
+        guard case response.status = HTTPResponseStatus.ok else {
+            throw Error(message: "Received \(response.status) when trying to download \(url)")
+        }
+
+        // Unknown download.swift.org paths redirect to a 404 page which then returns a 200 status.
+        // As a heuristic for if we've hit the 404 page, we check to see if the content is HTML.
+        guard !response.headers["Content-Type"].contains(where: { $0.contains("text/html") }) else {
+            throw DownloadNotFoundError(url: url)
+        }
+
+        // if defined, the content-length headers announces the size of the body
+        let expectedBytes = response.headers.first(name: "content-length").flatMap(Int.init)
+
+        var receivedBytes = 0
+        for try await buffer in response.body {
+            receivedBytes += buffer.readableBytes
+
+            try buffer.withUnsafeReadableBytes { bufferPtr in
+                try fileHandle.write(contentsOf: bufferPtr)
+            }
+            reportProgress(DownloadProgress(receivedBytes: receivedBytes, totalBytes: expectedBytes))
+        }
     }
 }
 

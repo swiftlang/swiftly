@@ -32,18 +32,15 @@ public struct Linux: Platform {
     }
 
     public func install(from tmpFile: URL, version: ToolchainVersion) throws {
-        // check if file exists
         guard tmpFile.fileExists() else {
             throw Error(message: "\(tmpFile) doesn't exist")
         }
 
-        // ensure ~/.swiftly/toolchains exists
         let toolchainsDir = swiftlyHomeDir.appendingPathComponent("toolchains")
         if !toolchainsDir.fileExists() {
             try FileManager.default.createDirectory(at: toolchainsDir, withIntermediateDirectories: false)
         }
 
-        // extract files
         print("Extracting toolchain...")
         let toolchainDir = toolchainsDir.appendingPathComponent(version.name)
         try extractArchive(atPath: tmpFile) { name in

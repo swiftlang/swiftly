@@ -2,7 +2,7 @@ import CLibArchive
 import Foundation
 
 // The code in this file consists mainly of a Swift port of the "Complete Extractor" example included in the libarchive
-// documenation: https://github.com/libarchive/libarchive/wiki/Examples#a-complete-extractor
+// documentation: https://github.com/libarchive/libarchive/wiki/Examples#a-complete-extractor
 
 struct ExtractError: Error {
     let message: String?

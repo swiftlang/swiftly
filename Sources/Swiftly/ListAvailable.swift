@@ -34,65 +34,63 @@ struct ListAvailable: AsyncParsableCommand {
     var toolchainSelector: String?
 
     internal mutating func run() async throws {
-        // TODO: uncomment this and update implementation
+        let selector = try self.toolchainSelector.map { input in
+            try ToolchainSelector(parsing: input)
+        }
 
-        // let selector = try self.toolchainSelector.map { input in
-        //     try ToolchainSelector(parsing: input)
-        // }
+        let toolchains = try await HTTP.getReleaseToolchains()
+            .map(ToolchainVersion.stable)
+            .filter { selector?.matches(toolchain: $0) ?? true }
 
-        // let toolchains = try await HTTP.getReleaseToolchains(limit: 20)
-        //     .compactMap { (try? $0.parse()).map(ToolchainVersion.stable) }
-        //     .filter { selector?.matches(toolchain: $0) ?? true }
+        let installedToolchains = Set(Swiftly.currentPlatform.listToolchains(selector: selector))
+        let activeToolchain = try Swiftly.currentPlatform.currentToolchain()
 
-        // let installedToolchains = Set(Swiftly.currentPlatform.listToolchains(selector: selector))
-        // let activeToolchain = try Swiftly.currentPlatform.currentToolchain()
+        let printToolchain = { (toolchain: ToolchainVersion) in
+            var message = "\(toolchain)"
+            if toolchain == activeToolchain {
+                message += " (installed, in use)"
+            } else if installedToolchains.contains(toolchain) {
+                message += " (installed)"
+            }
+            print(message)
+        }
 
-        // let printToolchain = { (toolchain: ToolchainVersion) in
-        //     var message = "\(toolchain)"
-        //     if toolchain == activeToolchain {
-        //         message += " (installed, in use)"
-        //     } else if installedToolchains.contains(toolchain) {
-        //         message += " (installed)"
-        //     }
-        //     print(message)
-        // }
+        if let selector {
+            let modifier: String
+            switch selector {
+            case let .stable(major, minor, nil):
+                if let minor {
+                    modifier = "Swift \(major).\(minor) release"
+                } else {
+                    modifier = "Swift \(major) release"
+                }
+            case .snapshot(.main, nil):
+                modifier = "main development snapshot"
+            case let .snapshot(.release(major, minor), nil):
+                modifier = "\(major).\(minor) development snapshot"
+            default:
+                modifier = "matching"
+            }
 
-        // if let selector {
-        //     let modifier: String
-        //     switch selector {
-        //     case let .stable(major, minor, nil):
-        //         if let minor {
-        //             modifier = "Swift \(major).\(minor) release"
-        //         } else {
-        //             modifier = "Swift \(major) release"
-        //         }
-        //     case .snapshot(.main, nil):
-        //         modifier = "main development snapshot"
-        //     case let .snapshot(.release(major, minor), nil):
-        //         modifier = "\(major).\(minor) development snapshot"
-        //     default:
-        //         modifier = "matching"
-        //     }
+            let message = "available \(modifier) toolchains"
+            print(message)
+            print(String(repeating: "-", count: message.utf8.count))
+            for toolchain in toolchains {
+                printToolchain(toolchain)
+            }
+        } else {
+            print("available release toolchains")
+            print("----------------------------")
+            for toolchain in toolchains where toolchain.isStableRelease() {
+                printToolchain(toolchain)
+            }
 
-        //     let message = "available \(modifier) toolchains"
-        //     print(message)
-        //     print(String(repeating: "-", count: message.utf8.count))
-        //     for toolchain in toolchains {
-        //         printToolchain(toolchain)
-        //     }
-        // } else {
-        //     print("available release toolchains")
-        //     print("----------------------------")
-        //     for toolchain in toolchains where toolchain.isStableRelease() {
-        //         printToolchain(toolchain)
-        //     }
-
-        //     print("")
-        //     print("available snapshot toolchains")
-        //     print("-----------------------------")
-        //     for toolchain in toolchains where toolchain.isSnapshot() {
-        //         printToolchain(toolchain)
-        //     }
-        // }
+            print("")
+            print("available snapshot toolchains")
+            print("-----------------------------")
+            for toolchain in toolchains where toolchain.isSnapshot() {
+                printToolchain(toolchain)
+            }
+        }
     }
 }

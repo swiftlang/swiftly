@@ -220,6 +220,8 @@ public class HTTP {
             }
             reportProgress(DownloadProgress(receivedBytes: receivedBytes, totalBytes: expectedBytes))
         }
+
+        try fileHandle.synchronize()
     }
 }
 

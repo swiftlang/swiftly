@@ -1,22 +1,10 @@
 # swiftly
 
-swiftly is a CLI tool for installing, managing, and switching between Swift toolchains, written in Swift. swiftly itself is designed to be extremely easy to install and get running, and its command interface is intended to be flexible while also being simple to use. The overall experience is inspired by and meant to feel reminiscient of the Rust toolchain manager [rustup]().
+swiftly is a CLI tool for installing, managing, and switching between [Swift](https://www.swift.org/) toolchains, written in Swift. swiftly itself is designed to be extremely easy to install and get running, and its command interface is intended to be flexible while also being simple to use. The overall experience is inspired by and meant to feel reminiscent of the Rust toolchain manager [rustup](https://rustup.rs/).
 
 Ongoing maintenance and stewardship of this project is led by the [SSWG](https://www.swift.org/sswg/).
 
-## Current development status
-
-Right now, swiftly is in the very early stages of development and is working towards an MVP for the Linux platforms mentioned on https://swift.org/download. Once that is complete, work will begin on an MVP for macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
-
-## Features
-
-- Install multiple toolchains, including both stable releases and snapshots
-- Switch which installed toolchain is active (i.e. switch which one is discovered via `$PATH`)
-- Update installed toolchains to the latest available versions of those toolchains
-- Uninstall intalled toolchains
-- List the toolchains that are available to install
-
-### Basic Usage
+### Basic usage
 
 ```
 $ swiftly install latest
@@ -33,7 +21,35 @@ Swift version 5.6.3 (swift-5.6.3-RELEASE)
 Target: x86_64-unknown-linux-gnu
 ```
 
-## Command overview
+## Features
+
+- Installing multiple toolchains, including both stable releases and snapshots
+- Switching which installed toolchain is active (i.e. which one is discovered via `$PATH`)
+- Updating installed toolchains to the latest available versions of those toolchains
+- Uninstalling installed toolchains
+- Listing the toolchains that are available to install
+
+## Index
+- [Basic usage](#basic-usage)
+- [Features](#features)
+- [Current development status](#current-development-status)
+- [Command interface overview](#command-interface-overview)
+  - [Installing a toolchain](#installing-a-toolchain)
+  - [Uninstalling a toolchain](#uninstalling-a-toolchain)
+  - [Listing installed toolchains](#listing-installed-toolchains)
+  - [Selecting a toolchain for use](#selecting-a-toolchain-for-use)
+  - [Updating a toolchain](#updating-a-toolchain)
+  - [Listing toolchains available to install](#listing-toolchains-available-to-install)
+  - [Updating swiftly](#updating-swiftly)
+  - [Specifying a snapshot toolchain](#specifying-a-snapshot-toolchain)
+  - [Specifying a GitHub access token](#specifying-a-github-access-token)
+- [FAQ](#faq)
+
+## Current development status
+
+Right now, swiftly is in the very early stages of development and is working towards an MVP for the Linux platforms mentioned on https://swift.org/download. Once that is complete, work will begin on an MVP for macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
+
+## Command interface overview
 
 ### Installing a toolchain
 
@@ -81,7 +97,7 @@ If the date isn't specified, swiftly will look up and install the latest snapsho
 $ swiftly install 5.7-snapshot
 ```
 
-### Uninstalling toolchains
+### Uninstalling a toolchain
 
 #### Uninstall a release toolchain
 
@@ -92,7 +108,7 @@ $ swiftly uninstall 5.6.3
 To uninstall all toolchains associated with a given minor release, leave off the patch version:
 
 ```
-$ swiftly unintall 5.6
+$ swiftly uninstall 5.6
 ```
 
 #### Uninstall a snapshot toolchain
@@ -109,7 +125,7 @@ $ swiftly uninstall main-snapshot
 $ swiftly uninstall 5.7-snapshot
 ```
 
-### List installed toolchains
+### Listing installed toolchains
 
 The `list` command prints all the toolchains installed by swiftly:
 
@@ -163,7 +179,7 @@ To use the latest installed main snapshot, leave off the date:
 $ swiftly use main-snapshot
 ```
 
-### Update toolchains
+### Updating a toolchain
 
 Update replaces a given toolchain with a later version of that toolchain. For a stable release, this means updating to a later patch version. For snapshots, this means updating to the most recently available snapshot. 
 
@@ -203,7 +219,7 @@ You can also update the latest installed main snapshot to the latest available o
 swiftly update main-snapshot
 ```
 
-### Listing available toolchains
+### Listing toolchains available to install
 
 The `list-available` command can be used to list the latest toolchains that Apple has made available to install.
 
@@ -219,11 +235,28 @@ $ swiftly list-available main-snapshot
 $ swiftly list-available 5.7-snapshot
 ```
 
-### self-update
+### Updating swiftly
 
 This command checks to see if there are new versions of `swiftly` itself and upgrades to them if so.
 
 `swiftly self-update`
+
+### Specifying a snapshot toolchain
+
+The canonical name for a snapshot toolchain in swiftly's command interface is the following:
+
+```
+<branch>-snapshot-YYYY-MM-DD
+```
+
+However, swiftly also accepts the snapshot toolchain filenames from the downloads provided by swift.org. For example:
+
+```
+swift-DEVELOPMENT-SNAPSHOT-2022-09-10-a
+swift-5.7-DEVELOPMENT-SNAPSHOT-2022-08-30-a
+```
+
+The canonical name format was chosen to reduce the keystrokes needed to refer to a snapshot toolchain, but the longer form is also useful when copy/pasting a toolchain name provided from somewhere else.
 
 ### Specifying a GitHub access token
 
@@ -237,14 +270,18 @@ $ swiftly install latest --token <GitHub authentication token>
 
 #### How is this different from [swiftenv](https://github.com/kylef/swiftenv)?
 
-swiftenv is an existing Swift version manager which already has much of the functionality that swiftly will eventually have. It's an awesome piece of software, and if it's part of your workflow then we encourage you to keep using it! That said, swiftly is/will be different a few important ways that may be worth considering:
+swiftenv is an existing Swift version manager which already has much of the functionality that swiftly will eventually have. It's an awesome tool, and if it's part of your workflow then we encourage you to keep using it! That said, swiftly is/will be different a few ways:
 
-- swiftly is optimized for ease of installation. Ideally, this could be done with a bash one-liner similar to rustup. In addition, it doesn't require any system dependencies to be installed on the user's system. swiftenv is also relatively easy to install, but it does involve cloning a git repository or using Homebrew, and it requires a few system dependencies (e.g. bash, curl, tar).
+- swiftly is optimized for ease of installation. Ideally, this will be done with a bash one-liner similar to rustup. In addition, swiftly won't require any system dependencies to be installed on the user's system. While swiftenv is also relatively easy to install, it does involve cloning a git repository or using Homebrew, and it requires a few system dependencies (e.g. bash, curl, tar).
 
-- swiftly is being built in cooperation with Apple via the SSWG. Through this, swiftly will help inform the creation of official Apple API endpoints that it will use to get information about what toolchains are available to install. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations. Note that this is planned for the future--swiftly currently uses the GitHub API for this purpose.
+- swiftly is being built in cooperation with Apple via the SSWG, and through this collaboration, we hope that swiftly can  eventually become an official installation path for Swift toolchains. As first step towards that, swiftly will help inform the creation of API endpoints maintained by Apple that it will use to retrieve information about what toolchains are available to install. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations. Note that this is planned for the future--swiftly currently uses the GitHub API for this purpose. 
 
 - swiftly will be written in Swift, which we think is important for maintainability and encouraging community contributions. swiftenv is currently implemented in bash.
 
 - swiftly has first-class support for installing and managing snapshot toolchains.
 
 - swiftly has built in support for updating toolchains.
+
+#### Why not install Swift through the package manager (e.g. `apt` or `yum`)?
+
+Apple currently provides experimental [`.rpm` and `.deb`](https://forums.swift.org/t/rpm-and-debs-for-swift-call-for-the-community/49117) packages that allow you to install Swift via your package manager. While these are an effective way to install and update a single version of Swift, they aren't well suited to the task of installing multiple Swift toolchains that you can easily switch between. swiftly's target audience is Swift library developers, and they often need this functionality for the purposes of testing their libraries. The `.deb` and `.rpm` also currently don't provide support for snapshot toolchains.

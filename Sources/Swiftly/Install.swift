@@ -69,6 +69,9 @@ struct Install: AsyncParsableCommand {
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
+        defer {
+            try? FileManager.default.removeItem(at: tmpFile)
+        }
 
         var url: String = "https://download.swift.org/"
         switch version {

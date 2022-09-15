@@ -68,6 +68,7 @@ struct Install: AsyncParsableCommand {
         print("Installing \(version)")
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
+        FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
 
         var url: String = "https://download.swift.org/"
         switch version {

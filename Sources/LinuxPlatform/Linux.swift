@@ -71,9 +71,7 @@ public struct Linux: Platform {
     public func currentToolchain() throws -> ToolchainVersion? { nil }
 
     public func getTempFilePath() -> URL {
-        let path = URL(fileURLWithPath: "/tmp/swiftly-\(UUID())")
-        FileManager.default.createFile(atPath: path.path, contents: nil)
-        return path
+        FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
     public static let currentPlatform: any Platform = {

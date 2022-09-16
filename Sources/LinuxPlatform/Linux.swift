@@ -15,8 +15,8 @@ public struct Linux: Platform {
         self.platform.name
     }
 
-    public var fullName: String {
-        self.platform.fullName
+    public var nameFull: String {
+        self.platform.nameFull
     }
 
     public var namePretty: String {

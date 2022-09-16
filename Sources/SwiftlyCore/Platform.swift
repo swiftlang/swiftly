@@ -6,10 +6,9 @@ public protocol Platform {
     /// For macOS / Xcode, this would return “xcode”.
     var name: String { get }
 
-    /// A human-readable / pretty-printed version of the platform’s name, used for terminal
-    /// output and logging.
-    /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
-    var fullName: String { get }
+    /// The full name of the platform as it is used in the Swift download URLs.
+    /// For instance, for Ubuntu 16.04 this would return “ubuntu16.04”.
+    var nameFull: String { get }
 
     /// A human-readable / pretty-printed version of the platform’s name, used for terminal
     /// output and logging.

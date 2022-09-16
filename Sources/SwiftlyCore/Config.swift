@@ -9,7 +9,7 @@ public let swiftlyHomeDir = FileManager.default.homeDirectoryForCurrentUser.appe
 public struct Config: Codable {
     public struct PlatformDefinition: Codable {
         public let name: String
-        public let fullName: String
+        public let nameFull: String
         public let namePretty: String
     }
 

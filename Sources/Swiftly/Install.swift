@@ -85,7 +85,7 @@ struct Install: AsyncParsableCommand {
             url += "swift-\(versionString)-release/"
             url += "\(Swiftly.currentPlatform.name)/"
             url += "swift-\(versionString)-RELEASE/"
-            url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.nameFull).\(Swiftly.currentPlatform.toolchainFileExtension)"
         case let .snapshot(release):
             let snapshotString: String
             switch release.branch {
@@ -99,7 +99,7 @@ struct Install: AsyncParsableCommand {
 
             url += "\(Swiftly.currentPlatform.name)/"
             url += "\(snapshotString)-\(release.date)-a/"
-            url += "\(snapshotString)-\(release.date)-a-\(Swiftly.currentPlatform.fullName).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            url += "\(snapshotString)-\(release.date)-a-\(Swiftly.currentPlatform.nameFull).\(Swiftly.currentPlatform.toolchainFileExtension)"
         }
 
         let animation = PercentProgressAnimation(

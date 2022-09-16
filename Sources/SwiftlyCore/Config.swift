@@ -1,6 +1,8 @@
 import Foundation
 
-public let swiftlyHomeDir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly", isDirectory: true)
+
+public var swiftlyHomeDir =
+    FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly", isDirectory: true)
 
 /// Struct modelling the config.json file used to track installed toolchains,
 /// the current in-use tooolchain, and information about the platform.
@@ -20,6 +22,12 @@ public struct Config: Codable {
     // TODO: support other locations
     public static let fileName = "config.json"
     private static let url = swiftlyHomeDir.appendingPathComponent(Self.fileName)
+
+    internal init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition) {
+        self.inUse = inUse
+        self.installedToolchains = installedToolchains
+        self.platform = platform
+    }
 
     private static func makeEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()

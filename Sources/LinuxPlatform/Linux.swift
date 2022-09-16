@@ -43,6 +43,11 @@ public struct Linux: Platform {
 
         print("Extracting toolchain...")
         let toolchainDir = toolchainsDir.appendingPathComponent(version.name)
+
+        if toolchainDir.fileExists() {
+            try FileManager.default.removeItem(at: toolchainDir)
+        }
+
         try extractArchive(atPath: tmpFile) { name in
             // drop swift-a.b.c-RELEASE etc name from the extracted files.
             let relativePath = name.drop { c in c != "/" }.dropFirst()

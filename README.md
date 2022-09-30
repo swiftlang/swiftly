@@ -276,7 +276,7 @@ swiftenv is an existing Swift version manager which already has much of the func
 
 - swiftly is being built in cooperation with Apple via the SSWG, and through this collaboration, we hope that swiftly can  eventually become an official installation path for Swift toolchains. As first step towards that, swiftly will help inform the creation of API endpoints maintained by Apple that it will use to retrieve information about what toolchains are available to install. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations. Note that this is planned for the future--swiftly currently uses the GitHub API for this purpose. 
 
-- swiftly will be written in Swift, which we think is important for maintainability and encouraging community contributions. swiftenv is currently implemented in bash.
+- swiftly will be written in Swift, which we think is important for maintainability and encouraging community contributions. 
 
 - swiftly has first-class support for installing and managing snapshot toolchains.
 

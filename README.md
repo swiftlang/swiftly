@@ -1,6 +1,6 @@
 # swiftly
 
-`swiftly` is a CLI tool for installing, managing, and switching between [Swift](https://www.swift.org/) toolchains, written in Swift. `swiftly` itself is designed to be extremely easy to install and get running, and its command interface is intended to be flexible while also being simple to use. The overall experience is inspired by and meant to feel reminiscent of the Rust toolchain manager [rustup](https://rustup.rs/).
+swiftly is a CLI tool for installing, managing, and switching between [Swift](https://www.swift.org/) toolchains, written in Swift. swiftly itself is designed to be extremely easy to install and get running, and its command interface is intended to be flexible while also being simple to use. The overall experience is inspired by and meant to feel reminiscent of the Rust toolchain manager [rustup](https://rustup.rs/).
 
 Ongoing maintenance and stewardship of this project is led by the [SSWG](https://www.swift.org/sswg/).
 
@@ -47,7 +47,7 @@ Target: x86_64-unknown-linux-gnu
 
 ## Current development status
 
-Right now, `swiftly` is in the very early stages of development and is working towards an MVP for the Linux platforms mentioned on https://swift.org/download. Once that is complete, work will begin on an MVP for macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
+Right now, swiftly is in the very early stages of development and is working towards an MVP for the Linux platforms mentioned on https://swift.org/download. Once that is complete, work will begin on an MVP for macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
 
 ## Command interface overview
 
@@ -270,18 +270,18 @@ $ swiftly install latest --token <GitHub authentication token>
 
 #### How is this different from [swiftenv](https://github.com/kylef/swiftenv)?
 
-swiftenv is an existing Swift version manager which already has much of the functionality that `swiftly` will eventually have. It's an awesome tool, and if it's part of your workflow then we encourage you to keep using it! That said, `swiftly` is/will be different a few ways:
+swiftenv is an existing Swift version manager which already has much of the functionality that swiftly will eventually have. It's an awesome tool, and if it's part of your workflow then we encourage you to keep using it! That said, swiftly is/will be different a few ways:
 
-- `swiftly` is optimized for ease of installation. Ideally, this will be done with a bash one-liner similar to rustup. In addition, `swiftly` won't require any system dependencies to be installed on the user's system. While swiftenv is also relatively easy to install, it does involve cloning a git repository or using Homebrew, and it requires a few system dependencies (e.g. bash, curl, tar).
+- swiftly is optimized for ease of installation. Ideally, this will be done with a bash one-liner similar to rustup. In addition, swiftly won't require any system dependencies to be installed on the user's system. While swiftenv is also relatively easy to install, it does involve cloning a git repository or using Homebrew, and it requires a few system dependencies (e.g. bash, curl, tar).
 
-- `swiftly` is being built as a community driven effort led by the Swift server workgroup, and through this collaboration, we hope that `swiftly` can eventually become an official installation tool for Swift toolchains. As first step towards that, `swiftly` will help inform the creation of API endpoints maintained by the Swift project that it will use to retrieve information about what toolchains are available to install. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations. Note that this is planned for the future--`swiftly` currently uses the GitHub API for this purpose. 
+- swiftly is being built as a community driven effort led by the Swift server workgroup, and through this collaboration, we hope that swiftly can eventually become an official installation tool for Swift toolchains. As first step towards that, swiftly will help inform the creation of API endpoints maintained by the Swift project that it will use to retrieve information about what toolchains are available to install. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations. Note that this is planned for the future--swiftly currently uses the GitHub API for this purpose. 
 
-- `swiftly` will be written in Swift, which we think is important for maintainability and encouraging community contributions. 
+- swiftly will be written in Swift, which we think is important for maintainability and encouraging community contributions. 
 
-- `swiftly` has first-class support for installing and managing snapshot toolchains.
+- swiftly has first-class support for installing and managing snapshot toolchains.
 
-- `swiftly` has built in support for updating toolchains.
+- swiftly has built in support for updating toolchains.
 
 #### Why not install Swift through the package manager (e.g. `apt` or `yum`)?
 
-Swift.org currently provides experimental [`.rpm` and `.deb`](https://forums.swift.org/t/rpm-and-debs-for-swift-call-for-the-community/49117) packages that allow you to install Swift via your package manager. While these are an effective way to install and update a single version of Swift, they aren't well suited to the task of installing multiple Swift toolchains that you can easily switch between. `swiftly`'s target audience is Swift library developers, and they often need this functionality for the purposes of testing their libraries. The `.deb` and `.rpm` also currently don't provide support for snapshot toolchains.
+Swift.org currently provides experimental [`.rpm` and `.deb`](https://forums.swift.org/t/rpm-and-debs-for-swift-call-for-the-community/49117) packages that allow you to install Swift via your package manager. While these are an effective way to install and update a single version of Swift, they aren't well suited to the task of installing multiple Swift toolchains that you can easily switch between. swiftly's target audience is Swift library developers, and they often need this functionality for the purposes of testing their libraries. The `.deb` and `.rpm` also currently don't provide support for snapshot toolchains.

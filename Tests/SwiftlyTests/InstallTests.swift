@@ -23,7 +23,7 @@ final class InstallTests: SwiftlyTests {
             // As of writing this, 5.7.0 is the latest stable release. Assert it is at least that new.
             XCTAssertTrue(release >= ToolchainVersion.StableRelease(major: 5, minor: 7, patch: 0))
 
-            try validateInstalledToolchains([installedToolchain], description: "install latest")
+            try await validateInstalledToolchains([installedToolchain], description: "install latest")
         }
     }
 
@@ -46,7 +46,7 @@ final class InstallTests: SwiftlyTests {
             // As of writing this, 5.6.3 is the latest 5.6 patch release. Assert it is at least that new.
             XCTAssertTrue(release >= ToolchainVersion.StableRelease(major: 5, minor: 6, patch: 3))
 
-            try validateInstalledToolchains([installedToolchain], description: "install latest")
+            try await validateInstalledToolchains([installedToolchain], description: "install latest")
         }
     }
 
@@ -58,7 +58,7 @@ final class InstallTests: SwiftlyTests {
             try await cmd.run()
 
             installedToolchains.insert(ToolchainVersion(major: 5, minor: 7, patch: 0))
-            try validateInstalledToolchains(
+            try await validateInstalledToolchains(
                 installedToolchains,
                 description: "install a stable release toolchain"
             )
@@ -67,7 +67,7 @@ final class InstallTests: SwiftlyTests {
             try await cmd.run()
 
             installedToolchains.insert(ToolchainVersion(major: 5, minor: 6, patch: 1))
-            try validateInstalledToolchains(
+            try await validateInstalledToolchains(
                 installedToolchains,
                 description: "install another stable release toolchain"
             )
@@ -82,7 +82,7 @@ final class InstallTests: SwiftlyTests {
             try await cmd.run()
 
             installedToolchains.insert(ToolchainVersion(snapshotBranch: .main, date: "2022-09-10"))
-            try validateInstalledToolchains(
+            try await validateInstalledToolchains(
                 installedToolchains,
                 description: "install a main snapshot toolchain"
             )
@@ -91,7 +91,7 @@ final class InstallTests: SwiftlyTests {
             try await cmd.run()
 
             installedToolchains.insert(ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30"))
-            try validateInstalledToolchains(
+            try await validateInstalledToolchains(
                 installedToolchains,
                 description: "install a 5.7 snapshot toolchain"
             )
@@ -117,7 +117,7 @@ final class InstallTests: SwiftlyTests {
             // As of writing this, 2022-09-12 is the date of the latest main snapshot. Assert it is at least that new.
             XCTAssertTrue(snapshot.date >= "2022-09-12")
 
-            try validateInstalledToolchains(
+            try await validateInstalledToolchains(
                 [installedToolchain],
                 description: "install the latest main snapshot toolchain"
             )
@@ -143,7 +143,7 @@ final class InstallTests: SwiftlyTests {
             // As of writing this, 2022-08-30 is the date of the latest 5.7 snapshot. Assert it is at least that new.
             XCTAssertTrue(snapshot.date >= "2022-08-30")
 
-            try validateInstalledToolchains(
+            try await validateInstalledToolchains(
                 [installedToolchain],
                 description: "install the latest 5.7 snapshot toolchain"
             )
@@ -161,7 +161,7 @@ final class InstallTests: SwiftlyTests {
             cmd = try self.parseCommand(Install.self, ["install", "5.7.0"])
             try await cmd.run()
 
-            try validateInstalledToolchains(
+            try await validateInstalledToolchains(
                 [
                     ToolchainVersion(snapshotBranch: .main, date: "2022-09-10"),
                     ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30"),

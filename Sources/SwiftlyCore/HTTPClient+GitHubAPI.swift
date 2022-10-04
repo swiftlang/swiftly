@@ -10,7 +10,7 @@ extension HTTP {
     /// This will use the authorization token set, if any.
     private static func getFromGitHub<T: Decodable>(url: String) async throws -> T {
         var headers: [String: String] = [:]
-        if let token = Self.githubToken {
+        if let token = Self.githubToken ?? ProcessInfo.processInfo.environment["SWIFTLY_GITHUB_TOKEN"] {
             headers["Authorization"] = "Bearer \(token)"
         }
 
@@ -74,9 +74,17 @@ extension HTTP {
 
 /// Model of a GitHub REST API tag/release object.
 internal struct GitHubTag: Decodable {
+    internal struct Commit: Decodable {
+        internal let sha: String
+    }
+
     /// The name of the release.
     /// e.g. "Swift a.b[.c] Release" or "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-08-30-a".
-    let name: String
+    internal let name: String
+
+    /// The commit associated with the tag.
+    /// This is not present for releases.
+    internal let commit: Commit?
 
     internal func parseStableRelease() throws -> ToolchainVersion.StableRelease? {
         // names look like Swift a.b.c Release

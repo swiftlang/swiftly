@@ -62,7 +62,7 @@ class SwiftlyTests: XCTestCase {
         try await f()
     }
     
-    func validateInstalledToolchains(_ toolchains: Set<ToolchainVersion>, description: String) throws {
+    func validateInstalledToolchains(_ toolchains: Set<ToolchainVersion>, description: String) async throws {
         let config = try Config.load()
 
         guard config.installedToolchains == toolchains else {
@@ -74,6 +74,9 @@ class SwiftlyTests: XCTestCase {
 
         let stableRegex: Regex<(Substring, Substring)> =
             try! Regex("swift-([^-]+)-RELEASE")
+
+        let snapshotRegex: Regex<(Substring, Substring)> =
+            try! Regex("\\(LLVM [a-z0-9]+, Swift ([a-z0-9]+)\\)")
 
         for toolchain in toolchains {
             let toolchainDir = SwiftlyCore.swiftlyHomeDir
@@ -119,8 +122,30 @@ class SwiftlyTests: XCTestCase {
                 }
 
                 actualVersion = ToolchainVersion(major: major, minor: minor, patch: patch)
+            } else if let match = try snapshotRegex.firstMatch(in: outputString) {
+                let commitHash = match.output.1
+
+                guard
+                    let tag: GitHubTag = try await HTTP.mapGithubTags(
+                        limit: 1,
+                        filterMap: { tag in
+                            guard tag.commit!.sha.starts(with: commitHash) else {
+                                return nil
+                            }
+                            return tag
+                        },
+                        fetch: HTTP.getTags
+                    ).first,
+                    let snapshot = try tag.parseSnapshot()
+                else {
+                    XCTFail("could not find tag matching hash \(commitHash)")
+                    return
+                }
+
+                actualVersion = .snapshot(snapshot)
             } else {
-                fatalError("TODO: snapshot version parsing")
+                XCTFail("bad version: \(outputString)")
+                return
             }
 
             XCTAssertEqual(actualVersion, toolchain)

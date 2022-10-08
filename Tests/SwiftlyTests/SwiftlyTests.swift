@@ -62,6 +62,10 @@ class SwiftlyTests: XCTestCase {
         try await f()
     }
     
+    /// Validate that all of the provided toolchains have been installed.
+    ///
+    /// This method ensures that config.json reflects the expected installed toolchains and also
+    /// validates that the toolchains on disk match their expected versions via `swift --version`.
     func validateInstalledToolchains(_ toolchains: Set<ToolchainVersion>, description: String) async throws {
         let config = try Config.load()
 
@@ -125,6 +129,8 @@ class SwiftlyTests: XCTestCase {
             } else if let match = try snapshotRegex.firstMatch(in: outputString) {
                 let commitHash = match.output.1
 
+                // Get the commit hash from swift --version, look up the corresponding tag via GitHub, and confirm
+                // that it matches the expected version.
                 guard
                     let tag: GitHubTag = try await HTTP.mapGithubTags(
                         limit: 1,

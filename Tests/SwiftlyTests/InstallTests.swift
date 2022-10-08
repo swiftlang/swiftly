@@ -150,7 +150,7 @@ final class InstallTests: SwiftlyTests {
         }
     }
 
-    func testInstallBoth() async throws {
+    func testInstallReleaseAndSnapshots() async throws {
         try await self.withTestHome {
             var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2022-09-10"])
             try await cmd.run()

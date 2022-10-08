@@ -30,3 +30,8 @@ jobs:
 
     - name: Run tests
       run: swift test
+      env:
+        SWIFTLY_PLATFORM_NAME: ubuntu1804
+        SWIFTLY_PLATFORM_NAME_FULL: ubuntu18.04
+        SWIFTLY_PLATFORM_NAME_PRETTY: Ubuntu 18.04
+        SWIFTLY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,14 +10,23 @@ jobs:
   build:
     runs-on: ubuntu-18.04
     steps:
-    - run: |
+    - name: Download Swift
+      run: |
         wget --no-verbose "https://download.swift.org/swift-5.7-release/ubuntu1804/swift-5.7-RELEASE/swift-5.7-RELEASE-ubuntu18.04.tar.gz"
         tar -zxf swift-5.7-RELEASE-ubuntu18.04.tar.gz
         mkdir $HOME/.swift
         mv swift-5.7-RELEASE-ubuntu18.04/usr $HOME/.swift
-    - run: echo "$HOME/.swift/usr/bin" >> $GITHUB_PATH
+
+    - name: Update PATH
+      run: echo "$HOME/.swift/usr/bin" >> $GITHUB_PATH
+
+    - name: Install libarchive
+      run: sudo apt-get install -y libarchive-dev
+
     - uses: actions/checkout@v3
+
     - name: Build
       run: swift build --build-tests
+
     - name: Run tests
       run: swift test

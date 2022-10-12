@@ -365,7 +365,7 @@ Finally, swiftly will then get the toolchain's list of system dependencies, if a
 
 #### Verifying system dependencies
 
-In order to run Swift on Linux, there are a number of system dependencies that need to be installed. We could consider having swiftly detect and install these dependencies for the user, but we decided that it was best if it doesn't modify the system outside of handling toolchains in `~/.swiftly`. Instead, swiftly will just attempt to detect if any required system libraries are missing and, if so, print helpful, platform-specific messages indicating how a user could install them.
+In order to run Swift on Linux, there are a number of system dependencies that need to be installed. We could consider having swiftly detect and install these dependencies for the user, but we decided that it was best if it doesn't modify the system outside of handling toolchains in `~/.swiftly`. Instead, swiftly will just attempt to detect if any required system libraries are missing and, if so, print helpful, platform-specific messages indicating how a user could install them. In the future, swiftly will use an API from swift.org to discover the list of required dependencies per Swift version / platform. Until then, a list will manually be maintained in this repository.
 
 Determining whether the system has these installed or not is a bit of a tricky problem and varies from platform to platform. The mechanism for doing so on each will be as follows:
 

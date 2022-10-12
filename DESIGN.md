@@ -390,6 +390,10 @@ Once the URL has been constructed, swiftly will use `AsyncHTTPClient` to downloa
 
 Once the download completes, the hash of the downloaded toolchain will be compared against the checksum provided via swift.org. If that passes, the on-disk URL of the toolchain will be returned.
 
+##### Official swift.org URLs
+
+The future swift.org API that swiftly will use to discover available toolchain versions will also provide the download URLs for those toolchains, obviating the need for swiftly to construct the URLs itself. These URLs could be signed by swift.org, ensuring their authenticity.
+
 #### Using a toolchain
 
 Given a version string `a.b[.c]`, swiftly first checks `config.json` to see if we have a version installed for `a.b[.c]`. If not, print a message indicating so and prompt the user to execute swiftly install `a.b[.c]`. If there is such a version, invoke the use function for the given platform. If the user only provides an `a.b` version string, use the latest installed patch version of the given minor version (e.g. `a.b.2` works fine for `a.b`). If they provide a full `a.b.c`, the installed version must match exactly.

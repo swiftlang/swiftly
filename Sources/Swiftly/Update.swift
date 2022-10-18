@@ -1,7 +1,7 @@
 import ArgumentParser
 import SwiftlyCore
 
-struct Update: AsyncParsableCommand {
+struct Update: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Update an installed toolchain to a newer version."
     )

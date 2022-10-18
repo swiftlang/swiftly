@@ -1,7 +1,7 @@
 import ArgumentParser
 import SwiftlyCore
 
-struct Uninstall: ParsableCommand {
+struct Uninstall: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Remove an installed toolchain."
     )
@@ -33,7 +33,7 @@ struct Uninstall: ParsableCommand {
     ))
     var toolchain: String
 
-    mutating func run() throws {
+    mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
         let toolchains = Swiftly.currentPlatform.listToolchains(selector: selector)
 

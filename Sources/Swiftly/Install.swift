@@ -6,7 +6,7 @@ import TSCBasic
 
 import SwiftlyCore
 
-struct Install: AsyncParsableCommand {
+struct Install: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Install a new toolchain."
     )

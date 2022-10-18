@@ -1,7 +1,7 @@
 import ArgumentParser
 import SwiftlyCore
 
-struct Use: ParsableCommand {
+struct Use: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Set the active toolchain."
     )
@@ -38,7 +38,7 @@ struct Use: ParsableCommand {
     ))
     var toolchain: String
 
-    internal mutating func run() throws {
+    internal mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
         guard let toolchain = Swiftly.currentPlatform.listToolchains(selector: selector).max() else {
             print("no installed toolchains match \"\(self.toolchain)\"")

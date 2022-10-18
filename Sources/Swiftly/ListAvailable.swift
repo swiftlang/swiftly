@@ -1,7 +1,7 @@
 import ArgumentParser
 import SwiftlyCore
 
-struct ListAvailable: AsyncParsableCommand {
+struct ListAvailable: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "List toolchains available for install."
     )

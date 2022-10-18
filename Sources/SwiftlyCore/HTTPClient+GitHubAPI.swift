@@ -21,7 +21,7 @@ extension HTTP {
     /// The `fetch` closure is used to retrieve the next page of results. It accepts the page number as its argument.
     /// The `filterMap` closure maps the input GitHub tag to an output. If it returns nil, it will not be included
     /// in the returned array.
-    internal static func mapGithubTags<T>(
+    internal static func mapGitHubTags<T>(
         limit: Int?,
         filterMap: ((GitHubTag) throws -> T?),
         fetch: (Int) async throws -> [GitHubTag]

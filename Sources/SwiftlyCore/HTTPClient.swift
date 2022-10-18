@@ -76,7 +76,7 @@ public class HTTP {
             return release
         }
 
-        return try await Self.mapGithubTags(limit: limit, filterMap: filterMap) { page in
+        return try await Self.mapGitHubTags(limit: limit, filterMap: filterMap) { page in
             try await Self.getReleases(page: page)
         }
     }
@@ -103,7 +103,7 @@ public class HTTP {
             return snapshot
         }
 
-        return try await Self.mapGithubTags(limit: limit, filterMap: filter) { page in
+        return try await Self.mapGitHubTags(limit: limit, filterMap: filter) { page in
             try await Self.getTags(page: page)
         }
     }

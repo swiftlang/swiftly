@@ -132,7 +132,7 @@ class SwiftlyTests: XCTestCase {
                 // Get the commit hash from swift --version, look up the corresponding tag via GitHub, and confirm
                 // that it matches the expected version.
                 guard
-                    let tag: GitHubTag = try await HTTP.mapGithubTags(
+                    let tag: GitHubTag = try await HTTP.mapGitHubTags(
                         limit: 1,
                         filterMap: { tag in
                             guard tag.commit!.sha.starts(with: commitHash) else {

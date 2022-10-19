@@ -46,6 +46,24 @@ public struct Config: Codable, Equatable {
         try outData.write(to: Config.url, options: .atomic)
     }
 
+    public func listInstalledToolchains(selector: ToolchainSelector?) -> [ToolchainVersion] {
+        guard let selector else {
+            return Array(self.installedToolchains)
+        }
+
+        if case .latest = selector {
+            var ts: [ToolchainVersion] = []
+            if let t = self.installedToolchains.filter({ $0.isStableRelease() }).max() {
+                ts.append(t)
+            }
+            return ts
+        }
+
+        return self.installedToolchains.filter { toolchain in
+            return selector.matches(toolchain: toolchain)
+        }
+    }
+
     /// Load the config, pass it to the provided closure, and then
     /// save the modified config to disk.
     public static func update(f: (inout Config) throws -> Void) throws {

@@ -40,21 +40,27 @@ struct Use: SwiftlyCommand {
 
     internal mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
-        guard let toolchain = Swiftly.currentPlatform.listToolchains(selector: selector).max() else {
+        var config = try Config.load()
+ 
+        guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
             print("no installed toolchains match \"\(self.toolchain)\"")
             return
         }
 
-        let old = try Swiftly.currentPlatform.currentToolchain()
+        let previousToolchain = config.inUse
 
-        try Swiftly.currentPlatform.use(toolchain)
-        try Config.update { config in
-            config.inUse = toolchain
+        guard toolchain != previousToolchain else {
+            print("\(toolchain) is already in use")
+            return
         }
 
-        var message = "The current toolchain is now \(toolchain)"
-        if let old {
-            message += " (was \(old))"
+        try Swiftly.currentPlatform.use(toolchain)
+        config.inUse = toolchain
+        try config.save()
+
+        var message = "Set the active toolchain to \(toolchain)"
+        if let previousToolchain {
+            message += " (was \(previousToolchain))"
         }
 
         print(message)

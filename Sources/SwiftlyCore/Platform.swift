@@ -34,9 +34,6 @@ public protocol Platform {
     /// Select the toolchain associated with the given version.
     func use(_ version: ToolchainVersion) throws
 
-    /// List the installed toolchains.
-    func listToolchains(selector: ToolchainSelector?) -> [ToolchainVersion]
-
     /// Get a list of snapshot builds for the platform. If a version is specified, only
     /// return snapshots associated with the version.
     /// This will likely have a default implementation.
@@ -45,9 +42,6 @@ public protocol Platform {
     /// Update swiftly itself, if a new version has been released.
     /// This will likely have a default implementation.
     func selfUpdate() async throws
-
-    /// Get the toolchain that is currently "in use", if any.
-    func currentToolchain() throws -> ToolchainVersion?
 
     /// Get a path pointing to a unique, temporary file.
     /// This does not need to actually create the file.

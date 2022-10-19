@@ -35,7 +35,8 @@ struct Uninstall: SwiftlyCommand {
 
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
-        let toolchains = Swiftly.currentPlatform.listToolchains(selector: selector)
+        var config = try Config.load()
+        let toolchains = config.listInstalledToolchains(selector: selector)
 
         guard !toolchains.isEmpty else {
             print("no toolchains matched \"\(self.toolchain)\"")

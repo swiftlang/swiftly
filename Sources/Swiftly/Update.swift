@@ -63,11 +63,11 @@ struct Update: SwiftlyCommand {
 
     private func oldToolchain() throws -> ToolchainVersion? {
         guard let input = self.toolchain else {
-            return try Swiftly.currentPlatform.currentToolchain()
+            return try Config.load().inUse
         }
 
         let selector = try ToolchainSelector(parsing: input)
-        let toolchains = Swiftly.currentPlatform.listToolchains(selector: selector)
+        let toolchains = try Config.load().listInstalledToolchains(selector: selector)
 
         // When multiple toolchains are matched, update the latest one.
         // This is for situations such as `swiftly update 5.5` when both

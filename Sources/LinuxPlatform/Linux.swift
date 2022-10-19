@@ -61,7 +61,24 @@ public struct Linux: Platform {
 
     public func uninstall(version _: ToolchainVersion) throws {}
 
-    public func use(_: ToolchainVersion) throws {}
+    public func use(_ toolchain: ToolchainVersion) throws {
+        let linkURL = swiftlyHomeDir.appendingPathComponent("bin", isDirectory: true).appendingPathComponent("swift")
+
+        if linkURL.fileExists() {
+            try FileManager.default.removeItem(at: linkURL)
+        }
+
+        try FileManager.default.createSymbolicLink(
+            atPath: linkURL.path,
+            withDestinationPath: swiftlyHomeDir
+                .appendingPathComponent("toolchains", isDirectory: true)
+                .appendingPathComponent(toolchain.name, isDirectory: true)
+                .appendingPathComponent("usr", isDirectory: true)
+                .appendingPathComponent("bin", isDirectory: true)
+                .appendingPathComponent("swift")
+                .path
+        )
+    }
 
     public func listToolchains(selector _: ToolchainSelector?) -> [ToolchainVersion] {
         []

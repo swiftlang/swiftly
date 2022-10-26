@@ -152,7 +152,7 @@ struct Install: SwiftlyCommand {
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
-    /// TODO: update this to use an official Apple API
+    /// TODO: update this to use an official swift.org API
     func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:

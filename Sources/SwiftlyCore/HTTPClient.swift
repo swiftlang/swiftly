@@ -57,7 +57,7 @@ public class HTTP {
     /// Return an array of released Swift versions that match the given filter, up to the provided
     /// limit (default unlimited).
     ///
-    /// TODO: retrieve these directly from Apple instead of through GitHub.
+    /// TODO: retrieve these directly from swift.org instead of through GitHub.
     public static func getReleaseToolchains(
         limit: Int? = nil,
         filter: ((ToolchainVersion.StableRelease) -> Bool)? = nil
@@ -84,7 +84,7 @@ public class HTTP {
     /// Return an array of Swift snapshots that match the given filter, up to the provided
     /// limit (default unlimited).
     ///
-    /// TODO: retrieve these directly from Apple instead of through GitHub.
+    /// TODO: retrieve these directly from swift.org instead of through GitHub.
     public static func getSnapshotToolchains(
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil

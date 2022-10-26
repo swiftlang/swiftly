@@ -215,4 +215,6 @@ final class UseTests: SwiftlyTests {
             try await self.useAndValidate(argument: "main-snapshot-1996-01-01", expectedVersion: Self.oldStable)
         }
     }
+
+    // TODO: add test verifying that all the required binaries are present.
 }

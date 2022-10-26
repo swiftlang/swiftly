@@ -62,22 +62,35 @@ public struct Linux: Platform {
     public func uninstall(version _: ToolchainVersion) throws {}
 
     public func use(_ toolchain: ToolchainVersion) throws {
-        let linkURL = swiftlyHomeDir.appendingPathComponent("bin", isDirectory: true).appendingPathComponent("swift")
+        let binURL = swiftlyHomeDir.appendingPathComponent("bin", isDirectory: true)
+        let toolchainBinURL = swiftlyHomeDir
+            .appendingPathComponent("toolchains", isDirectory: true)
+            .appendingPathComponent(toolchain.name, isDirectory: true)
+            .appendingPathComponent("usr", isDirectory: true)
+            .appendingPathComponent("bin", isDirectory: true)
 
-        if linkURL.fileExists() {
-            try FileManager.default.removeItem(at: linkURL)
+        // Only symlink a subset of the executables in <toolchain>/usr/bin to avoid overriding the user's
+        // existing installations of clang, lldb, etc.
+        let executables = [
+            "swift",
+            "swiftc",
+            "sourcekit-lsp",
+            "docc"
+        ]
+
+        for executable in executables {
+            let linkURL = binURL.appendingPathComponent(executable)
+            let executableURL = toolchainBinURL.appendingPathComponent(executable)
+
+            if linkURL.fileExists() {
+                try FileManager.default.removeItem(at: linkURL)
+            }
+
+            try FileManager.default.createSymbolicLink(
+                atPath: linkURL.path,
+                withDestinationPath: executableURL.path
+            )
         }
-
-        try FileManager.default.createSymbolicLink(
-            atPath: linkURL.path,
-            withDestinationPath: swiftlyHomeDir
-                .appendingPathComponent("toolchains", isDirectory: true)
-                .appendingPathComponent(toolchain.name, isDirectory: true)
-                .appendingPathComponent("usr", isDirectory: true)
-                .appendingPathComponent("bin", isDirectory: true)
-                .appendingPathComponent("swift")
-                .path
-        )
     }
 
     public func listToolchains(selector _: ToolchainSelector?) -> [ToolchainVersion] {

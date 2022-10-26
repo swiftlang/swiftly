@@ -8,8 +8,8 @@ public var swiftlyHomeDir =
 /// the current in-use tooolchain, and information about the platform.
 ///
 /// TODO: implement cache
-public struct Config: Codable {
-    public struct PlatformDefinition: Codable {
+public struct Config: Codable, Equatable {
+    public struct PlatformDefinition: Codable, Equatable {
         public let name: String
         public let nameFull: String
         public let namePretty: String

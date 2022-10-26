@@ -171,4 +171,38 @@ final class InstallTests: SwiftlyTests {
             )
         }
     }
+
+    func duplicateTest(_ version: String) async throws {
+        try await self.withTestHome {
+            var cmd = try self.parseCommand(Install.self, ["install", version])
+            try await cmd.run()
+
+            let before = try Config.load()
+
+            let startTime = Date()
+            cmd = try try self.parseCommand(Install.self, ["install", version])
+            try await cmd.run()
+
+            // Assert that swiftly didn't attempt to download a new toolchain.
+            XCTAssertTrue(startTime.timeIntervalSinceNow.magnitude < 5)
+
+            let after = try Config.load()
+            XCTAssertEqual(before, after)
+        }
+    }
+
+    func testInstallDuplicateReleases() async throws {
+        try await duplicateTest("5.7.0")
+        try await duplicateTest("latest")
+    }
+
+    func testInstallDuplicateMainSnapshots() async throws {
+        try await duplicateTest("main-snapshot-2022-09-10")
+        try await duplicateTest("main-snapshot")
+    }
+
+    func testInstallDuplicateReleaseSnapshots() async throws {
+        try await duplicateTest("5.7-snapshot-2022-08-30")
+        try await duplicateTest("5.7-snapshot")
+    }
 }

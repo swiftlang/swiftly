@@ -36,7 +36,7 @@ public struct Linux: Platform {
             throw Error(message: "\(tmpFile) doesn't exist")
         }
 
-        let toolchainsDir = swiftlyHomeDir.appendingPathComponent("toolchains")
+        let toolchainsDir = Config.swiftlyHomeDir.appendingPathComponent("toolchains")
         if !toolchainsDir.fileExists() {
             try FileManager.default.createDirectory(at: toolchainsDir, withIntermediateDirectories: false)
         }
@@ -62,8 +62,7 @@ public struct Linux: Platform {
     public func uninstall(version _: ToolchainVersion) throws {}
 
     public func use(_ toolchain: ToolchainVersion) throws {
-        let binURL = swiftlyHomeDir.appendingPathComponent("bin", isDirectory: true)
-        let toolchainBinURL = swiftlyHomeDir
+        let toolchainBinURL = Config.swiftlyHomeDir
             .appendingPathComponent("toolchains", isDirectory: true)
             .appendingPathComponent(toolchain.name, isDirectory: true)
             .appendingPathComponent("usr", isDirectory: true)
@@ -79,7 +78,7 @@ public struct Linux: Platform {
         ]
 
         for executable in executables {
-            let linkURL = binURL.appendingPathComponent(executable)
+            let linkURL = Config.swiftlyBinDir.appendingPathComponent(executable)
             let executableURL = toolchainBinURL.appendingPathComponent(executable)
 
             if linkURL.fileExists() {

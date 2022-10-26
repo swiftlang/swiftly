@@ -1,13 +1,34 @@
 import Foundation
 
-public var swiftlyHomeDir =
-    FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly", isDirectory: true)
-
 /// Struct modelling the config.json file used to track installed toolchains,
 /// the current in-use tooolchain, and information about the platform.
 ///
 /// TODO: implement cache
 public struct Config: Codable, Equatable {
+    // TODO: support other locations
+    public static var swiftlyHomeDir =
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly", isDirectory: true)
+
+    public static var swiftlyBinDir: URL {
+        Self.swiftlyHomeDir.appendingPathComponent("bin", isDirectory: true)
+    }
+
+    public static var swiftlyToolchainsDir: URL {
+        Self.swiftlyHomeDir.appendingPathComponent("toolchains", isDirectory: true)
+    }
+
+    public static var swiftlyConfigFile: URL {
+        Self.swiftlyHomeDir.appendingPathComponent("config.json")
+    }
+
+    public static var requiredDirectories: [URL] {
+        [
+            Self.swiftlyHomeDir,
+            Self.swiftlyBinDir,
+            Self.swiftlyToolchainsDir
+        ]
+    }
+
     public struct PlatformDefinition: Codable, Equatable {
         public let name: String
         public let nameFull: String
@@ -17,10 +38,6 @@ public struct Config: Codable, Equatable {
     public var inUse: ToolchainVersion?
     public var installedToolchains: Set<ToolchainVersion>
     public var platform: PlatformDefinition
-
-    // TODO: support other locations
-    public static let fileName = "config.json"
-    private static let url = swiftlyHomeDir.appendingPathComponent(Self.fileName)
 
     internal init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition) {
         self.inUse = inUse
@@ -36,14 +53,14 @@ public struct Config: Codable, Equatable {
 
     /// Read the config file from disk.
     public static func load() throws -> Config {
-        let data = try Data(contentsOf: Config.url)
+        let data = try Data(contentsOf: Self.swiftlyConfigFile)
         return try JSONDecoder().decode(Config.self, from: data)
     }
 
     /// Write the contents of this `Config` struct to disk.
     public func save() throws {
         let outData = try Self.makeEncoder().encode(self)
-        try outData.write(to: Config.url, options: .atomic)
+        try outData.write(to: Self.swiftlyConfigFile, options: .atomic)
     }
 
     public func listInstalledToolchains(selector: ToolchainSelector?) -> [ToolchainVersion] {

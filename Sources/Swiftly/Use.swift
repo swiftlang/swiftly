@@ -43,10 +43,15 @@ struct Use: SwiftlyCommand {
         var config = try Config.load()
  
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
-            print("no installed toolchains match \"\(self.toolchain)\"")
+            print("No installed toolchains match \"\(self.toolchain)\"")
             return
         }
 
+        try await Self.execute(toolchain)
+    }
+
+    internal static func execute(_ toolchain: ToolchainVersion) async throws {
+        var config = try Config.load()
         let previousToolchain = config.inUse
 
         guard toolchain != previousToolchain else {

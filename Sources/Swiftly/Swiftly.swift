@@ -37,6 +37,13 @@ public protocol SwiftlyCommand: AsyncParsableCommand {}
 
 extension SwiftlyCommand {
     public mutating func validate() throws {
+        for requiredDir in Config.requiredDirectories {
+            guard requiredDir.fileExists() else {
+                try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
+                continue
+            }
+        }
+
         do {
             _ = try Config.load()
         } catch {

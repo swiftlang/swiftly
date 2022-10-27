@@ -4,6 +4,11 @@ import Foundation
 import XCTest
 
 final class InstallTests: SwiftlyTests {
+    /// Tests that `swiftly install latest` successfully installs the latest stable release of Swift.
+    ///
+    /// It stops short of verifying that it actually installs the _most_ recently released version, which is the intended
+    /// behavior, since determining which version is the latest is non-trivial and would require duplicating code
+    /// from within swiftly itself.
     func testInstallLatest() async throws {
         try await self.withTestHome {
             var cmd = try self.parseCommand(Install.self, ["install", "latest"])
@@ -27,6 +32,7 @@ final class InstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that `swiftly install a.b` installs the latest patch version of Swift a.b.
     func testInstallLatestPatchVersion() async throws {
         try await self.withTestHome {
             var cmd = try self.parseCommand(Install.self, ["install", "5.6"])
@@ -50,6 +56,7 @@ final class InstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that swiftly can install different stable release versions by their full a.b.c versions.
     func testInstallReleases() async throws {
         try await self.withTestHome {
             var installedToolchains: Set<ToolchainVersion> = []
@@ -74,6 +81,7 @@ final class InstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that swiftly can install main and release snapshots by their full snapshot names.
     func testInstallSnapshots() async throws {
         try await self.withTestHome {
             var installedToolchains: Set<ToolchainVersion> = []
@@ -98,6 +106,7 @@ final class InstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that `swiftly install main-snapshot` installs the latest available main snapshot.
     func testInstallLatestMainSnapshot() async throws {
         try await self.withTestHome {
             var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot"])
@@ -110,7 +119,7 @@ final class InstallTests: SwiftlyTests {
             let installedToolchain = config.installedToolchains.first!
 
             guard case let .snapshot(snapshot) = installedToolchain, snapshot.branch == .main else {
-                XCTFail("expected swiftly install main-snapshot to install snapshot toolchain but got \(installedToolchain)")
+                XCTFail("expected to install latest main snapshot toolchain but got \(installedToolchain)")
                 return
             }
 
@@ -124,6 +133,7 @@ final class InstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that `swiftly install a.b-snapshot` installs the latest available a.b release snapshot.
     func testInstallLatestReleaseSnapshot() async throws {
         try await self.withTestHome {
             var cmd = try self.parseCommand(Install.self, ["install", "5.7-snapshot"])
@@ -150,6 +160,7 @@ final class InstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that swiftly can install both stable release toolchains and snapshot toolchains.
     func testInstallReleaseAndSnapshots() async throws {
         try await self.withTestHome {
             var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2022-09-10"])
@@ -180,7 +191,7 @@ final class InstallTests: SwiftlyTests {
             let before = try Config.load()
 
             let startTime = Date()
-            cmd = try try self.parseCommand(Install.self, ["install", version])
+            cmd = try self.parseCommand(Install.self, ["install", version])
             try await cmd.run()
 
             // Assert that swiftly didn't attempt to download a new toolchain.
@@ -191,16 +202,19 @@ final class InstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that attempting to install stable releases that are already installed doesn't result in an error.
     func testInstallDuplicateReleases() async throws {
         try await duplicateTest("5.7.0")
         try await duplicateTest("latest")
     }
 
+    /// Tests that attempting to install main snapshots that are already installed doesn't result in an error.
     func testInstallDuplicateMainSnapshots() async throws {
         try await duplicateTest("main-snapshot-2022-09-10")
         try await duplicateTest("main-snapshot")
     }
 
+    /// Tests that attempting to install release snapshots that are already installed doesn't result in an error.
     func testInstallDuplicateReleaseSnapshots() async throws {
         try await duplicateTest("5.7-snapshot-2022-08-30")
         try await duplicateTest("5.7-snapshot")

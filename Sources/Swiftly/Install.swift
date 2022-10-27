@@ -1,8 +1,8 @@
 import _StringProcessing
 import ArgumentParser
 import Foundation
-import TSCUtility
 import TSCBasic
+import TSCUtility
 
 import SwiftlyCore
 
@@ -44,13 +44,13 @@ struct Install: SwiftlyCommand {
     var version: String
 
     @Option(help: ArgumentHelp(
-                "A GitHub authentiation token to use for any GitHub API requests.",
-                discussion: """
+        "A GitHub authentiation token to use for any GitHub API requests.",
+        discussion: """
 
-                This is useful to avoid GitHub's low rate limits. If an installation
-                fails with an \"unauthorized\" status code, it likely means the rate limit has been hit.
-                """
-            ))
+        This is useful to avoid GitHub's low rate limits. If an installation
+        fails with an \"unauthorized\" status code, it likely means the rate limit has been hit.
+        """
+    ))
     var token: String?
 
     mutating func run() async throws {
@@ -73,7 +73,7 @@ struct Install: SwiftlyCommand {
             try? FileManager.default.removeItem(at: tmpFile)
         }
 
-        var url: String = "https://download.swift.org/"
+        var url = "https://download.swift.org/"
         switch version {
         case let .stable(stableVersion):
             // Building URL path that looks like:

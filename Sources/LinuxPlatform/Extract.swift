@@ -21,7 +21,7 @@ struct ExtractError: Error {
 /// Write the data from the given readArchive into the writeArchive.
 func copyData(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws {
     var r = 0
-    var buff: UnsafeRawPointer? = nil
+    var buff: UnsafeRawPointer?
     var size = 0
     var offset: Int64 = 0
 
@@ -33,7 +33,7 @@ func copyData(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws 
         guard r == ARCHIVE_OK else {
             throw ExtractError(archive: readArchive)
         }
-        r = Int(archive_write_data_block(writeArchive, buff, size, offset));
+        r = Int(archive_write_data_block(writeArchive, buff, size, offset))
         guard r == ARCHIVE_OK else {
             throw ExtractError(archive: writeArchive)
         }
@@ -45,25 +45,25 @@ func copyData(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws 
 ///
 /// This uses libarchive under the hood, so a wide variety of archive formats are supported (e.g. .tar.gz).
 internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws {
-    var flags = Int32(0);
-    flags = ARCHIVE_EXTRACT_TIME;
-    flags |= ARCHIVE_EXTRACT_PERM;
-    flags |= ARCHIVE_EXTRACT_ACL;
-    flags |= ARCHIVE_EXTRACT_FFLAGS;
+    var flags = Int32(0)
+    flags = ARCHIVE_EXTRACT_TIME
+    flags |= ARCHIVE_EXTRACT_PERM
+    flags |= ARCHIVE_EXTRACT_ACL
+    flags |= ARCHIVE_EXTRACT_FFLAGS
 
-    let a = archive_read_new();
-    archive_read_support_format_all(a);
-    archive_read_support_filter_all(a);
+    let a = archive_read_new()
+    archive_read_support_format_all(a)
+    archive_read_support_filter_all(a)
 
-    let ext = archive_write_disk_new();
-    archive_write_disk_set_options(ext, flags);
-    archive_write_disk_set_standard_lookup(ext);
+    let ext = archive_write_disk_new()
+    archive_write_disk_set_options(ext, flags)
+    archive_write_disk_set_standard_lookup(ext)
 
     defer {
-        archive_read_close(a);
-        archive_read_free(a);
-        archive_write_close(ext);
-        archive_write_free(ext);
+        archive_read_close(a)
+        archive_read_free(a)
+        archive_write_close(ext)
+        archive_write_free(ext)
     }
 
     if archive_read_open_filename(a, archivePath.path, 10240) != 0 {
@@ -71,11 +71,11 @@ internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL
     }
 
     while true {
-        var r = Int32(0);
-        var entry: OpaquePointer? = nil
-        r = archive_read_next_header(a, &entry);
+        var r = Int32(0)
+        var entry: OpaquePointer?
+        r = archive_read_next_header(a, &entry)
         if r == ARCHIVE_EOF {
-            break;
+            break
         }
         guard r == ARCHIVE_OK else {
             throw ExtractError(archive: a)
@@ -83,7 +83,7 @@ internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL
 
         let currentPath = String(cString: archive_entry_pathname(entry))
         archive_entry_set_pathname(entry, transform(currentPath).path)
-        r = archive_write_header(ext, entry);
+        r = archive_write_header(ext, entry)
         guard r == ARCHIVE_OK else {
             throw ExtractError(archive: ext)
         }
@@ -92,7 +92,7 @@ internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL
             try copyData(readArchive: a, writeArchive: ext)
         }
 
-        r = archive_write_finish_entry(ext);
+        r = archive_write_finish_entry(ext)
         guard r == ARCHIVE_OK else {
             throw ExtractError(archive: ext)
         }

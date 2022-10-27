@@ -1,6 +1,5 @@
 import Foundation
 
-
 public var swiftlyHomeDir =
     FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly", isDirectory: true)
 

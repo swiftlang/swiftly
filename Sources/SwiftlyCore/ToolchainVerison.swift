@@ -2,7 +2,6 @@ import _StringProcessing
 
 /// Enum representing a fully resolved toolchain version (e.g. 5.6.7 or 5.7-snapshot-2022-07-05).
 public enum ToolchainVersion {
-
     public struct Snapshot: Equatable, Hashable, CustomStringConvertible {
         public enum Branch: Equatable, Hashable, CustomStringConvertible {
             case main
@@ -48,7 +47,7 @@ public enum ToolchainVersion {
         }
 
         public var description: String {
-            return "Swift \(self.major).\(self.minor).\(self.patch)"
+            "Swift \(self.major).\(self.minor).\(self.patch)"
         }
 
         public static func < (lhs: Self, rhs: Self) -> Bool {
@@ -213,7 +212,7 @@ public enum ToolchainSelector {
     }
 
     public func isSnapshotSelector() -> Bool {
-        return !self.isReleaseSelector()
+        !self.isReleaseSelector()
     }
 
     /// Returns whether or not this selector "matches" the provided toolchain.

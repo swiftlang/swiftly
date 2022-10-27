@@ -1,15 +1,14 @@
+import _StringProcessing
+import ArgumentParser
 @testable import Swiftly
 @testable import SwiftlyCore
 import XCTest
-import ArgumentParser
-import _StringProcessing
 
 struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
 class SwiftlyTests: XCTestCase {
-
     func parseCommand<T: ParsableCommand>(_ commandType: T.Type, _ arguments: [String]) throws -> T {
         let rawCmd = try Swiftly.parseAsRoot(arguments)
 
@@ -61,7 +60,7 @@ class SwiftlyTests: XCTestCase {
 
         try await f()
     }
-    
+
     /// Validate that all of the provided toolchains have been installed.
     ///
     /// This method ensures that config.json reflects the expected installed toolchains and also
@@ -73,7 +72,7 @@ class SwiftlyTests: XCTestCase {
             throw SwiftlyTestError(message: "\(description): expected \(toolchains) but got \(config.installedToolchains)")
         }
 
-        #if os(Linux)
+#if os(Linux)
         // Verify that the toolchains on disk correspond to those in the config.
 
         let stableRegex: Regex<(Substring, Substring)> =
@@ -156,7 +155,6 @@ class SwiftlyTests: XCTestCase {
 
             XCTAssertEqual(actualVersion, toolchain)
         }
-        #endif
+#endif
     }
-
 }

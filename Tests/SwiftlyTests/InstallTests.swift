@@ -1,6 +1,6 @@
+import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
-import Foundation
 import XCTest
 
 final class InstallTests: SwiftlyTests {
@@ -204,19 +204,19 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that attempting to install stable releases that are already installed doesn't result in an error.
     func testInstallDuplicateReleases() async throws {
-        try await duplicateTest("5.7.0")
-        try await duplicateTest("latest")
+        try await self.duplicateTest("5.7.0")
+        try await self.duplicateTest("latest")
     }
 
     /// Tests that attempting to install main snapshots that are already installed doesn't result in an error.
     func testInstallDuplicateMainSnapshots() async throws {
-        try await duplicateTest("main-snapshot-2022-09-10")
-        try await duplicateTest("main-snapshot")
+        try await self.duplicateTest("main-snapshot-2022-09-10")
+        try await self.duplicateTest("main-snapshot")
     }
 
     /// Tests that attempting to install release snapshots that are already installed doesn't result in an error.
     func testInstallDuplicateReleaseSnapshots() async throws {
-        try await duplicateTest("5.7-snapshot-2022-08-30")
-        try await duplicateTest("5.7-snapshot")
+        try await self.duplicateTest("5.7-snapshot-2022-08-30")
+        try await self.duplicateTest("5.7-snapshot")
     }
 }

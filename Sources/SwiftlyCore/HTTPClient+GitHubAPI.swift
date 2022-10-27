@@ -1,10 +1,10 @@
+import _StringProcessing
 import AsyncHTTPClient
 import Foundation
-import _StringProcessing
 
 extension HTTP {
     /// The GitHub authentication token to use for any requests made to the GitHub API.
-    public static var githubToken: String? = nil
+    public static var githubToken: String?
 
     /// Get a JSON response from the GitHub REST API.
     /// This will use the authorization token set, if any.
@@ -23,7 +23,7 @@ extension HTTP {
     /// in the returned array.
     internal static func mapGitHubTags<T>(
         limit: Int?,
-        filterMap: ((GitHubTag) throws -> T?),
+        filterMap: (GitHubTag) throws -> T?,
         fetch: (Int) async throws -> [GitHubTag]
     ) async throws -> [T] {
         var page = 1

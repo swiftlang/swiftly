@@ -1,9 +1,9 @@
+import _StringProcessing
 import AsyncHTTPClient
 import Foundation
-import NIOFoundationCompat
 import NIO
+import NIOFoundationCompat
 import NIOHTTP1
-import _StringProcessing
 
 /// HTTPClient wrapper used for interfacing with various APIs and downloading things.
 public class HTTP {

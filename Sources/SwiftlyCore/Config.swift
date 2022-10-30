@@ -67,8 +67,16 @@ public struct Config: Codable, Equatable {
 
     /// Read the config file from disk.
     public static func load() throws -> Config {
-        let data = try Data(contentsOf: Self.swiftlyConfigFile)
-        return try JSONDecoder().decode(Config.self, from: data)
+        do {
+            let data = try Data(contentsOf: Self.swiftlyConfigFile)
+            return try JSONDecoder().decode(Config.self, from: data)
+        } catch {
+            let msg = """
+            Could not load swiftly's configuration file at \(Self.swiftlyConfigFile.path) due to error: \"\(error)\".
+            To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
+            """
+            throw Error(message: msg)
+        }
     }
 
     /// Write the contents of this `Config` struct to disk.
@@ -91,7 +99,7 @@ public struct Config: Codable, Equatable {
         }
 
         return self.installedToolchains.filter { toolchain in
-            return selector.matches(toolchain: toolchain)
+            selector.matches(toolchain: toolchain)
         }
     }
 

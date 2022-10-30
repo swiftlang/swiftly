@@ -44,14 +44,6 @@ extension SwiftlyCommand {
             }
         }
 
-        do {
-            _ = try Config.load()
-        } catch {
-            let msg = """
-            Could not load swiftly's configuration file due to error: \"\(error)\".
-            To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
-            """
-            throw Error(message: msg)
-        }
+        _ = try Config.load()
     }
 }

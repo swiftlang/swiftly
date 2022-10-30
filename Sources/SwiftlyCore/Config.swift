@@ -21,6 +21,8 @@ public struct Config: Codable, Equatable {
         Self.swiftlyHomeDir.appendingPathComponent("config.json")
     }
 
+    /// The list of directories that swiftly needs to exist in order to execute.
+    /// If they do not exist when a swiftly command is invoked, they will be created.
     public static var requiredDirectories: [URL] {
         [
             Self.swiftlyHomeDir,
@@ -28,6 +30,18 @@ public struct Config: Codable, Equatable {
             Self.swiftlyToolchainsDir
         ]
     }
+
+    /// This is the list of executables included in a Swift toolchain that swiftly will create symlinks to in its `bin`
+    /// directory.
+    ///
+    /// swiftly doesn't create links for every entry in a toolchain's `bin` directory since some of them are
+    /// forked versions of executables not specific to Swift (e.g. clang), and we don't want to override those.
+    public static let symlinkedExecutables: [String] = [
+        "swift",
+        "swiftc",
+        "sourcekit-lsp",
+        "docc"
+    ]
 
     public struct PlatformDefinition: Codable, Equatable {
         public let name: String

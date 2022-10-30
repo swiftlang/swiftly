@@ -68,16 +68,7 @@ public struct Linux: Platform {
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
 
-        // Only symlink a subset of the executables in <toolchain>/usr/bin to avoid overriding the user's
-        // existing installations of clang, lldb, etc.
-        let executables = [
-            "swift",
-            "swiftc",
-            "sourcekit-lsp",
-            "docc"
-        ]
-
-        for executable in executables {
+        for executable in Config.symlinkedExecutables {
             let linkURL = Config.swiftlyBinDir.appendingPathComponent(executable)
             let executableURL = toolchainBinURL.appendingPathComponent(executable)
 

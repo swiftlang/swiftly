@@ -29,15 +29,26 @@ final class UseTests: SwiftlyTests {
                 Self.newReleaseSnapshot
             ]
 
+            // To save time when running these tests, populate some mock toolchains.
             for toolchain in allToolchains {
-                var install = try self.parseCommand(Install.self, ["install", toolchain.name])
-                try await install.run()
+                // var install = try self.parseCommand(Install.self, ["install", toolchain.name])
+                // try await install.run()
+                let toolchainDir = Config.swiftlyToolchainsDir.appendingPathComponent(toolchain.name)
+                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
+
+                // create the toolchain's bin dir
+                try FileManager.default.createDirectory(
+                    at: dir.appendingPathComponent("bin", isDirectory: true),
+                    withIntermediateDirectories: false
+                )
+
+                // create dummy executable file that just prints the toolchain's version
             }
         }
     }
 
     override class func tearDown() {
-        try? FileManager.default.removeItem(at: Self.getTestHomePath(name: Self.homeName))
+        // try? FileManager.default.removeItem(at: Self.getTestHomePath(name: Self.homeName))
     }
 
     func runUseTest(f: () async throws -> Void) async throws {
@@ -216,5 +227,30 @@ final class UseTests: SwiftlyTests {
         }
     }
 
-    // TODO: add test verifying that all the required binaries are present.
+    func testUseAll() async throws {
+        try await self.runUseTest {
+            let config = try Config.load()
+
+            for toolchain in config.installedToolchains {
+                try await self.useAndValidate(
+                    argument: toolchain.name,
+                    expectedVersion: toolchain
+                )
+            }
+        }
+    }
+
+    func testSymlinks() async throws {
+        try await self.runUseTest {
+            let config = try Config.load()
+
+            for toolchain in config.installedToolchains {
+                var use = try self.parseCommand(Use.self, ["use", toolchain.name])
+                try await use.run()
+
+                let files = try FileManager.default.contentsOfDirectory(atPath: Config.swiftlyBinDir.path).sorted()
+                XCTAssertEqual(files, Config.symlinkedExecutables)
+            }
+        }
+    }
 }

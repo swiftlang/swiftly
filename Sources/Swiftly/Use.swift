@@ -1,7 +1,7 @@
 import ArgumentParser
 import SwiftlyCore
 
-struct Use: SwiftlyCommand {
+internal struct Use: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Set the active toolchain."
     )

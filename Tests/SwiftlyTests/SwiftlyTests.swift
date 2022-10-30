@@ -44,10 +44,11 @@ class SwiftlyTests: XCTestCase {
             Config.swiftlyHomeDir = oldHome
         }
 
-        if testHome.fileExists() {
-            try FileManager.default.removeItem(at: Config.swiftlyHomeDir)
-        }
+        try testHome.deleteIfExists()
         try FileManager.default.createDirectory(at: Config.swiftlyHomeDir, withIntermediateDirectories: false)
+        defer {
+            try? FileManager.default.removeItem(at: testHome)
+        }
 
         let getEnv = { varName in
             guard let v = ProcessInfo.processInfo.environment[varName] else {
@@ -66,16 +67,17 @@ class SwiftlyTests: XCTestCase {
             )
         )
         try config.save()
-        defer {
-            try? FileManager.default.removeItem(at: testHome)
-        }
 
         try await f()
     }
 
-    /// Validates that the provided toolchain is the one currently marked as "in use".
+    /// Validates that the provided toolchain is the one currently marked as "in use", both by checking the
+    /// configuration file and by executing `swift --version` using the swift executable in the `bin` directory.
     /// If nil is provided, this validates that no toolchain is currently in use.
     func validateInUse(expected: ToolchainVersion?) async throws {
+        let config = try Config.load()
+        XCTAssertEqual(config.inUse, expected)
+
         let executable = SwiftExecutable(path: Config.swiftlyBinDir.appendingPathComponent("swift"))
 
         XCTAssertEqual(executable.exists(), expected != nil)
@@ -186,6 +188,7 @@ class SwiftlyTests: XCTestCase {
     }
 }
 
+/// Wrapper around a `swift` executable used to execute swift commands.
 public struct SwiftExecutable {
     public let path: URL
 

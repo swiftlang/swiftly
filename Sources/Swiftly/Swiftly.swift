@@ -44,6 +44,7 @@ extension SwiftlyCommand {
             }
         }
 
+        // Verify that the configuration exists and can be loaded
         _ = try Config.load()
     }
 }

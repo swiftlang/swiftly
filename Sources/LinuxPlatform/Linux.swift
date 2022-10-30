@@ -60,8 +60,7 @@ public struct Linux: Platform {
     public func uninstall(version _: ToolchainVersion) throws {}
 
     public func use(_ toolchain: ToolchainVersion) throws {
-        let toolchainBinURL = Config.swiftlyHomeDir
-            .appendingPathComponent("toolchains", isDirectory: true)
+        let toolchainBinURL = Config.swiftlyToolchainsDir
             .appendingPathComponent(toolchain.name, isDirectory: true)
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)

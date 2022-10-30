@@ -35,7 +35,8 @@ public struct Config: Codable, Equatable {
     /// directory.
     ///
     /// swiftly doesn't create links for every entry in a toolchain's `bin` directory since some of them are
-    /// forked versions of executables not specific to Swift (e.g. clang), and we don't want to override those.
+    /// forked versions of executables not specific to Swift (e.g. clang), and we don't want to override the users
+    /// existing installations of those executables.
     public static let symlinkedExecutables: [String] = [
         "swift",
         "swiftc",

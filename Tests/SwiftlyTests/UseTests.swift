@@ -70,11 +70,13 @@ final class UseTests: SwiftlyTests {
         }
     }
 
-    /// Execute a `use` command with the provided argument. Then validate that the in-use toolchain prints the
-    /// the provided expectedVersion.
+    /// Execute a `use` command with the provided argument. Then validate that the configuration is updated properly and
+    /// the in-use swift executable prints the the provided expectedVersion.
     func useAndValidate(argument: String, expectedVersion: ToolchainVersion) async throws {
         var use = try self.parseCommand(Use.self, ["use", argument])
         try await use.run()
+
+        XCTAssertEqual(try Config.load().inUse, expectedVersion)
 
         let swiftExecutableURL = Config.swiftlyBinDir.appendingPathComponent("swift")
         let process = Process()

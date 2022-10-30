@@ -16,49 +16,82 @@ final class UseTests: SwiftlyTests {
     static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-27")
     static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30")
 
-    override func setUp() async throws {
-        // Each test uses cleanUp: false, so this will only actually install these toolchains once.
-        try await self.withTestHome(name: Self.homeName, cleanUp: false) {
-            let allToolchains = [
-                Self.oldStable,
-                Self.oldStableNewPatch,
-                Self.newStable,
-                Self.oldMainSnapshot,
-                Self.newMainSnapshot,
-                Self.oldReleaseSnapshot,
-                Self.newReleaseSnapshot
+    /// Construct a mock home directory with the toolchains listed above installed and run the provided closure within
+    /// the context of that home.
+    func runUseTest(f: () async throws -> Void) async throws {
+        try await self.withTestHome(name: Self.homeName, createNew: true, cleanUp: true) {
+            // List of toolchains to be installed. Snapshot toolchains have a git hash included to facilitate
+            // implementing the --version output.
+            let allToolchains: [(ToolchainVersion, String?)] = [
+                (Self.oldStable, nil),
+                (Self.oldStableNewPatch, nil),
+                (Self.newStable, nil),
+                (Self.oldMainSnapshot, "005c9f34031"),
+                (Self.newMainSnapshot, "4c546d3d07c"),
+                (Self.oldReleaseSnapshot, "4c347d27c92"),
+                (Self.newReleaseSnapshot, "1e80674d67f")
             ]
 
-            // To save time when running these tests, populate some mock toolchains.
-            for toolchain in allToolchains {
-                // var install = try self.parseCommand(Install.self, ["install", toolchain.name])
-                // try await install.run()
+            for (toolchain, hash) in allToolchains {
                 let toolchainDir = Config.swiftlyToolchainsDir.appendingPathComponent(toolchain.name)
-                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
+                try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: true)
 
-                // create the toolchain's bin dir
+                let toolchainBinDir = toolchainDir
+                    .appendingPathComponent("usr", isDirectory: true)
+                    .appendingPathComponent("bin", isDirectory: true)
                 try FileManager.default.createDirectory(
-                    at: dir.appendingPathComponent("bin", isDirectory: true),
-                    withIntermediateDirectories: false
+                    at: toolchainBinDir,
+                    withIntermediateDirectories: true
                 )
 
                 // create dummy executable file that just prints the toolchain's version
+                let executablePath = toolchainBinDir.appendingPathComponent("swift")
+                try executablePath.deleteIfExists()
+
+                let script = """
+                    #!/usr/bin/env bash
+
+                    echo '\(toolchain.name)'
+                    """
+
+                let data = script.data(using: .utf8)!
+                try data.write(to: executablePath)
+
+                // make the file executable
+                try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
             }
+
+            try Config.update { config in
+                config.installedToolchains = Set(allToolchains.map({ $0.0 }))
+            }
+
+            var use = try self.parseCommand(Use.self, ["use", "latest"])
+            try await use.run()
+
+            try await f()
         }
-    }
-
-    override class func tearDown() {
-        // try? FileManager.default.removeItem(at: Self.getTestHomePath(name: Self.homeName))
-    }
-
-    func runUseTest(f: () async throws -> Void) async throws {
-        try await self.withTestHome(name: Self.homeName, cleanUp: false, f)
     }
 
     func useAndValidate(argument: String, expectedVersion: ToolchainVersion) async throws {
         var use = try self.parseCommand(Use.self, ["use", argument])
         try await use.run()
-        try await validateInUse(expected: expectedVersion)
+
+        let swiftExecutableURL = Config.swiftlyBinDir.appendingPathComponent("swift")
+        let process = Process()
+        process.executableURL = swiftExecutableURL
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
+            throw SwiftlyTestError(message: "got no output from swift binary at path \(swiftExecutableURL.path)")
+        }
+
+        let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
+        XCTAssertEqual(toolchainVersion, expectedVersion.name)
     }
 
     func testUseStable() async throws {
@@ -249,8 +282,12 @@ final class UseTests: SwiftlyTests {
                 try await use.run()
 
                 let files = try FileManager.default.contentsOfDirectory(atPath: Config.swiftlyBinDir.path).sorted()
-                XCTAssertEqual(files, Config.symlinkedExecutables)
+                XCTAssertEqual(files, Config.symlinkedExecutables.sorted())
             }
         }
+    }
+
+    func testFoo() async throws {
+        try await self.runUseTest { print("ok") }
     }
 }

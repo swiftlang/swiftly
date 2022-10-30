@@ -36,7 +36,12 @@ class SwiftlyTests: XCTestCase {
     ///
     /// The home directory will be deleted after the provided closure has been executed by default. To disable this
     /// behavior, specify cleanUp: false.
-    func withTestHome(name: String = "testHome", cleanUp: Bool = true, _ f: () async throws -> Void) async throws {
+    func withTestHome(
+        name: String = "testHome",
+        createNew: Bool = true,
+        cleanUp: Bool = true,
+        _ f: () async throws -> Void
+    ) async throws {
         let oldHome = Config.swiftlyHomeDir
 
         let testHome = Self.getTestHomePath(name: name)
@@ -46,7 +51,10 @@ class SwiftlyTests: XCTestCase {
         }
 
         // If the home doesn't already exist, create a fresh one.
-        if !Config.swiftlyHomeDir.fileExists() {
+        if createNew || !Config.swiftlyHomeDir.fileExists() {
+            if testHome.fileExists() {
+                try FileManager.default.removeItem(at: Config.swiftlyHomeDir)
+            }
             try FileManager.default.createDirectory(at: Config.swiftlyHomeDir, withIntermediateDirectories: false)
 
             let getEnv = { varName in

@@ -72,9 +72,7 @@ public struct Linux: Platform {
             let linkURL = Config.swiftlyBinDir.appendingPathComponent(executable)
             let executableURL = toolchainBinURL.appendingPathComponent(executable)
 
-            if linkURL.fileExists() {
-                try FileManager.default.removeItem(at: linkURL)
-            }
+            try linkURL.deleteIfExists()
 
             try FileManager.default.createSymbolicLink(
                 atPath: linkURL.path,

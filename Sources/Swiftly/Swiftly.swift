@@ -7,7 +7,7 @@ import SwiftlyCore
 
 @main
 @available(macOS 10.15, *)
-public struct Swiftly: AsyncParsableCommand {
+public struct Swiftly: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "A utility for insalling and managing Swift toolchains.",
 
@@ -31,4 +31,20 @@ public struct Swiftly: AsyncParsableCommand {
 #if os(Linux)
     internal static let currentPlatform = Linux.currentPlatform
 #endif
+}
+
+public protocol SwiftlyCommand: AsyncParsableCommand {}
+
+extension SwiftlyCommand {
+    public mutating func validate() throws {
+        do {
+            _ = try Config.load()
+        } catch {
+            let msg = """
+            Could not load swiftly's configuration file due to error: \"\(error)\".
+            To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
+            """
+            throw Error(message: msg)
+        }
+    }
 }

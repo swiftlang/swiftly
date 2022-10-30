@@ -2,12 +2,40 @@ import _StringProcessing
 
 /// Enum representing a fully resolved toolchain version (e.g. 5.6.7 or 5.7-snapshot-2022-07-05).
 public enum ToolchainVersion {
-    public enum SnapshotBranch: Equatable, Hashable {
-        case main
-        case release(major: Int, minor: Int)
+    public struct Snapshot: Equatable, Hashable, CustomStringConvertible {
+        public enum Branch: Equatable, Hashable, CustomStringConvertible {
+            case main
+            case release(major: Int, minor: Int)
+
+            public var description: String {
+                switch self {
+                case .main:
+                    return "main"
+                case let .release(major, minor):
+                    return "\(major).\(minor) development"
+                }
+            }
+        }
+
+        public let branch: Branch
+        public let date: String
+
+        public init(branch: Branch, date: String) {
+            self.branch = branch
+            self.date = date
+        }
+
+        public var description: String {
+            switch self.branch {
+            case .main:
+                return "main-snapshot-\(self.date)"
+            case let .release(major, minor):
+                return "\(major).\(minor)-snapshot-\(self.date)"
+            }
+        }
     }
 
-    public struct StableRelease: Equatable, Comparable, Hashable {
+    public struct StableRelease: Equatable, Comparable, Hashable, CustomStringConvertible {
         public let major: Int
         public let minor: Int
         public let patch: Int
@@ -16,6 +44,10 @@ public enum ToolchainVersion {
             self.major = major
             self.minor = minor
             self.patch = patch
+        }
+
+        public var description: String {
+            "Swift \(self.major).\(self.minor).\(self.patch)"
         }
 
         public static func < (lhs: Self, rhs: Self) -> Bool {
@@ -30,10 +62,14 @@ public enum ToolchainVersion {
     }
 
     case stable(StableRelease)
-    case snapshot(branch: SnapshotBranch, date: String)
+    case snapshot(Snapshot)
 
     public init(major: Int, minor: Int, patch: Int) {
         self = .stable(StableRelease(major: major, minor: minor, patch: patch))
+    }
+
+    public init(snapshotBranch: Snapshot.Branch, date: String) {
+        self = .snapshot(Snapshot(branch: snapshotBranch, date: date))
     }
 
     static let stableRegex: Regex<(Substring, Substring, Substring, Substring)> =
@@ -57,7 +93,7 @@ public enum ToolchainVersion {
             }
             self = ToolchainVersion(major: major, minor: minor, patch: patch)
         } else if let match = try Self.mainSnapshotRegex.wholeMatch(in: string) {
-            self = .snapshot(branch: .main, date: String(match.output.1))
+            self = ToolchainVersion(snapshotBranch: .main, date: String(match.output.1))
         } else if let match = try Self.releaseSnapshotRegex.wholeMatch(in: string) {
             guard
                 let major = Int(match.output.1),
@@ -65,7 +101,7 @@ public enum ToolchainVersion {
             else {
                 throw Error(message: "invalid release snapshot version: \(string)")
             }
-            self = .snapshot(branch: .release(major: major, minor: minor), date: String(match.output.3))
+            self = ToolchainVersion(snapshotBranch: .release(major: major, minor: minor), date: String(match.output.3))
         } else {
             throw Error(message: "invalid toolchain version: \"\(string)\"")
         }
@@ -84,6 +120,20 @@ public enum ToolchainVersion {
         }
         return true
     }
+
+    public var name: String {
+        switch self {
+        case let .stable(release):
+            return "\(release.major).\(release.minor).\(release.patch)"
+        case let .snapshot(release):
+            switch release.branch {
+            case .main:
+                return "main-snapshot-\(release.date)"
+            case let .release(major, minor):
+                return "\(major).\(minor)-snapshot-\(release.date)"
+            }
+        }
+    }
 }
 
 extension ToolchainVersion: LosslessStringConvertible {
@@ -99,11 +149,9 @@ extension ToolchainVersion: CustomStringConvertible {
     public var description: String {
         switch self {
         case let .stable(release):
-            return "\(release.major).\(release.minor).\(release.patch)"
-        case let .snapshot(.main, date):
-            return "main-snapshot-\(date)"
-        case let .snapshot(.release(major, minor), date):
-            return "\(major).\(minor)-snapshot-\(date)"
+            return "\(release)"
+        case let .snapshot(snapshot):
+            return "\(snapshot)"
         }
     }
 }
@@ -115,10 +163,8 @@ extension ToolchainVersion: Comparable {
         switch (lhs, rhs) {
         case let (.stable(lhsRelease), .stable(rhsRelease)):
             return lhsRelease < rhsRelease
-        case let (.snapshot(.main, lhsDate), .snapshot(branch: .main, rhsDate)):
-            return lhsDate < rhsDate
-        case let (.snapshot(.release, lhsDate), .snapshot(branch: .release, rhsDate)):
-            return lhsDate < rhsDate
+        case let (.snapshot(lhsRelease), .snapshot(rhsRelease)):
+            return lhsRelease.branch == rhsRelease.branch && lhsRelease.date < rhsRelease.date
         default:
             return false
         }
@@ -142,7 +188,7 @@ public enum ToolchainSelector {
     ///
     /// If the date is not provided, this will select the latest snapshot
     /// associated with the given branch.
-    case snapshot(branch: ToolchainVersion.SnapshotBranch, date: String?)
+    case snapshot(branch: ToolchainVersion.Snapshot.Branch, date: String?)
 
     public init(parsing input: String) throws {
         for parser in parsers {
@@ -166,7 +212,7 @@ public enum ToolchainSelector {
     }
 
     public func isSnapshotSelector() -> Bool {
-        return !self.isReleaseSelector()
+        !self.isReleaseSelector()
     }
 
     /// Returns whether or not this selector "matches" the provided toolchain.
@@ -188,12 +234,12 @@ public enum ToolchainSelector {
             }
             return true
 
-        case let (.snapshot(selectorBranch, selectorDate), .snapshot(releaseBranch, releaseDate)):
-            guard selectorBranch == releaseBranch else {
+        case let (.snapshot(selectorBranch, selectorDate), .snapshot(release)):
+            guard selectorBranch == release.branch else {
                 return false
             }
             if let selectorDate {
-                guard selectorDate == releaseDate else {
+                guard selectorDate == release.date else {
                     return false
                 }
             }

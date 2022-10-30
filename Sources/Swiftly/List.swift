@@ -1,7 +1,7 @@
 import ArgumentParser
 import SwiftlyCore
 
-struct List: ParsableCommand {
+struct List: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "List installed toolchains."
     )
@@ -33,7 +33,7 @@ struct List: ParsableCommand {
     ))
     var toolchainSelector: String?
 
-    internal mutating func run() throws {
+    internal mutating func run() async throws {
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }

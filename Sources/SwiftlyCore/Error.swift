@@ -6,4 +6,6 @@ public struct Error: LocalizedError {
     public init(message: String) {
         self.message = message
     }
+
+    public var errorDescription: String? { self.message }
 }

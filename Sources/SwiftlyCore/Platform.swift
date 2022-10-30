@@ -6,18 +6,18 @@ public protocol Platform {
     /// For macOS / Xcode, this would return “xcode”.
     var name: String { get }
 
+    /// The full name of the platform as it is used in the Swift download URLs.
+    /// For instance, for Ubuntu 16.04 this would return “ubuntu16.04”.
+    var nameFull: String { get }
+
     /// A human-readable / pretty-printed version of the platform’s name, used for terminal
     /// output and logging.
     /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
     var namePretty: String { get }
 
-    /// Downloads a toolchain associated with the given version and returns
-    /// a URL pointing to where it was downloaded to, which will be a temporary location.
-    /// To get the URL to download from, name() and the provided version can be used.
-    ///
-    /// This will likely be the same on all platforms, so it’ll either have a default implementation
-    /// or be omitted from the actual protocol.
-    func download(version: ToolchainVersion) async throws -> URL
+    /// The file extension of the downloaded toolchain for this platform.
+    /// e.g. for Linux systems this is "tar.gz" and on macOS it's "pkg".
+    var toolchainFileExtension: String { get }
 
     /// Checks whether a given system dependency has been installed yet or not.
     /// This will only really be used on Linux.
@@ -48,6 +48,10 @@ public protocol Platform {
 
     /// Get the toolchain that is currently "in use", if any.
     func currentToolchain() throws -> ToolchainVersion?
+
+    /// Get a path pointing to a unique, temporary file.
+    /// This does not need to actually create the file.
+    func getTempFilePath() -> URL
 }
 
 public struct SystemDependency {}

@@ -1,7 +1,7 @@
 import ArgumentParser
 import SwiftlyCore
 
-struct ListAvailable: AsyncParsableCommand {
+struct ListAvailable: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "List toolchains available for install."
     )
@@ -38,8 +38,8 @@ struct ListAvailable: AsyncParsableCommand {
             try ToolchainSelector(parsing: input)
         }
 
-        let toolchains = try await HTTP().getLatestReleases()
-            .compactMap { (try? $0.parse()).map(ToolchainVersion.stable) }
+        let toolchains = try await HTTP.getReleaseToolchains()
+            .map(ToolchainVersion.stable)
             .filter { selector?.matches(toolchain: $0) ?? true }
 
         let installedToolchains = Set(Swiftly.currentPlatform.listToolchains(selector: selector))

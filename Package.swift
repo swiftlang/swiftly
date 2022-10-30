@@ -14,6 +14,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.1.2"),
         .package(url: "https://github.com/swift-server/async-http-client", from: "1.9.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.38.0"),
+        .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.2.7"),
     ],
     targets: [
         .executableTarget(
@@ -22,6 +23,7 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .target(name: "SwiftlyCore"),
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
+                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
             ]
         ),
         .target(
@@ -35,6 +37,14 @@ let package = Package(
             name: "LinuxPlatform",
             dependencies: [
                 "SwiftlyCore",
+                "CLibArchive",
+            ]
+        ),
+        .systemLibrary(
+            name: "CLibArchive",
+            pkgConfig: "libarchive",
+            providers: [
+                .apt(["libarchive-dev"])
             ]
         ),
         .testTarget(

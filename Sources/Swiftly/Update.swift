@@ -1,7 +1,7 @@
 import ArgumentParser
 import SwiftlyCore
 
-struct Update: AsyncParsableCommand {
+struct Update: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Update an installed toolchain to a newer version."
     )
@@ -78,16 +78,11 @@ struct Update: AsyncParsableCommand {
     private func newToolchain(old: ToolchainVersion) async throws -> ToolchainVersion? {
         switch old {
         case let .stable(oldRelease):
-            let releases = try await HTTP().getLatestReleases()
-            return releases
-                .compactMap { try? $0.parse() }
-                .filter { release in
-                    release.major == oldRelease.major
-                        && release.minor == oldRelease.minor
-                        && release.patch > oldRelease.patch
-                }
-                .max()
-                .map(ToolchainVersion.stable)
+            return try await HTTP.getReleaseToolchains(limit: 1) { release in
+                release.major == oldRelease.major
+                    && release.minor == oldRelease.minor
+                    && release.patch > oldRelease.patch
+            }.first.map(ToolchainVersion.stable)
         default:
             // TODO: fetch newer snapshots
             return nil

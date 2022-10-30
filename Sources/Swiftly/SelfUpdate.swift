@@ -1,6 +1,6 @@
 import ArgumentParser
 
-internal struct SelfUpdate: AsyncParsableCommand {
+internal struct SelfUpdate: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Update the version of swiftly itself."
     )

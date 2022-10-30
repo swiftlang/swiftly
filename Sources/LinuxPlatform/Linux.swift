@@ -55,8 +55,6 @@ public struct Linux: Platform {
             // prepend ~/.swiftly/toolchains/<toolchain> to each file name
             return toolchainDir.appendingPathComponent(String(relativePath))
         }
-
-        // TODO: if config doesn't have an active toolchain, set it to that
     }
 
     public func uninstall(version _: ToolchainVersion) throws {}

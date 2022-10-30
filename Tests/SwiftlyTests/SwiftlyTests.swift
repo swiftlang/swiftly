@@ -31,15 +31,9 @@ class SwiftlyTests: XCTestCase {
     /// This method requires the SWIFTLY_PLATFORM_NAME, SWIFTLY_PLATFORM_NAME_FULL, and SWIFTLY_PLATFORM_NAME_PRETTY
     /// environment variables to be set.
     ///
-    /// If a home directory already exists at the provided path, it will not be deleted.
-    /// If the directory does not exist, a fresh one will be created.
-    ///
-    /// The home directory will be deleted after the provided closure has been executed by default. To disable this
-    /// behavior, specify cleanUp: false.
+    /// The home directory will be deleted after the provided closure has been executed.
     func withTestHome(
         name: String = "testHome",
-        createNew: Bool = true,
-        cleanUp: Bool = true,
         _ f: () async throws -> Void
     ) async throws {
         let oldHome = Config.swiftlyHomeDir
@@ -50,35 +44,30 @@ class SwiftlyTests: XCTestCase {
             Config.swiftlyHomeDir = oldHome
         }
 
-        // If the home doesn't already exist, create a fresh one.
-        if createNew || !Config.swiftlyHomeDir.fileExists() {
-            if testHome.fileExists() {
-                try FileManager.default.removeItem(at: Config.swiftlyHomeDir)
-            }
-            try FileManager.default.createDirectory(at: Config.swiftlyHomeDir, withIntermediateDirectories: false)
-
-            let getEnv = { varName in
-                guard let v = ProcessInfo.processInfo.environment[varName] else {
-                    throw SwiftlyTestError(message: "environment variable \(varName) must be set in order to run tests")
-                }
-                return v
-            }
-
-            let config = Config(
-                inUse: nil,
-                installedToolchains: [],
-                platform: Config.PlatformDefinition(
-                    name: try getEnv("SWIFTLY_PLATFORM_NAME"),
-                    nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
-                    namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
-                )
-            )
-            try config.save()
+        if testHome.fileExists() {
+            try FileManager.default.removeItem(at: Config.swiftlyHomeDir)
         }
-        defer {
-            if cleanUp {
-                try? FileManager.default.removeItem(at: testHome)
+        try FileManager.default.createDirectory(at: Config.swiftlyHomeDir, withIntermediateDirectories: false)
+
+        let getEnv = { varName in
+            guard let v = ProcessInfo.processInfo.environment[varName] else {
+                throw SwiftlyTestError(message: "environment variable \(varName) must be set in order to run tests")
             }
+            return v
+        }
+
+        let config = Config(
+            inUse: nil,
+            installedToolchains: [],
+            platform: Config.PlatformDefinition(
+                name: try getEnv("SWIFTLY_PLATFORM_NAME"),
+                nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
+                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
+            )
+        )
+        try config.save()
+        defer {
+            try? FileManager.default.removeItem(at: testHome)
         }
 
         try await f()
@@ -98,7 +87,7 @@ class SwiftlyTests: XCTestCase {
         let inUseVersion = try await executable.version()
         XCTAssertEqual(inUseVersion, expected)
     }
-    
+
     /// Validate that all of the provided toolchains have been installed.
     ///
     /// This method ensures that config.json reflects the expected installed toolchains and also
@@ -207,7 +196,7 @@ public struct SwiftExecutable {
         try! Regex("\\(LLVM [a-z0-9]+, Swift ([a-z0-9]+)\\)")
 
     public func exists() -> Bool {
-        return self.path.fileExists()
+        self.path.fileExists()
     }
 
     /// Gets the version of this executable by parsing the `swift --version` output, potentially looking

@@ -148,6 +148,7 @@ struct Install: SwiftlyCommand {
         config.installedToolchains.insert(version)
         try config.save()
 
+        // If this is the first installed toolchain, mark it as in-use.
         if config.inUse == nil {
             try await Use.execute(version)
         }

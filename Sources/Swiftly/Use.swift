@@ -40,7 +40,7 @@ internal struct Use: SwiftlyCommand {
 
     internal mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
-        var config = try Config.load()
+        let config = try Config.load()
 
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
             print("No installed toolchains match \"\(self.toolchain)\"")

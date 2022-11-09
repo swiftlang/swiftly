@@ -36,16 +36,16 @@ class SwiftlyTests: XCTestCase {
         name: String = "testHome",
         _ f: () async throws -> Void
     ) async throws {
-        let oldHome = Config.swiftlyHomeDir
+        let oldHome = SwiftlyCore.homeDir
 
         let testHome = Self.getTestHomePath(name: name)
-        Config.swiftlyHomeDir = testHome
+        SwiftlyCore.homeDir = testHome
         defer {
-            Config.swiftlyHomeDir = oldHome
+            SwiftlyCore.homeDir = oldHome
         }
 
         try testHome.deleteIfExists()
-        try FileManager.default.createDirectory(at: Config.swiftlyHomeDir, withIntermediateDirectories: false)
+        try FileManager.default.createDirectory(at: SwiftlyCore.homeDir, withIntermediateDirectories: false)
         defer {
             try? FileManager.default.removeItem(at: testHome)
         }
@@ -78,7 +78,7 @@ class SwiftlyTests: XCTestCase {
         let config = try Config.load()
         XCTAssertEqual(config.inUse, expected)
 
-        let executable = SwiftExecutable(path: Config.swiftlyBinDir.appendingPathComponent("swift"))
+        let executable = SwiftExecutable(path: SwiftlyCore.binDir.appendingPathComponent("swift"))
 
         XCTAssertEqual(executable.exists(), expected != nil)
 
@@ -111,7 +111,7 @@ class SwiftlyTests: XCTestCase {
             try! Regex("\\(LLVM [a-z0-9]+, Swift ([a-z0-9]+)\\)")
 
         for toolchain in toolchains {
-            let toolchainDir = Config.swiftlyHomeDir
+            let toolchainDir = SwiftlyCore.homeDir
                 .appendingPathComponent("toolchains")
                 .appendingPathComponent(toolchain.name)
             XCTAssertTrue(toolchainDir.fileExists())

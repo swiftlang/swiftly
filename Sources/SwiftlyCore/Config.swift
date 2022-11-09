@@ -5,45 +5,6 @@ import Foundation
 ///
 /// TODO: implement cache
 public struct Config: Codable, Equatable {
-    // TODO: support other locations
-    public static var swiftlyHomeDir =
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly", isDirectory: true)
-
-    public static var swiftlyBinDir: URL {
-        Self.swiftlyHomeDir.appendingPathComponent("bin", isDirectory: true)
-    }
-
-    public static var swiftlyToolchainsDir: URL {
-        Self.swiftlyHomeDir.appendingPathComponent("toolchains", isDirectory: true)
-    }
-
-    public static var swiftlyConfigFile: URL {
-        Self.swiftlyHomeDir.appendingPathComponent("config.json")
-    }
-
-    /// The list of directories that swiftly needs to exist in order to execute.
-    /// If they do not exist when a swiftly command is invoked, they will be created.
-    public static var requiredDirectories: [URL] {
-        [
-            Self.swiftlyHomeDir,
-            Self.swiftlyBinDir,
-            Self.swiftlyToolchainsDir
-        ]
-    }
-
-    /// This is the list of executables included in a Swift toolchain that swiftly will create symlinks to in its `bin`
-    /// directory.
-    ///
-    /// swiftly doesn't create links for every entry in a toolchain's `bin` directory since some of them are
-    /// forked versions of executables not specific to Swift (e.g. clang), and we don't want to override the users
-    /// existing installations of those executables.
-    public static let symlinkedExecutables: [String] = [
-        "swift",
-        "swiftc",
-        "sourcekit-lsp",
-        "docc"
-    ]
-
     public struct PlatformDefinition: Codable, Equatable {
         public let name: String
         public let nameFull: String
@@ -69,11 +30,11 @@ public struct Config: Codable, Equatable {
     /// Read the config file from disk.
     public static func load() throws -> Config {
         do {
-            let data = try Data(contentsOf: Self.swiftlyConfigFile)
+            let data = try Data(contentsOf: SwiftlyCore.configFile)
             return try JSONDecoder().decode(Config.self, from: data)
         } catch {
             let msg = """
-            Could not load swiftly's configuration file at \(Self.swiftlyConfigFile.path) due to error: \"\(error)\".
+            Could not load swiftly's configuration file at \(SwiftlyCore.configFile.path) due to error: \"\(error)\".
             To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
             """
             throw Error(message: msg)
@@ -83,7 +44,7 @@ public struct Config: Codable, Equatable {
     /// Write the contents of this `Config` struct to disk.
     public func save() throws {
         let outData = try Self.makeEncoder().encode(self)
-        try outData.write(to: Self.swiftlyConfigFile, options: .atomic)
+        try outData.write(to: SwiftlyCore.configFile, options: .atomic)
     }
 
     public func listInstalledToolchains(selector: ToolchainSelector?) -> [ToolchainVersion] {

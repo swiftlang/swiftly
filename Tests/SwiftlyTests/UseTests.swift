@@ -31,7 +31,7 @@ final class UseTests: SwiftlyTests {
             ]
 
             for toolchain in allToolchains {
-                let toolchainDir = Config.swiftlyToolchainsDir.appendingPathComponent(toolchain.name)
+                let toolchainDir = SwiftlyCore.toolchainsDir.appendingPathComponent(toolchain.name)
                 try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: true)
 
                 let toolchainBinDir = toolchainDir
@@ -78,7 +78,7 @@ final class UseTests: SwiftlyTests {
 
         XCTAssertEqual(try Config.load().inUse, expectedVersion)
 
-        let swiftExecutableURL = Config.swiftlyBinDir.appendingPathComponent("swift")
+        let swiftExecutableURL = SwiftlyCore.binDir.appendingPathComponent("swift")
         let process = Process()
         process.executableURL = swiftExecutableURL
 
@@ -298,8 +298,8 @@ final class UseTests: SwiftlyTests {
                 var use = try self.parseCommand(Use.self, ["use", toolchain.name])
                 try await use.run()
 
-                let files = try FileManager.default.contentsOfDirectory(atPath: Config.swiftlyBinDir.path).sorted()
-                XCTAssertEqual(files, Config.symlinkedExecutables.sorted())
+                let files = try FileManager.default.contentsOfDirectory(atPath: SwiftlyCore.binDir.path).sorted()
+                XCTAssertEqual(files, SwiftlyCore.symlinkedExecutables.sorted())
             }
         }
     }

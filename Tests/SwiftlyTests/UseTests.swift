@@ -289,18 +289,26 @@ final class UseTests: SwiftlyTests {
         }
     }
 
-    /// Tests that the `use` command creates only the required symlinks in the `bin` directory.
+    /// Tests that the `use` command symlinks all of the executables provided in a toolchain.
     func testSymlinks() async throws {
-        try await self.runUseTest {
-            let config = try Config.load()
+        try await runUseTest {
+            var cmd = try self.parseCommand(Install.self, ["install", "5.7.1"])
+            try await cmd.run()
 
-            for toolchain in config.installedToolchains {
-                var use = try self.parseCommand(Use.self, ["use", toolchain.name])
-                try await use.run()
+            var use = try self.parseCommand(Use.self, ["use", "5.7.1"])
+            try await use.run()
 
-                let files = try FileManager.default.contentsOfDirectory(atPath: SwiftlyCore.binDir.path).sorted()
-                XCTAssertEqual(files, SwiftlyCore.symlinkedExecutables.sorted())
-            }
+            let symlinkedExecutables = try FileManager.default
+                .contentsOfDirectory(atPath: SwiftlyCore.binDir.path)
+                .sorted()
+
+            let toolchainBinDir = SwiftlyCore.toolchainsDir
+                .appendingPathComponent("5.7.1", isDirectory: true)
+                .appendingPathComponent("usr", isDirectory: true)
+                .appendingPathComponent("bin", isDirectory: true)
+            let toolchainExecutables = try FileManager.default.contentsOfDirectory(atPath: toolchainBinDir.path).sorted()
+
+            XCTAssertEqual(symlinkedExecutables, toolchainExecutables)
         }
     }
 }

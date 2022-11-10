@@ -65,7 +65,7 @@ public struct Linux: Platform {
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
 
-        for executable in SwiftlyCore.symlinkedExecutables {
+        for executable in try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path) {
             let linkURL = SwiftlyCore.binDir.appendingPathComponent(executable)
             let executableURL = toolchainBinURL.appendingPathComponent(executable)
 

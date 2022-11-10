@@ -41,19 +41,6 @@ public var requiredDirectories: [URL] {
     [
         SwiftlyCore.homeDir,
         SwiftlyCore.binDir,
-        SwiftlyCore.toolchainsDir
+        SwiftlyCore.toolchainsDir,
     ]
 }
-
-/// This is the list of executables included in a Swift toolchain that swiftly will create symlinks to in its `bin`
-/// directory.
-///
-/// swiftly doesn't create links for every entry in a toolchain's `bin` directory since some of them are
-/// forked versions of executables not specific to Swift (e.g. clang), and we don't want to override the users
-/// existing installations of those executables.
-public let symlinkedExecutables: [String] = [
-    "swift",
-    "swiftc",
-    "sourcekit-lsp",
-    "docc"
-]

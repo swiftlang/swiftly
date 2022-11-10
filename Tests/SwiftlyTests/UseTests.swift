@@ -31,36 +31,7 @@ final class UseTests: SwiftlyTests {
             ]
 
             for toolchain in allToolchains {
-                let toolchainDir = SwiftlyCore.toolchainsDir.appendingPathComponent(toolchain.name)
-                try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: true)
-
-                let toolchainBinDir = toolchainDir
-                    .appendingPathComponent("usr", isDirectory: true)
-                    .appendingPathComponent("bin", isDirectory: true)
-                try FileManager.default.createDirectory(
-                    at: toolchainBinDir,
-                    withIntermediateDirectories: true
-                )
-
-                // create dummy executable file that just prints the toolchain's version
-                let executablePath = toolchainBinDir.appendingPathComponent("swift")
-                try executablePath.deleteIfExists()
-
-                let script = """
-                #!/usr/bin/env sh
-
-                echo '\(toolchain.name)'
-                """
-
-                let data = script.data(using: .utf8)!
-                try data.write(to: executablePath)
-
-                // make the file executable
-                try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
-            }
-
-            try Config.update { config in
-                config.installedToolchains = Set(allToolchains)
+                try self.installMockedToolchain(toolchain: toolchain)
             }
 
             var use = try self.parseCommand(Use.self, ["use", "latest"])
@@ -68,6 +39,63 @@ final class UseTests: SwiftlyTests {
 
             try await f()
         }
+    }
+
+    /// Install a mocked toolchain associated with the given version that includes the provided list of executables
+    /// in its bin directory.
+    ///
+    /// When executed, the mocked executables will simply print the toolchain version and return.
+    func installMockedToolchain(toolchain: ToolchainVersion, executables: [String] = ["swift"]) throws {
+        let toolchainDir = SwiftlyCore.toolchainsDir.appendingPathComponent(toolchain.name)
+        try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: true)
+
+        let toolchainBinDir = toolchainDir
+            .appendingPathComponent("usr", isDirectory: true)
+            .appendingPathComponent("bin", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: toolchainBinDir,
+            withIntermediateDirectories: true
+        )
+
+        // create dummy executable file that just prints the toolchain's version
+        for executable in executables {
+            let executablePath = toolchainBinDir.appendingPathComponent(executable)
+
+            let script = """
+                #!/usr/bin/env sh
+
+                echo '\(toolchain.name)'
+                """
+
+            let data = script.data(using: .utf8)!
+            try data.write(to: executablePath)
+
+            // make the file executable
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+        }
+
+        try Config.update { config in
+            config.installedToolchains.insert(toolchain)
+        }
+    }
+
+    /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given URL.
+    func getMockedToolchainVersion(at url: URL) throws -> ToolchainVersion {
+        let process = Process()
+        process.executableURL = url
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
+            throw SwiftlyTestError(message: "got no output from swift binary at path \(url.path)")
+        }
+
+        let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
+        return try ToolchainVersion(parsing: toolchainVersion)
     }
 
     /// Execute a `use` command with the provided argument. Then validate that the configuration is updated properly and
@@ -78,22 +106,8 @@ final class UseTests: SwiftlyTests {
 
         XCTAssertEqual(try Config.load().inUse, expectedVersion)
 
-        let swiftExecutableURL = SwiftlyCore.binDir.appendingPathComponent("swift")
-        let process = Process()
-        process.executableURL = swiftExecutableURL
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
-            throw SwiftlyTestError(message: "got no output from swift binary at path \(swiftExecutableURL.path)")
-        }
-
-        let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
-        XCTAssertEqual(toolchainVersion, expectedVersion.name)
+        let toolchainVersion = try self.getMockedToolchainVersion(at: SwiftlyCore.binDir.appendingPathComponent("swift"))
+        XCTAssertEqual(toolchainVersion, expectedVersion)
     }
 
     /// Tests that the `use` command can switch between installed stable release toolchains.
@@ -289,26 +303,36 @@ final class UseTests: SwiftlyTests {
         }
     }
 
-    /// Tests that the `use` command symlinks all of the executables provided in a toolchain.
-    func testSymlinks() async throws {
-        try await runUseTest {
-            var cmd = try self.parseCommand(Install.self, ["install", "5.7.1"])
-            try await cmd.run()
+    /// Tests that the `use` command symlinks all of the executables provided in a toolchain and removes any existing
+    /// symlinks from the previously active toolchain.
+    func testOldSymlinksRemoved() async throws {
+        try await self.withTestHome {
+            let spec = [
+                ToolchainVersion(major: 1, minor: 2, patch: 3): ["a", "b"],
+                ToolchainVersion(major: 2, minor: 3, patch: 4): ["b", "c", "d"],
+                ToolchainVersion(major: 3, minor: 4, patch: 5): ["a", "c", "d", "e"]
+            ]
 
-            var use = try self.parseCommand(Use.self, ["use", "5.7.1"])
-            try await use.run()
+            for (toolchain, files) in spec {
+                try self.installMockedToolchain(toolchain: toolchain, executables: files)
+            }
 
-            let symlinkedExecutables = try FileManager.default
-                .contentsOfDirectory(atPath: SwiftlyCore.binDir.path)
-                .sorted()
+            for (toolchain, files) in spec {
+                var use = try self.parseCommand(Use.self, ["use", toolchain.name])
+                try await use.run()
 
-            let toolchainBinDir = SwiftlyCore.toolchainsDir
-                .appendingPathComponent("5.7.1", isDirectory: true)
-                .appendingPathComponent("usr", isDirectory: true)
-                .appendingPathComponent("bin", isDirectory: true)
-            let toolchainExecutables = try FileManager.default.contentsOfDirectory(atPath: toolchainBinDir.path).sorted()
+                // Verify that only the symlinks for the active toolchain remain.
+                let symlinks = try FileManager.default.contentsOfDirectory(atPath: SwiftlyCore.binDir.path)
+                XCTAssertEqual(symlinks.sorted(), files.sorted())
 
-            XCTAssertEqual(symlinkedExecutables, toolchainExecutables)
+                // Verify that any all the symlinks point to the right toolchain.
+                for file in files {
+                    let observedVersion = try self.getMockedToolchainVersion(
+                        at: SwiftlyCore.binDir.appendingPathComponent(file)
+                    )
+                    XCTAssertEqual(observedVersion, toolchain)
+                }
+            }
         }
     }
 }

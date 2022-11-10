@@ -65,6 +65,14 @@ public struct Linux: Platform {
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
 
+        // Delete existing symlinks from previously in-use toolchain.
+        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: SwiftlyCore.binDir.path) {
+            guard existingExecutable != "swiftly" else {
+                continue
+            }
+            try SwiftlyCore.binDir.appendingPathComponent(existingExecutable).deleteIfExists()
+        }
+
         for executable in try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path) {
             let linkURL = SwiftlyCore.binDir.appendingPathComponent(executable)
             let executableURL = toolchainBinURL.appendingPathComponent(executable)

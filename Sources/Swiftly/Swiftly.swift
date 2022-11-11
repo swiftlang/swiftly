@@ -37,14 +37,14 @@ public protocol SwiftlyCommand: AsyncParsableCommand {}
 
 extension SwiftlyCommand {
     public mutating func validate() throws {
-        do {
-            _ = try Config.load()
-        } catch {
-            let msg = """
-            Could not load swiftly's configuration file due to error: \"\(error)\".
-            To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
-            """
-            throw Error(message: msg)
+        for requiredDir in SwiftlyCore.requiredDirectories {
+            guard requiredDir.fileExists() else {
+                try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
+                continue
+            }
         }
+
+        // Verify that the configuration exists and can be loaded
+        _ = try Config.load()
     }
 }

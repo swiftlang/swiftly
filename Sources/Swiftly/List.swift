@@ -38,8 +38,10 @@ struct List: SwiftlyCommand {
             try ToolchainSelector(parsing: input)
         }
 
-        let toolchains = Swiftly.currentPlatform.listToolchains(selector: selector)
-        let activeToolchain = try Swiftly.currentPlatform.currentToolchain()
+        let config = try Config.load()
+
+        let toolchains = config.listInstalledToolchains(selector: selector)
+        let activeToolchain = config.inUse
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"

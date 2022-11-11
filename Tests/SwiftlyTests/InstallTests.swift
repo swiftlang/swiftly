@@ -219,4 +219,24 @@ final class InstallTests: SwiftlyTests {
         try await self.duplicateTest("5.7-snapshot-2022-08-30")
         try await self.duplicateTest("5.7-snapshot")
     }
+
+    /// Verify that the installed toolchain will be used if no toolchains currently are installed.
+    func testInstallUsesFirstToolchain() async throws {
+        try await self.withTestHome {
+            let config = try Config.load()
+            XCTAssertTrue(config.inUse == nil)
+            try await validateInUse(expected: nil)
+
+            var cmd = try self.parseCommand(Install.self, ["install", "5.7.0"])
+            try await cmd.run()
+
+            try await validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
+
+            var install56 = try self.parseCommand(Install.self, ["install", "5.6.0"])
+            try await install56.run()
+
+            // Verify that 5.7.0 is still in use.
+            try await self.validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
+        }
+    }
 }

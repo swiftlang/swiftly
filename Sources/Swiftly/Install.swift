@@ -144,8 +144,13 @@ struct Install: SwiftlyCommand {
 
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)
 
-        try Config.update { config in
-            config.installedToolchains.insert(version)
+        var config = try Config.load()
+        config.installedToolchains.insert(version)
+        try config.save()
+
+        // If this is the first installed toolchain, mark it as in-use.
+        if config.inUse == nil {
+            try await Use.execute(version)
         }
 
         print("\(version) installed successfully!")

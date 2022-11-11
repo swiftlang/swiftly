@@ -36,7 +36,7 @@ public struct Linux: Platform {
             throw Error(message: "\(tmpFile) doesn't exist")
         }
 
-        let toolchainsDir = swiftlyHomeDir.appendingPathComponent("toolchains")
+        let toolchainsDir = SwiftlyCore.homeDir.appendingPathComponent("toolchains")
         if !toolchainsDir.fileExists() {
             try FileManager.default.createDirectory(at: toolchainsDir, withIntermediateDirectories: false)
         }
@@ -55,13 +55,36 @@ public struct Linux: Platform {
             // prepend ~/.swiftly/toolchains/<toolchain> to each file name
             return toolchainDir.appendingPathComponent(String(relativePath))
         }
-
-        // TODO: if config doesn't have an active toolchain, set it to that
     }
 
     public func uninstall(version _: ToolchainVersion) throws {}
 
-    public func use(_: ToolchainVersion) throws {}
+    public func use(_ toolchain: ToolchainVersion) throws {
+        let toolchainBinURL = SwiftlyCore.toolchainsDir
+            .appendingPathComponent(toolchain.name, isDirectory: true)
+            .appendingPathComponent("usr", isDirectory: true)
+            .appendingPathComponent("bin", isDirectory: true)
+
+        // Delete existing symlinks from previously in-use toolchain.
+        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: SwiftlyCore.binDir.path) {
+            guard existingExecutable != "swiftly" else {
+                continue
+            }
+            try SwiftlyCore.binDir.appendingPathComponent(existingExecutable).deleteIfExists()
+        }
+
+        for executable in try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path) {
+            let linkURL = SwiftlyCore.binDir.appendingPathComponent(executable)
+            let executableURL = toolchainBinURL.appendingPathComponent(executable)
+
+            try linkURL.deleteIfExists()
+
+            try FileManager.default.createSymbolicLink(
+                atPath: linkURL.path,
+                withDestinationPath: executableURL.path
+            )
+        }
+    }
 
     public func listToolchains(selector _: ToolchainSelector?) -> [ToolchainVersion] {
         []

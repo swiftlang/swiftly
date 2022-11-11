@@ -42,8 +42,10 @@ struct ListAvailable: SwiftlyCommand {
             .map(ToolchainVersion.stable)
             .filter { selector?.matches(toolchain: $0) ?? true }
 
-        let installedToolchains = Set(Swiftly.currentPlatform.listToolchains(selector: selector))
-        let activeToolchain = try Swiftly.currentPlatform.currentToolchain()
+        let config = try Config.load()
+
+        let installedToolchains = Set(config.listInstalledToolchains(selector: selector))
+        let activeToolchain = config.inUse
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"

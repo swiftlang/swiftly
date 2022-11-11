@@ -114,6 +114,20 @@ public enum ToolchainVersion {
         return true
     }
 
+    public var asStableRelease: StableRelease? {
+        guard case let .stable(s) = self else {
+            return nil
+        }
+        return s
+    }
+
+    public var asSnapshot: Snapshot? {
+        guard case let .snapshot(s) = self else {
+            return nil
+        }
+        return s
+    }
+
     public func isSnapshot() -> Bool {
         guard case .snapshot = self else {
             return false

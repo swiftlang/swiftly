@@ -41,7 +41,7 @@ public struct Linux: Platform {
             try FileManager.default.createDirectory(at: toolchainsDir, withIntermediateDirectories: false)
         }
 
-        print("Extracting toolchain...")
+        SwiftlyCore.print("Extracting toolchain...")
         let toolchainDir = toolchainsDir.appendingPathComponent(version.name)
 
         if toolchainDir.fileExists() {

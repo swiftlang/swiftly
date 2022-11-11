@@ -62,10 +62,10 @@ struct Install: SwiftlyCommand {
 
     internal static func execute(version: ToolchainVersion) async throws {
         guard try !Config.load().installedToolchains.contains(version) else {
-            print("\(version) is already installed, exiting.")
+            SwiftlyCore.print("\(version) is already installed, exiting.")
             return
         }
-        print("Installing \(version)")
+        SwiftlyCore.print("Installing \(version)")
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
@@ -133,7 +133,7 @@ struct Install: SwiftlyCommand {
                 }
             )
         } catch _ as HTTP.DownloadNotFoundError {
-            print("\(version) does not exist, exiting")
+            SwiftlyCore.print("\(version) does not exist, exiting")
             return
         } catch {
             animation.complete(success: false)
@@ -153,7 +153,7 @@ struct Install: SwiftlyCommand {
             try await Use.execute(version)
         }
 
-        print("\(version) installed successfully!")
+        SwiftlyCore.print("\(version) installed successfully!")
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
@@ -161,7 +161,7 @@ struct Install: SwiftlyCommand {
     func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:
-            print("Fetching the latest stable Swift release...")
+            SwiftlyCore.print("Fetching the latest stable Swift release...")
 
             guard let release = try await HTTP.getReleaseToolchains(limit: 1).first else {
                 throw Error(message: "couldn't get latest releases")
@@ -179,7 +179,7 @@ struct Install: SwiftlyCommand {
                 return .stable(ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch))
             }
 
-            print("Fetching the latest stable Swift \(major).\(minor) release...")
+            SwiftlyCore.print("Fetching the latest stable Swift \(major).\(minor) release...")
             // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
             let toolchain = try await HTTP.getReleaseToolchains(limit: 1) { release in
@@ -197,7 +197,7 @@ struct Install: SwiftlyCommand {
                 return ToolchainVersion(snapshotBranch: branch, date: date)
             }
 
-            print("Fetching the latest \(branch) branch snapshot...")
+            SwiftlyCore.print("Fetching the latest \(branch) branch snapshot...")
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.
             let snapshot = try await HTTP.getSnapshotToolchains(limit: 1) { snapshot in

@@ -44,3 +44,22 @@ public var requiredDirectories: [URL] {
         SwiftlyCore.toolchainsDir,
     ]
 }
+
+/// Protocol defining a handler for information swiftly intends to print to stdout.
+/// This is currently only used to intercept print statements for testing.
+public protocol OutputHandler {
+    func handleOutputLine(_ string: String)
+}
+
+/// The output handler to use, if any.
+public var outputHandler: (any OutputHandler)?
+
+/// Pass the provided string to the set output handler if any.
+/// If no output handler has been set, just print to stdout.
+public func print(_ string: String) {
+    guard let handler = SwiftlyCore.outputHandler else {
+        Swift.print(string)
+        return
+    }
+    handler.handleOutputLine(string)
+}

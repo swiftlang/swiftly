@@ -29,22 +29,6 @@ Target: x86_64-unknown-linux-gnu
 - Uninstalling installed toolchains
 - Listing the toolchains that are available to install
 
-## Index
-- [Basic usage](#basic-usage)
-- [Features](#features)
-- [Current development status](#current-development-status)
-- [Command interface overview](#command-interface-overview)
-  - [Installing a toolchain](#installing-a-toolchain)
-  - [Uninstalling a toolchain](#uninstalling-a-toolchain)
-  - [Listing installed toolchains](#listing-installed-toolchains)
-  - [Selecting a toolchain for use](#selecting-a-toolchain-for-use)
-  - [Updating a toolchain](#updating-a-toolchain)
-  - [Listing toolchains available to install](#listing-toolchains-available-to-install)
-  - [Updating swiftly](#updating-swiftly)
-  - [Specifying a snapshot toolchain](#specifying-a-snapshot-toolchain)
-  - [Specifying a GitHub access token](#specifying-a-github-access-token)
-- [FAQ](#faq)
-
 ## Current development status
 
 Right now, swiftly is in the very early stages of development and is working towards an MVP for the Linux platforms mentioned on https://swift.org/download. Once that is complete, work will begin on an MVP for macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).

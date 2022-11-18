@@ -41,63 +41,6 @@ final class UseTests: SwiftlyTests {
         }
     }
 
-    /// Install a mocked toolchain associated with the given version that includes the provided list of executables
-    /// in its bin directory.
-    ///
-    /// When executed, the mocked executables will simply print the toolchain version and return.
-    func installMockedToolchain(toolchain: ToolchainVersion, executables: [String] = ["swift"]) throws {
-        let toolchainDir = SwiftlyCore.toolchainsDir.appendingPathComponent(toolchain.name)
-        try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: true)
-
-        let toolchainBinDir = toolchainDir
-            .appendingPathComponent("usr", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
-        try FileManager.default.createDirectory(
-            at: toolchainBinDir,
-            withIntermediateDirectories: true
-        )
-
-        // create dummy executable file that just prints the toolchain's version
-        for executable in executables {
-            let executablePath = toolchainBinDir.appendingPathComponent(executable)
-
-            let script = """
-                #!/usr/bin/env sh
-
-                echo '\(toolchain.name)'
-                """
-
-            let data = script.data(using: .utf8)!
-            try data.write(to: executablePath)
-
-            // make the file executable
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
-        }
-
-        try Config.update { config in
-            config.installedToolchains.insert(toolchain)
-        }
-    }
-
-    /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given URL.
-    func getMockedToolchainVersion(at url: URL) throws -> ToolchainVersion {
-        let process = Process()
-        process.executableURL = url
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
-            throw SwiftlyTestError(message: "got no output from swift binary at path \(url.path)")
-        }
-
-        let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
-        return try ToolchainVersion(parsing: toolchainVersion)
-    }
-
     /// Execute a `use` command with the provided argument. Then validate that the configuration is updated properly and
     /// the in-use swift executable prints the the provided expectedVersion.
     func useAndValidate(argument: String, expectedVersion: ToolchainVersion) async throws {

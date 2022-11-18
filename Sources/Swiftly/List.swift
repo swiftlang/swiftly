@@ -40,7 +40,7 @@ struct List: SwiftlyCommand {
 
         let config = try Config.load()
 
-        let toolchains = config.listInstalledToolchains(selector: selector)
+        let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
         let activeToolchain = config.inUse
 
         let printToolchain = { (toolchain: ToolchainVersion) in
@@ -48,7 +48,7 @@ struct List: SwiftlyCommand {
             if toolchain == activeToolchain {
                 message += " (in use)"
             }
-            print(message)
+            SwiftlyCore.print(message)
         }
 
         if let selector {
@@ -68,22 +68,25 @@ struct List: SwiftlyCommand {
                 modifier = "matching"
             }
 
-            let message = "installed \(modifier) toolchains"
-            print(message)
-            print(String(repeating: "-", count: message.utf8.count))
+            let message = "Installed \(modifier) toolchains"
+            SwiftlyCore.print(message)
+            SwiftlyCore.print(String(repeating: "-", count: message.utf8.count))
             for toolchain in toolchains {
                 printToolchain(toolchain)
             }
         } else {
-            print("installed release toolchains")
-            print("----------------------------")
-            for toolchain in toolchains where toolchain.isStableRelease() {
+            SwiftlyCore.print("Installed release toolchains")
+            SwiftlyCore.print("----------------------------")
+            for toolchain in toolchains {
+                guard toolchain.isStableRelease() else {
+                    continue
+                }
                 printToolchain(toolchain)
             }
 
-            print("")
-            print("installed snapshot toolchains")
-            print("-----------------------------")
+            SwiftlyCore.print("")
+            SwiftlyCore.print("Installed snapshot toolchains")
+            SwiftlyCore.print("-----------------------------")
             for toolchain in toolchains where toolchain.isSnapshot() {
                 printToolchain(toolchain)
             }

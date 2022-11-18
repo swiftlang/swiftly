@@ -43,7 +43,7 @@ internal struct Use: SwiftlyCommand {
         let config = try Config.load()
 
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
-            print("No installed toolchains match \"\(self.toolchain)\"")
+            SwiftlyCore.print("No installed toolchains match \"\(self.toolchain)\"")
             return
         }
 
@@ -55,7 +55,7 @@ internal struct Use: SwiftlyCommand {
         let previousToolchain = config.inUse
 
         guard toolchain != previousToolchain else {
-            print("\(toolchain) is already in use")
+            SwiftlyCore.print("\(toolchain) is already in use")
             return
         }
 
@@ -68,6 +68,6 @@ internal struct Use: SwiftlyCommand {
             message += " (was \(previousToolchain))"
         }
 
-        print(message)
+        SwiftlyCore.print(message)
     }
 }

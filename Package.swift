@@ -38,14 +38,13 @@ let package = Package(
             dependencies: [
                 "SwiftlyCore",
                 "CLibArchive",
+            ],
+            linkerSettings: [
+                .linkedLibrary("z")
             ]
         ),
         .systemLibrary(
-            name: "CLibArchive",
-            pkgConfig: "libarchive",
-            providers: [
-                .apt(["libarchive-dev"])
-            ]
+            name: "CLibArchive"
         ),
         .testTarget(
             name: "SwiftlyTests",

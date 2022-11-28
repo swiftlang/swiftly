@@ -39,33 +39,49 @@ struct Uninstall: SwiftlyCommand {
         let toolchains = config.listInstalledToolchains(selector: selector)
 
         guard !toolchains.isEmpty else {
-            print("no toolchains matched \"\(self.toolchain)\"")
+            SwiftlyCore.print("No toolchains matched \"\(self.toolchain)\"")
             return
         }
 
-        print("The following toolchains will be uninstalled:")
+        SwiftlyCore.print("The following toolchains will be uninstalled:")
 
         for toolchain in toolchains {
-            print("  \(toolchain)")
+            SwiftlyCore.print("  \(toolchain)")
         }
 
-        print("Proceed? (y/n)", terminator: ": ")
-        let proceed = readLine(strippingNewline: true) ?? "n"
+        let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
 
         guard proceed == "y" else {
-            print("aborting uninstall")
+            SwiftlyCore.print("Aborting uninstall")
             return
         }
 
-        print()
+        SwiftlyCore.print()
 
         for toolchain in toolchains {
-            print("Uninstalling \(toolchain)...", terminator: "")
-            try Swiftly.currentPlatform.uninstall(version: toolchain)
-            print("done")
+            SwiftlyCore.print("Uninstalling \(toolchain)...", terminator: "")
+            try Swiftly.currentPlatform.uninstall(toolchain)
+            try Config.update { config in
+                config.installedToolchains.remove(toolchain)
+            }
+            SwiftlyCore.print("done")
         }
 
-        print()
-        print("\(toolchains.count) toolchain(s) successfully uninstalled")
+        SwiftlyCore.print()
+        SwiftlyCore.print("\(toolchains.count) toolchain(s) successfully uninstalled")
+
+        var latestConfig = try Config.load()
+
+        // If the in-use toolchain was one of the uninstalled toolchains, use the latest installed
+        // toolchain.
+        if let previouslyInUse = latestConfig.inUse, toolchains.contains(previouslyInUse) {
+            if let toUse = latestConfig.listInstalledToolchains(selector: .latest).max() ?? latestConfig.installedToolchains.max() {
+                try await Use.execute(toUse)
+            } else {
+                // If there are no more toolchains installed, clear the inUse config entry.
+                latestConfig.inUse = nil
+                try latestConfig.save()
+            }
+        }
     }
 }

@@ -71,6 +71,24 @@ class SwiftlyTests: XCTestCase {
         try await f()
     }
 
+    func withMockedHome(
+        homeName: String,
+        toolchains: Set<ToolchainVersion>,
+        inUse: ToolchainVersion? = nil,
+        f: () async throws -> Void
+    ) async throws {
+        try await self.withTestHome(name: homeName) {
+            for toolchain in toolchains {
+                try self.installMockedToolchain(toolchain: toolchain)
+            }
+
+            var use = try self.parseCommand(Use.self, ["use", inUse?.name ?? "latest"])
+            try await use.run()
+
+            try await f()
+        }
+    }
+
     /// Validates that the provided toolchain is the one currently marked as "in use", both by checking the
     /// configuration file and by executing `swift --version` using the swift executable in the `bin` directory.
     /// If nil is provided, this validates that no toolchain is currently in use.
@@ -103,13 +121,6 @@ class SwiftlyTests: XCTestCase {
 
 #if os(Linux)
         // Verify that the toolchains on disk correspond to those in the config.
-
-        let stableRegex: Regex<(Substring, Substring)> =
-            try! Regex("swift-([^-]+)-RELEASE")
-
-        let snapshotRegex: Regex<(Substring, Substring)> =
-            try! Regex("\\(LLVM [a-z0-9]+, Swift ([a-z0-9]+)\\)")
-
         for toolchain in toolchains {
             let toolchainDir = SwiftlyCore.homeDir
                 .appendingPathComponent("toolchains")
@@ -121,67 +132,9 @@ class SwiftlyTests: XCTestCase {
                 .appendingPathComponent("bin")
                 .appendingPathComponent("swift")
 
-            let process = Process()
-            process.executableURL = swiftBinary
-            process.arguments = ["--version"]
 
-            let outputPipe = Pipe()
-            process.standardOutput = outputPipe
-
-            try process.run()
-            process.waitUntilExit()
-
-            guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
-                XCTFail("got no output from swift binary")
-                return
-            }
-
-            let outputString = String(decoding: outputData, as: UTF8.self)
-
-            let actualVersion: ToolchainVersion
-
-            if let match = try stableRegex.firstMatch(in: outputString) {
-                let versions = match.output.1.split(separator: ".")
-
-                let major = Int(versions[0])!
-                let minor = Int(versions[1])!
-
-                let patch: Int
-                if versions.count == 3 {
-                    patch = Int(versions[2])!
-                } else {
-                    patch = 0
-                }
-
-                actualVersion = ToolchainVersion(major: major, minor: minor, patch: patch)
-            } else if let match = try snapshotRegex.firstMatch(in: outputString) {
-                let commitHash = match.output.1
-
-                // Get the commit hash from swift --version, look up the corresponding tag via GitHub, and confirm
-                // that it matches the expected version.
-                guard
-                    let tag: GitHubTag = try await HTTP.mapGitHubTags(
-                        limit: 1,
-                        filterMap: { tag in
-                            guard tag.commit!.sha.starts(with: commitHash) else {
-                                return nil
-                            }
-                            return tag
-                        },
-                        fetch: HTTP.getTags
-                    ).first,
-                    let snapshot = try tag.parseSnapshot()
-                else {
-                    XCTFail("could not find tag matching hash \(commitHash)")
-                    return
-                }
-
-                actualVersion = .snapshot(snapshot)
-            } else {
-                XCTFail("bad version: \(outputString)")
-                return
-            }
-
+            let executable = SwiftExecutable(path: swiftBinary)
+            let actualVersion = try await executable.version()
             XCTAssertEqual(actualVersion, toolchain)
         }
 #endif
@@ -263,13 +216,33 @@ public class TestOutputHandler: SwiftlyCore.OutputHandler {
     }
 }
 
+public class TestInputProvider: SwiftlyCore.InputProvider {
+    private var lines: [String]
+
+    public init(lines: [String]) {
+        self.lines = lines
+    }
+
+    public func readLine() -> String? {
+        self.lines.removeFirst()
+    }
+}
+
 extension SwiftlyCommand {
-    mutating func runWithOutput(quiet: Bool = false) async throws -> [String] {
+    mutating func runWithOutput(quiet: Bool = false, input: [String]? = nil) async throws -> [String] {
         let handler = TestOutputHandler(quiet: quiet)
         SwiftlyCore.outputHandler = handler
         defer {
             SwiftlyCore.outputHandler = nil
         }
+
+        if let input {
+            SwiftlyCore.inputProvider = TestInputProvider(lines: input)
+        }
+        defer {
+            SwiftlyCore.inputProvider = nil
+        }
+
         try await self.run()
         return handler.lines
     }
@@ -306,7 +279,7 @@ public struct SwiftExecutable {
             throw SwiftlyTestError(message: "got no output from swift binary at path \(self.path.path)")
         }
 
-        let outputString = String(decoding: outputData, as: UTF8.self)
+        let outputString = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
 
         if let match = try Self.stableRegex.firstMatch(in: outputString) {
             let versions = match.output.1.split(separator: ".")
@@ -344,6 +317,9 @@ public struct SwiftExecutable {
             }
 
             return .snapshot(snapshot)
+        } else if let version = try? ToolchainVersion(parsing: outputString) {
+            // This branch is taken if the toolchain in question is mocked.
+            return version
         } else {
             throw SwiftlyTestError(message: "bad version: \(outputString)")
         }

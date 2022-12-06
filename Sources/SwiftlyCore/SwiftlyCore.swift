@@ -77,7 +77,7 @@ public var inputProvider: (any InputProvider)?
 public func readLine(prompt: String) -> String? {
     print(prompt, terminator: ": ")
     guard let provider = SwiftlyCore.inputProvider else {
-        return Swift.readLine(strippingNewline: true) 
+        return Swift.readLine(strippingNewline: true)
     }
     return provider.readLine()
 }

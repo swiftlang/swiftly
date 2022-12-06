@@ -21,11 +21,11 @@ final class UninstallTests: SwiftlyTests {
 
     /// Tests that `swiftly uninstall latest` successfully uninstalls the latest stable release of Swift.
     func testUninstallLatest() async throws {
-        let toolchains = Self.allToolchains.filter({ $0.asStableRelease != nil })
+        let toolchains = Self.allToolchains.filter { $0.asStableRelease != nil }
         try await self.withMockedHome(homeName: Self.homeName, toolchains: toolchains) {
             var installed = toolchains
 
-            for i in 0 ..< toolchains.count {
+            for i in 0..<toolchains.count {
                 var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", "latest"])
                 _ = try await uninstall.runWithMockedIO(input: ["y"])
                 installed.remove(installed.max()!)
@@ -42,7 +42,7 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
-    /// Tests that a fully-qualified stable release version can be supplied to `swiftly uninstall`. 
+    /// Tests that a fully-qualified stable release version can be supplied to `swiftly uninstall`.
     func testUninstallStableRelease() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             var installed = Self.allToolchains
@@ -68,7 +68,7 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
-    /// Tests that a fully-qualified snapshot version can be supplied to `swiftly uninstall`. 
+    /// Tests that a fully-qualified snapshot version can be supplied to `swiftly uninstall`.
     func testUninstallSnapshot() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             var installed = Self.allToolchains
@@ -94,7 +94,7 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
-    /// Tests that multiple toolchains can be installed at once. 
+    /// Tests that multiple toolchains can be installed at once.
     func testBulkUninstall() async throws {
         let toolchains = Set(
             [
@@ -108,7 +108,7 @@ final class UninstallTests: SwiftlyTests {
                 "1.1.3",
                 "1.1.0",
                 "1.5.54"
-            ].map({ try! ToolchainVersion(parsing: $0) })
+            ].map { try! ToolchainVersion(parsing: $0) }
         )
 
         func bulkUninstallTest(
@@ -118,7 +118,7 @@ final class UninstallTests: SwiftlyTests {
         ) async throws {
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", argument])
             let output = try await uninstall.runWithMockedIO(input: ["y"])
-            installed.subtract(uninstalled) 
+            installed.subtract(uninstalled)
             try await self.validateInstalledToolchains(
                 installed,
                 description: "uninstall \(argument)"
@@ -190,7 +190,7 @@ final class UninstallTests: SwiftlyTests {
         ) async throws {
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", toRemove.name])
             let output = try await uninstall.runWithMockedIO(input: ["y"])
-            installed.remove(toRemove) 
+            installed.remove(toRemove)
             try await self.validateInstalledToolchains(
                 installed,
                 description: "remove \(toRemove)"

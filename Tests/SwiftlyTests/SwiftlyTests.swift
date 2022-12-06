@@ -151,7 +151,6 @@ class SwiftlyTests: XCTestCase {
                 .appendingPathComponent("bin")
                 .appendingPathComponent("swift")
 
-
             let executable = SwiftExecutable(path: swiftBinary)
             let actualVersion = try await executable.version()
             XCTAssertEqual(actualVersion, toolchain)

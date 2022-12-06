@@ -97,8 +97,8 @@ struct Uninstall: SwiftlyCommand {
             }
 
             if let toUse = latestConfig.listInstalledToolchains(selector: selector).max()
-                   ?? latestConfig.listInstalledToolchains(selector: .latest).max()
-                   ?? latestConfig.installedToolchains.max()
+                ?? latestConfig.listInstalledToolchains(selector: .latest).max()
+                ?? latestConfig.installedToolchains.max()
             {
                 try await Use.execute(toUse)
             } else {

@@ -6,30 +6,11 @@ import XCTest
 final class UninstallTests: SwiftlyTests {
     static let homeName = "uninstallTests"
 
-    // Below are some constants indicating which versions are installed during setup.
-
-    static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
-    static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
-    static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
-    static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-09-10")
-    static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-10-22")
-    static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-27")
-    static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30")
-
-    static let allToolchains: Set<ToolchainVersion> = [
-        oldStable,
-        oldStableNewPatch,
-        newStable,
-        oldMainSnapshot,
-        newMainSnapshot,
-        oldReleaseSnapshot,
-        newReleaseSnapshot,
-    ]
-
+    /// Tests that `swiftly uninstall` successfully handles being invoked when no toolchains have been installed yet.
     func testUninstallNoInstalledToolchains() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: []) {
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", "1.2.3"])
-            _ = try await uninstall.runWithOutput(input: ["y"])
+            _ = try await uninstall.runWithMockedIO(input: ["y"])
 
             try await self.validateInstalledToolchains(
                 [],
@@ -38,6 +19,7 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that `swiftly uninstall latest` successfully uninstalls the latest stable release of Swift.
     func testUninstallLatest() async throws {
         let toolchains = Self.allToolchains.filter({ $0.asStableRelease != nil })
         try await self.withMockedHome(homeName: Self.homeName, toolchains: toolchains) {
@@ -45,7 +27,7 @@ final class UninstallTests: SwiftlyTests {
 
             for i in 0 ..< toolchains.count {
                 var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", "latest"])
-                _ = try await uninstall.runWithOutput(input: ["y"])
+                _ = try await uninstall.runWithMockedIO(input: ["y"])
                 installed.remove(installed.max()!)
 
                 try await self.validateInstalledToolchains(
@@ -60,13 +42,14 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that a fully-qualified stable release version can be supplied to `swiftly uninstall`. 
     func testUninstallStableRelease() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             var installed = Self.allToolchains
 
             for toolchain in Self.allToolchains.filter({ $0.isStableRelease() }) {
                 var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", toolchain.name])
-                _ = try await uninstall.runWithOutput(input: ["y"])
+                _ = try await uninstall.runWithMockedIO(input: ["y"])
                 installed.remove(toolchain)
 
                 try await self.validateInstalledToolchains(
@@ -76,7 +59,7 @@ final class UninstallTests: SwiftlyTests {
             }
 
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", "1.2.3"])
-            _ = try await uninstall.runWithOutput(input: ["y"])
+            _ = try await uninstall.runWithMockedIO(input: ["y"])
 
             try await self.validateInstalledToolchains(
                 installed,
@@ -85,13 +68,14 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that a fully-qualified snapshot version can be supplied to `swiftly uninstall`. 
     func testUninstallSnapshot() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             var installed = Self.allToolchains
 
             for toolchain in Self.allToolchains.filter({ $0.isSnapshot() }) {
                 var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", toolchain.name])
-                _ = try await uninstall.runWithOutput(input: ["y"])
+                _ = try await uninstall.runWithMockedIO(input: ["y"])
                 installed.remove(toolchain)
 
                 try await self.validateInstalledToolchains(
@@ -101,7 +85,7 @@ final class UninstallTests: SwiftlyTests {
             }
 
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", "main-snapshot-2022-01-01"])
-            _ = try await uninstall.runWithOutput(input: ["y"])
+            _ = try await uninstall.runWithMockedIO(input: ["y"])
 
             try await self.validateInstalledToolchains(
                 installed,
@@ -110,6 +94,7 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that multiple toolchains can be installed at once. 
     func testBulkUninstall() async throws {
         let toolchains = Set(
             [
@@ -132,7 +117,7 @@ final class UninstallTests: SwiftlyTests {
             uninstalled: Set<ToolchainVersion>
         ) async throws {
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", argument])
-            let output = try await uninstall.runWithOutput(input: ["y"])
+            let output = try await uninstall.runWithMockedIO(input: ["y"])
             installed.subtract(uninstalled) 
             try await self.validateInstalledToolchains(
                 installed,
@@ -186,62 +171,81 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that uninstalling the toolchain that is currently "in use" has the expected behavior.
     func testUninstallInUse() async throws {
         let toolchains: Set<ToolchainVersion> = [
             Self.oldStable,
+            Self.oldStableNewPatch,
             Self.newStable,
-            Self.oldMainSnapshot
+            Self.oldMainSnapshot,
+            Self.newMainSnapshot,
+            Self.oldReleaseSnapshot,
+            Self.newReleaseSnapshot
         ]
+
+        func uninstallInUseTest(
+            _ installed: inout Set<ToolchainVersion>,
+            toRemove: ToolchainVersion,
+            expectedInUse: ToolchainVersion?
+        ) async throws {
+            var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", toRemove.name])
+            let output = try await uninstall.runWithMockedIO(input: ["y"])
+            installed.remove(toRemove) 
+            try await self.validateInstalledToolchains(
+                installed,
+                description: "remove \(toRemove)"
+            )
+
+            // Ensure the latest installed toolchain was used when the in-use one was uninstalled.
+            try await self.validateInUse(expected: expectedInUse)
+
+            if let expectedInUse {
+                // Ensure that something was printed indicating the latest toolchain was marked in use.
+                XCTAssert(
+                    output.contains(where: { $0.contains(String(describing: expectedInUse)) }),
+                    "output did not contain \(expectedInUse)"
+                )
+            }
+        }
 
         try await self.withMockedHome(homeName: Self.homeName, toolchains: toolchains, inUse: Self.oldStable) {
             var installed = toolchains
 
-            var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.oldStable.name])
-            let output = try await uninstall.runWithOutput(input: ["y"])
-            installed.remove(Self.oldStable) 
-            try await self.validateInstalledToolchains(
-                installed,
-                description: "remove in use toolchain"
+            try await uninstallInUseTest(&installed, toRemove: Self.oldStable, expectedInUse: Self.oldStableNewPatch)
+            try await uninstallInUseTest(&installed, toRemove: Self.oldStableNewPatch, expectedInUse: Self.newStable)
+            try await uninstallInUseTest(&installed, toRemove: Self.newStable, expectedInUse: Self.newMainSnapshot)
+
+            // Switch to the old main snapshot to ensure uninstalling it selects the new one.
+            var use = try self.parseCommand(Use.self, ["use", Self.oldMainSnapshot.name])
+            try await use.run()
+            try await uninstallInUseTest(&installed, toRemove: Self.oldMainSnapshot, expectedInUse: Self.newMainSnapshot)
+            try await uninstallInUseTest(
+                &installed,
+                toRemove: Self.newMainSnapshot,
+                expectedInUse: Self.newReleaseSnapshot
             )
-
-            // Ensure the latest installed toolchain was used when the in-use one was uninstalled.
-            try await self.validateInUse(expected: Self.newStable)
-
-            // Ensure that something was printed indicating the latest toolchain was marked in use.
-            XCTAssert(output.contains(where: { $0.contains(String(describing: Self.newStable)) }))
-
-            uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.newStable.name])
-            let newStableOutput = try await uninstall.runWithOutput(input: ["y"])
-            installed.remove(Self.newStable) 
-            try await self.validateInstalledToolchains(
-                installed,
-                description: "remove in use toolchain"
+            // Switch to the old release snapshot to ensure uninstalling it selects the new one.
+            use = try self.parseCommand(Use.self, ["use", Self.oldReleaseSnapshot.name])
+            try await use.run()
+            try await uninstallInUseTest(
+                &installed,
+                toRemove: Self.oldReleaseSnapshot,
+                expectedInUse: Self.newReleaseSnapshot
             )
-
-            // Ensure the latest installed toolchain was used when the in-use one was uninstalled.
-            try await self.validateInUse(expected: Self.oldMainSnapshot)
-
-            // Ensure that something was printed indicating the latest toolchain was marked in use.
-            XCTAssert(newStableOutput.contains(where: { $0.contains(String(describing: Self.oldMainSnapshot)) }))
-
-            uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.oldMainSnapshot.name])
-            _ = try await uninstall.runWithOutput(input: ["y"])
-            installed.remove(Self.oldMainSnapshot) 
-            try await self.validateInstalledToolchains(
-                installed,
-                description: "remove in use toolchain"
+            try await uninstallInUseTest(
+                &installed,
+                toRemove: Self.newReleaseSnapshot,
+                expectedInUse: nil
             )
-
-            // Ensure the latest installed toolchain was used when the in-use one was uninstalled.
-            try await self.validateInUse(expected: nil)
         }
     }
 
+    /// Tests that aborting an uninstall works correctly.
     func testUninstallAbort() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains, inUse: Self.oldStable) {
             let preConfig = try Config.load()
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.oldStable.name])
-            _ = try await uninstall.runWithOutput(input: ["n"])
+            _ = try await uninstall.runWithMockedIO(input: ["n"])
             try await self.validateInstalledToolchains(
                 Self.allToolchains,
                 description: "abort uninstall"
@@ -249,6 +253,18 @@ final class UninstallTests: SwiftlyTests {
 
             // Ensure config did not change.
             XCTAssertEqual(try Config.load(), preConfig)
+        }
+    }
+
+    /// Tests that providing the `-y` argument skips the confirmation prompt.
+    func testUninstallAssumeYes() async throws {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: [Self.oldStable, Self.newStable]) {
+            var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", "-y", Self.oldStable.name])
+            _ = try await uninstall.run()
+            try await self.validateInstalledToolchains(
+                [Self.newStable],
+                description: "uninstall did not succeed even with -y provided"
+            )
         }
     }
 }

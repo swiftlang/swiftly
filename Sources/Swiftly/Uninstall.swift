@@ -29,9 +29,19 @@ struct Uninstall: SwiftlyCommand {
 
             $ swiftly uninstall main-snapshot
             $ swiftly uninstall 5.7-snapshot
+
+        The latest installed stable release can be uninstalled by specifying  'latest':
+
+            $ swiftly uninstall latest
         """
     ))
     var toolchain: String
+
+    @Flag(
+        name: [.long, .customShort("y")],
+        help: "Uninstall all selected toolchains without prompting for confirmation."
+    )
+    var assumeYes: Bool = false
 
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
@@ -43,17 +53,18 @@ struct Uninstall: SwiftlyCommand {
             return
         }
 
-        SwiftlyCore.print("The following toolchains will be uninstalled:")
+        if !self.assumeYes {
+            SwiftlyCore.print("The following toolchains will be uninstalled:")
 
-        for toolchain in toolchains {
-            SwiftlyCore.print("  \(toolchain)")
-        }
+            for toolchain in toolchains {
+                SwiftlyCore.print("  \(toolchain)")
+            }
+            let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
 
-        let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
-
-        guard proceed == "y" else {
-            SwiftlyCore.print("Aborting uninstall")
-            return
+            guard proceed == "y" else {
+                SwiftlyCore.print("Aborting uninstall")
+                return
+            }
         }
 
         SwiftlyCore.print()
@@ -75,7 +86,20 @@ struct Uninstall: SwiftlyCommand {
         // If the in-use toolchain was one of the uninstalled toolchains, use the latest installed
         // toolchain.
         if let previouslyInUse = latestConfig.inUse, toolchains.contains(previouslyInUse) {
-            if let toUse = latestConfig.listInstalledToolchains(selector: .latest).max() ?? latestConfig.installedToolchains.max() {
+            let selector: ToolchainSelector
+            switch previouslyInUse {
+            case let .stable(sr):
+                // If a.b.c was previously in use, switch to the latest a.b toolchain.
+                selector = .stable(major: sr.major, minor: sr.minor, patch: nil)
+            case let .snapshot(s):
+                // If a snapshot was previously in use, switch to the latest snapshot associated with that branch.
+                selector = .snapshot(branch: s.branch, date: nil)
+            }
+
+            if let toUse = latestConfig.listInstalledToolchains(selector: selector).max()
+                   ?? latestConfig.listInstalledToolchains(selector: .latest).max()
+                   ?? latestConfig.installedToolchains.max()
+            {
                 try await Use.execute(toUse)
             } else {
                 // If there are no more toolchains installed, clear the inUse config entry.

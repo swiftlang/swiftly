@@ -9,6 +9,25 @@ struct SwiftlyTestError: LocalizedError {
 }
 
 class SwiftlyTests: XCTestCase {
+    // Below are some constants that can be used to write test cases.
+    static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
+    static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
+    static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
+    static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-09-10")
+    static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-10-22")
+    static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-27")
+    static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30")
+
+    static let allToolchains: Set<ToolchainVersion> = [
+        oldStable,
+        oldStableNewPatch,
+        newStable,
+        oldMainSnapshot,
+        newMainSnapshot,
+        oldReleaseSnapshot,
+        newReleaseSnapshot,
+    ]
+
     func parseCommand<T: ParsableCommand>(_ commandType: T.Type, _ arguments: [String]) throws -> T {
         let rawCmd = try Swiftly.parseAsRoot(arguments)
 
@@ -229,7 +248,9 @@ public class TestInputProvider: SwiftlyCore.InputProvider {
 }
 
 extension SwiftlyCommand {
-    mutating func runWithOutput(quiet: Bool = false, input: [String]? = nil) async throws -> [String] {
+    /// Run this command, using the provided input as the stdin (in lines). Returns an array of captured
+    /// output lines.
+    mutating func runWithMockedIO(quiet: Bool = false, input: [String]? = nil) async throws -> [String] {
         let handler = TestOutputHandler(quiet: quiet)
         SwiftlyCore.outputHandler = handler
         defer {

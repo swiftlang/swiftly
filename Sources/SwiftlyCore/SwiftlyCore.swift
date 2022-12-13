@@ -56,10 +56,28 @@ public var outputHandler: (any OutputHandler)?
 
 /// Pass the provided string to the set output handler if any.
 /// If no output handler has been set, just print to stdout.
-public func print(_ string: String) {
+public func print(_ string: String = "", terminator: String? = nil) {
     guard let handler = SwiftlyCore.outputHandler else {
-        Swift.print(string)
+        if let terminator {
+            Swift.print(string, terminator: terminator)
+        } else {
+            Swift.print(string)
+        }
         return
     }
-    handler.handleOutputLine(string)
+    handler.handleOutputLine(string + (terminator ?? ""))
+}
+
+public protocol InputProvider {
+    func readLine() -> String?
+}
+
+public var inputProvider: (any InputProvider)?
+
+public func readLine(prompt: String) -> String? {
+    print(prompt, terminator: ": ")
+    guard let provider = SwiftlyCore.inputProvider else {
+        return Swift.readLine(strippingNewline: true)
+    }
+    return provider.readLine()
 }

@@ -91,7 +91,7 @@ public enum ToolchainVersion {
     }
 
     static let stableRegex: Regex<(Substring, Substring, Substring, Substring)> =
-        try! Regex("^(\\d+)\\.(\\d+)\\.(\\d+)$")
+        try! Regex("^(?:Swift )?(\\d+)\\.(\\d+)\\.(\\d+)$")
 
     static let mainSnapshotRegex: Regex<(Substring, Substring)> =
         try! Regex("^main-snapshot-(\\d{4}-\\d{2}-\\d{2})$")

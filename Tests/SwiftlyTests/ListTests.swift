@@ -6,26 +6,6 @@ import XCTest
 final class ListTests: SwiftlyTests {
     static let homeName = "useTests"
 
-    // Below are some constants indicating which versions are installed during setup.
-
-    static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
-    static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
-    static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
-    static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-09-10")
-    static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-10-22")
-    static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-27")
-    static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30")
-
-    static let allToolchains: [ToolchainVersion] = [
-        ListTests.oldStable,
-        ListTests.oldStableNewPatch,
-        ListTests.newStable,
-        ListTests.oldMainSnapshot,
-        ListTests.newMainSnapshot,
-        ListTests.oldReleaseSnapshot,
-        ListTests.newReleaseSnapshot,
-    ]
-
     static let sortedReleaseToolchains: [ToolchainVersion] = [
         ListTests.newStable,
         ListTests.oldStableNewPatch,
@@ -63,7 +43,7 @@ final class ListTests: SwiftlyTests {
         }
 
         var list = try self.parseCommand(List.self, args)
-        let output = try await list.runWithOutput()
+        let output = try await list.runWithMockedIO()
 
         let parsedToolchains = output.compactMap { outputLine in
             Self.allToolchains.first {
@@ -145,7 +125,7 @@ final class ListTests: SwiftlyTests {
                 listArgs.append(selector)
             }
             var list = try self.parseCommand(List.self, listArgs)
-            let output = try await list.runWithOutput()
+            let output = try await list.runWithMockedIO()
 
             let inUse = output.filter { $0.contains("in use") }
             XCTAssertEqual(inUse, ["\(toolchain) (in use)"])

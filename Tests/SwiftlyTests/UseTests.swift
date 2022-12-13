@@ -6,41 +6,6 @@ import XCTest
 final class UseTests: SwiftlyTests {
     static let homeName = "useTests"
 
-    // Below are some constants indicating which versions are installed during setup.
-
-    static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
-    static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
-    static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
-    static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-09-10")
-    static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-10-22")
-    static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-27")
-    static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30")
-
-    /// Constructs a mock home directory with the toolchains listed above installed and runs the provided closure within
-    /// the context of that home.
-    func runUseTest(f: () async throws -> Void) async throws {
-        try await self.withTestHome(name: Self.homeName) {
-            let allToolchains = [
-                Self.oldStable,
-                Self.oldStableNewPatch,
-                Self.newStable,
-                Self.oldMainSnapshot,
-                Self.newMainSnapshot,
-                Self.oldReleaseSnapshot,
-                Self.newReleaseSnapshot,
-            ]
-
-            for toolchain in allToolchains {
-                try self.installMockedToolchain(toolchain: toolchain)
-            }
-
-            var use = try self.parseCommand(Use.self, ["use", "latest"])
-            try await use.run()
-
-            try await f()
-        }
-    }
-
     /// Execute a `use` command with the provided argument. Then validate that the configuration is updated properly and
     /// the in-use swift executable prints the the provided expectedVersion.
     func useAndValidate(argument: String, expectedVersion: ToolchainVersion) async throws {
@@ -55,7 +20,7 @@ final class UseTests: SwiftlyTests {
 
     /// Tests that the `use` command can switch between installed stable release toolchains.
     func testUseStable() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             try await self.useAndValidate(argument: Self.oldStable.name, expectedVersion: Self.oldStable)
             try await self.useAndValidate(argument: Self.newStable.name, expectedVersion: Self.newStable)
             try await self.useAndValidate(argument: Self.newStable.name, expectedVersion: Self.newStable)
@@ -65,7 +30,7 @@ final class UseTests: SwiftlyTests {
     /// Tests that that "latest" can be provided to the `use` command to select the installed stable release
     /// toolchain with the most recent version.
     func testUseLatestStable() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             // Use an older toolchain.
             try await self.useAndValidate(argument: Self.oldStable.name, expectedVersion: Self.oldStable)
 
@@ -86,7 +51,7 @@ final class UseTests: SwiftlyTests {
     /// Tests that the latest installed patch release toolchain for a given major/minor version pair can be selected by
     /// omitting the patch version (e.g. `use 5.6`).
     func testUseLatestStablePatch() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             try await self.useAndValidate(argument: Self.oldStable.name, expectedVersion: Self.oldStable)
 
             let oldStableVersion = Self.oldStable.asStableRelease!
@@ -116,7 +81,7 @@ final class UseTests: SwiftlyTests {
 
     /// Tests that the `use` command can switch between installed main snapshot toolchains.
     func testUseMainSnapshot() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             // Switch to a non-snapshot.
             try await self.useAndValidate(argument: Self.newStable.name, expectedVersion: Self.newStable)
             try await self.useAndValidate(argument: Self.oldMainSnapshot.name, expectedVersion: Self.oldMainSnapshot)
@@ -130,7 +95,7 @@ final class UseTests: SwiftlyTests {
     /// Tests that the latest installed main snapshot toolchain can be selected by omitting the
     /// date (e.g. `use main-snapshot`).
     func testUseLatestMainSnapshot() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             // Switch to a non-snapshot.
             try await self.useAndValidate(argument: Self.newStable.name, expectedVersion: Self.newStable)
             // Switch to the latest main snapshot.
@@ -146,7 +111,7 @@ final class UseTests: SwiftlyTests {
 
     /// Tests that the `use` command can switch between installed release snapshot toolchains.
     func testUseReleaseSnapshot() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             // Switch to a non-snapshot.
             try await self.useAndValidate(argument: Self.newStable.name, expectedVersion: Self.newStable)
             try await self.useAndValidate(
@@ -172,7 +137,7 @@ final class UseTests: SwiftlyTests {
     /// Tests that the latest installed release snapshot toolchain can be selected by omitting the
     /// date (e.g. `use 5.7-snapshot`).
     func testUseLatestReleaseSnapshot() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             // Switch to a non-snapshot.
             try await self.useAndValidate(argument: Self.newStable.name, expectedVersion: Self.newStable)
             // Switch to the latest snapshot for the given release.
@@ -203,7 +168,7 @@ final class UseTests: SwiftlyTests {
 
     /// Tests that the `use` command gracefully exits when executed before any toolchains have been installed.
     func testUseNoInstalledToolchains() async throws {
-        try await self.withTestHome {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: []) {
             var use = try self.parseCommand(Use.self, ["use", "latest"])
             try await use.run()
 
@@ -220,7 +185,7 @@ final class UseTests: SwiftlyTests {
 
     /// Tests that the `use` command gracefully handles being executed with toolchain names that haven't been installed.
     func testUseNonExistent() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             // Switch to a valid toolchain.
             try await self.useAndValidate(argument: Self.oldStable.name, expectedVersion: Self.oldStable)
 
@@ -234,7 +199,7 @@ final class UseTests: SwiftlyTests {
 
     /// Tests that the `use` command works with all the installed toolchains in this test harness.
     func testUseAll() async throws {
-        try await self.runUseTest {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             let config = try Config.load()
 
             for toolchain in config.installedToolchains {
@@ -249,7 +214,7 @@ final class UseTests: SwiftlyTests {
     /// Tests that the `use` command symlinks all of the executables provided in a toolchain and removes any existing
     /// symlinks from the previously active toolchain.
     func testOldSymlinksRemoved() async throws {
-        try await self.withTestHome {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             let spec = [
                 ToolchainVersion(major: 1, minor: 2, patch: 3): ["a", "b"],
                 ToolchainVersion(major: 2, minor: 3, patch: 4): ["b", "c", "d"],

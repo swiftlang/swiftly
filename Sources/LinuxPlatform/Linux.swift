@@ -57,7 +57,10 @@ public struct Linux: Platform {
         }
     }
 
-    public func uninstall(version _: ToolchainVersion) throws {}
+    public func uninstall(_ toolchain: ToolchainVersion) throws {
+        let toolchainDir = SwiftlyCore.toolchainsDir.appendingPathComponent(toolchain.name)
+        try FileManager.default.removeItem(at: toolchainDir)
+    }
 
     public func use(_ toolchain: ToolchainVersion) throws {
         let toolchainBinURL = SwiftlyCore.toolchainsDir
@@ -84,10 +87,6 @@ public struct Linux: Platform {
                 withDestinationPath: executableURL.path
             )
         }
-    }
-
-    public func listToolchains(selector _: ToolchainSelector?) -> [ToolchainVersion] {
-        []
     }
 
     public func listAvailableSnapshots(version _: String?) async -> [Snapshot] {

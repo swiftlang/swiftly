@@ -63,7 +63,7 @@ struct Install: SwiftlyCommand {
     internal static func execute(version: ToolchainVersion) async throws {
         var config = try Config.load()
 
-        guard config.installedToolchains.contains(version) else {
+        guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed, exiting.")
             return
         }

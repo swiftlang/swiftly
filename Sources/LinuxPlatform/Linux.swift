@@ -45,7 +45,7 @@ public struct Linux: Platform {
             // drop swift-a.b.c-RELEASE etc name from the extracted files.
             let relativePath = name.drop { c in c != "/" }.dropFirst()
 
-            // prepend ~/.swiftly/toolchains/<toolchain> to each file name
+            // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
             return toolchainDir.appendingPathComponent(String(relativePath))
         }
     }

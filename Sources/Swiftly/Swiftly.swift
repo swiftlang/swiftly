@@ -5,6 +5,7 @@ import LinuxPlatform
 #endif
 import SwiftlyCore
 
+
 @main
 @available(macOS 10.15, *)
 public struct Swiftly: SwiftlyCommand {
@@ -24,6 +25,16 @@ public struct Swiftly: SwiftlyCommand {
         ]
     )
 
+    /// The list of directories that swiftly needs to exist in order to execute.
+    /// If they do not exist when a swiftly command is invoked, they will be created.
+    public static var requiredDirectories: [URL] {
+        [
+            Swiftly.currentPlatform.swiftlyHomeDir,
+            Swiftly.currentPlatform.swiftlyBinDir,
+            Swiftly.currentPlatform.swiftlyToolchainsDir,
+        ]
+    }
+
     public init() {}
 
     public mutating func run() async throws {}
@@ -31,13 +42,15 @@ public struct Swiftly: SwiftlyCommand {
 #if os(Linux)
     internal static let currentPlatform = Linux.currentPlatform
 #endif
+
 }
 
 public protocol SwiftlyCommand: AsyncParsableCommand {}
 
+
 extension SwiftlyCommand {
     public mutating func validate() throws {
-        for requiredDir in SwiftlyCore.requiredDirectories {
+        for requiredDir in Swiftly.requiredDirectories {
             guard requiredDir.fileExists() else {
                 try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
                 continue
@@ -48,3 +61,4 @@ extension SwiftlyCommand {
         _ = try Config.load()
     }
 }
+

@@ -5,22 +5,16 @@ import SwiftlyCore
 /// This implementation can be reused for any supported Linux platform.
 /// TODO: replace dummy implementations
 public struct Linux: Platform {
-    private let platform: Config.PlatformDefinition
+    public init() {}
 
-    public init(platform: Config.PlatformDefinition) {
-        self.platform = platform
-    }
-
-    public var name: String {
-        self.platform.name
-    }
-
-    public var nameFull: String {
-        self.platform.nameFull
-    }
-
-    public var namePretty: String {
-        self.platform.namePretty
+    public var appDataDirectory: URL {
+        if let dir = ProcessInfo.processInfo.environment["XDG_DATA_HOME"] {
+            return URL(fileURLWithPath: dir)
+        } else {
+            return FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent(".local", isDirectory: true)
+                .appendingPathComponent("share", isDirectory: true)
+        }
     }
 
     public var toolchainFileExtension: String {
@@ -36,13 +30,12 @@ public struct Linux: Platform {
             throw Error(message: "\(tmpFile) doesn't exist")
         }
 
-        let toolchainsDir = SwiftlyCore.homeDir.appendingPathComponent("toolchains")
-        if !toolchainsDir.fileExists() {
-            try FileManager.default.createDirectory(at: toolchainsDir, withIntermediateDirectories: false)
+        if !self.swiftlyToolchainsDir.fileExists() {
+            try FileManager.default.createDirectory(at: self.swiftlyToolchainsDir, withIntermediateDirectories: false)
         }
 
         SwiftlyCore.print("Extracting toolchain...")
-        let toolchainDir = toolchainsDir.appendingPathComponent(version.name)
+        let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent(version.name)
 
         if toolchainDir.fileExists() {
             try FileManager.default.removeItem(at: toolchainDir)
@@ -58,26 +51,26 @@ public struct Linux: Platform {
     }
 
     public func uninstall(_ toolchain: ToolchainVersion) throws {
-        let toolchainDir = SwiftlyCore.toolchainsDir.appendingPathComponent(toolchain.name)
+        let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent(toolchain.name)
         try FileManager.default.removeItem(at: toolchainDir)
     }
 
     public func use(_ toolchain: ToolchainVersion) throws {
-        let toolchainBinURL = SwiftlyCore.toolchainsDir
+        let toolchainBinURL = self.swiftlyToolchainsDir
             .appendingPathComponent(toolchain.name, isDirectory: true)
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
 
         // Delete existing symlinks from previously in-use toolchain.
-        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: SwiftlyCore.binDir.path) {
+        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: self.swiftlyBinDir.path) {
             guard existingExecutable != "swiftly" else {
                 continue
             }
-            try SwiftlyCore.binDir.appendingPathComponent(existingExecutable).deleteIfExists()
+            try self.swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
         }
 
         for executable in try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path) {
-            let linkURL = SwiftlyCore.binDir.appendingPathComponent(executable)
+            let linkURL = self.swiftlyBinDir.appendingPathComponent(executable)
             let executableURL = toolchainBinURL.appendingPathComponent(executable)
 
             try linkURL.deleteIfExists()
@@ -101,12 +94,5 @@ public struct Linux: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
-    public static let currentPlatform: any Platform = {
-        do {
-            let config = try Config.load()
-            return Linux(platform: config.platform)
-        } catch {
-            fatalError("error loading config: \(error)")
-        }
-    }()
+    public static let currentPlatform: any Platform = Linux()
 }

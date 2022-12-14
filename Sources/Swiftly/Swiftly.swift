@@ -5,7 +5,6 @@ import LinuxPlatform
 #endif
 import SwiftlyCore
 
-
 @main
 @available(macOS 10.15, *)
 public struct Swiftly: SwiftlyCommand {
@@ -42,11 +41,9 @@ public struct Swiftly: SwiftlyCommand {
 #if os(Linux)
     internal static let currentPlatform = Linux.currentPlatform
 #endif
-
 }
 
 public protocol SwiftlyCommand: AsyncParsableCommand {}
-
 
 extension SwiftlyCommand {
     public mutating func validate() throws {
@@ -61,4 +58,3 @@ extension SwiftlyCommand {
         _ = try Config.load()
     }
 }
-

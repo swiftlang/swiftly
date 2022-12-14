@@ -1,5 +1,9 @@
 import Foundation
 
+/// A separate home directory to use for testing purposes. This overrides swiftly's default
+/// home directory location logic.
+public var mockedHomeDir: URL?
+
 /// Protocol defining a handler for information swiftly intends to print to stdout.
 /// This is currently only used to intercept print statements for testing.
 public protocol OutputHandler {

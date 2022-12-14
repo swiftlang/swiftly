@@ -56,7 +56,7 @@ extension Platform {
     ///
     /// TODO: support other locations besides ~/.local/share/swiftly
     public var swiftlyHomeDir: URL {
-        self.appDataDirectory.appendingPathComponent("swiftly", isDirectory: true)
+        SwiftlyCore.mockedHomeDir ?? self.appDataDirectory.appendingPathComponent("swiftly", isDirectory: true)
     }
 
     /// The "bin" subdirectory of swiftly's home directory. Contains the swiftly executable as well as symlinks

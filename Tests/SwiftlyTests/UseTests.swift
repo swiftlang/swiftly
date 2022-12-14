@@ -14,7 +14,9 @@ final class UseTests: SwiftlyTests {
 
         XCTAssertEqual(try Config.load().inUse, expectedVersion)
 
-        let toolchainVersion = try self.getMockedToolchainVersion(at: SwiftlyCore.binDir.appendingPathComponent("swift"))
+        let toolchainVersion = try self.getMockedToolchainVersion(
+            at: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift")
+        )
         XCTAssertEqual(toolchainVersion, expectedVersion)
     }
 
@@ -230,13 +232,15 @@ final class UseTests: SwiftlyTests {
                 try await use.run()
 
                 // Verify that only the symlinks for the active toolchain remain.
-                let symlinks = try FileManager.default.contentsOfDirectory(atPath: SwiftlyCore.binDir.path)
+                let symlinks = try FileManager.default.contentsOfDirectory(
+                    atPath: Swiftly.currentPlatform.swiftlyBinDir.path
+                )
                 XCTAssertEqual(symlinks.sorted(), files.sorted())
 
                 // Verify that any all the symlinks point to the right toolchain.
                 for file in files {
                     let observedVersion = try self.getMockedToolchainVersion(
-                        at: SwiftlyCore.binDir.appendingPathComponent(file)
+                        at: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(file)
                     )
                     XCTAssertEqual(observedVersion, toolchain)
                 }

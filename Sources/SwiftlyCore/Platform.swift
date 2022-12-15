@@ -47,22 +47,29 @@ extension Platform {
     /// ```
     /// homeDir/
     ///   |
-    ///   -- bin/
-    ///   |
     ///   -- toolchains/
     ///   |
     ///   -- config.json
     /// ```
     ///
-    /// TODO: support other locations besides ~/.local/share/swiftly
     public var swiftlyHomeDir: URL {
-        SwiftlyCore.mockedHomeDir ?? self.appDataDirectory.appendingPathComponent("swiftly", isDirectory: true)
+        SwiftlyCore.mockedHomeDir
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_HOME_DIR"].map { URL(fileURLWithPath: $0) }
+            ?? self.appDataDirectory.appendingPathComponent("swiftly", isDirectory: true)
     }
 
-    /// The "bin" subdirectory of swiftly's home directory. Contains the swiftly executable as well as symlinks
+    /// The directory which stores the swiftly executable itself as well as symlinks
     /// to executables in the "bin" directory of the active toolchain.
+    ///
+    /// If a mocked home directory is set, this will be the "bin" subdirectory of the home directory.
+    /// If not, this will be the SWIFTLY_BIN_DIR environment variable if set. If unset, this will be
+    /// ~/.local/bin.
     public var swiftlyBinDir: URL {
-        self.swiftlyHomeDir.appendingPathComponent("bin", isDirectory: true)
+        SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
+            ?? FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".local", isDirectory: true)
+            .appendingPathComponent("bin", isDirectory: true)
     }
 
     /// The "toolchains" subdirectory of swiftly's home directory. Contains the Swift toolchains managed by swiftly.

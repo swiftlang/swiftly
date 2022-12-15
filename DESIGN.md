@@ -31,15 +31,7 @@ We'll need a bootstrapping script which detects information about the OS and dow
 - CentOS 8
 - Amazon Linux 2
 
-Once it has detected which platform the user is running, the script will then create `$HOME/.local/share/swiftly` (or a different path, if the user provides one. For an initial MVP, I think we can always install there). It'll also create `$HOME/.local/share/swiftly/bin`, download the prebuilt swiftly executable appropriate for the platform and drop it in there.
-
-Finally, it will create a `$HOME/.local/share/swiftly/env` file, which contains only the following line:
-
-```
-export PATH="$HOME/.local/share/swiftly/bin:$PATH"
-```
-
-and print a message instructing the user to run source `~/.local/share/swiftly/env` and to add it to their shell configuration. We may have to do some discovery to determine which shell the user is running for this. Printing instructions for bash and zsh should be sufficient.
+Once it has detected which platform the user is running, the script will then create `$HOME/.local/share/swiftly` (or a different path, if the user provides one. For an initial MVP, I think we can always install there). It'll also create `$HOME/.local/bin` if needed, download the prebuilt swiftly executable appropriate for the platform, and drop it in there.
 
 ### Installation of a Swift toolchain
 
@@ -48,16 +40,14 @@ A simple setup for managing the toolchains could look like this:
 ```
 ~/.local/share/swiftly
    |
-   -- bin/
-   |
    -- toolchains/
    |
    -- config.json
-   |
-   – env
 ```
 
-The toolchains (i.e. the contents of a given Swift download tarball) would be contained in the toolchains directory, each named according to the major/minor/patch version. The bin folder would just contain symlinks to whatever toolchain was selected by `swiftly use`. `config.json` would contain any required metadata (e.g. the latest Swift version, which toolchain is selected, etc.). If pulling in Foundation to use `JSONEncoder`/`JSONDecoder` (or some other JSON tool) would be a problem, we could also use something simpler.
+The toolchains (i.e. the contents of a given Swift download tarball) would be contained in the toolchains directory, each named according to the major/minor/patch version. `config.json` would contain any required metadata (e.g. the latest Swift version, which toolchain is selected, etc.). If pulling in Foundation to use `JSONEncoder`/`JSONDecoder` (or some other JSON tool) would be a problem, we could also use something simpler.
+
+The `~/.local/bin` directory would include symlinks pointing to the `bin` directory of the "active" toolchain, if any.
 
 This is all very similar to how rustup does things, but I figure there's no need to reinvent the wheel here.
 
@@ -469,7 +459,7 @@ It also updates `config.json` to include this toolchain as the latest for the pr
 Finally, the use implementation executes the following to update the link:
 
 ```
-$ ln -s ~/.local/share/swiftly/toolchains/<toolchain>/usr/bin/swift ~/.local/share/swiftly/bin/swift
+$ ln -s ~/.local/share/swiftly/toolchains/<toolchain>/usr/bin/swift ~/.local/bin/swift
 ```
 
 It also updates `config.json` to include this version as the currently selected one.

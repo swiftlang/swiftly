@@ -22,7 +22,10 @@ public protocol Platform {
     func uninstall(_ version: ToolchainVersion) throws
 
     /// Select the toolchain associated with the given version.
-    func use(_ version: ToolchainVersion) throws
+    func use(_ version: ToolchainVersion, currentToolchain: ToolchainVersion?) throws
+
+    /// Clear the current active toolchain.
+    func unUse(currentToolchain: ToolchainVersion) throws
 
     /// Get a list of snapshot builds for the platform. If a version is specified, only
     /// return snapshots associated with the version.

@@ -40,18 +40,18 @@ internal struct Use: SwiftlyCommand {
 
     internal mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
-        let config = try Config.load()
+        var config = try Config.load()
 
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
             SwiftlyCore.print("No installed toolchains match \"\(self.toolchain)\"")
             return
         }
 
-        try await Self.execute(toolchain)
+        try await Self.execute(toolchain, config: &config)
     }
 
-    internal static func execute(_ toolchain: ToolchainVersion) async throws {
-        var config = try Config.load()
+    /// Use a toolchain. This method modifies and saves the input config.
+    internal static func execute(_ toolchain: ToolchainVersion, config: inout Config) async throws {
         let previousToolchain = config.inUse
 
         guard toolchain != previousToolchain else {
@@ -59,7 +59,7 @@ internal struct Use: SwiftlyCommand {
             return
         }
 
-        try Swiftly.currentPlatform.use(toolchain)
+        try Swiftly.currentPlatform.use(toolchain, currentToolchain: previousToolchain)
         config.inUse = toolchain
         try config.save()
 

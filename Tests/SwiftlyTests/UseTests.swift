@@ -227,6 +227,12 @@ final class UseTests: SwiftlyTests {
                 try self.installMockedToolchain(toolchain: toolchain, executables: files)
             }
 
+            // Add an unrelated executable to the binary directory.
+            let existingFileName = "existing"
+            let existingExecutableURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(existingFileName)
+            let data = "hello world\n".data(using: .utf8)!
+            try data.write(to: existingExecutableURL)
+
             for (toolchain, files) in spec {
                 var use = try self.parseCommand(Use.self, ["use", toolchain.name])
                 try await use.run()
@@ -235,10 +241,13 @@ final class UseTests: SwiftlyTests {
                 let symlinks = try FileManager.default.contentsOfDirectory(
                     atPath: Swiftly.currentPlatform.swiftlyBinDir.path
                 )
-                XCTAssertEqual(symlinks.sorted(), files.sorted())
+                XCTAssertEqual(symlinks.sorted(), (files + [existingFileName]).sorted())
 
                 // Verify that any all the symlinks point to the right toolchain.
                 for file in files {
+                    guard file != existingFileName else {
+                        continue
+                    }
                     let observedVersion = try self.getMockedToolchainVersion(
                         at: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(file)
                     )

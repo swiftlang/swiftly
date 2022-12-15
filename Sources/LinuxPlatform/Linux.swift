@@ -55,18 +55,15 @@ public struct Linux: Platform {
         try FileManager.default.removeItem(at: toolchainDir)
     }
 
-    public func use(_ toolchain: ToolchainVersion) throws {
+    public func use(_ toolchain: ToolchainVersion, currentToolchain: ToolchainVersion?) throws {
         let toolchainBinURL = self.swiftlyToolchainsDir
             .appendingPathComponent(toolchain.name, isDirectory: true)
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
 
         // Delete existing symlinks from previously in-use toolchain.
-        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: self.swiftlyBinDir.path) {
-            guard existingExecutable != "swiftly" else {
-                continue
-            }
-            try self.swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
+        if let currentToolchain {
+            try self.unUse(currentToolchain: currentToolchain)
         }
 
         for executable in try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path) {
@@ -79,6 +76,20 @@ public struct Linux: Platform {
                 atPath: linkURL.path,
                 withDestinationPath: executableURL.path
             )
+        }
+    }
+
+    public func unUse(currentToolchain: ToolchainVersion) throws {
+        let currentToolchainBinURL = self.swiftlyToolchainsDir
+            .appendingPathComponent(currentToolchain.name, isDirectory: true)
+            .appendingPathComponent("usr", isDirectory: true)
+            .appendingPathComponent("bin", isDirectory: true)
+
+        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: currentToolchainBinURL.path) {
+            guard existingExecutable != "swiftly" else {
+                continue
+            }
+            try self.swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
         }
     }
 

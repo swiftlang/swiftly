@@ -45,8 +45,8 @@ struct Uninstall: SwiftlyCommand {
 
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.toolchain)
-        let config = try Config.load()
-        let toolchains = config.listInstalledToolchains(selector: selector)
+        let startingConfig = try Config.load()
+        let toolchains = startingConfig.listInstalledToolchains(selector: selector)
 
         guard !toolchains.isEmpty else {
             SwiftlyCore.print("No toolchains matched \"\(self.toolchain)\"")
@@ -70,42 +70,43 @@ struct Uninstall: SwiftlyCommand {
         SwiftlyCore.print()
 
         for toolchain in toolchains {
+            var config = try Config.load()
+
+            // If the in-use toolchain was one of the uninstalled toolchains, use a new toolchain.
+            if toolchain == config.inUse {
+                let selector: ToolchainSelector
+                switch toolchain {
+                case let .stable(sr):
+                    // If a.b.c was previously in use, switch to the latest a.b toolchain.
+                    selector = .stable(major: sr.major, minor: sr.minor, patch: nil)
+                case let .snapshot(s):
+                    // If a snapshot was previously in use, switch to the latest snapshot associated with that branch.
+                    selector = .snapshot(branch: s.branch, date: nil)
+                }
+
+                if let toUse = config.listInstalledToolchains(selector: selector)
+                       .filter({ !toolchains.contains($0) })
+                       .max()
+                    ?? config.listInstalledToolchains(selector: .latest).filter({ !toolchains.contains($0) }).max()
+                    ?? config.installedToolchains.filter({ !toolchains.contains($0) }).max()
+                {
+                    try await Use.execute(toUse, config: &config)
+                } else {
+                    // If there are no more toolchains installed, just unuse the currently active toolchain.
+                    try Swiftly.currentPlatform.unUse(currentToolchain: toolchain)
+                    config.inUse = nil
+                    try config.save()
+                }
+            }
+
             SwiftlyCore.print("Uninstalling \(toolchain)...", terminator: "")
             try Swiftly.currentPlatform.uninstall(toolchain)
-            try Config.update { config in
-                config.installedToolchains.remove(toolchain)
-            }
+            config.installedToolchains.remove(toolchain)
+            try config.save()
             SwiftlyCore.print("done")
         }
 
         SwiftlyCore.print()
         SwiftlyCore.print("\(toolchains.count) toolchain(s) successfully uninstalled")
-
-        var latestConfig = try Config.load()
-
-        // If the in-use toolchain was one of the uninstalled toolchains, use the latest installed
-        // toolchain.
-        if let previouslyInUse = latestConfig.inUse, toolchains.contains(previouslyInUse) {
-            let selector: ToolchainSelector
-            switch previouslyInUse {
-            case let .stable(sr):
-                // If a.b.c was previously in use, switch to the latest a.b toolchain.
-                selector = .stable(major: sr.major, minor: sr.minor, patch: nil)
-            case let .snapshot(s):
-                // If a snapshot was previously in use, switch to the latest snapshot associated with that branch.
-                selector = .snapshot(branch: s.branch, date: nil)
-            }
-
-            if let toUse = latestConfig.listInstalledToolchains(selector: selector).max()
-                ?? latestConfig.listInstalledToolchains(selector: .latest).max()
-                ?? latestConfig.installedToolchains.max()
-            {
-                try await Use.execute(toUse)
-            } else {
-                // If there are no more toolchains installed, clear the inUse config entry.
-                latestConfig.inUse = nil
-                try latestConfig.save()
-            }
-        }
     }
 }

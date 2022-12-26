@@ -55,7 +55,7 @@ public struct Linux: Platform {
         try FileManager.default.removeItem(at: toolchainDir)
     }
 
-    public func use(_ toolchain: ToolchainVersion, currentToolchain: ToolchainVersion?) throws {
+    public func use(_ toolchain: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool {
         let toolchainBinURL = self.swiftlyToolchainsDir
             .appendingPathComponent(toolchain.name, isDirectory: true)
             .appendingPathComponent("usr", isDirectory: true)
@@ -66,10 +66,30 @@ public struct Linux: Platform {
             try self.unUse(currentToolchain: currentToolchain)
         }
 
-        for executable in try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path) {
+        // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
+        let swiftlyBinDirContents = try FileManager.default.contentsOfDirectory(atPath: self.swiftlyBinDir.path)
+        let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path)
+        let willBeOverwritten = Set(toolchainBinDirContents).intersection(swiftlyBinDirContents)
+        if !willBeOverwritten.isEmpty {
+            SwiftlyCore.print("The following existing executables will be overwritten:")
+
+            for executable in willBeOverwritten {
+                SwiftlyCore.print("  \(self.swiftlyBinDir.appendingPathComponent(executable).path)")
+            }
+
+            let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
+
+            guard proceed == "y" else {
+                SwiftlyCore.print("Aborting use")
+                return false
+            }
+        }
+
+        for executable in toolchainBinDirContents {
             let linkURL = self.swiftlyBinDir.appendingPathComponent(executable)
             let executableURL = toolchainBinURL.appendingPathComponent(executable)
 
+            // Deletion confirmed with user above.
             try linkURL.deleteIfExists()
 
             try FileManager.default.createSymbolicLink(
@@ -77,6 +97,8 @@ public struct Linux: Platform {
                 withDestinationPath: executableURL.path
             )
         }
+
+        return true
     }
 
     public func unUse(currentToolchain: ToolchainVersion) throws {
@@ -89,6 +111,18 @@ public struct Linux: Platform {
             guard existingExecutable != "swiftly" else {
                 continue
             }
+
+            let url = self.swiftlyBinDir.appendingPathComponent(existingExecutable)
+            let vals = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
+
+            guard let islink = vals.isSymbolicLink, islink else {
+                throw Error(message: "Found executable not managed by swiftly in SWIFTLY_BIN_DIR: \(url.path)")
+            }
+            let symlinkDest = url.resolvingSymlinksInPath()
+            guard symlinkDest == currentToolchainBinURL.appendingPathComponent(existingExecutable) else {
+                throw Error(message: "Found symlink that points to non-swiftly managed executable: \(symlinkDest.path)")
+            }
+
             try self.swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
         }
     }

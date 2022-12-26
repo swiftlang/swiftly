@@ -49,7 +49,11 @@ extension SwiftlyCommand {
     public mutating func validate() throws {
         for requiredDir in Swiftly.requiredDirectories {
             guard requiredDir.fileExists() else {
-                try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
+                do {
+                    try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
+                } catch {
+                    throw Error(message: "Failed to create required directory \"\(requiredDir.path)\": \(error)")
+                }
                 continue
             }
         }

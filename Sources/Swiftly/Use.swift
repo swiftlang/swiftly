@@ -59,7 +59,9 @@ internal struct Use: SwiftlyCommand {
             return
         }
 
-        try Swiftly.currentPlatform.use(toolchain, currentToolchain: previousToolchain)
+        guard try Swiftly.currentPlatform.use(toolchain, currentToolchain: previousToolchain) else {
+            return
+        }
         config.inUse = toolchain
         try config.save()
 

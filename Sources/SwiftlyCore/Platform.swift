@@ -22,7 +22,8 @@ public protocol Platform {
     func uninstall(_ version: ToolchainVersion) throws
 
     /// Select the toolchain associated with the given version.
-    func use(_ version: ToolchainVersion, currentToolchain: ToolchainVersion?) throws
+    /// Returns whether the selection was successful.
+    func use(_ version: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool
 
     /// Clear the current active toolchain.
     func unUse(currentToolchain: ToolchainVersion) throws
@@ -65,8 +66,8 @@ extension Platform {
     /// to executables in the "bin" directory of the active toolchain.
     ///
     /// If a mocked home directory is set, this will be the "bin" subdirectory of the home directory.
-    /// If not, this will be the SWIFTLY_BIN_DIR environment variable if set. If unset, this will be
-    /// ~/.local/bin.
+    /// If not, this will be the SWIFTLY_BIN_DIR environment variable if set. If that's also unset,
+    /// this will default to ~/.local/bin.
     public var swiftlyBinDir: URL {
         SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }

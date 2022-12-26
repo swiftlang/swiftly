@@ -99,8 +99,15 @@ class SwiftlyTests: XCTestCase {
                 try self.installMockedToolchain(toolchain: toolchain)
             }
 
-            var use = try self.parseCommand(Use.self, ["use", inUse?.name ?? "latest"])
-            try await use.run()
+            if !toolchains.isEmpty {
+                var use = try self.parseCommand(Use.self, ["use", inUse?.name ?? "latest"])
+                try await use.run()
+            } else {
+                try FileManager.default.createDirectory(
+                    at: Swiftly.currentPlatform.swiftlyBinDir,
+                    withIntermediateDirectories: true
+                )
+            }
 
             try await f()
         }

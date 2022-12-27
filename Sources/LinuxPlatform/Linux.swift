@@ -119,7 +119,7 @@ public struct Linux: Platform {
                 throw Error(message: "Found executable not managed by swiftly in SWIFTLY_BIN_DIR: \(url.path)")
             }
             let symlinkDest = url.resolvingSymlinksInPath()
-            guard symlinkDest == currentToolchainBinURL.appendingPathComponent(existingExecutable) else {
+            guard symlinkDest.deletingLastPathComponent() == currentToolchainBinURL else {
                 throw Error(message: "Found symlink that points to non-swiftly managed executable: \(symlinkDest.path)")
             }
 

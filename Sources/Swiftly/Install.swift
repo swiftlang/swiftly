@@ -61,7 +61,9 @@ struct Install: SwiftlyCommand {
     }
 
     internal static func execute(version: ToolchainVersion) async throws {
-        guard try !Config.load().installedToolchains.contains(version) else {
+        var config = try Config.load()
+
+        guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed, exiting.")
             return
         }
@@ -83,9 +85,9 @@ struct Install: SwiftlyCommand {
                 versionString += ".\(stableVersion.patch)"
             }
             url += "swift-\(versionString)-release/"
-            url += "\(Swiftly.currentPlatform.name)/"
+            url += "\(config.platform.name)/"
             url += "swift-\(versionString)-RELEASE/"
-            url += "swift-\(versionString)-RELEASE-\(Swiftly.currentPlatform.nameFull).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            url += "swift-\(versionString)-RELEASE-\(config.platform.nameFull).\(Swiftly.currentPlatform.toolchainFileExtension)"
         case let .snapshot(release):
             let snapshotString: String
             switch release.branch {
@@ -97,9 +99,9 @@ struct Install: SwiftlyCommand {
                 snapshotString = "swift-DEVELOPMENT-SNAPSHOT"
             }
 
-            url += "\(Swiftly.currentPlatform.name)/"
+            url += "\(config.platform.name)/"
             url += "\(snapshotString)-\(release.date)-a/"
-            url += "\(snapshotString)-\(release.date)-a-\(Swiftly.currentPlatform.nameFull).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            url += "\(snapshotString)-\(release.date)-a-\(config.platform.nameFull).\(Swiftly.currentPlatform.toolchainFileExtension)"
         }
 
         let animation = PercentProgressAnimation(
@@ -144,13 +146,12 @@ struct Install: SwiftlyCommand {
 
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)
 
-        var config = try Config.load()
         config.installedToolchains.insert(version)
         try config.save()
 
         // If this is the first installed toolchain, mark it as in-use.
         if config.inUse == nil {
-            try await Use.execute(version)
+            try await Use.execute(version, config: &config)
         }
 
         SwiftlyCore.print("\(version) installed successfully!")

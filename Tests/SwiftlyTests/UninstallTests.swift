@@ -240,6 +240,22 @@ final class UninstallTests: SwiftlyTests {
         }
     }
 
+    /// Tests that uninstalling the last toolchain is handled properly and cleans up any symlinks.
+    func testUninstallLastToolchain() async throws {
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: [Self.oldStable], inUse: Self.oldStable) {
+            var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.oldStable.name])
+            _ = try await uninstall.runWithMockedIO(input: ["y"])
+            let config = try Config.load()
+            XCTAssertEqual(config.inUse, nil)
+
+            // Ensure all symlinks have been cleaned up.
+            let symlinks = try FileManager.default.contentsOfDirectory(
+                atPath: Swiftly.currentPlatform.swiftlyBinDir.path
+            )
+            XCTAssertEqual(symlinks, [])
+        }
+    }
+
     /// Tests that aborting an uninstall works correctly.
     func testUninstallAbort() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains, inUse: Self.oldStable) {

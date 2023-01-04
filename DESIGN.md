@@ -31,33 +31,23 @@ We'll need a bootstrapping script which detects information about the OS and dow
 - CentOS 8
 - Amazon Linux 2
 
-Once it has detected which platform the user is running, the script will then create `$HOME/.swiftly` (or a different path, if the user provides one. For an initial MVP, I think we can always install there). It'll also create `$HOME/.swiftly/bin`, download the prebuilt swiftly executable appropriate for the platform and drop it in there.
-
-Finally, it will create a `$HOME/.swiftly/env` file, which contains only the following line:
-
-```
-export PATH="$HOME/.swiftly/bin:$PATH"
-```
-
-and print a message instructing the user to run source `~/.swiftly/env` and to add it to their shell configuration. We may have to do some discovery to determine which shell the user is running for this. Printing instructions for bash and zsh should be sufficient.
+Once it has detected which platform the user is running, the script will then create `$HOME/.local/share/swiftly` (or a different path, if the user provides one. For an initial MVP, I think we can always install there). It'll also create `$HOME/.local/bin` if needed, download the prebuilt swiftly executable appropriate for the platform, and drop it in there.
 
 ### Installation of a Swift toolchain
 
 A simple setup for managing the toolchains could look like this:
 
 ```
-~/.swiftly
-   |
-   -- bin/
+~/.local/share/swiftly
    |
    -- toolchains/
    |
    -- config.json
-   |
-   – env
 ```
 
-The toolchains (i.e. the contents of a given Swift download tarball) would be contained in the toolchains directory, each named according to the major/minor/patch version. The bin folder would just contain symlinks to whatever toolchain was selected by `swiftly use`. `config.json` would contain any required metadata (e.g. the latest Swift version, which toolchain is selected, etc.). If pulling in Foundation to use `JSONEncoder`/`JSONDecoder` (or some other JSON tool) would be a problem, we could also use something simpler.
+The toolchains (i.e. the contents of a given Swift download tarball) would be contained in the toolchains directory, each named according to the major/minor/patch version. `config.json` would contain any required metadata (e.g. the latest Swift version, which toolchain is selected, etc.). If pulling in Foundation to use `JSONEncoder`/`JSONDecoder` (or some other JSON tool) would be a problem, we could also use something simpler.
+
+The `~/.local/bin` directory would include symlinks pointing to the `bin` directory of the "active" toolchain, if any.
 
 This is all very similar to how rustup does things, but I figure there's no need to reinvent the wheel here.
 
@@ -365,7 +355,7 @@ Finally, swiftly will then get the toolchain's list of system dependencies, if a
 
 #### Verifying system dependencies
 
-In order to run Swift on Linux, there are a number of system dependencies that need to be installed. We could consider having swiftly detect and install these dependencies for the user, but we decided that it was best if it doesn't modify the system outside of handling toolchains in `~/.swiftly`. Instead, swiftly will just attempt to detect if any required system libraries are missing and, if so, print helpful, platform-specific messages indicating how a user could install them. In the future, swiftly will use an API from swift.org to discover the list of required dependencies per Swift version / platform. Until then, a list will manually be maintained in this repository.
+In order to run Swift on Linux, there are a number of system dependencies that need to be installed. We could consider having swiftly detect and install these dependencies for the user, but we decided that it was best if it doesn't modify the system outside of handling toolchains in `~/.local/share/swiftly`. Instead, swiftly will just attempt to detect if any required system libraries are missing and, if so, print helpful, platform-specific messages indicating how a user could install them. In the future, swiftly will use an API from swift.org to discover the list of required dependencies per Swift version / platform. Until then, a list will manually be maintained in this repository.
 
 Determining whether the system has these installed or not is a bit of a tricky problem and varies from platform to platform. The mechanism for doing so on each will be as follows:
 
@@ -410,7 +400,7 @@ Given a version string `main-snapshot[-YYYY-MM-DD]` or `a.b-snapshot[-YYYY-MM-DD
 
 #### Uninstalling a toolchain
 
-Given a version string `a.b[.c]`, check that we have such a toolchain installed per config.json. If all of `a.b.c` is provided, this must match exactly. If only `a.b` is provided, all `a.b.c` will match and will be uninstalled. Always prompt the user before proceeding with the uninstallation, confirming all of the uninstallations are correct. If a matching version is installed, first delete the entry in `config.json` associated with that version. Then delete the folder in `~/.swiftly/toolchains` associated with it. If that toolchain was in use, use the installed toolchain with the latest Swift version, if any, per [Using a toolchain](#using-a-toolchain).
+Given a version string `a.b[.c]`, check that we have such a toolchain installed per config.json. If all of `a.b.c` is provided, this must match exactly. If only `a.b` is provided, all `a.b.c` will match and will be uninstalled. Always prompt the user before proceeding with the uninstallation, confirming all of the uninstallations are correct. If a matching version is installed, first delete the entry in `config.json` associated with that version. Then delete the folder in `~/.local/share/swiftly/toolchains` associated with it. If that toolchain was in use, use the installed toolchain with the latest Swift version, if any, per [Using a toolchain](#using-a-toolchain).
 
 Snapshots work similarly. If a date is provided in the snapshot version, attempt to uninstall only that snapshot. Otherwise, attempt to uninstall all matching snapshots after ensuring this is what the user intended.
 
@@ -461,7 +451,7 @@ https://download.swift.org/swift-5.5.1-release/ubuntu1604/swift-5.5.1-RELEASE/sw
 `install` accepts a URL pointing to the downloaded `.tar.gz` file and executes the following to install it:
 
 ```
-$ tar -xf <URL> --directory ~/.swiftly/toolchains
+$ tar -xf <URL> --directory ~/.local/share/swiftly/toolchains
 ```
 
 It also updates `config.json` to include this toolchain as the latest for the provided version. If installing a new patch release toolchain, the now-outdated one can be deleted (e.g. `5.5.0` can be deleted when `5.5.1` is installed).
@@ -469,7 +459,7 @@ It also updates `config.json` to include this toolchain as the latest for the pr
 Finally, the use implementation executes the following to update the link:
 
 ```
-$ ln -s ~/.swiftly/toolchains/<toolchain>/usr/bin/swift ~/.swiftly/bin/swift
+$ ln -s ~/.local/share/swiftly/toolchains/<toolchain>/usr/bin/swift ~/.local/bin/swift
 ```
 
 It also updates `config.json` to include this version as the currently selected one.

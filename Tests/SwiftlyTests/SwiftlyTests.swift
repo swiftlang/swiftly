@@ -55,16 +55,14 @@ class SwiftlyTests: XCTestCase {
         name: String = "testHome",
         _ f: () async throws -> Void
     ) async throws {
-        let oldHome = SwiftlyCore.homeDir
-
         let testHome = Self.getTestHomePath(name: name)
-        SwiftlyCore.homeDir = testHome
+        SwiftlyCore.mockedHomeDir = testHome
         defer {
-            SwiftlyCore.homeDir = oldHome
+            SwiftlyCore.mockedHomeDir = nil
         }
 
         try testHome.deleteIfExists()
-        try FileManager.default.createDirectory(at: SwiftlyCore.homeDir, withIntermediateDirectories: false)
+        try FileManager.default.createDirectory(at: testHome, withIntermediateDirectories: false)
         defer {
             try? FileManager.default.removeItem(at: testHome)
         }
@@ -101,8 +99,15 @@ class SwiftlyTests: XCTestCase {
                 try self.installMockedToolchain(toolchain: toolchain)
             }
 
-            var use = try self.parseCommand(Use.self, ["use", inUse?.name ?? "latest"])
-            try await use.run()
+            if !toolchains.isEmpty {
+                var use = try self.parseCommand(Use.self, ["use", inUse?.name ?? "latest"])
+                try await use.run()
+            } else {
+                try FileManager.default.createDirectory(
+                    at: Swiftly.currentPlatform.swiftlyBinDir,
+                    withIntermediateDirectories: true
+                )
+            }
 
             try await f()
         }
@@ -115,7 +120,7 @@ class SwiftlyTests: XCTestCase {
         let config = try Config.load()
         XCTAssertEqual(config.inUse, expected)
 
-        let executable = SwiftExecutable(path: SwiftlyCore.binDir.appendingPathComponent("swift"))
+        let executable = SwiftExecutable(path: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift"))
 
         XCTAssertEqual(executable.exists(), expected != nil)
 
@@ -141,7 +146,7 @@ class SwiftlyTests: XCTestCase {
 #if os(Linux)
         // Verify that the toolchains on disk correspond to those in the config.
         for toolchain in toolchains {
-            let toolchainDir = SwiftlyCore.homeDir
+            let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir
                 .appendingPathComponent("toolchains")
                 .appendingPathComponent(toolchain.name)
             XCTAssertTrue(toolchainDir.fileExists())
@@ -163,7 +168,7 @@ class SwiftlyTests: XCTestCase {
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(toolchain: ToolchainVersion, executables: [String] = ["swift"]) throws {
-        let toolchainDir = SwiftlyCore.toolchainsDir.appendingPathComponent(toolchain.name)
+        let toolchainDir = Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent(toolchain.name)
         try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: true)
 
         let toolchainBinDir = toolchainDir

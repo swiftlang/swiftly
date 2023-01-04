@@ -8,14 +8,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
     - name: Download Swift
       run: |
-        wget --no-verbose "https://download.swift.org/swift-5.7-release/ubuntu1804/swift-5.7-RELEASE/swift-5.7-RELEASE-ubuntu18.04.tar.gz"
-        tar -zxf swift-5.7-RELEASE-ubuntu18.04.tar.gz
+        wget --no-verbose "https://download.swift.org/swift-5.7-release/ubuntu2004/swift-5.7-RELEASE/swift-5.7-RELEASE-ubuntu20.04.tar.gz"
+        tar -zxf swift-5.7-RELEASE-ubuntu20.04.tar.gz
         mkdir $HOME/.swift
-        mv swift-5.7-RELEASE-ubuntu18.04/usr $HOME/.swift
+        mv swift-5.7-RELEASE-ubuntu20.04/usr $HOME/.swift
 
     - name: Update PATH
       run: echo "$HOME/.swift/usr/bin" >> $GITHUB_PATH
@@ -31,7 +31,7 @@ jobs:
     - name: Run tests
       run: swift test
       env:
-        SWIFTLY_PLATFORM_NAME: ubuntu1804
-        SWIFTLY_PLATFORM_NAME_FULL: ubuntu18.04
-        SWIFTLY_PLATFORM_NAME_PRETTY: Ubuntu 18.04
+        SWIFTLY_PLATFORM_NAME: ubuntu2004
+        SWIFTLY_PLATFORM_NAME_FULL: ubuntu20.04
+        SWIFTLY_PLATFORM_NAME_PRETTY: Ubuntu 20.04
         SWIFTLY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

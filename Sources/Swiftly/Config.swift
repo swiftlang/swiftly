@@ -1,4 +1,5 @@
 import Foundation
+import SwiftlyCore
 
 /// Struct modelling the config.json file used to track installed toolchains,
 /// the current in-use tooolchain, and information about the platform.
@@ -6,8 +7,18 @@ import Foundation
 /// TODO: implement cache
 public struct Config: Codable, Equatable {
     public struct PlatformDefinition: Codable, Equatable {
+        /// The name of the platform as it is used in the Swift download URLs.
+        /// For instance, for Ubuntu 16.04 this would return “ubuntu1604”.
+        /// For macOS / Xcode, this would return “xcode”.
         public let name: String
+
+        /// The full name of the platform as it is used in the Swift download URLs.
+        /// For instance, for Ubuntu 16.04 this would return “ubuntu16.04”.
         public let nameFull: String
+
+        /// A human-readable / pretty-printed version of the platform’s name, used for terminal
+        /// output and logging.
+        /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
         public let namePretty: String
     }
 
@@ -30,11 +41,12 @@ public struct Config: Codable, Equatable {
     /// Read the config file from disk.
     public static func load() throws -> Config {
         do {
-            let data = try Data(contentsOf: SwiftlyCore.configFile)
+            let data = try Data(contentsOf: Swiftly.currentPlatform.swiftlyConfigFile)
             return try JSONDecoder().decode(Config.self, from: data)
         } catch {
             let msg = """
-            Could not load swiftly's configuration file at \(SwiftlyCore.configFile.path) due to error: \"\(error)\".
+            Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile.path) due to
+            error: \"\(error)\".
             To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
             """
             throw Error(message: msg)
@@ -44,7 +56,7 @@ public struct Config: Codable, Equatable {
     /// Write the contents of this `Config` struct to disk.
     public func save() throws {
         let outData = try Self.makeEncoder().encode(self)
-        try outData.write(to: SwiftlyCore.configFile, options: .atomic)
+        try outData.write(to: Swiftly.currentPlatform.swiftlyConfigFile, options: .atomic)
     }
 
     public func listInstalledToolchains(selector: ToolchainSelector?) -> [ToolchainVersion] {

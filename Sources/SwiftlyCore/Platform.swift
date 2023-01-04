@@ -1,19 +1,9 @@
 import Foundation
 
 public protocol Platform {
-    /// The name of the platform as it is used in the Swift download URLs.
-    /// For instance, for Ubuntu 16.04 this would return “ubuntu1604”.
-    /// For macOS / Xcode, this would return “xcode”.
-    var name: String { get }
-
-    /// The full name of the platform as it is used in the Swift download URLs.
-    /// For instance, for Ubuntu 16.04 this would return “ubuntu16.04”.
-    var nameFull: String { get }
-
-    /// A human-readable / pretty-printed version of the platform’s name, used for terminal
-    /// output and logging.
-    /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
-    var namePretty: String { get }
+    /// The platform-specific location on disk where applications are
+    /// supposed to store their custom data.
+    var appDataDirectory: URL { get }
 
     /// The file extension of the downloaded toolchain for this platform.
     /// e.g. for Linux systems this is "tar.gz" and on macOS it's "pkg".
@@ -32,7 +22,11 @@ public protocol Platform {
     func uninstall(_ version: ToolchainVersion) throws
 
     /// Select the toolchain associated with the given version.
-    func use(_ version: ToolchainVersion) throws
+    /// Returns whether the selection was successful.
+    func use(_ version: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool
+
+    /// Clear the current active toolchain.
+    func unUse(currentToolchain: ToolchainVersion) throws
 
     /// Get a list of snapshot builds for the platform. If a version is specified, only
     /// return snapshots associated with the version.
@@ -46,6 +40,51 @@ public protocol Platform {
     /// Get a path pointing to a unique, temporary file.
     /// This does not need to actually create the file.
     func getTempFilePath() -> URL
+}
+
+extension Platform {
+    /// The location on disk where swiftly will store its configuration, installed toolchains, and symlinks to
+    /// the active location.
+    ///
+    /// The structure of this directory looks like the following:
+    ///
+    /// ```
+    /// homeDir/
+    ///   |
+    ///   -- toolchains/
+    ///   |
+    ///   -- config.json
+    /// ```
+    ///
+    public var swiftlyHomeDir: URL {
+        SwiftlyCore.mockedHomeDir
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_HOME_DIR"].map { URL(fileURLWithPath: $0) }
+            ?? self.appDataDirectory.appendingPathComponent("swiftly", isDirectory: true)
+    }
+
+    /// The directory which stores the swiftly executable itself as well as symlinks
+    /// to executables in the "bin" directory of the active toolchain.
+    ///
+    /// If a mocked home directory is set, this will be the "bin" subdirectory of the home directory.
+    /// If not, this will be the SWIFTLY_BIN_DIR environment variable if set. If that's also unset,
+    /// this will default to ~/.local/bin.
+    public var swiftlyBinDir: URL {
+        SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
+            ?? FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".local", isDirectory: true)
+            .appendingPathComponent("bin", isDirectory: true)
+    }
+
+    /// The "toolchains" subdirectory of swiftly's home directory. Contains the Swift toolchains managed by swiftly.
+    public var swiftlyToolchainsDir: URL {
+        self.swiftlyHomeDir.appendingPathComponent("toolchains", isDirectory: true)
+    }
+
+    /// The URL of the configuration file in swiftly's home directory.
+    public var swiftlyConfigFile: URL {
+        self.swiftlyHomeDir.appendingPathComponent("config.json")
+    }
 }
 
 public struct SystemDependency {}

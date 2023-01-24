@@ -44,7 +44,8 @@ let package = Package(
             ]
         ),
         .systemLibrary(
-            name: "CLibArchive"
+            name: "CLibArchive",
+            pkgConfig: "libarchive"
         ),
         .testTarget(
             name: "SwiftlyTests",

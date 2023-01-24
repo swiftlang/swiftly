@@ -14,6 +14,7 @@ tar -xzf "libarchive-$LIBARCHIVE_VERSION.tar.gz"
 
 cd "libarchive-$LIBARCHIVE_VERSION"
 ./configure \
+    --enable-shared=no \
     --without-nettle \
     --without-openssl \
     --without-lzo2 \

@@ -113,6 +113,10 @@ public struct Linux: Platform {
             }
 
             let url = self.swiftlyBinDir.appendingPathComponent(existingExecutable)
+            guard url.fileExists() else {
+                print("Note: expected link to \(existingExecutable) in SWIFTLY_BIN_DIR but did not find it")
+                continue
+            }
             let vals = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
 
             guard let islink = vals.isSymbolicLink, islink else {

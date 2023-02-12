@@ -41,33 +41,44 @@ struct Update: SwiftlyCommand {
     var toolchain: String?
 
     public mutating func run() async throws {
-        guard let oldToolchain = try self.oldToolchain() else {
+        var config = try Config.load()
+
+        guard let oldToolchain = try self.oldToolchain(config: config) else {
             if let toolchain = self.toolchain {
-                print("No installed toolchain matched \"\(toolchain)\"")
+                SwiftlyCore.print("No installed toolchain matched \"\(toolchain)\"")
             } else {
-                print("No toolchains are currently installed")
+                SwiftlyCore.print("No toolchains are currently installed")
             }
             return
         }
 
         guard let newToolchain = try await self.newToolchain(old: oldToolchain) else {
-            print("\(oldToolchain) is already up to date!")
+            SwiftlyCore.print("\(oldToolchain) is already up to date!")
             return
         }
 
-        print("updating \(oldToolchain) -> \(newToolchain)")
+        guard !config.installedToolchains.contains(newToolchain) else {
+            SwiftlyCore.print("\(newToolchain) is already installed, exiting.")
+            return
+        }
+
+        SwiftlyCore.print("Updating \(oldToolchain) -> \(newToolchain)")
         try await Install.execute(version: newToolchain)
+        if oldToolchain == config.inUse {
+            try await Use.execute(newToolchain, config: &config)
+        }
         try Swiftly.currentPlatform.uninstall(oldToolchain)
-        print("successfully updated \(oldToolchain) -> \(newToolchain)")
+        config.installedToolchains.remove(oldToolchain)
+        SwiftlyCore.print("Successfully updated \(oldToolchain) -> \(newToolchain)")
     }
 
-    private func oldToolchain() throws -> ToolchainVersion? {
+    private func oldToolchain(config: Config) throws -> ToolchainVersion? {
         guard let input = self.toolchain else {
-            return try Config.load().inUse
+            return config.inUse
         }
 
         let selector = try ToolchainSelector(parsing: input)
-        let toolchains = try Config.load().listInstalledToolchains(selector: selector)
+        let toolchains = config.listInstalledToolchains(selector: selector)
 
         // When multiple toolchains are matched, update the latest one.
         // This is for situations such as `swiftly update 5.5` when both

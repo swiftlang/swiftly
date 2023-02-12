@@ -59,7 +59,8 @@ extension HTTP {
     /// The results are returned in lexicographic order.
     internal static func getReleases(page: Int, perPage: Int = 100) async throws -> [GitHubTag] {
         let url = "https://api.github.com/repos/apple/swift/releases?per_page=\(perPage)&page=\(page)"
-        return try await Self.getFromGitHub(url: url)
+        let releases: [GitHubRelease] = try await Self.getFromGitHub(url: url)
+        return releases.filter { !$0.prerelease }.map { $0.toGitHubTag() }
     }
 
     /// Get a list of tags on the apple/swift GitHub repository.
@@ -69,6 +70,17 @@ extension HTTP {
     internal static func getTags(page: Int) async throws -> [GitHubTag] {
         let url = "https://api.github.com/repos/apple/swift/tags?per_page=100&page=\(page)"
         return try await Self.getFromGitHub(url: url)
+    }
+}
+
+/// Model of a GitHub REST API release object.
+/// See: https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#list-releases
+private struct GitHubRelease: Decodable {
+    fileprivate let name: String
+    fileprivate let prerelease: Bool
+
+    fileprivate func toGitHubTag() -> GitHubTag {
+        GitHubTag(name: self.name, commit: nil)
     }
 }
 

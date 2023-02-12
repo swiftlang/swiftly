@@ -29,6 +29,8 @@ struct ListAvailable: SwiftlyCommand {
 
             $ swiftly list-available main-snapshot
             $ swiftly list-available 5.7-snapshot
+
+        Note that listing available snapshots is currently unsupported. It will be introduced in a future release.
         """
     ))
     var toolchainSelector: String?
@@ -36,6 +38,13 @@ struct ListAvailable: SwiftlyCommand {
     internal mutating func run() async throws {
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
+        }
+
+        if let selector {
+            guard !selector.isSnapshotSelector() else {
+                SwiftlyCore.print("Listing available snapshots is not currently supported.")
+                return
+            }
         }
 
         let toolchains = try await HTTP.getReleaseToolchains()
@@ -54,7 +63,7 @@ struct ListAvailable: SwiftlyCommand {
             } else if installedToolchains.contains(toolchain) {
                 message += " (installed)"
             }
-            print(message)
+            SwiftlyCore.print(message)
         }
 
         if let selector {
@@ -74,25 +83,25 @@ struct ListAvailable: SwiftlyCommand {
                 modifier = "matching"
             }
 
-            let message = "available \(modifier) toolchains"
-            print(message)
-            print(String(repeating: "-", count: message.utf8.count))
+            let message = "Available \(modifier) toolchains"
+            SwiftlyCore.print(message)
+            SwiftlyCore.print(String(repeating: "-", count: message.utf8.count))
             for toolchain in toolchains {
                 printToolchain(toolchain)
             }
         } else {
-            print("available release toolchains")
+            print("Available release toolchains")
             print("----------------------------")
             for toolchain in toolchains where toolchain.isStableRelease() {
                 printToolchain(toolchain)
             }
 
-            print("")
-            print("available snapshot toolchains")
-            print("-----------------------------")
-            for toolchain in toolchains where toolchain.isSnapshot() {
-                printToolchain(toolchain)
-            }
+            // print("")
+            // print("Available snapshot toolchains")
+            // print("-----------------------------")
+            // for toolchain in toolchains where toolchain.isSnapshot() {
+            //     printToolchain(toolchain)
+            // }
         }
     }
 }

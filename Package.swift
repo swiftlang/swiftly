@@ -38,6 +38,9 @@ let package = Package(
             dependencies: [
                 "SwiftlyCore",
                 "CLibArchive",
+            ],
+            linkerSettings: [
+                .linkedLibrary("z")
             ]
         ),
         .systemLibrary(

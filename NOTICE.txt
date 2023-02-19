@@ -1,0 +1,61 @@
+swiftly
+Copyright (c) 2023 the swiftly project authors
+Licensed under Apache License v2.0
+
+See LICENSE.txt for license information
+See CONTRIBUTORS.txt for the list of swiftly project authors
+
+SPDX-License-Identifier: Apache-2.0
+
+----------------------------------------------------------------------
+
+This product contains a derivation of various scripts from SwiftNIO.
+
+  * LICENSE (Apache License 2.0):
+    * https://www.apache.org/licenses/LICENSE-2.0
+  * HOMEPAGE:
+    * https://github.com/apple/swift-nio
+
+----------------------------------------------------------------------
+
+The binary distributions of swiftly depend on and statically link to the
+following third party libraries:
+
+* Swift Argument Parser - Copyright 2020 Apple Inc. and the Swift project authors
+
+  * LICENSE (Apache License 2.0):
+    * https://www.apache.org/licenses/LICENSE-2.0
+  * HOMEPAGE:
+    * https://github.com/apple/swift-argument-parser
+
+* AsyncHTTPClient - Copyright 2017-2021 The AsyncHTTPClient Project
+
+  * LICENSE (Apache License 2.0):
+    * https://www.apache.org/licenses/LICENSE-2.0
+  * NOTICE:
+    * https://github.com/swift-server/async-http-client/blob/main/NOTICE.txt
+  * HOMEPAGE:
+    * https://github.com/swift-server/async-http-client
+
+* SwiftNIO - Copyright 2017, 2018 The SwiftNIO Project
+
+  * LICENSE (Apache License 2.0):
+    * https://www.apache.org/licenses/LICENSE-2.0
+  * NOTICE:
+    * https://github.com/apple/swift-nio/blob/main/NOTICE.txt
+  * HOMEPAGE:
+    * https://github.com/apple/swift-nio
+
+* swift-tools-support-core - Copyright 2014 Apple Inc. and the Swift project authors
+
+  * LICENSE (Apache License 2.0):
+    * https://www.apache.org/licenses/LICENSE-2.0
+  * HOMEPAGE:
+    * https://github.com/apple/swift-tools-support-core
+
+* libarchive - Copyright (c) 2003-2018 Tim Kientzle. All rights reserved.
+
+  * LICENSE ("New BSD license"):
+    * https://raw.githubusercontent.com/libarchive/libarchive/master/COPYING
+  * HOMEPAGE:
+    * http://www.libarchive.org/

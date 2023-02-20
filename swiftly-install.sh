@@ -45,15 +45,6 @@ case "$ID" in
         PLATFORM_NAME_FULL="amazonlinux2"
         ;;
 
-    "centos")
-        if [ "VERSION_ID" -ne "7" ]; then
-            echo "Error: Unsupported CentOS version: $PRETTY_NAME"
-            exit 1
-        fi
-        PLATFORM_NAME="centos7"
-        PLATFORM_NAME_FULL="centos7"
-        ;;
-
     "ubuntu")
         case "$UBUNTU_CODENAME" in
             "jammy")
@@ -119,7 +110,10 @@ mkdir -p $HOME_DIR
 
 EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
 echo "Downloading swiftly..."
-curl "https://github.com/patrickfreed/swiftly/releases/latest/download/$EXECUTABLE_NAME" --output "$BIN_DIR/swiftly"
+curl \
+    --header "Authorization: Bearer $SWIFTLY_GITHUB_TOKEN" \
+    "https://github.com/patrickfreed/swiftly/releases/latest/download/$EXECUTABLE_NAME" \
+    --output "$BIN_DIR/swiftly"
 
 echo "$JSON_OUT" > "$HOME_DIR/config.json"
 

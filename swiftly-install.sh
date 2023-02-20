@@ -109,15 +109,16 @@ EOF
 mkdir -p $HOME_DIR
 
 EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
-echo "Downloading swiftly..."
+DOWNLOAD_URL="https://github.com/patrickfreed/swiftly/releases/latest/download/$EXECUTABLE_NAME"
+echo "Downloading swiftly from $DOWNLOAD_URL..."
 curl \
     --header "Authorization: Bearer $SWIFTLY_GITHUB_TOKEN" \
-    "https://github.com/patrickfreed/swiftly/releases/latest/download/$EXECUTABLE_NAME" \
+    "$DOWNLOAD_URL" \
     --output "$BIN_DIR/swiftly"
 
 echo "$JSON_OUT" > "$HOME_DIR/config.json"
 
 echo "swiftly has been succesfully installed!"
 if ! has_command "swiftly" ; then
-    echo "You may have to restart your shell in order for swiftly to be accessible from your $PATH"
+    echo "You may have to restart your shell or add SWIFTLY_BIN_DIR to your PATH in order to access swiftly from the command line"
 fi

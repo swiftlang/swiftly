@@ -76,6 +76,14 @@ struct Install: SwiftlyCommand {
         }
 
         var url = "https://download.swift.org/"
+
+        var platformString = config.platform.name
+        var platformFullString = config.platform.nameFull
+        if let arch = config.platform.architecture {
+            platformString += "-\(arch)"
+            platformFullString += "-\(arch)"
+        }
+
         switch version {
         case let .stable(stableVersion):
             // Building URL path that looks like:
@@ -84,10 +92,11 @@ struct Install: SwiftlyCommand {
             if stableVersion.patch != 0 {
                 versionString += ".\(stableVersion.patch)"
             }
+
             url += "swift-\(versionString)-release/"
-            url += "\(config.platform.name)/"
+            url += "\(platformString)/"
             url += "swift-\(versionString)-RELEASE/"
-            url += "swift-\(versionString)-RELEASE-\(config.platform.nameFull).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            url += "swift-\(versionString)-RELEASE-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
         case let .snapshot(release):
             let snapshotString: String
             switch release.branch {
@@ -99,9 +108,9 @@ struct Install: SwiftlyCommand {
                 snapshotString = "swift-DEVELOPMENT-SNAPSHOT"
             }
 
-            url += "\(config.platform.name)/"
+            url += "\(platformString)/"
             url += "\(snapshotString)-\(release.date)-a/"
-            url += "\(snapshotString)-\(release.date)-a-\(config.platform.nameFull).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            url += "\(snapshotString)-\(release.date)-a-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
         }
 
         let animation = PercentProgressAnimation(

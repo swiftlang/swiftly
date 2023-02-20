@@ -80,7 +80,8 @@ class SwiftlyTests: XCTestCase {
             platform: Config.PlatformDefinition(
                 name: try getEnv("SWIFTLY_PLATFORM_NAME"),
                 nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
-                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
+                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY"),
+                architecture: try? getEnv("SWIFTLY_PLATFORM_ARCH")
             )
         )
         try config.save()

@@ -20,6 +20,9 @@ public struct Config: Codable, Equatable {
         /// output and logging.
         /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
         public let namePretty: String
+
+        /// The CPU architecture of the platform. If omitted, assumed to be x86_64.
+        public let architecture: String?
     }
 
     public var inUse: ToolchainVersion?

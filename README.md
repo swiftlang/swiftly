@@ -25,9 +25,9 @@ Target: x86_64-unknown-linux-gnu
 
 - Installing multiple toolchains, including both stable releases and snapshots
 - Switching which installed toolchain is active (i.e. which one is discovered via `$PATH`)
-- Updating installed toolchains to the latest available versions of those toolchains
+- Updating installed toolchains to the latest available versions of those toolchains (not yet implemented)
 - Uninstalling installed toolchains
-- Listing the toolchains that are available to install
+- Listing the toolchains that are available to install (not yet implemented)
 
 ## Current development status
 
@@ -169,6 +169,8 @@ Update replaces a given toolchain with a later version of that toolchain. For a 
 
 If no version is provided, update will update the currently selected toolchain to its latest version while removing the old version. The newly installed version will be used.
 
+Note that this command isn't implemented yet, but it will be included in a future release.
+
 ```
 $ swiftly update
 ```
@@ -207,6 +209,8 @@ swiftly update main-snapshot
 
 The `list-available` command can be used to list the latest toolchains that Apple has made available to install.
 
+Note that this command isn't implemented yet, but it will be included in a future release.
+
 ```
 swiftly list-available
 ```
@@ -222,6 +226,8 @@ $ swiftly list-available 5.7-snapshot
 ### Updating swiftly
 
 This command checks to see if there are new versions of `swiftly` itself and upgrades to them if so.
+
+Note that this command isn't implemented yet, but it will be included in a future release.
 
 `swiftly self-update`
 

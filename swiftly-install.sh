@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 
+# swiftly-install
 # Script used to install and configure swiftly.
 # 
-# If successful, this will create a directory at $SWIFTLY_HOME_DIR (default
-# $XDG_DATA_HOME/swiftly, if XDG_DATA_HOME isn't set, then ~/.local/share/swiftly)
-# containing a config.json file with platform information. It will also download
-# and install a swiftly executable at $SWIFTLY_HOME_DIR (default ~/.local/bin).
+# This script will download the latest released swiftly executable and install it
+# to $SWIFTLY_BIN_DIR, or ~/.local/bin if that variable isn't specified.
+#
+# This script will also create a directory at $SWIFTLY_HOME_DIR, or
+# $XDG_DATA_HOME/swiftly if that variable isn't specified. If XDG_DATA_HOME is also unset,
+# ~/.local/share/swiftly will be used as a default instead. swiftly will use this directory
+# to store platform information, downloaded toolchains, and other state required to manage
+# the toolchains.
+#
+# Unless the --disable-confirmation flag is set, this script will allow the runner to
+# configure either of those two directory paths.
 #
 # curl is required to run this script.
 
@@ -15,9 +23,50 @@ has_command () {
     command -v "$1" > /dev/null
 }
 
-DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
-HOME_DIR="${SWIFTLY_HOME_DIR:-$DATA_DIR/swiftly}"
-BIN_DIR="${SWIFTLY_BIN_DIR:-$HOME/.local/bin}"
+read_input_with_default () {
+    echo -n "> "
+    read READ_INPUT_RETURN
+
+    if [ -z "$READ_INPUT_RETURN" ]; then
+        READ_INPUT_RETURN="$1"
+    fi
+}
+
+SWIFTLY_INSTALL_VERSION="0.1.0"
+
+for arg in "$@"; do
+    case "$arg" in
+        "--help" | "-h")
+            cat <<EOF
+swiftly-install $SWIFTLY_INSTALL_VERSION
+The installer for swiftly.
+
+USAGE:
+    swiftly-install [FLAGS]
+
+FLAGS:
+    -y, --disable-confirmation  Disable confirmation prompt.
+    -h, --help                  Prints help information.
+    --version                   Prints version information.
+EOF
+            exit 0
+            ;;
+
+        "--disable-confirmation" | "-y")
+            DISABLE_CONFIRMATION="true"
+            ;;
+
+        "--version")
+            echo "$SWIFTLY_INSTALL_VERSION"
+            exit 0
+            ;;
+
+        *)
+            echo "Error: unrecognized flag \"$arg\""
+            exit 1
+            ;;
+    esac
+done
 
 if ! has_command "curl" ; then
     echo "Error: curl must be installed to download swiftly"
@@ -100,13 +149,85 @@ JSON_OUT=$(cat <<EOF
     "namePretty": "$PRETTY_NAME",
     "architecture": $PLATFORM_ARCH
   },
-  "installedToolchains": []
-  "inUse": null,
+  "installedToolchains": [],
+  "inUse": null
 }
 EOF
 )
 
+echo "This script will install swiftly, a Swift toolchain installer and manager."
+echo ""
+
+DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
+DEFAULT_HOME_DIR="$DATA_DIR/swiftly"
+HOME_DIR="${SWIFTLY_HOME_DIR:-$DEFAULT_HOME_DIR}"
+BIN_DIR="${SWIFTLY_BIN_DIR:-$HOME/.local/bin}"
+
+
+while [ -z "$DISABLE_CONFIRMATION" ]; do
+    echo "swiftly executables installation directory: $BIN_DIR"
+    echo "swiftly data files installation directory: $HOME_DIR"
+    echo ""
+    echo "Select one of the following:"
+    echo "1) Proceed with the installation (default)"
+    echo "2) Customize the installation paths"
+    echo "3) Cancel"
+
+    read_input_with_default "1"
+    case "$READ_INPUT_RETURN" in
+        # Just hitting enter will proceed with the default installation.
+        "1" | "1)")
+            echo ""
+            break
+            ;;
+
+        "2" | "2)")
+            echo "Enter the swiftly binary installation directory (default $BIN_DIR): "
+            read_input_with_default "$BIN_DIR"
+            BIN_DIR="$READ_INPUT_RETURN"
+
+            echo "Enter the swiftly data files directory (default $HOME_DIR): "
+            read_input_with_default "$HOME_DIR"
+            HOME_DIR="$READ_INPUT_RETURN"
+            ;;
+
+        *)
+            echo "Cancelling installation"
+            exit 0
+            ;;
+    esac
+done
+
+if [ -d "$HOME_DIR" ]; then
+    if [ "$DISABLE_CONFIRMATION" == "true" ]; then
+        echo "Overwriting existing swiftly installation at $HOME_DIR"
+    else
+        echo "Existing swiftly installation detected at $HOME_DIR, overwrite? (Y/n)"
+
+        while [ true ]; do
+            read_input_with_default "y"
+            case "$READ_INPUT_RETURN" in
+                "y" | "Y")
+                    break
+                ;;
+
+                "n" | "N" | "q")
+                    echo "Cancelling installation"
+                    exit 0
+                ;;
+
+                *)
+                    echo "Please input \"y\" or \"n\"."
+                    ;;
+            esac
+        done
+    fi
+
+    rm -r $HOME_DIR
+fi
+
 mkdir -p $HOME_DIR
+mkdir -p $BIN_DIR
 
 EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
 DOWNLOAD_URL="https://github.com/patrickfreed/swiftly/releases/latest/download/$EXECUTABLE_NAME"
@@ -119,14 +240,24 @@ curl \
 
 chmod +x "$BIN_DIR/swiftly"
 
+echo ""
+
+echo "swiftly executable written to $BIN_DIR/swiftly"
+
 echo "$JSON_OUT" > "$HOME_DIR/config.json"
 
-# Verify the downloaded executable works. The script will exit if this fails due to
-# set -o errexit.
+echo "swiftly data files written to $HOME_DIR"
+
+# Verify the downloaded executable works. The script will exit if this fails due to errexit.
 "$BIN_DIR/swiftly" --version > /dev/null
 
+echo ""
 echo "swiftly has been succesfully installed!"
 if ! has_command "swiftly" ; then
-    echo "You may have to restart your shell or add SWIFTLY_BIN_DIR \
-to your PATH in order to access swiftly from the shell"
+    echo "You may have to restart your shell or add $BIN_DIR \
+to your PATH in order to access swiftly from the shell."
+fi
+
+if [ "$HOME_DIR" != "$DEFAULT_HOME_DIR" ]; then
+    echo "The \$SWIFTLY_HOME_DIR environment variable must be set to $HOME_DIR in order to use swiftly."
 fi

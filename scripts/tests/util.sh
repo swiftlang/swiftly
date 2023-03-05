@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# Common utility functionality used in the various bash tests for swiftly-install.sh.
+
+has_command () {
+    command -v "$1" > /dev/null
+}
+
+test_fail () {
+    if [ ! -z "$1" ]; then
+        printf "$1\n"
+    fi
+
+    if [ ! -z "$2" ]; then
+        printf "actual: $2\n";
+        printf "expected: $3\n";
+    fi
+    echo "========= TEST FAILED ========"
+    exit 1
+}
+
+test_pass () {
+    echo "========= TEST PASSED ========"
+    exit 0
+}

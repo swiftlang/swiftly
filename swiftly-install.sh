@@ -226,7 +226,7 @@ if [ -d "$HOME_DIR" ]; then
     rm -r $HOME_DIR
 fi
 
-mkdir -p $HOME_DIR
+mkdir -p $HOME_DIR/toolchains
 mkdir -p $BIN_DIR
 
 EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"

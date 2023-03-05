@@ -161,12 +161,12 @@ echo ""
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
 DEFAULT_HOME_DIR="$DATA_DIR/swiftly"
 HOME_DIR="${SWIFTLY_HOME_DIR:-$DEFAULT_HOME_DIR}"
-BIN_DIR="${SWIFTLY_BIN_DIR:-$HOME/.local/bin}"
-
+DEFAULT_BIN_DIR="$HOME/.local/bin"
+BIN_DIR="${SWIFTLY_BIN_DIR:-$DEFAULT_BIN_DIR}"
 
 while [ -z "$DISABLE_CONFIRMATION" ]; do
+    echo "swiftly data and configuration files directory: $HOME_DIR"
     echo "swiftly executables installation directory: $BIN_DIR"
-    echo "swiftly data files installation directory: $HOME_DIR"
     echo ""
     echo "Select one of the following:"
     echo "1) Proceed with the installation (default)"
@@ -182,13 +182,13 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
             ;;
 
         "2" | "2)")
+            echo "Enter the swiftly data and configuration files directory (default $HOME_DIR): "
+            read_input_with_default "$HOME_DIR"
+            HOME_DIR="${READ_INPUT_RETURN/#~/$HOME}"
+
             echo "Enter the swiftly binary installation directory (default $BIN_DIR): "
             read_input_with_default "$BIN_DIR"
-            BIN_DIR="$READ_INPUT_RETURN"
-
-            echo "Enter the swiftly data files directory (default $HOME_DIR): "
-            read_input_with_default "$HOME_DIR"
-            HOME_DIR="$READ_INPUT_RETURN"
+            BIN_DIR="${READ_INPUT_RETURN/#~/$HOME}"
             ;;
 
         *)
@@ -259,5 +259,13 @@ to your PATH in order to access swiftly from the shell."
 fi
 
 if [ "$HOME_DIR" != "$DEFAULT_HOME_DIR" ]; then
-    echo "The \$SWIFTLY_HOME_DIR environment variable must be set to $HOME_DIR in order to use swiftly."
+    echo ""
+    echo "To ensure swiftly can properly find its data and configuration files, set the \$SWIFTLY_HOME_DIR \
+environment variable to $HOME_DIR before using swiftly."
+fi
+
+if [ "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]; then
+    echo ""
+    echo "To ensure swiftly installs Swift tooclhain executables to the configured location, set the \$SWIFTLY_BIN_DIR \
+environment variable to $BIN_DIR before using swiftly."
 fi

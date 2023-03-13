@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
 # Tests that the --disable-confirmation argument works.
-# Run this from the root of the repository.
 # WARNING: this test makes changes to the local filesystem and is intended to be run in a containerized environment.
 
 set -o errexit
-source ./scripts/tests/util.sh
+source ./test-util.sh
 
 cleanup () {
     rm -r "$HOME/.local/share/swiftly"

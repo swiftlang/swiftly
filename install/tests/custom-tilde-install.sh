@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
 # Tests that custom install paths that include the "~" character are expanded properly.
-# Run this from the root of the repository.
 # WARNING: this test makes changes to the local filesystem and is intended to be run in a containerized environment.
 
 set -o errexit
-source ./scripts/tests/util.sh
+source ./test-util.sh
 
 export CUSTOM_HOME_DIR_NAME="tilde-substitution-test-home"
 export CUSTOM_HOME_DIR="$HOME/$CUSTOM_HOME_DIR_NAME"

@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
 # Tests that installation can be cancelled.
-# Run this from the root of the repository.
 # WARNING: this test makes changes to the local filesystem and is intended to be run in a containerized environment.
 
 set -o errexit
-source ./scripts/tests/util.sh
+source ./test-util.sh
 
 echo "3" | ./swiftly-install.sh
 

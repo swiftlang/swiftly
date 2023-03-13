@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
 # Tests that swiftly-install properly handles an existing installation of swiftly.
-# Run this from the root of the repository.
 # WARNING: this test makes changes to the local filesystem and is intended to be run in a containerized environment.
 
 set -o errexit
-source ./scripts/tests/util.sh
+source ./test-util.sh
 
 export SWIFTLY_HOME_DIR="./overwrite-test-home"
 export SWIFTLY_BIN_DIR="$SWIFTLY_HOME_DIR/bin"

@@ -250,7 +250,7 @@ echo "$JSON_OUT" > "$HOME_DIR/config.json"
 echo "swiftly data files written to $HOME_DIR"
 
 # Verify the downloaded executable works. The script will exit if this fails due to errexit.
-"$BIN_DIR/swiftly" --version > /dev/null
+SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
 
 echo ""
 echo "swiftly has been succesfully installed!"

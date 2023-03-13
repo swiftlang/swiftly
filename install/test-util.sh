@@ -11,15 +11,13 @@ test_fail () {
         printf "$1\n"
     fi
 
-    if [ ! -z "$2" ]; then
-        printf "actual: $2\n";
-        printf "expected: $3\n";
+    if [ ! -z "$3" ]; then
+        printf "actual: $2\n"
+        printf "expected: $3\n"
     fi
-    echo "========= TEST FAILED ========"
     exit 1
 }
 
 test_pass () {
-    echo "========= TEST PASSED ========"
     exit 0
 }

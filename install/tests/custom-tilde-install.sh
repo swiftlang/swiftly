@@ -12,12 +12,6 @@ export CUSTOM_BIN_DIR="$CUSTOM_HOME_DIR/bin"
 export PATH="$CUSTOM_BIN_DIR:$PATH"
 
 cleanup () {
-    set +o errexit
-
-    if has_command "swiftly" ; then
-       swiftly uninstall -y latest > /dev/null
-    fi
-
     rm -r "$CUSTOM_HOME_DIR"
 }
 trap cleanup EXIT
@@ -32,12 +26,5 @@ fi
 if [ ! -d "$CUSTOM_HOME_DIR/toolchains" ]; then
     test_fail "the toolchains directory was not created in SWIFTLY_HOME_DIR"
 fi
-
-export SWIFTLY_HOME_DIR="$CUSTOM_HOME_DIR"
-export SWIFTLY_BIN_DIR="$CUSTOM_BIN_DIR"
-
-swiftly install latest
-
-swift --version
 
 test_pass

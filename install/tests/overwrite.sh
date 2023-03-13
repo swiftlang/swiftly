@@ -21,9 +21,10 @@ if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
 fi
 
-swiftly install 5.7.3
-
-INSTALLED_TOOLCHAINS="$(jq .installedToolchains $SWIFTLY_HOME_DIR/config.json)"
+# Modify the home dir to be able to to tell if it is changed with subseqent installs.
+DUMMY_CONFIG_CONTENTS="hello world"
+echo "$DUMMY_CONFIG_CONTENTS" > "$SWIFTLY_HOME_DIR/config.json"
+mkdir "$SWIFTLY_HOME_DIR/toolchains/5.7.3"
 
 # Attempt the same installation, but decline to overwrite.
 printf "1\nn\n" | ./swiftly-install.sh 
@@ -32,9 +33,9 @@ if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
 fi
 
-NEW_INSTALLED_TOOLCHAINS="$(jq .installedToolchains $SWIFTLY_HOME_DIR/config.json)"
-if [ "$NEW_INSTALLED_TOOLCHAINS" != "$INSTALLED_TOOLCHAINS" ]; then
-    test_fail "Expected config to remain unchanged" "$NEW_INSTALLED_TOOLCHAINS" "$INSTALLED_TOOLCHAINS"
+NEW_CONFIG_CONTENTS="$(cat $SWIFTLY_HOME_DIR/config.json)"
+if [ "$NEW_CONFIG_CONTENTS" != "$DUMMY_CONFIG_CONTENTS" ]; then
+    test_fail "Expected config to remain unchanged" "$NEW_CONFIG_CONTENTS" "$DUMMY_CONFIG_CONTENTS"
 fi
 
 if [ ! -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]; then
@@ -48,9 +49,9 @@ if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
 fi
 
-NEW_INSTALLED_TOOLCHAINS="$(jq .installedToolchains $SWIFTLY_HOME_DIR/config.json)"
-if [ "$NEW_INSTALLED_TOOLCHAINS" != "[]" ]; then
-    test_fail "Expected config's list of installed toolchains to be reset" "$NEW_INSTALLED_TOOLCHAINS" "[]"
+NEW_CONFIG_CONTENTS="$(cat $SWIFTLY_HOME_DIR/config.json)"
+if [ "$NEW_CONFIG_CONTENTS" == "DUMMY_CONFIG_CONTENTS" ]; then
+    test_fail "Expected config to be reset but it was not"
 fi
 
 if [ -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]; then

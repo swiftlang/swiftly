@@ -12,7 +12,7 @@ if has_command "swiftly" ; then
     test_fail "swiftly executable should not have been installed"
 fi
 
-if [ ! -d "$HOME/.local/share/swiftly" ]; then
+if [ -d "$HOME/.local/share/swiftly" ]; then
     test_fail "SWIFTLY_HOME_DIR should not have been created"
 fi
 

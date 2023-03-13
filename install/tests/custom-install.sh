@@ -23,21 +23,31 @@ trap cleanup EXIT
 
 printf "2\n$CUSTOM_HOME_DIR\n$CUSTOM_BIN_DIR\n1\n" | ./swiftly-install.sh
 
+export SWIFTLY_HOME_DIR="$CUSTOM_HOME_DIR"
+export SWIFTLY_BIN_DIR="$CUSTOM_BIN_DIR"
+
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
 fi
-
-ls "$CUSTOM_HOME_DIR"
 
 if [ ! -d "$CUSTOM_HOME_DIR/toolchains" ]; then
     test_fail "the toolchains directory was not created in SWIFTLY_HOME_DIR"
 fi
 
-export SWIFTLY_HOME_DIR="$CUSTOM_HOME_DIR"
-export SWIFTLY_BIN_DIR="$CUSTOM_BIN_DIR"
+if [ -d "$HOME/.local/share/swiftly" ]; then
+    test_fail "expected default home directory to not be created, but it was"
+fi
 
-swiftly install latest
+swiftly install 5.7.3
 
 swift --version
+
+if [ ! -d "$CUSTOM_HOME_DIR/toolchains/5.7.3" ]; then
+    test_fail "the toolchain was not installed to the custom directory"
+fi
+
+if [ -d "$HOME/.local/share/swiftly" ]; then
+    test_fail "expected default home directory to not be created, but it was"
+fi
 
 test_pass

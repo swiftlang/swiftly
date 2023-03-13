@@ -34,11 +34,11 @@ if ! has_command "swiftly" ; then
 fi
 
 NEW_CONFIG_CONTENTS="$(cat $SWIFTLY_HOME_DIR/config.json)"
-if [ "$NEW_CONFIG_CONTENTS" != "$DUMMY_CONFIG_CONTENTS" ]; then
+if [[ "$NEW_CONFIG_CONTENTS" != "$DUMMY_CONFIG_CONTENTS" ]]; then
     test_fail "Expected config to remain unchanged" "$NEW_CONFIG_CONTENTS" "$DUMMY_CONFIG_CONTENTS"
 fi
 
-if [ ! -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]; then
+if [[ ! -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]]; then
     test_fail "Expected installed toolchain directory to still exist, but it has been deleted"
 fi
 
@@ -50,11 +50,11 @@ if ! has_command "swiftly" ; then
 fi
 
 NEW_CONFIG_CONTENTS="$(cat $SWIFTLY_HOME_DIR/config.json)"
-if [ "$NEW_CONFIG_CONTENTS" == "DUMMY_CONFIG_CONTENTS" ]; then
+if [[ "$NEW_CONFIG_CONTENTS" == "DUMMY_CONFIG_CONTENTS" ]]; then
     test_fail "Expected config to be reset but it was not"
 fi
 
-if [ -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]; then
+if [[ -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]]; then
     test_fail "Expected installed toolchain directory to have been overwritten, but it still exists"
 fi
 

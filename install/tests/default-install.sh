@@ -24,7 +24,7 @@ if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
 fi
 
-if [ ! -d "$HOME/.local/share/swiftly/toolchains" ]; then
+if [[ ! -d "$HOME/.local/share/swiftly/toolchains" ]]; then
     test_fail "the toolchains directory was not created in SWIFTLY_HOME_DIR"
 fi
 

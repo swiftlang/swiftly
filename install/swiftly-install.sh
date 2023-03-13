@@ -73,9 +73,9 @@ if ! has_command "curl" ; then
     exit 1
 fi
 
-if [ -f "/etc/os-release" ]; then
+if [[ -f "/etc/os-release" ]]; then
     OS_RELEASE="/etc/os-release"
-elif [ -f "/usr/lib/os-release" ]; then
+elif [[ -f "/usr/lib/os-release" ]]; then
     OS_RELEASE="/usr/lib/os-release"
 else
     echo "Error: could not detect OS information"
@@ -86,7 +86,7 @@ source "$OS_RELEASE"
 
 case "$ID" in
     "amzn")
-        if [ "VERSION_ID" -ne "2" ]; then
+        if [[ "$VERSION_ID" != "2" ]]; then
             echo "Error: Unsupported Amazon Linux version: $PRETTY_NAME"
             exit 1
         fi
@@ -198,13 +198,13 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
     esac
 done
 
-if [ -d "$HOME_DIR" ]; then
-    if [ "$DISABLE_CONFIRMATION" == "true" ]; then
+if [[ -d "$HOME_DIR" ]]; then
+    if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
         echo "Overwriting existing swiftly installation at $HOME_DIR"
     else
         echo "Existing swiftly installation detected at $HOME_DIR, overwrite? (Y/n)"
 
-        while [ true ]; do
+        while [[ true ]]; do
             read_input_with_default "y"
             case "$READ_INPUT_RETURN" in
                 "y" | "Y")
@@ -259,13 +259,13 @@ if ! has_command "swiftly" ; then
 to your PATH in order to access swiftly from the shell."
 fi
 
-if [ "$HOME_DIR" != "$DEFAULT_HOME_DIR" ]; then
+if [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" ]]; then
     echo ""
     echo "To ensure swiftly can properly find its data and configuration files, set the \$SWIFTLY_HOME_DIR \
 environment variable to $HOME_DIR before using swiftly."
 fi
 
-if [ "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]; then
+if [[ "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]]; then
     echo ""
     echo "To ensure swiftly installs Swift tooclhain executables to the configured location, set the \$SWIFTLY_BIN_DIR \
 environment variable to $BIN_DIR before using swiftly."

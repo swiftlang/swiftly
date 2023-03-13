@@ -233,6 +233,7 @@ EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
 DOWNLOAD_URL="https://github.com/patrickfreed/swiftly/releases/latest/download/$EXECUTABLE_NAME"
 echo "Downloading swiftly from $DOWNLOAD_URL..."
 curl \
+    --retry 3 \
     --location \
     --header "Accept: application/octet-stream" \
     "$DOWNLOAD_URL" \

@@ -270,3 +270,6 @@ if [[ "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]]; then
     echo "To ensure swiftly installs Swift tooclhain executables to the configured location, set the \$SWIFTLY_BIN_DIR \
 environment variable to $BIN_DIR before using swiftly."
 fi
+
+echo ""
+echo "To install the latest version of Swift, run 'swiftly install latest'"

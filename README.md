@@ -29,9 +29,12 @@ Target: x86_64-unknown-linux-gnu
 - Uninstalling installed toolchains
 - Listing the toolchains that are available to install (not yet implemented)
 
-## Current development status
+## Platform support
 
-Right now, swiftly is in the very early stages of development and is working towards an MVP for the Linux platforms mentioned on https://swift.org/download. Once that is complete, work will begin on an MVP for macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
+- Linux-based platforms listed on https://swift.org/download
+  - CentOS 7 will not be supported due to some dependencies of swiftly not supporting it, however.
+
+Right now, swiftly is in the very early stages of development and is working towards an MVP for the Linux. Once that is complete, work will begin on an MVP for macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
 
 ## Command interface overview
 

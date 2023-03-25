@@ -107,7 +107,7 @@ final class UninstallTests: SwiftlyTests {
                 "5.7-snapshot-2022-01-03",
                 "1.1.3",
                 "1.1.0",
-                "1.5.54"
+                "1.5.54",
             ].map { try! ToolchainVersion(parsing: $0) }
         )
 
@@ -180,7 +180,7 @@ final class UninstallTests: SwiftlyTests {
             Self.oldMainSnapshot,
             Self.newMainSnapshot,
             Self.oldReleaseSnapshot,
-            Self.newReleaseSnapshot
+            Self.newReleaseSnapshot,
         ]
 
         func uninstallInUseTest(

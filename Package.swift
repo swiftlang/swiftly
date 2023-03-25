@@ -40,14 +40,14 @@ let package = Package(
                 "CLibArchive",
             ],
             linkerSettings: [
-                .linkedLibrary("z")
+                .linkedLibrary("z"),
             ]
         ),
         .systemLibrary(
             name: "CLibArchive",
             pkgConfig: "libarchive",
             providers: [
-                .apt(["libarchive-dev"])
+                .apt(["libarchive-dev"]),
             ]
         ),
         .testTarget(

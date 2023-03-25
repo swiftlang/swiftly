@@ -176,7 +176,7 @@ final class InstallTests: SwiftlyTests {
                 [
                     ToolchainVersion(snapshotBranch: .main, date: "2022-09-10"),
                     ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30"),
-                    ToolchainVersion(major: 5, minor: 7, patch: 0)
+                    ToolchainVersion(major: 5, minor: 7, patch: 0),
                 ],
                 description: "install both snapshots and releases"
             )

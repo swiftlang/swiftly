@@ -9,14 +9,14 @@ final class ListTests: SwiftlyTests {
     static let sortedReleaseToolchains: [ToolchainVersion] = [
         ListTests.newStable,
         ListTests.oldStableNewPatch,
-        ListTests.oldStable
+        ListTests.oldStable,
     ]
 
     static let sortedSnapshotToolchains: [ToolchainVersion] = [
         ListTests.newMainSnapshot,
         ListTests.oldMainSnapshot,
         ListTests.newReleaseSnapshot,
-        ListTests.oldReleaseSnapshot
+        ListTests.oldReleaseSnapshot,
     ]
 
     /// Constructs a mock home directory with the toolchains listed above installed and runs the provided closure within

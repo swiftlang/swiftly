@@ -220,7 +220,7 @@ final class UseTests: SwiftlyTests {
             let spec = [
                 ToolchainVersion(major: 1, minor: 2, patch: 3): ["a", "b"],
                 ToolchainVersion(major: 2, minor: 3, patch: 4): ["b", "c", "d"],
-                ToolchainVersion(major: 3, minor: 4, patch: 5): ["a", "c", "d", "e"]
+                ToolchainVersion(major: 3, minor: 4, patch: 5): ["a", "c", "d", "e"],
             ]
 
             for (toolchain, files) in spec {

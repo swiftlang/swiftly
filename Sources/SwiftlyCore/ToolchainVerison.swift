@@ -294,7 +294,7 @@ protocol ToolchainSelectorParser {
 private let parsers: [any ToolchainSelectorParser] = [
     StableReleaseParser(),
     ReleaseSnapshotParser(),
-    MainSnapshotParser()
+    MainSnapshotParser(),
 ]
 
 /// Parser for version selectors like the following:

@@ -2,12 +2,11 @@ version: "3"
 
 services:
 
-  runtime-setup:
+  test-setup:
     image: swiftly:18.04-5.7
     build:
       args:
         base_image: "swift:5.7-bionic"
-
 
   lint:
     image: swiftly:18.04-5.7
@@ -15,9 +14,18 @@ services:
   test:
     image: swiftly:18.04-5.7
     environment:
-      - SWIFTLY_PLATFORM_NAME=ubuntu2004
+      - SWIFTLY_PLATFORM_NAME=ubuntu1804
       - SWIFTLY_PLATFORM_NAME_FULL=ubuntu18.04
       - SWIFTLY_PLATFORM_NAME_PRETTY="Ubuntu 18.04"
+
+  install-test-setup:
+    image: swiftly:18.04
+    build:
+      args:
+        base_image: "ubuntu:bionic"
+
+  install-test:
+    image: swiftly:18.04
 
   shell:
     image: swiftly:18.04-5.7

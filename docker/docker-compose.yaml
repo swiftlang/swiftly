@@ -5,15 +5,15 @@ version: "3"
 
 services:
 
-  runtime-setup:
+  test-setup:
     image: swiftly:default
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/test.dockerfile
 
   common: &common
     image: swiftly:default
-    depends_on: [runtime-setup]
+    depends_on: [test-setup]
     volumes:
       - ~/.ssh:/root/.ssh
       - ..:/code:z
@@ -29,6 +29,27 @@ services:
   test:
     <<: *common
     command: /usr/bin/env bash -xcl "./scripts/run-tests.sh"
+
+  install-test-setup:
+    image: swiftly:install-default
+    build:
+      context: ..
+      dockerfile: docker/install-test.dockerfile
+
+  install-test-common: &install-test-common
+    image: swiftly:install-default
+    depends_on: [install-test-setup]
+    volumes:
+      - ~/.ssh:/root/.ssh
+      - ../install:/swiftly-install:z
+    working_dir: /swiftly-install
+    cap_drop:
+      - CAP_NET_RAW
+      - CAP_NET_BIND_SERVICE
+
+  install-test:
+    <<: *install-test-common
+    command: /usr/bin/env bash -xcl "./run-tests.sh"
 
   # util
 

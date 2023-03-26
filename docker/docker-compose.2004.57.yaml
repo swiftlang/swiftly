@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+
+  runtime-setup:
+    image: swiftly:20.04-5.7
+    build:
+      args:
+        base_image: "swift:5.7-focal"
+
+
+  lint:
+    image: swiftly:20.04-5.7
+
+  test:
+    image: swiftly:20.04-5.7
+    environment:
+      - SWIFTLY_PLATFORM_NAME=ubuntu2004
+      - SWIFTLY_PLATFORM_NAME_FULL=ubuntu20.04
+      - SWIFTLY_PLATFORM_NAME_PRETTY="Ubuntu 20.04"
+
+  shell:
+    image: swiftly:20.04-5.7

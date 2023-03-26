@@ -35,7 +35,7 @@ final class InstallTests: SwiftlyTests {
     /// Tests that `swiftly install a.b` installs the latest patch version of Swift a.b.
     func testInstallLatestPatchVersion() async throws {
         try await self.withTestHome {
-            var cmd = try self.parseCommand(Install.self, ["install", "5.6"])
+            var cmd = try self.parseCommand(Install.self, ["install", "5.7"])
             try await cmd.run()
 
             let config = try Config.load()
@@ -49,8 +49,8 @@ final class InstallTests: SwiftlyTests {
                 return
             }
 
-            // As of writing this, 5.6.3 is the latest 5.6 patch release. Assert it is at least that new.
-            XCTAssertTrue(release >= ToolchainVersion.StableRelease(major: 5, minor: 6, patch: 3))
+            // As of writing this, 5.7.3 is the latest 5.7 patch release. Assert it is at least that new.
+            XCTAssertTrue(release >= ToolchainVersion.StableRelease(major: 5, minor: 7, patch: 3))
 
             try await validateInstalledToolchains([installedToolchain], description: "install latest")
         }
@@ -70,10 +70,10 @@ final class InstallTests: SwiftlyTests {
                 description: "install a stable release toolchain"
             )
 
-            cmd = try self.parseCommand(Install.self, ["install", "5.6.1"])
+            cmd = try self.parseCommand(Install.self, ["install", "5.7.2"])
             try await cmd.run()
 
-            installedToolchains.insert(ToolchainVersion(major: 5, minor: 6, patch: 1))
+            installedToolchains.insert(ToolchainVersion(major: 5, minor: 7, patch: 2))
             try await validateInstalledToolchains(
                 installedToolchains,
                 description: "install another stable release toolchain"
@@ -232,8 +232,8 @@ final class InstallTests: SwiftlyTests {
 
             try await validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
 
-            var install56 = try self.parseCommand(Install.self, ["install", "5.6.0"])
-            try await install56.run()
+            var installOther = try self.parseCommand(Install.self, ["install", "5.7.1"])
+            try await installOther.run()
 
             // Verify that 5.7.0 is still in use.
             try await self.validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))

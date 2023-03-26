@@ -24,7 +24,7 @@ services:
 
   test:
     <<: *common
-    command: /usr/bin/env bash -xcl "swift test --parallel -Xswiftc -warnings-as-errors"
+    command: /usr/bin/env bash -xcl "swift test -Xswiftc -warnings-as-errors"
 
   # util
 

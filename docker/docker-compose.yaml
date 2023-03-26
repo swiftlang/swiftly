@@ -24,7 +24,7 @@ services:
 
   lint:
     <<: *common
-    command: /usr/bin/env bash -xcl "swiftformat --lint ."
+    command: /usr/bin/env bash -xcl "./scripts/check-lint.sh"
 
   test:
     <<: *common

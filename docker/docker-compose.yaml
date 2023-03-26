@@ -22,6 +22,10 @@ services:
       - CAP_NET_RAW
       - CAP_NET_BIND_SERVICE
 
+  lint:
+    <<: *common
+    command: /usr/bin/env bash -xcl "swiftformat --lint ."
+
   test:
     <<: *common
     command: /usr/bin/env bash -xcl "swift test -Xswiftc -warnings-as-errors"

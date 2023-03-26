@@ -8,12 +8,16 @@ services:
       args:
         base_image: "swift:5.7-jammy"
 
+
+  lint:
+    image: swiftly:22.04-5.7
+
   test:
     image: swiftly:22.04-5.7
     environment:
       - SWIFTLY_PLATFORM_NAME=ubuntu2204
       - SWIFTLY_PLATFORM_NAME_FULL=ubuntu22.04
-      - SWIFTLY_PLATFORM_NAME_PRETTY"Ubuntu 22.04"
+      - SWIFTLY_PLATFORM_NAME_PRETTY="Ubuntu 22.04"
 
   shell:
     image: swiftly:22.04-5.7

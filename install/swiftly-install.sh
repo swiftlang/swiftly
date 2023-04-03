@@ -235,6 +235,7 @@ echo "Downloading swiftly from $DOWNLOAD_URL..."
 curl \
     --retry 3 \
     --location \
+    --fail-with-body \
     --header "Accept: application/octet-stream" \
     "$DOWNLOAD_URL" \
     --output "$BIN_DIR/swiftly"

@@ -230,7 +230,7 @@ mkdir -p $HOME_DIR/toolchains
 mkdir -p $BIN_DIR
 
 EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
-DOWNLOAD_URL="https://github.com/patrickfreed/swiftly/releases/latest/download/$EXECUTABLE_NAME"
+DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
 echo "Downloading swiftly from $DOWNLOAD_URL..."
 curl \
     --retry 3 \

@@ -4,6 +4,13 @@ swiftly is a CLI tool for installing, managing, and switching between [Swift](ht
 
 Ongoing maintenance and stewardship of this project is led by the [SSWG](https://www.swift.org/sswg/).
 
+### Installation
+
+Just Run:
+```
+curl -L https://raw.githubusercontent.com/swift-server/swiftly/main/install/swiftly-install.sh | bash
+```
+
 ### Basic usage
 
 ```

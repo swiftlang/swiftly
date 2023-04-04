@@ -5,9 +5,10 @@ ARG swift_version
 ARG ubuntu_version
 
 # dependencies
-RUN yum install -y \
+RUN yum install --allowerasing -y \
     curl \
     gcc \
+    gcc-c++ \
     make
 COPY ./scripts/install-libarchive.sh /
 RUN /install-libarchive.sh

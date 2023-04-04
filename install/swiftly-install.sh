@@ -118,6 +118,15 @@ case "$ID" in
         esac
         ;;
 
+    "rhel")
+        if [[ "$VERSION_ID" != 9* ]]; then
+            echo "Error: Unsupported RHEL version: $PRETTY_NAME"
+            exit 1
+        fi
+        PLATFORM_NAME="ubi9"
+        PLATFORM_NAME_FULL="ubi9"
+        ;;
+
     *)
         echo "Error: Unsupported platform: $PRETTY_NAME"
         exit 1

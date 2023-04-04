@@ -38,11 +38,11 @@ if [[ -d "$HOME/.local/share/swiftly" ]]; then
     test_fail "expected default home directory to not be created, but it was"
 fi
 
-swiftly install 5.7.3
+swiftly install 5.8.0
 
 swift --version
 
-if [[ ! -d "$CUSTOM_HOME_DIR/toolchains/5.7.3" ]]; then
+if [[ ! -d "$CUSTOM_HOME_DIR/toolchains/5.8.0" ]]; then
     test_fail "the toolchain was not installed to the custom directory"
 fi
 

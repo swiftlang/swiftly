@@ -28,6 +28,26 @@ class SwiftlyTests: XCTestCase {
         newReleaseSnapshot,
     ]
 
+    func baseTestConfig() throws -> Config {
+        let getEnv = { varName in
+            guard let v = ProcessInfo.processInfo.environment[varName] else {
+                throw SwiftlyTestError(message: "environment variable \(varName) must be set in order to run tests")
+            }
+            return v
+        }
+
+        return Config(
+            inUse: nil,
+            installedToolchains: [],
+            platform: Config.PlatformDefinition(
+                name: try getEnv("SWIFTLY_PLATFORM_NAME"),
+                nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
+                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY"),
+                architecture: try? getEnv("SWIFTLY_PLATFORM_ARCH")
+            )
+        )
+    }
+
     func parseCommand<T: ParsableCommand>(_ commandType: T.Type, _ arguments: [String]) throws -> T {
         let rawCmd = try Swiftly.parseAsRoot(arguments)
 
@@ -67,23 +87,7 @@ class SwiftlyTests: XCTestCase {
             try? FileManager.default.removeItem(at: testHome)
         }
 
-        let getEnv = { varName in
-            guard let v = ProcessInfo.processInfo.environment[varName] else {
-                throw SwiftlyTestError(message: "environment variable \(varName) must be set in order to run tests")
-            }
-            return v
-        }
-
-        let config = Config(
-            inUse: nil,
-            installedToolchains: [],
-            platform: Config.PlatformDefinition(
-                name: try getEnv("SWIFTLY_PLATFORM_NAME"),
-                nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
-                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY"),
-                architecture: try? getEnv("SWIFTLY_PLATFORM_ARCH")
-            )
-        )
+        let config = try self.baseTestConfig()
         try config.save()
 
         try await f()

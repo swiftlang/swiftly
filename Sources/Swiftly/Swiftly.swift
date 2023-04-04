@@ -33,7 +33,10 @@ public struct Swiftly: SwiftlyCommand {
 
     public init() {}
 
-    public mutating func run() async throws {}
+    public mutating func run() async throws {
+        // Workaround for https://github.com/apple/swift-argument-parser/issues/563
+        throw Error(message: "No subcommands provided. See 'swiftly --help' for more information.")
+    }
 
 #if os(Linux)
     internal static let currentPlatform = Linux.currentPlatform

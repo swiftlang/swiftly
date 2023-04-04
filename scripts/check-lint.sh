@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-swiftformat --lint .
+set -o errexit
+
+swiftformat --lint --dryrun .

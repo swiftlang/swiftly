@@ -6,7 +6,7 @@ services:
     image: swiftly:ubi9-5.8
     build:
       context: ..
-      dockerfile: docker/test-yum.dockerfile
+      dockerfile: docker/test-ubi9.dockerfile
       args:
         base_image: "swift:5.8-rhel-ubi9"
 
@@ -21,7 +21,7 @@ services:
     image: swiftly:ubi9
     build:
       context: ..
-      dockerfile: docker/install-test-yum.dockerfile
+      dockerfile: docker/install-test-ubi9.dockerfile
       args:
         base_image: "redhat/ubi9:latest"
 

@@ -5,7 +5,7 @@ ARG swift_version
 ARG ubuntu_version
 
 # dependencies
-RUN yum install --allowerasing -y \
+RUN yum install -y \
     curl \
     gcc \
     gcc-c++ \

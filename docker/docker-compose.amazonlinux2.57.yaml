@@ -21,7 +21,7 @@ services:
     image: swiftly:amazonlinux2
     build:
       context: ..
-      dockerfile: docker/install-test-amazonlinux2.dockerfile
+      dockerfile: docker/install-test-yum.dockerfile
       args:
         base_image: "amazonlinux:2"
 

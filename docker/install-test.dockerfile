@@ -2,7 +2,7 @@ ARG base_image=ubuntu:jammy
 FROM $base_image
 
 # set as UTF-8
-RUN apt-get update && apt-get install -y locales locales-all
+RUN apt-get update && apt-get install -y locales locales-all sqlite3
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8

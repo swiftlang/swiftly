@@ -68,11 +68,6 @@ EOF
     esac
 done
 
-if ! has_command "curl" ; then
-    echo "Error: curl must be installed to download swiftly"
-    exit 1
-fi
-
 if [[ -f "/etc/os-release" ]]; then
     OS_RELEASE="/etc/os-release"
 elif [[ -f "/usr/lib/os-release" ]]; then
@@ -140,6 +135,11 @@ case "$RAW_ARCH" in
         echo "Error: Unsupported CPU architecture: $RAW_ARCH"
         ;;
 esac
+
+if ! has_command "curl" ; then
+    echo "Error: curl must be installed to download swiftly"
+    exit 1
+fi
 
 JSON_OUT=$(cat <<EOF
 {

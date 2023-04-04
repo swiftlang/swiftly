@@ -99,7 +99,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2023-04-01"])
             try await cmd.run()
 
-            installedToolchains.insert(ToolchainVersion(snapshotBranch: .main, date: "2022-04-01"))
+            installedToolchains.insert(ToolchainVersion(snapshotBranch: .main, date: "2023-04-01"))
             try await validateInstalledToolchains(
                 installedToolchains,
                 description: "install a main snapshot toolchain"

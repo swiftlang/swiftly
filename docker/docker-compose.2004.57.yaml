@@ -8,9 +8,6 @@ services:
       args:
         base_image: "swift:5.7-focal"
 
-  lint:
-    image: swiftly:20.04-5.7
-
   test:
     image: swiftly:20.04-5.7
     environment:

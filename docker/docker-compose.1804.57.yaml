@@ -8,9 +8,6 @@ services:
       args:
         base_image: "swift:5.7-bionic"
 
-  lint:
-    image: swiftly:18.04-5.7
-
   test:
     image: swiftly:18.04-5.7
     environment:

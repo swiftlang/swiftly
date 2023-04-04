@@ -8,9 +8,6 @@ services:
       args:
         base_image: "swift:5.7-jammy"
 
-  lint:
-    image: swiftly:22.04-5.7
-
   test:
     image: swiftly:22.04-5.7
     environment:

@@ -10,9 +10,6 @@ services:
       args:
         base_image: "swift:5.8-rhel-ubi9"
 
-  lint:
-    image: swiftly:ubi9-5.8
-
   test:
     image: swiftly:ubi9-5.8
     environment:

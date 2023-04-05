@@ -9,7 +9,7 @@ import SwiftlyCore
 @available(macOS 10.15, *)
 public struct Swiftly: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
-        abstract: "A utility for insalling and managing Swift toolchains.",
+        abstract: "A utility for installing and managing Swift toolchains.",
 
         version: "0.1.0",
 
@@ -32,11 +32,6 @@ public struct Swiftly: SwiftlyCommand {
     }
 
     public init() {}
-
-    public mutating func run() async throws {
-        // Workaround for https://github.com/apple/swift-argument-parser/issues/563
-        throw Error(message: "No subcommands provided. See 'swiftly --help' for more information.")
-    }
 
 #if os(Linux)
     internal static let currentPlatform = Linux.currentPlatform

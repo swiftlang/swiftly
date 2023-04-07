@@ -3,22 +3,22 @@ version: "3"
 services:
 
   test-setup:
-    image: swiftly:amazonlinux2-5.7
+    image: swiftly:amazonlinux2-test
     build:
       context: ..
       dockerfile: docker/test-amazonlinux2.dockerfile
       args:
-        base_image: "swift:5.7-amazonlinux2"
+        base_image: "swift:5.8-amazonlinux2"
 
   test:
-    image: swiftly:amazonlinux2-5.7
+    image: swiftly:amazonlinux2-test
     environment:
       - SWIFTLY_PLATFORM_NAME=amazonlinux2
       - SWIFTLY_PLATFORM_NAME_FULL=amazonlinux2
       - SWIFTLY_PLATFORM_NAME_PRETTY="Amazon Linux 2"
 
   install-test-setup:
-    image: swiftly:amazonlinux2
+    image: swiftly:amazonlinux2-install-test
     build:
       context: ..
       dockerfile: docker/install-test-amazonlinux2.dockerfile
@@ -26,7 +26,7 @@ services:
         base_image: "amazonlinux:2"
 
   install-test:
-    image: swiftly:amazonlinux2
+    image: swiftly:amazonlinux2-install-test
 
   shell:
-    image: swiftly:amazonlinux2-5.7
+    image: swiftly:amazonlinux2-test

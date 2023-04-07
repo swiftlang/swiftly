@@ -3,7 +3,7 @@ version: "3"
 services:
 
   test-setup:
-    image: swiftly:ubi9-5.8
+    image: swiftly:ubi9-test
     build:
       context: ..
       dockerfile: docker/test-ubi9.dockerfile
@@ -11,14 +11,14 @@ services:
         base_image: "swift:5.8-rhel-ubi9"
 
   test:
-    image: swiftly:ubi9-5.8
+    image: swiftly:ubi9-test
     environment:
       - SWIFTLY_PLATFORM_NAME=ubi9
       - SWIFTLY_PLATFORM_NAME_FULL=ubi9
       - SWIFTLY_PLATFORM_NAME_PRETTY="Red Hat Enterprise Linux 9"
 
   install-test-setup:
-    image: swiftly:ubi9
+    image: swiftly:ubi9-install-test
     build:
       context: ..
       dockerfile: docker/install-test-ubi9.dockerfile
@@ -26,7 +26,7 @@ services:
         base_image: "redhat/ubi9:latest"
 
   install-test:
-    image: swiftly:ubi9
+    image: swiftly:ubi9-install-test
 
   shell:
-    image: swiftly:ubi9-5.8
+    image: swiftly:ubi9-test

@@ -67,13 +67,11 @@ extension Platform {
     ///
     /// If a mocked home directory is set, this will be the "bin" subdirectory of the home directory.
     /// If not, this will be the SWIFTLY_BIN_DIR environment variable if set. If that's also unset,
-    /// this will default to ~/.local/bin.
+    /// this will default to /usr/local/bin.
     public var swiftlyBinDir: URL {
-        SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
-            ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
-            ?? FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".local", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
+        SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) } ??
+          ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) } ?? 
+          URL(fileURLWithPath: "/usr/local/bin")
     }
 
     /// The "toolchains" subdirectory of swiftly's home directory. Contains the Swift toolchains managed by swiftly.

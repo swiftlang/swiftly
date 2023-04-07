@@ -4,7 +4,7 @@
 # Script used to install and configure swiftly.
 # 
 # This script will download the latest released swiftly executable and install it
-# to $SWIFTLY_BIN_DIR, or ~/.local/bin if that variable isn't specified.
+# to $SWIFTLY_BIN_DIR, or /usr/local/bin if that variable isn't specified.
 #
 # This script will also create a directory at $SWIFTLY_HOME_DIR, or
 # $XDG_DATA_HOME/swiftly if that variable isn't specified. If XDG_DATA_HOME is also unset,
@@ -30,10 +30,6 @@ read_input_with_default () {
     if [ -z "$READ_INPUT_RETURN" ]; then
         READ_INPUT_RETURN="$1"
     fi
-}
-
-in_path() {
-  [[ ":$PATH:" == *":$1:"* ]]
 }
 
 SWIFTLY_INSTALL_VERSION="0.1.0"
@@ -165,12 +161,7 @@ echo ""
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
 DEFAULT_HOME_DIR="$DATA_DIR/swiftly"
 HOME_DIR="${SWIFTLY_HOME_DIR:-$DEFAULT_HOME_DIR}"
-DEFAULT_BIN_DIR="$HOME/.local/bin"
-
-if ! in_path "$HOME/.local/bin" && in_path "/usr/local/bin"; then
-    DEFAULT_BIN_DIR="/usr/local/bin"
-fi
-
+DEFAULT_BIN_DIR="/usr/local/bin"
 BIN_DIR="${SWIFTLY_BIN_DIR:-$DEFAULT_BIN_DIR}"
 
 while [ -z "$DISABLE_CONFIRMATION" ]; do

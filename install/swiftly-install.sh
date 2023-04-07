@@ -32,6 +32,10 @@ read_input_with_default () {
     fi
 }
 
+in_path() {
+  [[ ":$PATH:" == *":$1:"* ]]
+}
+
 SWIFTLY_INSTALL_VERSION="0.1.0"
 
 for arg in "$@"; do
@@ -162,6 +166,11 @@ DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
 DEFAULT_HOME_DIR="$DATA_DIR/swiftly"
 HOME_DIR="${SWIFTLY_HOME_DIR:-$DEFAULT_HOME_DIR}"
 DEFAULT_BIN_DIR="$HOME/.local/bin"
+
+if ! in_path "$HOME/.local/bin" && in_path "/usr/local/bin"; then
+    DEFAULT_BIN_DIR="/usr/local/bin"
+fi
+
 BIN_DIR="${SWIFTLY_BIN_DIR:-$DEFAULT_BIN_DIR}"
 
 while [ -z "$DISABLE_CONFIRMATION" ]; do

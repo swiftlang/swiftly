@@ -12,6 +12,13 @@
 # to store platform information, downloaded toolchains, and other state required to manage
 # the toolchains.
 #
+# After installation, the script will create $SWIFTLY_HOME_DIR/env.sh, which can be sourced
+# to properly set up the environment variables required to run swiftly. Unless --no-modify-profile
+# was specified, the script will also update ~/.profile, ~/.bash_profile, or ~/.zprofile,
+# depending on the value of $SHELL and the existence of the files, to source the env.sh file.
+# This will ensure that future logins will automatically configure SWIFTLY_HOME_DIR, SWIFTLY_BIN_DIR,
+# and PATH.
+#
 # Unless the --disable-confirmation flag is set, this script will allow the runner to
 # configure either of those two directory paths.
 #
@@ -46,6 +53,8 @@ USAGE:
 
 FLAGS:
     -y, --disable-confirmation  Disable confirmation prompt.
+    --no-modify-profile         Do not attempt to modify the profile file to set environment 
+                                variables (e.g. PATH) on login.
     -h, --help                  Prints help information.
     --version                   Prints version information.
 EOF
@@ -54,6 +63,10 @@ EOF
 
         "--disable-confirmation" | "-y")
             DISABLE_CONFIRMATION="true"
+            ;;
+
+        "--no-modify-profile")
+            NO_MODIFY_PATH="true"
             ;;
 
         "--version")
@@ -229,17 +242,17 @@ fi
 mkdir -p $HOME_DIR/toolchains
 mkdir -p $BIN_DIR
 
-EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
-DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
-echo "Downloading swiftly from $DOWNLOAD_URL..."
-curl \
-    --retry 3 \
-    --location \
-    --header "Accept: application/octet-stream" \
-    "$DOWNLOAD_URL" \
-    --output "$BIN_DIR/swiftly"
+# EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
+# DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
+# echo "Downloading swiftly from $DOWNLOAD_URL..."
+# curl \
+#     --retry 3 \
+#     --location \
+#     --header "Accept: application/octet-stream" \
+#     "$DOWNLOAD_URL" \
+#     --output "$BIN_DIR/swiftly"
 
-chmod +x "$BIN_DIR/swiftly"
+# chmod +x "$BIN_DIR/swiftly"
 
 echo ""
 
@@ -250,25 +263,45 @@ echo "$JSON_OUT" > "$HOME_DIR/config.json"
 echo "swiftly data files written to $HOME_DIR"
 
 # Verify the downloaded executable works. The script will exit if this fails due to errexit.
-SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
+# SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
 
 echo ""
 echo "swiftly has been succesfully installed!"
-if ! has_command "swiftly" ; then
-    echo "You may have to restart your shell or add $BIN_DIR \
-to your PATH in order to access swiftly from the shell."
+
+ENV_OUT=$(cat <<EOF
+SWIFTLY_HOME_DIR="$HOME_DIR"
+SWIFTLY_BIN_DIR="$BIN_DIR"
+if [[ ":\$PATH:" != *":\$SWIFTLY_BIN_DIR:"* ]]; then
+   PATH="\$SWIFTLY_BIN_DIR:\$PATH"
+fi
+EOF
+)
+
+echo "$ENV_OUT" > "$HOME_DIR/env.sh"
+
+if [[ "$NO_MODIFY_PATH" != "true" ]]; then
+    PROFILE_FILE="$HOME/.profile"
+    case "$SHELL" in
+        "*zsh")
+            PROFILE_FILE="$HOME/.zprofile"
+            ;;
+        "*bash")
+            if [[ -f "$HOME/.bash_profile" ]]; then
+                PROFILE_FILE="$HOME/.bash_profile"
+            fi
+            ;;
+        *)
+    esac
+    echo ". $HOME_DIR/env.sh" >> "$PROFILE_FILE"
 fi
 
-if [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" ]]; then
+if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then
     echo ""
-    echo "To ensure swiftly can properly find its data and configuration files, set the \$SWIFTLY_HOME_DIR \
-environment variable to $HOME_DIR before using swiftly."
-fi
-
-if [[ "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]]; then
+    echo "To begin using swiftly from your current shell, first run the following command:"
     echo ""
-    echo "To ensure swiftly installs Swift tooclhain executables to the configured location, set the \$SWIFTLY_BIN_DIR \
-environment variable to $BIN_DIR before using swiftly."
+    echo "    . $HOME_DIR/env.sh"
+    echo ""
+    echo "Once you log in again, this should no longer be necessary."
 fi
 
 echo ""

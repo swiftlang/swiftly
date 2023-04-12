@@ -6,7 +6,7 @@
 set -o errexit
 source ./test-util.sh
 
-echo "3" | ./swiftly-install.sh
+echo "3" | SWIFTLY_READ_FROM_STDIN=1 ./swiftly-install.sh
 
 if has_command "swiftly" ; then
     test_fail "swiftly executable should not have been installed"

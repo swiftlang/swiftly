@@ -14,7 +14,7 @@ trap cleanup EXIT
 
 export PATH="$HOME/.local/bin:$PATH"
 
-./swiftly-install.sh -y
+SWIFTLY_READ_FROM_STDIN=1 ./swiftly-install.sh -y
 
 if ! has_command "swiftly" ; then
     fail_test "Can't find swiftly on the PATH"
@@ -24,7 +24,7 @@ DUMMY_CONTENT="should be overwritten"
 echo "$DUMMY_CONTENT" > "$HOME/.local/share/swiftly/config.json"
 
 # Running it again should overwrite the previous installation without asking us for permission.
-./swiftly-install.sh --disable-confirmation
+SWIFTLY_READ_FROM_STDIN=1 ./swiftly-install.sh --disable-confirmation
 
 if ! has_command "swiftly" ; then
     fail_test "Can't find swiftly on the PATH"

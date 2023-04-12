@@ -17,7 +17,7 @@ cleanup () {
 trap cleanup EXIT
 
 # Make sure that the "~" character is handled properly.
-printf "2\n~/${CUSTOM_HOME_DIR_NAME}\n~/${CUSTOM_HOME_DIR_NAME}/bin\n1\n" | ./swiftly-install.sh
+printf "2\n~/${CUSTOM_HOME_DIR_NAME}\n~/${CUSTOM_HOME_DIR_NAME}/bin\n1\n" | SWIFTLY_READ_FROM_STDIN=1 ./swiftly-install.sh
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"

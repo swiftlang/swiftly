@@ -39,6 +39,18 @@ read_input_with_default () {
     fi
 }
 
+# TODO: use this in env.sh, and everywhere print to stdout
+
+# Replaces the actual path to $HOME at the beginning of the provided string argument with
+# the string "$HOME".
+replace_home_path () {
+    if [[ "$1" =~ ^"$HOME"(/|$) ]]; then
+        echo "\$HOME${1#$HOME}"
+    else
+        echo "$1"
+    fi
+}
+
 SWIFTLY_INSTALL_VERSION="0.1.0"
 
 for arg in "$@"; do
@@ -66,7 +78,7 @@ EOF
             ;;
 
         "--no-modify-profile")
-            NO_MODIFY_PATH="true"
+            NO_MODIFY_PROFILE="true"
             ;;
 
         "--version")
@@ -178,7 +190,7 @@ DEFAULT_BIN_DIR="$HOME/.local/bin"
 BIN_DIR="${SWIFTLY_BIN_DIR:-$DEFAULT_BIN_DIR}"
 
 while [ -z "$DISABLE_CONFIRMATION" ]; do
-    echo "swiftly data and configuration files directory: $HOME_DIR"
+    echo "swiftly data and configuration files directory: $(replace_home_path $HOME_DIR)"
     echo "swiftly executables installation directory: $BIN_DIR"
     echo ""
     echo "Select one of the following:"
@@ -195,13 +207,13 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
             ;;
 
         "2" | "2)")
-            echo "Enter the swiftly data and configuration files directory (default $HOME_DIR): "
+            echo "Enter the swiftly data and configuration files directory (default $(replace_home_path $HOME_DIR)): "
             read_input_with_default "$HOME_DIR"
             HOME_DIR="${READ_INPUT_RETURN/#~/$HOME}"
 
             echo "Enter the swiftly binary installation directory (default $BIN_DIR): "
             read_input_with_default "$BIN_DIR"
-            BIN_DIR="${READ_INPUT_RETURN/#~/$HOME}"
+            BIN_DIR="${READ_INPUT_RETURN/#~/\$HOME}"
             ;;
 
         *)
@@ -213,7 +225,7 @@ done
 
 if [[ -d "$HOME_DIR" ]]; then
     if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
-        echo "Overwriting existing swiftly installation at $HOME_DIR"
+        echo "Overwriting existing swiftly installation at $(replace_home_path $HOME_DIR)"
     else
         echo "Existing swiftly installation detected at $HOME_DIR, overwrite? (Y/n)"
 
@@ -242,31 +254,28 @@ fi
 mkdir -p $HOME_DIR/toolchains
 mkdir -p $BIN_DIR
 
-# EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
-# DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
-# echo "Downloading swiftly from $DOWNLOAD_URL..."
-# curl \
-#     --retry 3 \
-#     --location \
-#     --header "Accept: application/octet-stream" \
-#     "$DOWNLOAD_URL" \
-#     --output "$BIN_DIR/swiftly"
+EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
+DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
+echo "Downloading swiftly from $DOWNLOAD_URL..."
+curl \
+    --retry 3 \
+    --location \
+    --header "Accept: application/octet-stream" \
+    "$DOWNLOAD_URL" \
+    --output "$BIN_DIR/swiftly"
 
-# chmod +x "$BIN_DIR/swiftly"
+chmod +x "$BIN_DIR/swiftly"
 
 echo ""
-
-echo "swiftly executable written to $BIN_DIR/swiftly"
 
 echo "$JSON_OUT" > "$HOME_DIR/config.json"
 
-echo "swiftly data files written to $HOME_DIR"
-
 # Verify the downloaded executable works. The script will exit if this fails due to errexit.
-# SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
+SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
 
 echo ""
 echo "swiftly has been succesfully installed!"
+echo ""
 
 ENV_OUT=$(cat <<EOF
 SWIFTLY_HOME_DIR="$HOME_DIR"
@@ -279,7 +288,7 @@ EOF
 
 echo "$ENV_OUT" > "$HOME_DIR/env.sh"
 
-if [[ "$NO_MODIFY_PATH" != "true" ]]; then
+if [[ "$NO_MODIFY_PROFILE" != "true" ]]; then
     PROFILE_FILE="$HOME/.profile"
     case "$SHELL" in
         "*zsh")
@@ -296,13 +305,12 @@ if [[ "$NO_MODIFY_PATH" != "true" ]]; then
 fi
 
 if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then
-    echo ""
+    echo "Once you log in again, swiftly should be accessible from your PATH."
     echo "To begin using swiftly from your current shell, first run the following command:"
     echo ""
     echo "    . $HOME_DIR/env.sh"
     echo ""
-    echo "Once you log in again, this should no longer be necessary."
+    echo "Then to install the latest version of Swift, run 'swiftly install latest'"
+else
+    echo "To install the latest version of Swift, run 'swiftly install latest'"
 fi
-
-echo ""
-echo "To install the latest version of Swift, run 'swiftly install latest'"

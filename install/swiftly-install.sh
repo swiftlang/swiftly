@@ -51,7 +51,13 @@ replace_home_path () {
     fi
 }
 
+bold () {
+    echo "$(tput bold)$1$(tput sgr0)"
+}
+
 SWIFTLY_INSTALL_VERSION="0.1.0"
+
+MODIFY_PROFILE="true"
 
 for arg in "$@"; do
     case "$arg" in
@@ -78,7 +84,7 @@ EOF
             ;;
 
         "--no-modify-profile")
-            NO_MODIFY_PROFILE="true"
+            MODIFY_PROFILE="false"
             ;;
 
         "--version")
@@ -180,6 +186,19 @@ JSON_OUT=$(cat <<EOF
 EOF
 )
 
+PROFILE_FILE="$HOME/.profile"
+case "$SHELL" in
+    "*zsh")
+        PROFILE_FILE="$HOME/.zprofile"
+        ;;
+    "*bash")
+        if [[ -f "$HOME/.bash_profile" ]]; then
+            PROFILE_FILE="$HOME/.bash_profile"
+        fi
+        ;;
+    *)
+esac
+
 echo "This script will install swiftly, a Swift toolchain installer and manager."
 echo ""
 
@@ -190,8 +209,11 @@ DEFAULT_BIN_DIR="$HOME/.local/bin"
 BIN_DIR="${SWIFTLY_BIN_DIR:-$DEFAULT_BIN_DIR}"
 
 while [ -z "$DISABLE_CONFIRMATION" ]; do
-    echo "swiftly data and configuration files directory: $(replace_home_path $HOME_DIR)"
-    echo "swiftly executables installation directory: $BIN_DIR"
+    echo "Current installation options:"
+    echo ""
+    printf "  %40s: $(bold $(replace_home_path $HOME_DIR))\n" "Data and configuration files directory"
+    printf "  %40s: $(bold $(replace_home_path $BIN_DIR))\n" "Executables installation directory"
+    printf "  %40s: $(bold $MODIFY_PROFILE)\n" "Modify login config ($(replace_home_path $PROFILE_FILE))"
     echo ""
     echo "Select one of the following:"
     echo "1) Proceed with the installation (default)"
@@ -211,9 +233,30 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
             read_input_with_default "$HOME_DIR"
             HOME_DIR="${READ_INPUT_RETURN/#~/$HOME}"
 
-            echo "Enter the swiftly binary installation directory (default $BIN_DIR): "
+            echo "Enter the swiftly executables installation directory (default $(replace_home_path $BIN_DIR)): "
             read_input_with_default "$BIN_DIR"
             BIN_DIR="${READ_INPUT_RETURN/#~/\$HOME}"
+
+            if [[ "$MODIFY_PROFILE" == "true" ]]; then
+                MODIFY_PROFILE_PROMPT="(Y/n)"
+            else
+                MODIFY_PROFILE_PROMPT="(y/N)"
+            fi
+            echo "Modify login config ($(replace_home_path $PROFILE_FILE))? $MODIFY_PROFILE_PROMPT"
+            read_input_with_default "$MODIFY_PROFILE"
+
+            case "$READ_INPUT_RETURN" in
+                "y" | "Y")
+                    MODIFY_PROFILE="true"
+                ;;
+
+                "n" | "N")
+                    MODIFY_PROFILE="false"
+                ;;
+
+                *)
+                ;;
+            esac
             ;;
 
         *)
@@ -227,7 +270,7 @@ if [[ -d "$HOME_DIR" ]]; then
     if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
         echo "Overwriting existing swiftly installation at $(replace_home_path $HOME_DIR)"
     else
-        echo "Existing swiftly installation detected at $HOME_DIR, overwrite? (Y/n)"
+        echo "Existing swiftly installation detected at $(replace_home_path $HOME_DIR), overwrite? (Y/n)"
 
         while [[ true ]]; do
             read_input_with_default "y"
@@ -278,8 +321,8 @@ echo "swiftly has been succesfully installed!"
 echo ""
 
 ENV_OUT=$(cat <<EOF
-SWIFTLY_HOME_DIR="$HOME_DIR"
-SWIFTLY_BIN_DIR="$BIN_DIR"
+SWIFTLY_HOME_DIR="$(replace_home_path $HOME_DIR)"
+SWIFTLY_BIN_DIR="$(replace_home_path $BIN_DIR)"
 if [[ ":\$PATH:" != *":\$SWIFTLY_BIN_DIR:"* ]]; then
    PATH="\$SWIFTLY_BIN_DIR:\$PATH"
 fi
@@ -288,27 +331,15 @@ EOF
 
 echo "$ENV_OUT" > "$HOME_DIR/env.sh"
 
-if [[ "$NO_MODIFY_PROFILE" != "true" ]]; then
-    PROFILE_FILE="$HOME/.profile"
-    case "$SHELL" in
-        "*zsh")
-            PROFILE_FILE="$HOME/.zprofile"
-            ;;
-        "*bash")
-            if [[ -f "$HOME/.bash_profile" ]]; then
-                PROFILE_FILE="$HOME/.bash_profile"
-            fi
-            ;;
-        *)
-    esac
-    echo ". $HOME_DIR/env.sh" >> "$PROFILE_FILE"
+if [[ "$MODIFY_PROFILE" == "true" ]]; then
+    echo ". $(replace_home_path $HOME_DIR)/env.sh" >> "$PROFILE_FILE"
 fi
 
 if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then
     echo "Once you log in again, swiftly should be accessible from your PATH."
     echo "To begin using swiftly from your current shell, first run the following command:"
     echo ""
-    echo "    . $HOME_DIR/env.sh"
+    echo "    . $(replace_home_path $HOME_DIR)/env.sh"
     echo ""
     echo "Then to install the latest version of Swift, run 'swiftly install latest'"
 else

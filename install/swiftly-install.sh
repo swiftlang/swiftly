@@ -25,6 +25,7 @@
 # curl is required to run this script.
 
 set -o errexit
+shopt -s extglob
 
 has_command () {
     command -v "$1" > /dev/null
@@ -39,10 +40,9 @@ read_input_with_default () {
     fi
 }
 
-# TODO: use this in env.sh, and everywhere print to stdout
-
 # Replaces the actual path to $HOME at the beginning of the provided string argument with
-# the string "$HOME".
+# the string "$HOME". This is used when printing to stdout.
+# e.g. "home/user/.local/bin" => "$HOME/.local/bin"
 replace_home_path () {
     if [[ "$1" =~ ^"$HOME"(/|$) ]]; then
         echo "\$HOME${1#$HOME}"
@@ -51,6 +51,14 @@ replace_home_path () {
     fi
 }
 
+# Replaces the string "$HOME" or "~" in the argument with the actual value of $HOME.
+# e.g. "$HOME/.local/bin" => "/home/user/.local/bin"
+# e.g. "~/.local/bin" => "/home/user/.local/bin"
+expand_home_path () {
+    echo "${1/#@(~|\$HOME)/$HOME}"
+}
+
+# Prints the provided argument using the terminal's bold text effect.
 bold () {
     echo "$(tput bold)$1$(tput sgr0)"
 }
@@ -217,25 +225,24 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
     echo ""
     echo "Select one of the following:"
     echo "1) Proceed with the installation (default)"
-    echo "2) Customize the installation paths"
+    echo "2) Customize the installation"
     echo "3) Cancel"
 
     read_input_with_default "1"
     case "$READ_INPUT_RETURN" in
         # Just hitting enter will proceed with the default installation.
         "1" | "1)")
-            echo ""
             break
             ;;
 
         "2" | "2)")
             echo "Enter the swiftly data and configuration files directory (default $(replace_home_path $HOME_DIR)): "
             read_input_with_default "$HOME_DIR"
-            HOME_DIR="${READ_INPUT_RETURN/#~/$HOME}"
+            HOME_DIR="$(expand_home_path $READ_INPUT_RETURN)"
 
             echo "Enter the swiftly executables installation directory (default $(replace_home_path $BIN_DIR)): "
             read_input_with_default "$BIN_DIR"
-            BIN_DIR="${READ_INPUT_RETURN/#~/\$HOME}"
+            BIN_DIR="$(expand_home_path $READ_INPUT_RETURN)"
 
             if [[ "$MODIFY_PROFILE" == "true" ]]; then
                 MODIFY_PROFILE_PROMPT="(Y/n)"
@@ -309,8 +316,6 @@ curl \
 
 chmod +x "$BIN_DIR/swiftly"
 
-echo ""
-
 echo "$JSON_OUT" > "$HOME_DIR/config.json"
 
 # Verify the downloaded executable works. The script will exit if this fails due to errexit.
@@ -321,18 +326,23 @@ echo "swiftly has been succesfully installed!"
 echo ""
 
 ENV_OUT=$(cat <<EOF
-SWIFTLY_HOME_DIR="$(replace_home_path $HOME_DIR)"
-SWIFTLY_BIN_DIR="$(replace_home_path $BIN_DIR)"
+export SWIFTLY_HOME_DIR="$(replace_home_path $HOME_DIR)"
+export SWIFTLY_BIN_DIR="$(replace_home_path $BIN_DIR)"
 if [[ ":\$PATH:" != *":\$SWIFTLY_BIN_DIR:"* ]]; then
-   PATH="\$SWIFTLY_BIN_DIR:\$PATH"
+   export PATH="\$SWIFTLY_BIN_DIR:\$PATH"
 fi
 EOF
 )
 
 echo "$ENV_OUT" > "$HOME_DIR/env.sh"
 
-if [[ "$MODIFY_PROFILE" == "true" ]]; then
-    echo ". $(replace_home_path $HOME_DIR)/env.sh" >> "$PROFILE_FILE"
+if [[ "$MODIFY_PROFILE" == "true" ]] && [[ -f "$PROFILE_FILE" ]]; then
+    SOURCE_LINE=". $(replace_home_path $HOME_DIR)/env.sh"
+
+    # Only append the line if it isn't in .profile already.
+    if [[ ! "$(cat $PROFILE_FILE)" =~ "$SOURCE_LINE" ]]; then
+        echo "$SOURCE_LINE" >> "$PROFILE_FILE"
+    fi
 fi
 
 if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then

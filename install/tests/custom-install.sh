@@ -21,10 +21,12 @@ cleanup () {
 }
 trap cleanup EXIT
 
-printf "2\n$CUSTOM_HOME_DIR\n$CUSTOM_BIN_DIR\n1\n" | ./swiftly-install.sh
+printf "2\n$CUSTOM_HOME_DIR\n$CUSTOM_BIN_DIR\ny\n1\n" | ./swiftly-install.sh
 
-export SWIFTLY_HOME_DIR="$CUSTOM_HOME_DIR"
-export SWIFTLY_BIN_DIR="$CUSTOM_BIN_DIR"
+# .profile should be updated to update PATH and HOME_DIR/BIN_DIR.
+bash --login -c "swiftly --version"
+
+. "$CUSTOM_HOME_DIR/env.sh"
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"

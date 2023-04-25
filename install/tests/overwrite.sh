@@ -8,21 +8,26 @@ source ./test-util.sh
 
 export SWIFTLY_HOME_DIR="./overwrite-test-home"
 export SWIFTLY_BIN_DIR="$SWIFTLY_HOME_DIR/bin"
-export PATH="$SWIFTLY_BIN_DIR:$PATH"
+
+cp "$HOME/.profile" "$HOME/.profile.bak"
 
 cleanup () {
+    mv "$HOME/.profile.bak" "$HOME/.profile"
     rm -r "$SWIFTLY_HOME_DIR"
 }
 trap cleanup EXIT
 
 ./swiftly-install.sh -y
 
+. "$SWIFTLY_HOME_DIR/env.sh"
+
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
 fi
 
-# Modify the home dir to be able to to tell if it is changed with subseqent installs.
+# Modify the home dir to be able to to tell if it is changed with subsequent installs.
 DUMMY_CONFIG_CONTENTS="hello world"
+PROFILE_CONTENTS="$(cat $HOME/.profile)"
 echo "$DUMMY_CONFIG_CONTENTS" > "$SWIFTLY_HOME_DIR/config.json"
 mkdir "$SWIFTLY_HOME_DIR/toolchains/5.7.3"
 
@@ -52,6 +57,10 @@ fi
 NEW_CONFIG_CONTENTS="$(cat $SWIFTLY_HOME_DIR/config.json)"
 if [[ "$NEW_CONFIG_CONTENTS" == "DUMMY_CONFIG_CONTENTS" ]]; then
     test_fail "Expected config to be reset but it was not"
+fi
+
+if [[ "$(cat $HOME/.profile)" != "$PROFILE_CONTENTS" ]]; then
+    test_fail "Expected .profile not to be updated on overwrite install"
 fi
 
 if [[ -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]]; then

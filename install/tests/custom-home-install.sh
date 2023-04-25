@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Tests that custom install paths that include the "~" character are expanded properly.
+# Tests that custom install paths that include the string "$HOME" are expanded properly.
 # WARNING: this test makes changes to the local filesystem and is intended to be run in a containerized environment.
 
 set -o errexit
 source ./test-util.sh
 
-export CUSTOM_HOME_DIR_NAME="tilde-substitution-test-home"
+export CUSTOM_HOME_DIR_NAME="home-substitution-test-home"
 export CUSTOM_HOME_DIR="$HOME/$CUSTOM_HOME_DIR_NAME"
 export CUSTOM_BIN_DIR="$CUSTOM_HOME_DIR/bin"
 
@@ -19,7 +19,7 @@ cleanup () {
 trap cleanup EXIT
 
 # Make sure that the "~" character is handled properly.
-printf "2\n~/${CUSTOM_HOME_DIR_NAME}\n~/${CUSTOM_HOME_DIR_NAME}/bin\ny\n1\n" | ./swiftly-install.sh
+printf "2\n\$HOME/${CUSTOM_HOME_DIR_NAME}\n\$HOME/${CUSTOM_HOME_DIR_NAME}/bin\ny\n1\n" | ./swiftly-install.sh
 
 # .profile should be updated to update PATH and SWIFTLY_HOME_DIR/SWIFTLY_BIN_DIR.
 bash --login -c "swiftly --version"

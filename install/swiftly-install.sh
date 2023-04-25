@@ -196,12 +196,16 @@ EOF
 
 PROFILE_FILE="$HOME/.profile"
 case "$SHELL" in
-    "*zsh")
+    *"zsh")
         PROFILE_FILE="$HOME/.zprofile"
         ;;
-    "*bash")
+    *"bash")
+        # Order derived from:
+        # https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Bash-Startup-Files
         if [[ -f "$HOME/.bash_profile" ]]; then
             PROFILE_FILE="$HOME/.bash_profile"
+        elif [[ -f "$HOME/.bash_login" ]]; then
+            PROFILE_FILE="$HOME/.bash_login"
         fi
         ;;
     *)

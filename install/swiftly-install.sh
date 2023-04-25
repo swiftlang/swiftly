@@ -350,11 +350,11 @@ EOF
 
 echo "$ENV_OUT" > "$HOME_DIR/env.sh"
 
-if [[ "$MODIFY_PROFILE" == "true" ]] && [[ -f "$PROFILE_FILE" ]]; then
+if [[ "$MODIFY_PROFILE" == "true" ]]; then
     SOURCE_LINE=". $(replace_home_path $HOME_DIR)/env.sh"
 
     # Only append the line if it isn't in .profile already.
-    if [[ ! "$(cat $PROFILE_FILE)" =~ "$SOURCE_LINE" ]]; then
+    if [[ ! -f "$PROFILE_FILE" ]] || [[ ! "$(cat $PROFILE_FILE)" =~ "$SOURCE_LINE" ]]; then
         echo "$SOURCE_LINE" >> "$PROFILE_FILE"
     fi
 fi

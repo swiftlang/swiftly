@@ -14,8 +14,8 @@
 #
 # After installation, the script will create $SWIFTLY_HOME_DIR/env.sh, which can be sourced
 # to properly set up the environment variables required to run swiftly. Unless --no-modify-profile
-# was specified, the script will also update ~/.profile, ~/.bash_profile, or ~/.zprofile,
-# depending on the value of $SHELL and the existence of the files, to source the env.sh file.
+# was specified, the script will also update ~/.profile, ~/.bash_profile, ~/.bash_login, or ~/.zprofile,
+# depending on the value of $SHELL and the existence of the files, to source the env.sh file on login.
 # This will ensure that future logins will automatically configure SWIFTLY_HOME_DIR, SWIFTLY_BIN_DIR,
 # and PATH.
 #

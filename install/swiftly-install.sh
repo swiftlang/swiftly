@@ -107,11 +107,6 @@ EOF
     esac
 done
 
-if ! has_command "curl" ; then
-    echo "Error: curl must be installed to download swiftly"
-    exit 1
-fi
-
 if [[ -f "/etc/os-release" ]]; then
     OS_RELEASE="/etc/os-release"
 elif [[ -f "/usr/lib/os-release" ]]; then
@@ -157,6 +152,15 @@ case "$ID" in
         esac
         ;;
 
+    "rhel")
+        if [[ "$VERSION_ID" != 9* ]]; then
+            echo "Error: Unsupported RHEL version: $PRETTY_NAME"
+            exit 1
+        fi
+        PLATFORM_NAME="ubi9"
+        PLATFORM_NAME_FULL="ubi9"
+        ;;
+
     *)
         echo "Error: Unsupported platform: $PRETTY_NAME"
         exit 1
@@ -179,6 +183,11 @@ case "$RAW_ARCH" in
         echo "Error: Unsupported CPU architecture: $RAW_ARCH"
         ;;
 esac
+
+if ! has_command "curl" ; then
+    echo "Error: curl must be installed to download swiftly"
+    exit 1
+fi
 
 JSON_OUT=$(cat <<EOF
 {
@@ -314,6 +323,7 @@ echo "Downloading swiftly from $DOWNLOAD_URL..."
 curl \
     --retry 3 \
     --location \
+    --fail \
     --header "Accept: application/octet-stream" \
     "$DOWNLOAD_URL" \
     --output "$BIN_DIR/swiftly"

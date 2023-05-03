@@ -6,19 +6,28 @@
 set -o errexit
 source ./test-util.sh
 
+cp "$HOME/.profile" "$HOME/.profile.bak"
+
 cleanup () {
+    set +o errexit
+
+    mv "$HOME/.profile.bak" "$HOME/.profile"
+
     if has_command "swiftly" ; then
        swiftly uninstall -y latest > /dev/null
     fi
 
     rm -r "$HOME/.local/share/swiftly"
-    rm -r "$HOME/.local/bin/swiftly"
+    rm "$HOME/.local/bin/swiftly"
 }
 trap cleanup EXIT
 
-export PATH="$HOME/.local/bin:$PATH"
-
 echo "1" | ./swiftly-install.sh
+
+# .profile should be updated to update PATH.
+bash --login -c "swiftly --version"
+
+. "$HOME/.local/share/swiftly/env.sh"
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"

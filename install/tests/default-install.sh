@@ -18,7 +18,7 @@ trap cleanup EXIT
 
 export PATH="$HOME/.local/bin:$PATH"
 
-echo "1" | SWIFTLY_READ_FROM_STDIN=1 ./swiftly-install.sh
+echo "1" | ./swiftly-install.sh
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"

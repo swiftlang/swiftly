@@ -32,7 +32,7 @@ echo "$DUMMY_CONFIG_CONTENTS" > "$SWIFTLY_HOME_DIR/config.json"
 mkdir "$SWIFTLY_HOME_DIR/toolchains/5.7.3"
 
 # Attempt the same installation, but decline to overwrite.
-printf "1\nn\n" | ./swiftly-install.sh 
+printf "1\nn\n" | ./swiftly-install.sh
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
@@ -48,7 +48,7 @@ if [[ ! -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]]; then
 fi
 
 # Attempt the same installation, but overwrite this time.
-printf "1\ny\n" | ./swiftly-install.sh 
+printf "1\ny\n" | ./swiftly-install.sh
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"

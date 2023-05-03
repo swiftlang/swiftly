@@ -25,7 +25,15 @@ has_command () {
 
 read_input_with_default () {
     echo -n "> "
-    read READ_INPUT_RETURN
+    # The installer script is usually run by "curl ... | bash", which means that
+    # stdin is not a tty but the script content itself. In that case, "read" builtin
+    # command receives EOF immediately. To avoid that, we use /dev/tty as stdin explicitly.
+    # SWIFTLY_READ_FROM_STDIN is used for testing interactive input
+    if [[ -t 0 ]] || [[ ${SWIFTLY_READ_FROM_STDIN+set} == "set" ]]; then
+        read READ_INPUT_RETURN
+    else
+        read READ_INPUT_RETURN < /dev/tty
+    fi
 
     if [ -z "$READ_INPUT_RETURN" ]; then
         READ_INPUT_RETURN="$1"

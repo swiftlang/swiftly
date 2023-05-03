@@ -2,6 +2,8 @@
 
 # Common utility functionality used in the various bash tests for swiftly-install.sh.
 
+export SWIFTLY_READ_FROM_STDIN=1
+
 has_command () {
     command -v "$1" > /dev/null
 }

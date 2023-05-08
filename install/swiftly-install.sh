@@ -134,23 +134,31 @@ case "$ID" in
         fi
         PLATFORM_NAME="amazonlinux2"
         PLATFORM_NAME_FULL="amazonlinux2"
+        DOCKER_PLATFORM_NAME="amazonlinux"
+        DOCKER_PLATFORM_VERSION="2"
+        PACKAGE_MANAGER="yum"
         ;;
 
     "ubuntu")
+        DOCKER_PLATFORM_NAME="ubuntu"
+        PACKAGE_MANAGER="apt-get"
         case "$UBUNTU_CODENAME" in
             "jammy")
                 PLATFORM_NAME="ubuntu2204"
                 PLATFORM_NAME_FULL="ubuntu22.04"
+                DOCKER_PLATFORM_VERSION="22.04"
                 ;;
 
             "focal")
                 PLATFORM_NAME="ubuntu2004"
                 PLATFORM_NAME_FULL="ubuntu20.04"
+                DOCKER_PLATFORM_VERSION="20.04"
                 ;;
 
             "bionic")
                 PLATFORM_NAME="ubuntu1804"
                 PLATFORM_NAME_FULL="ubuntu18.04"
+                DOCKER_PLATFORM_VERSION="18.04"
                 ;;
 
             *)
@@ -167,6 +175,9 @@ case "$ID" in
         fi
         PLATFORM_NAME="ubi9"
         PLATFORM_NAME_FULL="ubi9"
+        DOCKER_PLATFORM_NAME="rhel-ubi"
+        DOCKER_PLATFORM_VERSION="9"
+        PACKAGE_MANAGER="yum"
         ;;
 
     *)
@@ -343,10 +354,6 @@ echo "$JSON_OUT" > "$HOME_DIR/config.json"
 # Verify the downloaded executable works. The script will exit if this fails due to errexit.
 SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
 
-echo ""
-echo "swiftly has been succesfully installed!"
-echo ""
-
 ENV_OUT=$(cat <<EOF
 export SWIFTLY_HOME_DIR="$(replace_home_path $HOME_DIR)"
 export SWIFTLY_BIN_DIR="$(replace_home_path $BIN_DIR)"
@@ -366,6 +373,35 @@ if [[ "$MODIFY_PROFILE" == "true" ]]; then
         echo "$SOURCE_LINE" >> "$PROFILE_FILE"
     fi
 fi
+
+if [[ "$INSTALL_SYSTEM_DEPENDENCIES" != "false" ]]; then
+    echo "Installing system dependencies..."
+    dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/nightly-main/$DOCKER_PLATFORM_NAME/$DOCKER_PLATFORM_VERSION/Dockerfile"
+    dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
+
+    # Find the line number of the RUN command associated with installing system dependencies
+    beg_line_num=$(printf "$dockerfile" | grep -n --max-count=1 "$PACKAGE_MANAGER.*install" | cut -d ":" -f1)
+
+    # Starting from there, find the first line that doesn't have the same level of indentation
+    relative_end_line_num=$(printf "$dockerfile" |
+                                tail --lines=+"$((beg_line_num + 1))" |
+                                grep -n --max-count=1 --invert-match "^[ ]\{2,4\}[^& ]" | cut -d ":" -f1)
+    end_line_num=$((beg_line_num + relative_end_line_num - 1))
+
+    # Read the lines between those two, replacing any spaces, backslashes, and newlines. Then join them together with
+    # spaces to construct the package list.
+    package_list=$(printf "$dockerfile" | sed -n "$((beg_line_num + 1)),${end_line_num}p" | sed -r 's/[\ ]//g' | tr "\n" " ")
+
+    if [[ "$(id --user)" != "0" ]]; then
+        sudo="sudo "
+    fi
+
+    eval "$sudo$PACKAGE_MANAGER -q install $package_list"
+fi
+
+echo ""
+echo "swiftly has been succesfully installed!"
+echo ""
 
 if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then
     echo "Once you log in again, swiftly should be accessible from your PATH."

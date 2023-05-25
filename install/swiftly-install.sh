@@ -59,7 +59,7 @@ yn_prompt () {
 # Read a y/n input.
 # First argument is the default value (must be "true" or "false").
 #
-# Sets READ_INPUT_RETURN to "true" if for an input of "y" or "Y" and sets it to
+# Sets READ_INPUT_RETURN to "true" for an input of "y" or "Y" and sets it to
 # "false" for an input of "n" or "N". For all other inputs, READ_INPUT_RETURN is
 # set to the default value provided in the first argument.
 read_yn_input () {
@@ -119,6 +119,9 @@ install_system_deps () {
 
     dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/nightly-main/$docker_platform_name/$docker_platform_version/Dockerfile"
     dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
+    if [[ "$?" -ne 0 ]]; then
+        echo "Error enumerating system dependencies, skipping system dependencies installation."
+    fi
 
     # Find the line number of the RUN command associated with installing system dependencies.
     beg_line_num=$(printf "$dockerfile" | grep -n --max-count=1 "$package_manager.*install" | cut -d ":" -f1)
@@ -136,16 +139,28 @@ install_system_deps () {
     # This will allow us to return from this function without aborting the entire swiftly installation, even if user just decides not
     # to install dependencies. It also allows user to get confirmation before using sudo, if need be.
 
+    echo "Install Swift's system dependencies using the following command (note: this may require sudo)? (Y/n)"
+    echo ""
+    echo "  $package_manager install -q -y ${package_list[@]}"
+    echo ""
+    read_yn_input "true"
+    if [[ "$READ_INPUT_RETURN" != "true" ]]; then
+        echo "Skipping system dependencies installation."
+        return
+    fi
+
     if [[ "$(id --user)" == "0" ]]; then
-        if [[ "$package_manager" == "apt-get" ]]; then
-            "$package_manager" update
-        fi
-        "$package_manager" install -q "${package_list[@]}"
+        # if [[ "$package_manager" == "apt-get" ]]; then
+        #     "$package_manager" update
+        # fi
+        # "$package_manager" install -q -y "${package_list[@]}"
+        echo "ok"
     else
-        if [[ "$package_manager" == "apt-get" ]]; then
-            sudo "$package_manager" update
-        fi
-        sudo "$package_manager" install -q "${package_list[@]}"
+        # if [[ "$package_manager" == "apt-get" ]]; then
+        #     sudo "$package_manager" update
+        # fi
+        # sudo "$package_manager" install -q -y "${package_list[@]}"
+        echo "ok"
     fi
 }
 
@@ -447,7 +462,6 @@ if [[ "$MODIFY_PROFILE" == "true" ]]; then
 fi
 
 if [[ "$SWIFTLY_INSTALL_SYSTEM_DEPS" != "false" ]]; then
-    echo "Installing system dependencies..."
     install_system_deps
 fi
 

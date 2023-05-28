@@ -149,7 +149,7 @@ install_system_deps () {
 
     install_args=(--quiet)
     if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
-        params+=(-y)
+        install_args+=(-y)
     fi
 
     # Disable errexit since failing to install system dependencies is not swiftly installation-fatal.

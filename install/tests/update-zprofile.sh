@@ -19,7 +19,7 @@ trap cleanup EXIT
 touch "$HOME/.zprofile"
 export SHELL="zsh"
 
-echo "1" | ./swiftly-install.sh
+echo "1" | ./swiftly-install.sh --no-install-system-deps
 
 if [[ ! "$(cat $HOME/.zprofile)" =~ "swiftly/env.sh" ]]; then
    test_fail "install did not update .zprofile"

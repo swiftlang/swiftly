@@ -23,7 +23,7 @@ cleanup () {
 trap cleanup EXIT
 
 if has_command apt-get ; then
-    apt-get remove -y libstdc++-11-dev
+    apt-get remove -y zlib1g-dev
 elif has_command yum ; then
     yum remove -y libcurl-devel
 fi
@@ -44,7 +44,7 @@ if [[ ! -d "$HOME/.local/share/swiftly/toolchains" ]]; then
 fi
 
 if has_command dpkg ; then
-    if ! dpkg --status libstdc++-11-dev ; then
+    if ! dpkg --status zlib1g-dev ; then
         test_fail "System dependencies were not installed properly"
     fi
 elif has_command rpm ; then

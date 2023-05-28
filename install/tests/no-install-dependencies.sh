@@ -17,7 +17,7 @@ trap cleanup EXIT
 
 verify_dependencies_not_installed () {
     if has_command dpkg ; then
-        if dpkg --status libstdc++-11-dev ; then
+        if dpkg --status zlib1g-dev ; then
             test_fail "System dependencies were installed when they shouldn't have been"
         fi
     elif has_command rpm ; then
@@ -28,7 +28,7 @@ verify_dependencies_not_installed () {
 }
 
 if has_command apt-get ; then
-    apt-get remove -y libstdc++-11-dev
+    apt-get remove -y zlib1g-dev
 elif has_command yum ; then
     yum remove -y libcurl-devel
 fi

@@ -28,7 +28,7 @@ elif has_command yum ; then
     yum remove -y libcurl-devel
 fi
 
-printf "1\ny\n" | ./swiftly-install.sh
+printf "1\ny\n" | DEBIAN_FRONTEND="noninteractive" ./swiftly-install.sh
 
 # .profile should be updated to update PATH.
 bash --login -c "swiftly --version"

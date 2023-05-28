@@ -139,10 +139,14 @@ install_system_deps () {
     # This will allow us to return from this function without aborting the entire swiftly installation, even if user just decides not
     # to install dependencies. It also allows user to get confirmation before using sudo, if need be.
 
-    echo "Install Swift's system dependencies using the following command (note: this may require sudo)? (Y/n)"
     echo ""
-    echo "  $package_manager install -q -y ${package_list[@]}"
+    echo "  $package_manager install -q -y \\"
+    printf '    %s' "${package_list[0]}"
+    printf ' \\\n    %s' "${package_list[@]:1}"
+    printf '\n'
     echo ""
+
+    echo "Install Swift's system dependencies using the prior command? (Y/n)"
     read_yn_input "true"
     if [[ "$READ_INPUT_RETURN" != "true" ]]; then
         echo "Skipping system dependencies installation."
@@ -150,15 +154,9 @@ install_system_deps () {
     fi
 
     if [[ "$(id --user)" == "0" ]]; then
-        # if [[ "$package_manager" == "apt-get" ]]; then
-        #     "$package_manager" update
-        # fi
         # "$package_manager" install -q -y "${package_list[@]}"
         echo "ok"
     else
-        # if [[ "$package_manager" == "apt-get" ]]; then
-        #     sudo "$package_manager" update
-        # fi
         # sudo "$package_manager" install -q -y "${package_list[@]}"
         echo "ok"
     fi

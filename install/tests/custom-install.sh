@@ -24,7 +24,7 @@ cleanup () {
 }
 trap cleanup EXIT
 
-printf "2\n$CUSTOM_HOME_DIR\n$CUSTOM_BIN_DIR\ny\n1\n" | ./swiftly-install.sh
+printf "2\n$CUSTOM_HOME_DIR\n$CUSTOM_BIN_DIR\ny\nn\n1\n" | ./swiftly-install.sh
 
 # .profile should be updated to update PATH and SWIFTLY_HOME_DIR/SWIFTLY_BIN_DIR.
 bash --login -c "swiftly --version"

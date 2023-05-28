@@ -17,7 +17,7 @@ cleanup () {
 }
 trap cleanup EXIT
 
-./swiftly-install.sh -y
+./swiftly-install.sh -y --no-install-system-deps
 
 . "$SWIFTLY_HOME_DIR/env.sh"
 
@@ -48,7 +48,7 @@ if [[ ! -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]]; then
 fi
 
 # Attempt the same installation, but overwrite this time.
-printf "1\ny\n" | ./swiftly-install.sh
+printf "1\ny\n" | ./swiftly-install.sh --no-install-system-deps
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"

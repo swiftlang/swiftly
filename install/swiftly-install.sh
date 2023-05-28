@@ -22,6 +22,9 @@
 # Unless the --disable-confirmation flag is set, this script will allow the runner to
 # configure either of those two directory paths.
 #
+# Unless the --no-install-system-deps flag is set, this script will attempt to install Swift's
+# system dependencies using the system package manager.
+#
 # curl is required to run this script.
 
 set -o errexit
@@ -59,25 +62,34 @@ yn_prompt () {
 # Read a y/n input.
 # First argument is the default value (must be "true" or "false").
 #
-# Sets READ_INPUT_RETURN to "true" for an input of "y" or "Y" and sets it to
-# "false" for an input of "n" or "N". For all other inputs, READ_INPUT_RETURN is
-# set to the default value provided in the first argument.
+# Sets READ_INPUT_RETURN to "true" for an input of "y" or "Y", "false" for an input
+# of "n" or "N", or the default value for a blank input
+# 
+# For all other inputs, a message is printed and the user is prompted again.
 read_yn_input () {
-    read_input_with_default "$1"
+    while [[ true ]]; do
+        read_input_with_default "$1"
 
-    case "$READ_INPUT_RETURN" in
-        "y" | "Y")
-            READ_INPUT_RETURN="true"
-            ;;
+        case "$READ_INPUT_RETURN" in
+            "y" | "Y")
+                READ_INPUT_RETURN="true"
+                return
+                ;;
 
-        "n" | "N")
-            READ_INPUT_RETURN="false"
-            ;;
+            "n" | "N")
+                READ_INPUT_RETURN="false"
+                return
+                ;;
 
-        *)
-            READ_INPUT_RETURN="$1"
-            ;;
-    esac
+            "$1")
+                return
+                ;;
+
+            *)
+                echo "Please input either \"y\" or \"n\", or press ENTER to use the default."
+                ;;
+        esac
+    done
 }
 
 # Replaces the actual path to $HOME at the beginning of the provided string argument with
@@ -120,7 +132,7 @@ install_system_deps () {
     dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/nightly-main/$docker_platform_name/$docker_platform_version/Dockerfile"
     dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
     if [[ "$?" -ne 0 ]]; then
-        echo "Error enumerating system dependencies, skipping system dependencies installation."
+        echo "Error enumerating system dependencies, skipping installation of system dependencies."
     fi
 
     # Find the line number of the RUN command associated with installing system dependencies.
@@ -135,31 +147,19 @@ install_system_deps () {
     # Read the lines between those two, deleting any spaces and backslashes.
     readarray -t package_list < <(printf "$dockerfile" | sed -n "$((beg_line_num + 1)),${end_line_num}p" | sed -r 's/[\ ]//g')
 
-    # TODO: prompt for confirmation here, pass -y into actual installation command.
-    # This will allow us to return from this function without aborting the entire swiftly installation, even if user just decides not
-    # to install dependencies. It also allows user to get confirmation before using sudo, if need be.
-
-    echo ""
-    echo "  $package_manager install -q -y \\"
-    printf '    %s' "${package_list[0]}"
-    printf ' \\\n    %s' "${package_list[@]:1}"
-    printf '\n'
-    echo ""
-
-    echo "Install Swift's system dependencies using the prior command? (Y/n)"
-    read_yn_input "true"
-    if [[ "$READ_INPUT_RETURN" != "true" ]]; then
-        echo "Skipping system dependencies installation."
-        return
+    install_args=(--quiet)
+    if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
+        params+=(-y)
     fi
 
+    # Disable errexit since failing to install system dependencies is not swiftly installation-fatal.
+    set +o errexit
     if [[ "$(id --user)" == "0" ]]; then
-        # "$package_manager" install -q -y "${package_list[@]}"
-        echo "ok"
+        "$package_manager" install "${install_args[@]}" "${package_list[@]}"
     else
-        # sudo "$package_manager" install -q -y "${package_list[@]}"
-        echo "ok"
+        sudo "$package_manager" install "${install_args[@]}" "${package_list[@]}"
     fi
+    set -o errexit
 }
 
 SWIFTLY_INSTALL_VERSION="0.1.0"
@@ -196,7 +196,7 @@ EOF
             MODIFY_PROFILE="false"
             ;;
 
-        "--no-install-dependencies")
+        "--no-install-system-deps")
             SWIFTLY_INSTALL_SYSTEM_DEPS="false"
             ;;
 
@@ -384,7 +384,7 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
             ;;
 
         *)
-            echo "Cancelling installation"
+            echo "Cancelling installation."
             exit 0
             ;;
     esac
@@ -396,23 +396,11 @@ if [[ -d "$HOME_DIR" ]]; then
     else
         echo "Existing swiftly installation detected at $(replace_home_path $HOME_DIR), overwrite? (Y/n)"
 
-        while [[ true ]]; do
-            read_input_with_default "y"
-            case "$READ_INPUT_RETURN" in
-                "y" | "Y")
-                    break
-                ;;
-
-                "n" | "N" | "q")
-                    echo "Cancelling installation"
-                    exit 0
-                ;;
-
-                *)
-                    echo "Please input \"y\" or \"n\"."
-                    ;;
-            esac
-        done
+        read_yn_input "true"
+        if [[ "$READ_INPUT_RETURN" == "false" ]]; then
+            echo "Cancelling installation."
+            exit 0
+        fi
     fi
 
     rm -r $HOME_DIR
@@ -421,23 +409,23 @@ fi
 mkdir -p $HOME_DIR/toolchains
 mkdir -p $BIN_DIR
 
-# EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
-# DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
-# echo "Downloading swiftly from $DOWNLOAD_URL..."
-# curl \
-#     --retry 3 \
-#     --location \
-#     --fail \
-#     --header "Accept: application/octet-stream" \
-#     "$DOWNLOAD_URL" \
-#     --output "$BIN_DIR/swiftly"
+EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
+DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
+echo "Downloading swiftly from $DOWNLOAD_URL..."
+curl \
+    --retry 3 \
+    --location \
+    --fail \
+    --header "Accept: application/octet-stream" \
+    "$DOWNLOAD_URL" \
+    --output "$BIN_DIR/swiftly"
 
-# chmod +x "$BIN_DIR/swiftly"
+chmod +x "$BIN_DIR/swiftly"
 
-# echo "$JSON_OUT" > "$HOME_DIR/config.json"
+echo "$JSON_OUT" > "$HOME_DIR/config.json"
 
-# # Verify the downloaded executable works. The script will exit if this fails due to errexit.
-# SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
+# Verify the downloaded executable works. The script will exit if this fails due to errexit.
+SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
 
 ENV_OUT=$(cat <<EOF
 export SWIFTLY_HOME_DIR="$(replace_home_path $HOME_DIR)"
@@ -460,6 +448,7 @@ if [[ "$MODIFY_PROFILE" == "true" ]]; then
 fi
 
 if [[ "$SWIFTLY_INSTALL_SYSTEM_DEPS" != "false" ]]; then
+    echo "Installing Swift's system dependencies via $package_manager (note: this may require root access)..."
     install_system_deps
 fi
 

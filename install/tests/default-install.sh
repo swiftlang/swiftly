@@ -22,7 +22,13 @@ cleanup () {
 }
 trap cleanup EXIT
 
-echo "1" | ./swiftly-install.sh
+if has_command apt-get ; then
+    apt-get remove -y libstdc++-11-dev
+elif has_command yum ; then
+    yum remove -y libcurl-devel
+fi
+
+printf "1\ny\n" | ./swiftly-install.sh
 
 # .profile should be updated to update PATH.
 bash --login -c "swiftly --version"
@@ -35,6 +41,16 @@ fi
 
 if [[ ! -d "$HOME/.local/share/swiftly/toolchains" ]]; then
     test_fail "the toolchains directory was not created in SWIFTLY_HOME_DIR"
+fi
+
+if has_command dpkg ; then
+    if ! dpkg --status libstdc++-11-dev ; then
+        test_fail "System dependencies were not installed properly"
+    fi
+elif has_command rpm ; then
+    if ! rpm -q libcurl-devel ; then
+        test_fail "System dependencies were not installed properly"
+    fi
 fi
 
 swiftly install latest

@@ -23,3 +23,52 @@ test_fail () {
 test_pass () {
     exit 0
 }
+
+get_os () {
+    if [[ -f "/etc/os-release" ]]; then
+        OS_RELEASE="/etc/os-release"
+    elif [[ -f "/usr/lib/os-release" ]]; then
+        OS_RELEASE="/usr/lib/os-release"
+    else
+        echo "Error: could not detect OS information"
+        exit 1
+    fi
+
+    source "$OS_RELEASE"
+
+    case "$ID" in
+        "amzn")
+            echo "amazonlinux2"
+            ;;
+
+        "ubuntu")
+            case "$UBUNTU_CODENAME" in
+                "jammy")
+                    echo "ubuntu2204"
+                    ;;
+
+                "focal")
+                    echo "ubuntu2004"
+                    ;;
+
+                "bionic")
+                    echo "ubuntu1804"
+                    ;;
+
+                *)
+                    echo "Unsupported Ubuntu version: $PRETTY_NAME"
+                    exit 1
+                    ;;
+            esac
+            ;;
+
+        "rhel")
+            echo "rhel-ubi9"
+            ;;
+
+        *)
+            echo "Unsupported platform: $PRETTY_NAME"
+            exit 1
+            ;;
+    esac
+}

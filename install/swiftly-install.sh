@@ -138,14 +138,19 @@ install_system_deps () {
     # Find the line number of the RUN command associated with installing system dependencies.
     beg_line_num=$(printf "$dockerfile" | grep -n --max-count=1 "$package_manager.*install" | cut -d ":" -f1)
 
-    # Starting from there, find the first line that doesn't have the same level of indentation.
+    # Starting from there, find the first line that starts with an & or doesn't end in a backslash.
     relative_end_line_num=$(printf "$dockerfile" |
                                 tail --lines=+"$((beg_line_num + 1))" |
-                                grep -n --max-count=1 --invert-match "^[ ]\{2,4\}[^& ]" | cut -d ":" -f1)
-    end_line_num=$((beg_line_num + relative_end_line_num - 1))
+                                grep -n --max-count=1 --invert-match '[[:space:]]*[^&].*\\$' | cut -d ":" -f1)
+    end_line_num=$((beg_line_num + relative_end_line_num))
 
     # Read the lines between those two, deleting any spaces and backslashes.
     readarray -t package_list < <(printf "$dockerfile" | sed -n "$((beg_line_num + 1)),${end_line_num}p" | sed -r 's/[\ ]//g')
+
+    # If the installation command from the Dockerfile included some cleanup as part of a second command, drop that.
+    if [[ "${package_list[-1]}" =~ ^\&\& ]]; then
+        unset 'package_list[-1]'
+    fi
 
     install_args=(--quiet)
     if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then

@@ -125,7 +125,7 @@ install_system_deps () {
         echo "Warning: sudo not installed and current user is not root, skipping system dependency installation."
         return
     elif ! has_command "$package_manager" ; then
-        echo "Warning: package manager \"$package_manager\" not found, skipping system dependency instllation."
+        echo "Warning: package manager \"$package_manager\" not found, skipping system dependency installation."
         return
     fi
 

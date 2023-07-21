@@ -164,6 +164,12 @@ install_system_deps () {
     else
         sudo "$package_manager" install "${install_args[@]}" "${package_list[@]}"
     fi
+    if [[ "$?" -ne 0 ]]; then
+        echo "System dependency installation failed."
+        if [[ "$package_manager" == "apt-get" ]]; then
+            echo "You may need to run apt-get update before installing system dependencies."
+        fi
+    fi
     set -o errexit
 }
 
@@ -453,6 +459,7 @@ if [[ "$MODIFY_PROFILE" == "true" ]]; then
 fi
 
 if [[ "$SWIFTLY_INSTALL_SYSTEM_DEPS" != "false" ]]; then
+    echo ""
     echo "Installing Swift's system dependencies via $package_manager (note: this may require root access)..."
     install_system_deps
 fi

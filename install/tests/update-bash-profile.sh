@@ -23,7 +23,7 @@ touch "$HOME/.bash_profile"
 touch "$HOME/.bash_login"
 export SHELL="bash"
 
-echo "1" | ./swiftly-install.sh
+echo "1" | ./swiftly-install.sh --no-install-system-deps
 
 if [[ ! "$(cat $HOME/.bash_profile)" =~ "swiftly/env.sh" ]]; then
    test_fail "install did not update .bash_profile"
@@ -34,7 +34,7 @@ if [[ "$(cat $HOME/.bash_login)" != "" ]]; then
 fi
 
 rm "$HOME/.bash_profile"
-printf "1\ny\n" | ./swiftly-install.sh
+printf "1\ny\n" | ./swiftly-install.sh --no-install-system-deps
 
 if [[ -f "$HOME/.bash_profile" ]]; then
    test_fail "install created .bash_profile when it should not have"

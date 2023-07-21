@@ -22,6 +22,9 @@
 # Unless the --disable-confirmation flag is set, this script will allow the runner to
 # configure either of those two directory paths.
 #
+# Unless the --no-install-system-deps flag is set, this script will attempt to install Swift's
+# system dependencies using the system package manager.
+#
 # curl is required to run this script.
 
 set -o errexit
@@ -48,6 +51,47 @@ read_input_with_default () {
     fi
 }
 
+yn_prompt () {
+    if [[ "$1" == "true" ]]; then
+        echo "(Y/n)"
+    else
+        echo "(y/N)"
+    fi
+}
+
+# Read a y/n input.
+# First argument is the default value (must be "true" or "false").
+#
+# Sets READ_INPUT_RETURN to "true" for an input of "y" or "Y", "false" for an input
+# of "n" or "N", or the default value for a blank input
+# 
+# For all other inputs, a message is printed and the user is prompted again.
+read_yn_input () {
+    while [[ true ]]; do
+        read_input_with_default "$1"
+
+        case "$READ_INPUT_RETURN" in
+            "y" | "Y")
+                READ_INPUT_RETURN="true"
+                return
+                ;;
+
+            "n" | "N")
+                READ_INPUT_RETURN="false"
+                return
+                ;;
+
+            "$1")
+                return
+                ;;
+
+            *)
+                echo "Please input either \"y\" or \"n\", or press ENTER to use the default."
+                ;;
+        esac
+    done
+}
+
 # Replaces the actual path to $HOME at the beginning of the provided string argument with
 # the string "$HOME". This is used when printing to stdout.
 # e.g. "home/user/.local/bin" => "$HOME/.local/bin"
@@ -71,9 +115,68 @@ bold () {
     echo "$(tput bold)$1$(tput sgr0)"
 }
 
+# Fetch the list of required system dependencies from the apple/swift-docker
+# repository and attempt to install them using the system's package manager.
+#
+# $docker_platform_name, $docker_platform_version, and $package manager need
+# to be set before calling this function.
+install_system_deps () {
+    if [[ "$(id --user)" != "0" ]] && ! has_command sudo ; then
+        echo "Warning: sudo not installed and current user is not root, skipping system dependency installation."
+        return
+    elif ! has_command "$package_manager" ; then
+        echo "Warning: package manager \"$package_manager\" not found, skipping system dependency installation."
+        return
+    fi
+
+    dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/nightly-main/$docker_platform_name/$docker_platform_version/Dockerfile"
+    dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
+    if [[ "$?" -ne 0 ]]; then
+        echo "Error enumerating system dependencies, skipping installation of system dependencies."
+    fi
+
+    # Find the line number of the RUN command associated with installing system dependencies.
+    beg_line_num=$(printf "$dockerfile" | grep -n --max-count=1 "$package_manager.*install" | cut -d ":" -f1)
+
+    # Starting from there, find the first line that starts with an & or doesn't end in a backslash.
+    relative_end_line_num=$(printf "$dockerfile" |
+                                tail --lines=+"$((beg_line_num + 1))" |
+                                grep -n --max-count=1 --invert-match '[[:space:]]*[^&].*\\$' | cut -d ":" -f1)
+    end_line_num=$((beg_line_num + relative_end_line_num))
+
+    # Read the lines between those two, deleting any spaces and backslashes.
+    readarray -t package_list < <(printf "$dockerfile" | sed -n "$((beg_line_num + 1)),${end_line_num}p" | sed -r 's/[\ ]//g')
+
+    # If the installation command from the Dockerfile included some cleanup as part of a second command, drop that.
+    if [[ "${package_list[-1]}" =~ ^\&\& ]]; then
+        unset 'package_list[-1]'
+    fi
+
+    install_args=(--quiet)
+    if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
+        install_args+=(-y)
+    fi
+
+    # Disable errexit since failing to install system dependencies is not swiftly installation-fatal.
+    set +o errexit
+    if [[ "$(id --user)" == "0" ]]; then
+        "$package_manager" install "${install_args[@]}" "${package_list[@]}"
+    else
+        sudo "$package_manager" install "${install_args[@]}" "${package_list[@]}"
+    fi
+    if [[ "$?" -ne 0 ]]; then
+        echo "System dependency installation failed."
+        if [[ "$package_manager" == "apt-get" ]]; then
+            echo "You may need to run apt-get update before installing system dependencies."
+        fi
+    fi
+    set -o errexit
+}
+
 SWIFTLY_INSTALL_VERSION="0.1.0"
 
 MODIFY_PROFILE="true"
+SWIFTLY_INSTALL_SYSTEM_DEPS="true"
 
 for arg in "$@"; do
     case "$arg" in
@@ -89,6 +192,7 @@ FLAGS:
     -y, --disable-confirmation  Disable confirmation prompt.
     --no-modify-profile         Do not attempt to modify the profile file to set environment 
                                 variables (e.g. PATH) on login.
+    --no-install-system-deps    Do not attempt to install Swift's required system dependencies.
     -h, --help                  Prints help information.
     --version                   Prints version information.
 EOF
@@ -101,6 +205,10 @@ EOF
 
         "--no-modify-profile")
             MODIFY_PROFILE="false"
+            ;;
+
+        "--no-install-system-deps")
+            SWIFTLY_INSTALL_SYSTEM_DEPS="false"
             ;;
 
         "--version")
@@ -134,23 +242,31 @@ case "$ID" in
         fi
         PLATFORM_NAME="amazonlinux2"
         PLATFORM_NAME_FULL="amazonlinux2"
+        docker_platform_name="amazonlinux"
+        docker_platform_version="2"
+        package_manager="yum"
         ;;
 
     "ubuntu")
+        docker_platform_name="ubuntu"
+        package_manager="apt-get"
         case "$UBUNTU_CODENAME" in
             "jammy")
                 PLATFORM_NAME="ubuntu2204"
                 PLATFORM_NAME_FULL="ubuntu22.04"
+                docker_platform_version="22.04"
                 ;;
 
             "focal")
                 PLATFORM_NAME="ubuntu2004"
                 PLATFORM_NAME_FULL="ubuntu20.04"
+                docker_platform_version="20.04"
                 ;;
 
             "bionic")
                 PLATFORM_NAME="ubuntu1804"
                 PLATFORM_NAME_FULL="ubuntu18.04"
+                docker_platform_version="18.04"
                 ;;
 
             *)
@@ -167,6 +283,9 @@ case "$ID" in
         fi
         PLATFORM_NAME="ubi9"
         PLATFORM_NAME_FULL="ubi9"
+        docker_platform_name="rhel-ubi"
+        docker_platform_version="9"
+        package_manager="yum"
         ;;
 
     *)
@@ -243,6 +362,7 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
     printf "  %40s: $(bold $(replace_home_path $HOME_DIR))\n" "Data and configuration files directory"
     printf "  %40s: $(bold $(replace_home_path $BIN_DIR))\n" "Executables installation directory"
     printf "  %40s: $(bold $MODIFY_PROFILE)\n" "Modify login config ($(replace_home_path $PROFILE_FILE))"
+    printf "  %40s: $(bold $SWIFTLY_INSTALL_SYSTEM_DEPS)\n" "Install system dependencies"
     echo ""
     echo "Select one of the following:"
     echo "1) Proceed with the installation (default)"
@@ -265,30 +385,17 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
             read_input_with_default "$BIN_DIR"
             BIN_DIR="$(expand_home_path $READ_INPUT_RETURN)"
 
-            if [[ "$MODIFY_PROFILE" == "true" ]]; then
-                MODIFY_PROFILE_PROMPT="(Y/n)"
-            else
-                MODIFY_PROFILE_PROMPT="(y/N)"
-            fi
-            echo "Modify login config ($(replace_home_path $PROFILE_FILE))? $MODIFY_PROFILE_PROMPT"
-            read_input_with_default "$MODIFY_PROFILE"
+            echo "Modify login config ($(replace_home_path $PROFILE_FILE))? $(yn_prompt $MODIFY_PROFILE)"
+            read_yn_input "$MODIFY_PROFILE"
+            MODIFY_PROFILE="$READ_INPUT_RETURN"
 
-            case "$READ_INPUT_RETURN" in
-                "y" | "Y")
-                    MODIFY_PROFILE="true"
-                ;;
-
-                "n" | "N")
-                    MODIFY_PROFILE="false"
-                ;;
-
-                *)
-                ;;
-            esac
+            echo "Install system dependencies? $(yn_prompt $SWIFTLY_INSTALL_SYSTEM_DEPS)"
+            read_yn_input "$SWIFTLY_INSTALL_SYSTEM_DEPS"
+            SWIFTLY_INSTALL_SYSTEM_DEPS="$READ_INPUT_RETURN"
             ;;
 
         *)
-            echo "Cancelling installation"
+            echo "Cancelling installation."
             exit 0
             ;;
     esac
@@ -300,23 +407,11 @@ if [[ -d "$HOME_DIR" ]]; then
     else
         echo "Existing swiftly installation detected at $(replace_home_path $HOME_DIR), overwrite? (Y/n)"
 
-        while [[ true ]]; do
-            read_input_with_default "y"
-            case "$READ_INPUT_RETURN" in
-                "y" | "Y")
-                    break
-                ;;
-
-                "n" | "N" | "q")
-                    echo "Cancelling installation"
-                    exit 0
-                ;;
-
-                *)
-                    echo "Please input \"y\" or \"n\"."
-                    ;;
-            esac
-        done
+        read_yn_input "true"
+        if [[ "$READ_INPUT_RETURN" == "false" ]]; then
+            echo "Cancelling installation."
+            exit 0
+        fi
     fi
 
     rm -r $HOME_DIR
@@ -343,10 +438,6 @@ echo "$JSON_OUT" > "$HOME_DIR/config.json"
 # Verify the downloaded executable works. The script will exit if this fails due to errexit.
 SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
 
-echo ""
-echo "swiftly has been succesfully installed!"
-echo ""
-
 ENV_OUT=$(cat <<EOF
 export SWIFTLY_HOME_DIR="$(replace_home_path $HOME_DIR)"
 export SWIFTLY_BIN_DIR="$(replace_home_path $BIN_DIR)"
@@ -366,6 +457,16 @@ if [[ "$MODIFY_PROFILE" == "true" ]]; then
         echo "$SOURCE_LINE" >> "$PROFILE_FILE"
     fi
 fi
+
+if [[ "$SWIFTLY_INSTALL_SYSTEM_DEPS" != "false" ]]; then
+    echo ""
+    echo "Installing Swift's system dependencies via $package_manager (note: this may require root access)..."
+    install_system_deps
+fi
+
+echo ""
+echo "swiftly has been succesfully installed!"
+echo ""
 
 if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then
     echo "Once you log in again, swiftly should be accessible from your PATH."

@@ -18,8 +18,7 @@ cleanup () {
 }
 trap cleanup EXIT
 
-# Make sure that the "~" character is handled properly.
-printf "2\n\$HOME/${CUSTOM_HOME_DIR_NAME}\n\$HOME/${CUSTOM_HOME_DIR_NAME}/bin\ny\n1\n" | ./swiftly-install.sh
+printf "2\n\$HOME/${CUSTOM_HOME_DIR_NAME}\n\$HOME/${CUSTOM_HOME_DIR_NAME}/bin\ny\nn\n1\n" | ./swiftly-install.sh
 
 # .profile should be updated to update PATH and SWIFTLY_HOME_DIR/SWIFTLY_BIN_DIR.
 bash --login -c "swiftly --version"

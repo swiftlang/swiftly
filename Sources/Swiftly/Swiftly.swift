@@ -11,7 +11,7 @@ public struct Swiftly: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "A utility for installing and managing Swift toolchains.",
 
-        version: "0.1.0",
+        version: "0.1.0-rc0",
 
         subcommands: [
             Install.self,

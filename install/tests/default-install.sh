@@ -112,6 +112,7 @@ case "$(get_os)" in
 esac
 
 if has_command apt-get ; then
+    apt-get update
     apt-get remove -y "${system_deps[@]}"
 elif has_command yum ; then
     yum remove -y "${system_deps[@]}"

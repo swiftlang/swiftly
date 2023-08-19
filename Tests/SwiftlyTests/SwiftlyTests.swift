@@ -298,7 +298,9 @@ public struct SwiftExecutable {
         let process = Process()
         process.executableURL = self.path
         process.arguments = ["--version"]
-        process.environment = ["PATH": self.path.deletingLastPathComponent().path]
+
+        let binPath = ProcessInfo.processInfo.environment["PATH"]!
+        process.environment = ["PATH": "\(self.path.deletingLastPathComponent().path):\(binPath)"]
 
         let outputPipe = Pipe()
         process.standardOutput = outputPipe

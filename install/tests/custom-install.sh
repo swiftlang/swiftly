@@ -24,6 +24,10 @@ cleanup () {
 }
 trap cleanup EXIT
 
+# Custom home dir
+# Custom bin dir
+# Modify login config (yes)
+# Install system dependencies (no)
 printf "2\n$CUSTOM_HOME_DIR\n$CUSTOM_BIN_DIR\ny\nn\n1\n" | ./swiftly-install.sh
 
 # .profile should be updated to update PATH and SWIFTLY_HOME_DIR/SWIFTLY_BIN_DIR.

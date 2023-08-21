@@ -152,10 +152,7 @@ install_system_deps () {
         unset 'package_list[-1]'
     fi
 
-    install_args=(--quiet)
-    if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
-        install_args+=(-y)
-    fi
+    install_args=(--quiet -y)
 
     # Disable errexit since failing to install system dependencies is not swiftly installation-fatal.
     set +o errexit
@@ -250,6 +247,7 @@ case "$ID" in
     "ubuntu")
         docker_platform_name="ubuntu"
         package_manager="apt-get"
+        export DEBIAN_FRONTEND=noninteractive
         case "$UBUNTU_CODENAME" in
             "jammy")
                 PLATFORM_NAME="ubuntu2204"

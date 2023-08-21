@@ -21,7 +21,7 @@ elif has_command yum ; then
     yum remove -y libcurl-devel
 fi
 
-DEBIAN_FRONTEND="noninteractive" ./swiftly-install.sh -y
+./swiftly-install.sh -y
 
 # .profile should be updated to update PATH.
 bash --login -c "swiftly --version"
@@ -36,7 +36,7 @@ DUMMY_CONTENT="should be overwritten"
 echo "$DUMMY_CONTENT" > "$HOME/.local/share/swiftly/config.json"
 
 # Running it again should overwrite the previous installation without asking us for permission.
-DEBIAN_FRONTEND="noninteractive" ./swiftly-install.sh --disable-confirmation
+./swiftly-install.sh --disable-confirmation
 
 if ! has_command "swiftly" ; then
     fail_test "Can't find swiftly on the PATH"

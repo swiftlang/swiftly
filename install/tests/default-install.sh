@@ -118,7 +118,7 @@ elif has_command yum ; then
     yum remove -y "${system_deps[@]}"
 fi
 
-printf "1\ny\n" | DEBIAN_FRONTEND="noninteractive" ./swiftly-install.sh
+printf "1\n" | ./swiftly-install.sh
 
 # .profile should be updated to update PATH.
 bash --login -c "swiftly --version"

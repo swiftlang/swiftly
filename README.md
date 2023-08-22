@@ -8,7 +8,7 @@ Ongoing maintenance and stewardship of this project is led by the [SSWG](https:/
 
 To download swiftly and install Swift, run the following in your terminal, then follow the on-screen instructions.
 ```
-curl -L https://raw.githubusercontent.com/swift-server/swiftly/main/install/swiftly-install.sh | bash
+curl -L https://swift-server.github.io/swiftly/swiftly-install.sh | bash
 ```
 
 ### Basic usage
@@ -17,14 +17,14 @@ curl -L https://raw.githubusercontent.com/swift-server/swiftly/main/install/swif
 $ swiftly install latest
 
 Fetching the latest stable Swift release...
-Installing Swift 5.6.3
+Installing Swift 5.8.1
 Downloaded 488.5 MiB of 488.5 MiB
 Extracting toolchain...
-Swift 5.6.3 installed successfully!
+Swift 5.8.1 installed successfully!
 
 $ swift --version
 
-Swift version 5.6.3 (swift-5.6.3-RELEASE)
+Swift version 5.8.1 (swift-5.8.1-RELEASE)
 Target: x86_64-unknown-linux-gnu
 ```
 
@@ -41,7 +41,7 @@ Target: x86_64-unknown-linux-gnu
 - Linux-based platforms listed on https://swift.org/download
   - CentOS 7 will not be supported due to some dependencies of swiftly not supporting it, however.
 
-Right now, swiftly is in the very early stages of development and is working towards an MVP for the Linux. Once that is complete, work will begin on an MVP for macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
+Right now, swiftly is in the very early stages of development and is only supported on Linux, but the long term plan is to also support macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
 
 ## Command interface overview
 
@@ -284,5 +284,5 @@ swiftenv is an existing Swift version manager which already has much of the func
 
 - swiftly has built in support for updating toolchains.
 
-- swiftly is optimized for ease of installation. Ideally, this will be done with a bash one-liner similar to Homebrew and rustup. In addition, swiftly won't require any system dependencies to be installed on the user's system. While swiftenv is also relatively easy to install, it does involve cloning a git repository or using Homebrew, and it requires a few system dependencies (e.g. bash, curl, tar).
+- swiftly is optimized for ease of installation--it can be done with a bash one-liner similar to Homebrew and rustup. In addition, swiftly won't require any system dependencies to be installed on the user's system. While swiftenv is also relatively easy to install, it does involve cloning a git repository or using Homebrew, and it requires a few system dependencies (e.g. bash, curl, tar).
 

@@ -158,7 +158,7 @@ public class HTTP {
 }
 
 private class HTTPClientWrapper {
-    fileprivate let inner = HTTPClient(eventLoopGroupProvider: .createNew)
+    fileprivate let inner = HTTPClient(eventLoopGroupProvider: .singleton)
 
     deinit {
         try? self.inner.syncShutdown()

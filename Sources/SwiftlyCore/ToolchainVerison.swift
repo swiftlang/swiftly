@@ -285,6 +285,8 @@ public enum ToolchainSelector {
     }
 }
 
+extension ToolchainSelector: Equatable {}
+
 /// Protocol used to facilitate parsing `ToolchainSelector`s from strings.
 protocol ToolchainSelectorParser {
     func parse(_ string: String) throws -> ToolchainSelector?
@@ -328,9 +330,11 @@ struct StableReleaseParser: ToolchainSelectorParser {
 ///    - a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
 ///    - a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
 ///    - a.b-DEVELOPMENT-SNAPSHOT
+///    - a.b-SNAPSHOT-YYYY-mm-dd
+///    - a.b-SNAPSHOT
 struct ReleaseSnapshotParser: ToolchainSelectorParser {
     static let regex: Regex<(Substring, Substring, Substring, Substring?)> =
-        try! Regex("^([0-9]+)\\.([0-9]+)-(?:snapshot|DEVELOPMENT-SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
+        try! Regex("^([0-9]+)\\.([0-9]+)-(?:snapshot|DEVELOPMENT-SNAPSHOT|SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
 
     func parse(_ input: String) throws -> ToolchainSelector? {
         guard let match = try Self.regex.wholeMatch(in: input) else {
@@ -351,12 +355,14 @@ struct ReleaseSnapshotParser: ToolchainSelectorParser {
 /// Parser for selectors like the following:
 ///    - main-snapshot-YYYY-mm-dd
 ///    - main-snapshot
+///    - main-SNAPSHOT-YYYY-mm-dd
+///    - main-SNAPSHOT
 ///    - swift-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
 ///    - swift-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
 ///    - swift-DEVELOPMENT-SNAPSHOT
 struct MainSnapshotParser: ToolchainSelectorParser {
     static let regex: Regex<(Substring, Substring?)> =
-        try! Regex("^(?:main-snapshot|swift-DEVELOPMENT-SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
+        try! Regex("^(?:main-snapshot|swift-DEVELOPMENT-SNAPSHOT|main-SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
 
     func parse(_ input: String) throws -> ToolchainSelector? {
         guard let match = try Self.regex.wholeMatch(in: input) else {

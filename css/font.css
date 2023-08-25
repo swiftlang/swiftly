@@ -25,3 +25,8 @@ body {
 #copy-button:active {
     color: #888;
 }
+#gh-link {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}

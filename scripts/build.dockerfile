@@ -1,7 +1,7 @@
 # Dockerfile used to build a statically-linked swiftly executable for generic GNU/Linux platforms.
 # See RELEASING.md for information on how to use this file.
 
-FROM swiftlang/swift:nightly-amazonlinux2
+FROM swift:5.8.1-amazonlinux2
 
 # swiftly build depdenencies
 RUN yum install -y \

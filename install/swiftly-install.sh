@@ -170,6 +170,16 @@ install_system_deps () {
     set -o errexit
 }
 
+set_ubuntu_platform () {
+    docker_platform_name="ubuntu"
+    package_manager="apt-get"
+    export DEBIAN_FRONTEND=noninteractive
+    
+    PLATFORM_NAME="ubuntu$1$2"
+    PLATFORM_NAME_FULL="ubuntu$1.$2"
+    docker_platform_version="$1.$2"
+}
+
 SWIFTLY_INSTALL_VERSION="0.1.0"
 
 MODIFY_PROFILE="true"
@@ -231,8 +241,8 @@ fi
 
 source "$OS_RELEASE"
 
-case "$ID" in
-    "amzn")
+case "$ID$ID_LIKE" in
+    *"amzn"*)
         if [[ "$VERSION_ID" != "2" ]]; then
             echo "Error: Unsupported Amazon Linux version: $PRETTY_NAME"
             exit 1
@@ -244,27 +254,18 @@ case "$ID" in
         package_manager="yum"
         ;;
 
-    "ubuntu")
-        docker_platform_name="ubuntu"
-        package_manager="apt-get"
-        export DEBIAN_FRONTEND=noninteractive
+    *"ubuntu"*)
         case "$UBUNTU_CODENAME" in
             "jammy")
-                PLATFORM_NAME="ubuntu2204"
-                PLATFORM_NAME_FULL="ubuntu22.04"
-                docker_platform_version="22.04"
+                set_ubuntu_platform "22" "04"
                 ;;
 
             "focal")
-                PLATFORM_NAME="ubuntu2004"
-                PLATFORM_NAME_FULL="ubuntu20.04"
-                docker_platform_version="20.04"
+                set_ubuntu_platform "20" "04"
                 ;;
 
             "bionic")
-                PLATFORM_NAME="ubuntu1804"
-                PLATFORM_NAME_FULL="ubuntu18.04"
-                docker_platform_version="18.04"
+                set_ubuntu_platform "18" "04"
                 ;;
 
             *)
@@ -274,7 +275,7 @@ case "$ID" in
         esac
         ;;
 
-    "rhel")
+    *"rhel"*)
         if [[ "$VERSION_ID" != 9* ]]; then
             echo "Error: Unsupported RHEL version: $PRETTY_NAME"
             exit 1
@@ -287,8 +288,36 @@ case "$ID" in
         ;;
 
     *)
-        echo "Error: Unsupported platform: $PRETTY_NAME"
-        exit 1
+        echo "$PRETTY_NAME is not an officially supported platform, but the toolchains for another platform may still work."
+        echo "Please select the platform to use for toolchain downloads:"
+
+        echo "0) Cancel"
+        echo "1) Ubuntu 22.04"
+        echo "2) Ubuntu 20.04"
+        echo "3) Ubuntu 18.04"
+        echo "4) RHEL 9"
+        echo "5) Amazon Linux 2"
+
+        read_input_with_default "0"
+        case "$READ_INPUT_RETURN" in
+            "1" | "1)")
+                set_ubuntu_platform "22" "04"
+                ;;
+
+            "2" | "2)")
+                set_ubuntu_platform "20" "04"
+                ;;
+
+            "3" | "3)")
+                set_ubuntu_platform "18" "04"
+                ;;
+
+            *)
+                echo "Cancelling installation."
+                exit 0
+                ;;
+            esac
+        done
         ;;
 esac
 

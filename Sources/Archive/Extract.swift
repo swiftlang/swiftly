@@ -1,19 +1,19 @@
-import CLibArchive
+@_implementationOnly import CLibArchive
 import Foundation
 
 // The code in this file consists mainly of a Swift port of the "Complete Extractor" example included in the libarchive
 // documentation: https://github.com/libarchive/libarchive/wiki/Examples#a-complete-extractor
 
-struct ExtractError: Error {
-    let message: String?
+public struct ExtractError: Error {
+    public let message: String?
 
-    init(archive: OpaquePointer?) {
+    internal init(archive: OpaquePointer?) {
         self.message = archive_error_string(archive).map { err in
             String(cString: err)
         }
     }
 
-    init(message: String) {
+    public init(message: String) {
         self.message = message
     }
 }
@@ -44,7 +44,7 @@ func copyData(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws 
 /// the provided closure which will return the path the file will be written to.
 ///
 /// This uses libarchive under the hood, so a wide variety of archive formats are supported (e.g. .tar.gz).
-internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws {
+public func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws {
     var flags = Int32(0)
     flags = ARCHIVE_EXTRACT_TIME
     flags |= ARCHIVE_EXTRACT_PERM

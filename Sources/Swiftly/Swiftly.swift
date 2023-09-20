@@ -2,6 +2,8 @@ import ArgumentParser
 import Foundation
 #if os(Linux)
 import LinuxPlatform
+#elseif canImport(Darwin)
+import DarwinPlatform
 #endif
 import SwiftlyCore
 
@@ -35,6 +37,8 @@ public struct Swiftly: SwiftlyCommand {
 
 #if os(Linux)
     internal static let currentPlatform = Linux.currentPlatform
+#elseif canImport(Darwin)
+    internal static let currentPlatform = Darwin.currentPlatform
 #endif
 }
 

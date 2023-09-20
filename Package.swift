@@ -4,6 +4,8 @@ import PackageDescription
 
 let package = Package(
     name: "swiftly",
+    // Current supported Darwin family: macOS
+    platforms: [.macOS(.v13)],
     products: [
         .executable(
             name: "swiftly",
@@ -23,6 +25,7 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .target(name: "SwiftlyCore"),
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
+                .target(name: "DarwinPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
             ]
         ),
@@ -34,13 +37,29 @@ let package = Package(
             ]
         ),
         .target(
-            name: "LinuxPlatform",
+            name: "DarwinPlatform",
             dependencies: [
                 "SwiftlyCore",
-                "CLibArchive",
+                "Archive",
             ],
             linkerSettings: [
                 .linkedLibrary("z"),
+            ]
+        ),
+        .target(
+            name: "LinuxPlatform",
+            dependencies: [
+                "SwiftlyCore",
+                "Archive",
+            ],
+            linkerSettings: [
+                .linkedLibrary("z"),
+            ]
+        ),
+        .target(
+            name: "Archive",
+            dependencies: [
+                "CLibArchive",
             ]
         ),
         .systemLibrary(
@@ -48,6 +67,9 @@ let package = Package(
             pkgConfig: "libarchive",
             providers: [
                 .apt(["libarchive-dev"]),
+                // For pkg-config to find libarchive you may need to set:
+                // `export PKG_CONFIG_PATH="/opt/homebrew/opt/libarchive/lib/pkgconfig"`
+                .brew(["libarchive"]),
             ]
         ),
         .testTarget(

@@ -2,10 +2,10 @@ import Foundation
 import SwiftlyCore
 @_implementationOnly import Archive
 
-/// `Platform` implementation for Linux systems.
-/// This implementation can be reused for any supported Linux platform.
+/// `Platform` implementation for Darwin systems.
+/// This implementation can be reused for any supported Darwin platform.
 /// TODO: replace dummy implementations
-public struct Linux: Platform {
+public struct Darwin: Platform {
     public init() {}
 
     public var appDataDirectory: URL {
@@ -19,7 +19,7 @@ public struct Linux: Platform {
     }
 
     public var toolchainFileExtension: String {
-        "tar.gz"
+        "pkg"
     }
 
     public func isSystemDependencyPresent(_: SystemDependency) -> Bool {
@@ -140,5 +140,5 @@ public struct Linux: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
-    public static let currentPlatform: any Platform = Linux()
+    public static let currentPlatform: any Platform = Darwin()
 }

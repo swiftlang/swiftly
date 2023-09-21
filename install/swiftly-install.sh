@@ -308,7 +308,7 @@ manually_select_platform () {
     esac
 }
 
-SWIFTLY_INSTALL_VERSION="0.1.0"
+SWIFTLY_INSTALL_VERSION="0.2.0"
 
 MODIFY_PROFILE="true"
 SWIFTLY_INSTALL_SYSTEM_DEPS="true"

@@ -27,9 +27,6 @@
 #
 # curl is required to run this script.
 
-set -o errexit
-shopt -s extglob
-
 has_command () {
     command -v "$1" > /dev/null
 }
@@ -308,10 +305,34 @@ manually_select_platform () {
     esac
 }
 
+verify_getopt_install () {
+    if ! has_command "getopt" ; then
+        return 1
+    fi
+
+    getopt --test
+    # getopt --test exiting with status code 4 implies GNU getopt is being used, which we need.
+    [[ "$?" -eq 4 ]]
+    return "$?"
+}
+
 SWIFTLY_INSTALL_VERSION="0.2.0"
 
 MODIFY_PROFILE="true"
 SWIFTLY_INSTALL_SYSTEM_DEPS="true"
+
+if ! has_command "curl" ; then
+    echo "Error: curl must be installed to download swiftly"
+    exit 1
+fi
+
+if ! verify_getopt_install ; then
+    echo "Error: getopt must be installed from the util-linux package to run swiftly-install"
+    exit 1
+fi
+
+set -o errexit
+shopt -s extglob
 
 short_options='yhvp:'
 long_options='disable-confirmation,no-modify-profile,no-install-system-deps,help,version,platform:'
@@ -427,11 +448,6 @@ case "$RAW_ARCH" in
         exit 1
         ;;
 esac
-
-if ! has_command "curl" ; then
-    echo "Error: curl must be installed to download swiftly"
-    exit 1
-fi
 
 JSON_OUT=$(cat <<EOF
 {

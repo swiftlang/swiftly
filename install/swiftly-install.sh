@@ -25,7 +25,7 @@
 # Unless the --no-install-system-deps flag is set, this script will attempt to install Swift's
 # system dependencies using the system package manager.
 #
-# curl is required to run this script.
+# curl and getopt (from the util-linux package) are required to run this script.
 
 has_command () {
     command -v "$1" > /dev/null
@@ -189,7 +189,7 @@ set_platform_amazonlinux () {
     package_manager="yum"
 
     if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
-        PLATFORM_NAME_PRETTY="Amazon Linux 2"
+        PLATFORM_NAME_PRETTY="Amazon Linux $1"
     fi
 }
 
@@ -265,7 +265,7 @@ manually_select_platform () {
         echo "Error: Unsupported platform: $PRETTY_NAME"
         exit 1
     fi
-    echo "$PRETTY_NAME is not an officially supported platform, but the toolchains for another platform may still work on it."
+    echo "$PLATFORM_NAME_PRETTY is not an officially supported platform, but the toolchains for another platform may still work on it."
     echo ""
     echo "Please select the platform to use for toolchain downloads:"
 
@@ -311,7 +311,7 @@ verify_getopt_install () {
     fi
 
     getopt --test
-    # getopt --test exiting with status code 4 implies GNU getopt is being used, which we need.
+    # getopt --test exiting with status code 4 implies getopt from util-linux is being used, which we need.
     [[ "$?" -eq 4 ]]
     return "$?"
 }

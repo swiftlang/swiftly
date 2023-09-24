@@ -25,10 +25,7 @@
 # Unless the --no-install-system-deps flag is set, this script will attempt to install Swift's
 # system dependencies using the system package manager.
 #
-# curl is required to run this script.
-
-set -o errexit
-shopt -s extglob
+# curl and getopt (from the util-linux package) are required to run this script.
 
 has_command () {
     command -v "$1" > /dev/null
@@ -170,26 +167,198 @@ install_system_deps () {
     set -o errexit
 }
 
-SWIFTLY_INSTALL_VERSION="0.1.0"
+set_platform_ubuntu () {
+    docker_platform_name="ubuntu"
+    package_manager="apt-get"
+    export DEBIAN_FRONTEND=noninteractive
+    
+    PLATFORM_NAME="ubuntu$1$2"
+    PLATFORM_NAME_FULL="ubuntu$1.$2"
+    docker_platform_version="$1.$2"
+
+    if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
+        PLATFORM_NAME_PRETTY="Ubuntu $1.$2"
+    fi
+}
+
+set_platform_amazonlinux () {
+    PLATFORM_NAME="amazonlinux$1"
+    PLATFORM_NAME_FULL="amazonlinux$1"
+    docker_platform_name="amazonlinux"
+    docker_platform_version="$1"
+    package_manager="yum"
+
+    if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
+        PLATFORM_NAME_PRETTY="Amazon Linux $1"
+    fi
+}
+
+set_platform_rhel () {
+    PLATFORM_NAME="ubi$1"
+    PLATFORM_NAME_FULL="ubi$1"
+    docker_platform_name="rhel-ubi"
+    docker_platform_version="$1"
+    package_manager="yum"
+
+    if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
+        PLATFORM_NAME_PRETTY="RHEL 9"
+    fi
+}
+
+detect_platform () {
+    if [[ -f "/etc/os-release" ]]; then
+        OS_RELEASE="/etc/os-release"
+    elif [[ -f "/usr/lib/os-release" ]]; then
+        OS_RELEASE="/usr/lib/os-release"
+    else
+        manually_select_platform
+    fi
+
+    source "$OS_RELEASE"
+    PLATFORM_NAME_PRETTY="$PRETTY_NAME"
+
+    case "$ID$ID_LIKE" in
+        *"amzn"*)
+            if [[ "$VERSION_ID" != "2" ]]; then
+                manually_select_platform
+            else
+                set_platform_amazonlinux "2"
+            fi
+            ;;
+
+        *"ubuntu"*)
+            case "$UBUNTU_CODENAME" in
+                "jammy")
+                    set_platform_ubuntu "22" "04"
+                    ;;
+
+                "focal")
+                    set_platform_ubuntu "20" "04"
+                    ;;
+
+                "bionic")
+                    set_platform_ubuntu "18" "04"
+                    ;;
+
+                *)
+                    manually_select_platform
+                    ;;
+            esac
+            ;;
+
+        *"rhel"*)
+            if [[ "$VERSION_ID" != 9* ]]; then
+                manually_select_platform
+            else
+                set_platform_rhel "9"
+            fi
+            ;;
+
+        *)
+            manually_select_platform
+            ;;
+    esac
+}
+
+manually_select_platform () {
+    if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
+        echo "Error: Unsupported platform: $PRETTY_NAME"
+        exit 1
+    fi
+    echo "$PLATFORM_NAME_PRETTY is not an officially supported platform, but the toolchains for another platform may still work on it."
+    echo ""
+    echo "Please select the platform to use for toolchain downloads:"
+
+    echo "0) Cancel"
+    echo "1) Ubuntu 22.04"
+    echo "2) Ubuntu 20.04"
+    echo "3) Ubuntu 18.04"
+    echo "4) RHEL 9"
+    echo "5) Amazon Linux 2"
+
+    read_input_with_default "0"
+    case "$READ_INPUT_RETURN" in
+        "1" | "1)")
+            set_platform_ubuntu "22" "04"
+            ;;
+
+        "2" | "2)")
+            set_platform_ubuntu "20" "04"
+            ;;
+
+        "3" | "3)")
+            set_platform_ubuntu "18" "04"
+            ;;
+
+        "4" | "4)")
+            set_platform_rhel "9"
+            ;;
+
+        "5" | "5)")
+            set_platform_amazonlinux "2"
+            ;;
+
+        *)
+            echo "Cancelling installation."
+            exit 0
+            ;;
+    esac
+}
+
+verify_getopt_install () {
+    if ! has_command "getopt" ; then
+        return 1
+    fi
+
+    getopt --test
+    # getopt --test exiting with status code 4 implies getopt from util-linux is being used, which we need.
+    [[ "$?" -eq 4 ]]
+    return "$?"
+}
+
+SWIFTLY_INSTALL_VERSION="0.2.0"
 
 MODIFY_PROFILE="true"
 SWIFTLY_INSTALL_SYSTEM_DEPS="true"
 
-for arg in "$@"; do
-    case "$arg" in
+if ! has_command "curl" ; then
+    echo "Error: curl must be installed to download swiftly"
+    exit 1
+fi
+
+if ! verify_getopt_install ; then
+    echo "Error: getopt must be installed from the util-linux package to run swiftly-install"
+    exit 1
+fi
+
+set -o errexit
+shopt -s extglob
+
+short_options='yhvp:'
+long_options='disable-confirmation,no-modify-profile,no-install-system-deps,help,version,platform:'
+
+args=$(getopt --options "$short_options" --longoptions "$long_options" --name "swiftly-install" -- "${@}")
+eval "set -- ${args}"
+
+while [ true ]; do
+    case "$1" in
         "--help" | "-h")
             cat <<EOF
 swiftly-install $SWIFTLY_INSTALL_VERSION
 The installer for swiftly.
 
 USAGE:
-    swiftly-install [FLAGS]
+    swiftly-install [options]
 
-FLAGS:
+OPTIONS:
     -y, --disable-confirmation  Disable confirmation prompt.
     --no-modify-profile         Do not attempt to modify the profile file to set environment 
                                 variables (e.g. PATH) on login.
     --no-install-system-deps    Do not attempt to install Swift's required system dependencies.
+    -p, --platform <platform>   Specifies which platform's toolchains swiftly will download. If
+                                unspecified, the platform will be automatically detected. Available
+                                options are "ubuntu22.04", "ubuntu20.04", "ubuntu18.04", "rhel9", and
+                                "amazonlinux2".
     -h, --help                  Prints help information.
     --version                   Prints version information.
 EOF
@@ -198,14 +367,17 @@ EOF
 
         "--disable-confirmation" | "-y")
             DISABLE_CONFIRMATION="true"
+            shift
             ;;
 
         "--no-modify-profile")
             MODIFY_PROFILE="false"
+            shift
             ;;
 
         "--no-install-system-deps")
             SWIFTLY_INSTALL_SYSTEM_DEPS="false"
+            shift
             ;;
 
         "--version")
@@ -213,84 +385,51 @@ EOF
             exit 0
             ;;
 
+        "--platform" | "-p")
+            case "$2" in
+                "ubuntu22.04")
+                    set_platform_ubuntu "22" "04"
+                    ;;
+
+                "ubuntu20.04")
+                    set_platform_ubuntu "20" "04"
+                    ;;
+
+                "ubuntu18.04")
+                    set_platform_ubuntu "18" "04"
+                    ;;
+
+                "amazonlinux2")
+                    set_platform_amazonlinux "2"
+                    ;;
+
+                "rhel9")
+                    set_platform_rhel "9"
+                    ;;
+
+                *)
+                    echo "Error: unrecognized platform $2"
+                    exit 1
+                    ;;
+            esac
+            shift 2
+            ;;
+
+        --)
+            shift
+            break
+            ;;
+
         *)
-            echo "Error: unrecognized flag \"$arg\""
+            echo "Error: unrecognized option \"$arg\""
             exit 1
             ;;
     esac
 done
 
-if [[ -f "/etc/os-release" ]]; then
-    OS_RELEASE="/etc/os-release"
-elif [[ -f "/usr/lib/os-release" ]]; then
-    OS_RELEASE="/usr/lib/os-release"
-else
-    echo "Error: could not detect OS information"
-    exit 1
+if [[ -z "$PLATFORM_NAME" ]]; then
+    detect_platform
 fi
-
-source "$OS_RELEASE"
-
-case "$ID" in
-    "amzn")
-        if [[ "$VERSION_ID" != "2" ]]; then
-            echo "Error: Unsupported Amazon Linux version: $PRETTY_NAME"
-            exit 1
-        fi
-        PLATFORM_NAME="amazonlinux2"
-        PLATFORM_NAME_FULL="amazonlinux2"
-        docker_platform_name="amazonlinux"
-        docker_platform_version="2"
-        package_manager="yum"
-        ;;
-
-    "ubuntu")
-        docker_platform_name="ubuntu"
-        package_manager="apt-get"
-        export DEBIAN_FRONTEND=noninteractive
-        case "$UBUNTU_CODENAME" in
-            "jammy")
-                PLATFORM_NAME="ubuntu2204"
-                PLATFORM_NAME_FULL="ubuntu22.04"
-                docker_platform_version="22.04"
-                ;;
-
-            "focal")
-                PLATFORM_NAME="ubuntu2004"
-                PLATFORM_NAME_FULL="ubuntu20.04"
-                docker_platform_version="20.04"
-                ;;
-
-            "bionic")
-                PLATFORM_NAME="ubuntu1804"
-                PLATFORM_NAME_FULL="ubuntu18.04"
-                docker_platform_version="18.04"
-                ;;
-
-            *)
-                echo "Error: Unsupported Ubuntu version: $PRETTY_NAME"
-                exit 1
-                ;;
-        esac
-        ;;
-
-    "rhel")
-        if [[ "$VERSION_ID" != 9* ]]; then
-            echo "Error: Unsupported RHEL version: $PRETTY_NAME"
-            exit 1
-        fi
-        PLATFORM_NAME="ubi9"
-        PLATFORM_NAME_FULL="ubi9"
-        docker_platform_name="rhel-ubi"
-        docker_platform_version="9"
-        package_manager="yum"
-        ;;
-
-    *)
-        echo "Error: Unsupported platform: $PRETTY_NAME"
-        exit 1
-        ;;
-esac
 
 RAW_ARCH="$(uname -m)"
 case "$RAW_ARCH" in
@@ -306,20 +445,16 @@ case "$RAW_ARCH" in
 
     *)
         echo "Error: Unsupported CPU architecture: $RAW_ARCH"
+        exit 1
         ;;
 esac
-
-if ! has_command "curl" ; then
-    echo "Error: curl must be installed to download swiftly"
-    exit 1
-fi
 
 JSON_OUT=$(cat <<EOF
 {
   "platform": {
     "name": "$PLATFORM_NAME",
     "nameFull": "$PLATFORM_NAME_FULL",
-    "namePretty": "$PRETTY_NAME",
+    "namePretty": "$PLATFORM_NAME_PRETTY",
     "architecture": $PLATFORM_ARCH
   },
   "installedToolchains": [],

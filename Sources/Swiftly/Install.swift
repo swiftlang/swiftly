@@ -53,15 +53,21 @@ struct Install: SwiftlyCommand {
     ))
     var token: String?
 
+    public var httpClient = HTTP()
+
+	private enum CodingKeys: String, CodingKey {
+		case version, token
+	}
+
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.version)
-        HTTP.githubToken = self.token
+        httpClient.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
         var config = try Config.load()
-        try await Self.execute(version: toolchainVersion, &config)
+        try await Self.execute(version: toolchainVersion, &config, self.httpClient)
     }
 
-    internal static func execute(version: ToolchainVersion, _ config: inout Config) async throws {
+    internal static func execute(version: ToolchainVersion, _ config: inout Config, _ httpClient: HTTP) async throws {
         guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed, exiting.")
             return
@@ -120,7 +126,8 @@ struct Install: SwiftlyCommand {
         var lastUpdate = Date()
 
         do {
-            try await HTTP.downloadToolchain(
+            try await httpClient.downloadToolchain(
+                version,
                 url: url,
                 to: tmpFile.path,
                 reportProgress: { progress in
@@ -172,7 +179,7 @@ struct Install: SwiftlyCommand {
         case .latest:
             SwiftlyCore.print("Fetching the latest stable Swift release...")
 
-            guard let release = try await HTTP.getReleaseToolchains(limit: 1).first else {
+            guard let release = try await self.httpClient.getReleaseToolchains(limit: 1).first else {
                 throw Error(message: "couldn't get latest releases")
             }
             return .stable(release)
@@ -191,7 +198,7 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest stable Swift \(major).\(minor) release...")
             // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
-            let toolchain = try await HTTP.getReleaseToolchains(limit: 1) { release in
+            let toolchain = try await self.httpClient.getReleaseToolchains(limit: 1) { release in
                 release.major == major && release.minor == minor
             }.first
 
@@ -209,7 +216,7 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest \(branch) branch snapshot...")
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.
-            let snapshot = try await HTTP.getSnapshotToolchains(limit: 1) { snapshot in
+            let snapshot = try await self.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
                 snapshot.branch == branch
             }.first
 

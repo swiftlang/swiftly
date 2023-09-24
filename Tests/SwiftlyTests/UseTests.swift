@@ -224,7 +224,7 @@ final class UseTests: SwiftlyTests {
             ]
 
             for (toolchain, files) in spec {
-                try self.installMockedToolchain(toolchain: toolchain, executables: files)
+                try await self.installMockedToolchain(toolchain: toolchain, executables: files)
             }
 
             // Add an unrelated executable to the binary directory.
@@ -269,7 +269,7 @@ final class UseTests: SwiftlyTests {
             }
 
             let toolchain = ToolchainVersion(major: 7, minor: 2, patch: 3)
-            try self.installMockedToolchain(
+            try await self.installMockedToolchain(
                 toolchain: toolchain,
                 executables: ["a", "b", "c", "d", "e"]
             )

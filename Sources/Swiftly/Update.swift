@@ -46,6 +46,12 @@ struct Update: SwiftlyCommand {
     )
     var assumeYes: Bool = false
 
+    public var httpClient = HTTP()
+
+	private enum CodingKeys: String, CodingKey {
+		case toolchain, assumeYes
+	}
+
     public mutating func run() async throws {
         var config = try Config.load()
 
@@ -58,7 +64,39 @@ struct Update: SwiftlyCommand {
             return
         }
 
-        guard let newToolchain = try await self.fetchNewToolchain(old: oldToolchain) else {
+        let bounds: UpdateBounds
+
+        let selector = try self.toolchain.map { try ToolchainSelector(parsing: $0) }
+
+        // TODO: de-uglify
+        if let selector {
+            switch oldToolchain {
+            case let .snapshot(snapshot):
+                bounds = .snapshot(old: snapshot)
+            case let .stable(stable):
+                switch selector {
+                case let .stable(major, minor, patch):
+                    if minor == nil {
+                        bounds = .stable(old: stable, range: .latestMinor)
+                    } else {
+                        bounds = .stable(old: stable, range: .latestPatch)
+                    }
+                case .latest:
+                    bounds = .stable(old: stable, range: .latest)
+                default:
+                    fatalError("TODO: unreachable")
+                }
+            }
+        } else {
+            switch oldToolchain {
+            case let .snapshot(snapshot):
+                bounds = .snapshot(old: snapshot)
+            case let .stable(stable):
+                bounds = .stable(old: stable, range: .latestPatch)
+            }
+        }
+
+        guard let newToolchain = try await self.fetchNewToolchain(bounds: bounds) else {
             SwiftlyCore.print("\(oldToolchain) is already up to date")
             return
         }
@@ -76,7 +114,7 @@ struct Update: SwiftlyCommand {
             }
         }
 
-        try await Install.execute(version: newToolchain, &config)
+        try await Install.execute(version: newToolchain, &config, self.httpClient)
 
         if config.inUse == oldToolchain {
             try await Use.execute(newToolchain, &config)
@@ -100,18 +138,83 @@ struct Update: SwiftlyCommand {
         return toolchains.max()
     }
 
-    private func fetchNewToolchain(old: ToolchainVersion) async throws -> ToolchainVersion? {
-        switch old {
-        case let .stable(oldRelease):
-            return try await HTTP.getReleaseToolchains(limit: 1) { release in
-                release.major == oldRelease.major
-                    && release.minor == oldRelease.minor
-                    && release.patch > oldRelease.patch
+    private func fetchNewToolchain(bounds: UpdateBounds) async throws -> ToolchainVersion? {
+        switch bounds {
+        case let .stable(old, range):
+            return try await self.httpClient.getReleaseToolchains(limit: 1) { release in
+                switch range {
+                case .latest:
+                    return release > old
+                case .latestMinor:
+                    return release.major == old.major && release > old
+                case .latestPatch:
+                    return release.major == old.major && release.minor == old.minor && release > old
+                }
             }.first.map(ToolchainVersion.stable)
-        case let .snapshot(oldSnapshot):
-            return try await HTTP.getSnapshotToolchains(limit: 1) { snapshot in
-                snapshot.branch == oldSnapshot.branch && snapshot.date > oldSnapshot.date
+        case let .snapshot(old):
+            return try await self.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
+                return snapshot.branch == old.branch && snapshot.date > old.date
             }.first.map(ToolchainVersion.snapshot)
         }
     }
+
+    // private func fetchNewToolchain(selector: ToolchainSelector?, old: ToolchainVersion) async throws -> ToolchainVersion? {
+    //     // guard let selector else {
+    //     //     switch old {
+    //     //     case let .stable(s):
+    //     //         return try await self.httpClient.getReleaseToolchains(limit: 1) { release in
+    //     //             release > old.asStableRelease!
+    //     //         }
+    //     //     }
+    //     // }
+
+    //     switch selector {
+    //     case .latest:
+    //         return try await self.httpClient.getReleaseToolchains(limit: 1) { release in
+    //             release > old.asStableRelease!
+    //         }
+    //     case let .stable(major, minor, patch):
+    //         return try await self.httpClient.getReleaseToolchains(limit: 1) { release in
+    //             guard release.major == major else {
+    //                 return false
+    //             }
+
+    //             if let minor {
+    //                 guard minor == release.minor else {
+    //                     return false
+    //                 }
+    //             }
+
+    //             if let patch {
+    //                 guard release.patch > patch else {
+    //                     return false
+    //                 }
+    //             }
+
+    //             return true
+    //         }.first.map(ToolchainVersion.stable)
+    //     case let .snapshot(branch, date):
+    //         return try await self.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
+    //             guard snapshot.branch == branch else {
+    //                 return false
+    //             }
+
+    //             if let date {
+    //                 return snapshot.date > date
+    //             }
+
+    //             return true
+    //         }.first.map(ToolchainVersion.snapshot)
+    //     }
+    // }
+}
+
+enum UpdateBounds {
+    enum StableUpdateRange {
+        case latest
+        case latestMinor
+        case latestPatch
+    }
+    case stable(old: ToolchainVersion.StableRelease, range: StableUpdateRange)
+    case snapshot(old: ToolchainVersion.Snapshot)
 }

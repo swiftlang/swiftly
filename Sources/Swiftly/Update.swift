@@ -40,34 +40,59 @@ struct Update: SwiftlyCommand {
     ))
     var toolchain: String?
 
+    @Flag(
+        name: [.long, .customShort("y")],
+        help: "Update the selected toolchains without prompting for confirmation."
+    )
+    var assumeYes: Bool = false
+
     public mutating func run() async throws {
-        guard let oldToolchain = try self.oldToolchain() else {
+        var config = try Config.load()
+
+        guard let oldToolchain = try self.oldToolchain(config) else {
             if let toolchain = self.toolchain {
-                print("No installed toolchain matched \"\(toolchain)\"")
+                SwiftlyCore.print("No installed toolchain matched \"\(toolchain)\"")
             } else {
-                print("No toolchains are currently installed")
+                SwiftlyCore.print("No toolchains are currently installed")
             }
             return
         }
 
-        guard let newToolchain = try await self.newToolchain(old: oldToolchain) else {
-            print("\(oldToolchain) is already up to date!")
+        guard let newToolchain = try await self.fetchNewToolchain(old: oldToolchain) else {
+            SwiftlyCore.print("\(oldToolchain) is already up to date")
             return
         }
 
-        print("updating \(oldToolchain) -> \(newToolchain)")
-        try await Install.execute(version: newToolchain)
-        try Swiftly.currentPlatform.uninstall(oldToolchain)
-        print("successfully updated \(oldToolchain) -> \(newToolchain)")
+        guard !config.installedToolchains.contains(newToolchain) else {
+            SwiftlyCore.print("The newest version of \(oldToolchain) (\(newToolchain)) is already installed")
+            return
+        }
+
+        if !self.assumeYes {
+            SwiftlyCore.print("Update \(oldToolchain) ⟶ \(newToolchain)?")
+            guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
+                SwiftlyCore.print("Aborting")
+                return
+            }
+        }
+
+        try await Install.execute(version: newToolchain, &config)
+
+        if config.inUse == oldToolchain {
+            try await Use.execute(newToolchain, &config)
+        }
+
+        try await Uninstall.execute(oldToolchain, &config)
+        SwiftlyCore.print("Successfully updated \(oldToolchain) ⟶ \(newToolchain)")
     }
 
-    private func oldToolchain() throws -> ToolchainVersion? {
+    private func oldToolchain(_ config: Config) throws -> ToolchainVersion? {
         guard let input = self.toolchain else {
-            return try Config.load().inUse
+            return config.inUse
         }
 
         let selector = try ToolchainSelector(parsing: input)
-        let toolchains = try Config.load().listInstalledToolchains(selector: selector)
+        let toolchains = config.listInstalledToolchains(selector: selector)
 
         // When multiple toolchains are matched, update the latest one.
         // This is for situations such as `swiftly update 5.5` when both
@@ -75,7 +100,7 @@ struct Update: SwiftlyCommand {
         return toolchains.max()
     }
 
-    private func newToolchain(old: ToolchainVersion) async throws -> ToolchainVersion? {
+    private func fetchNewToolchain(old: ToolchainVersion) async throws -> ToolchainVersion? {
         switch old {
         case let .stable(oldRelease):
             return try await HTTP.getReleaseToolchains(limit: 1) { release in
@@ -83,9 +108,10 @@ struct Update: SwiftlyCommand {
                     && release.minor == oldRelease.minor
                     && release.patch > oldRelease.patch
             }.first.map(ToolchainVersion.stable)
-        default:
-            // TODO: fetch newer snapshots
-            return nil
+        case let .snapshot(oldSnapshot):
+            return try await HTTP.getSnapshotToolchains(limit: 1) { snapshot in
+                snapshot.branch == oldSnapshot.branch && snapshot.date > oldSnapshot.date
+            }.first.map(ToolchainVersion.snapshot)
         }
     }
 }

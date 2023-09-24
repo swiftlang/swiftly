@@ -59,9 +59,8 @@ struct Uninstall: SwiftlyCommand {
             for toolchain in toolchains {
                 SwiftlyCore.print("  \(toolchain)")
             }
-            let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
 
-            guard proceed == "y" else {
+            guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
                 SwiftlyCore.print("Aborting uninstall")
                 return
             }
@@ -90,7 +89,7 @@ struct Uninstall: SwiftlyCommand {
                     ?? config.listInstalledToolchains(selector: .latest).filter({ !toolchains.contains($0) }).max()
                     ?? config.installedToolchains.filter({ !toolchains.contains($0) }).max()
                 {
-                    try await Use.execute(toUse, config: &config)
+                    try await Use.execute(toUse, &config)
                 } else {
                     // If there are no more toolchains installed, just unuse the currently active toolchain.
                     try Swiftly.currentPlatform.unUse(currentToolchain: toolchain)
@@ -99,14 +98,18 @@ struct Uninstall: SwiftlyCommand {
                 }
             }
 
-            SwiftlyCore.print("Uninstalling \(toolchain)...", terminator: "")
-            try Swiftly.currentPlatform.uninstall(toolchain)
-            config.installedToolchains.remove(toolchain)
-            try config.save()
-            SwiftlyCore.print("done")
+            try await Self.execute(toolchain, &config)
         }
 
         SwiftlyCore.print()
         SwiftlyCore.print("\(toolchains.count) toolchain(s) successfully uninstalled")
+    }
+
+    static func execute(_ toolchain: ToolchainVersion, _ config: inout Config) async throws {
+        SwiftlyCore.print("Uninstalling \(toolchain)...", terminator: "")
+        try Swiftly.currentPlatform.uninstall(toolchain)
+        config.installedToolchains.remove(toolchain)
+        try config.save()
+        SwiftlyCore.print("done")
     }
 }

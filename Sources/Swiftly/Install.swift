@@ -57,12 +57,11 @@ struct Install: SwiftlyCommand {
         let selector = try ToolchainSelector(parsing: self.version)
         HTTP.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
-        try await Self.execute(version: toolchainVersion)
+        var config = try Config.load()
+        try await Self.execute(version: toolchainVersion, &config)
     }
 
-    internal static func execute(version: ToolchainVersion) async throws {
-        var config = try Config.load()
-
+    internal static func execute(version: ToolchainVersion, _ config: inout Config) async throws {
         guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed, exiting.")
             return
@@ -160,7 +159,7 @@ struct Install: SwiftlyCommand {
 
         // If this is the first installed toolchain, mark it as in-use.
         if config.inUse == nil {
-            try await Use.execute(version, config: &config)
+            try await Use.execute(version, &config)
         }
 
         SwiftlyCore.print("\(version) installed successfully!")

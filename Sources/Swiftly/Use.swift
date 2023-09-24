@@ -47,11 +47,11 @@ internal struct Use: SwiftlyCommand {
             return
         }
 
-        try await Self.execute(toolchain, config: &config)
+        try await Self.execute(toolchain, &config)
     }
 
     /// Use a toolchain. This method modifies and saves the input config.
-    internal static func execute(_ toolchain: ToolchainVersion, config: inout Config) async throws {
+    internal static func execute(_ toolchain: ToolchainVersion, _ config: inout Config) async throws {
         let previousToolchain = config.inUse
 
         guard toolchain != previousToolchain else {

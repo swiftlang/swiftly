@@ -16,6 +16,15 @@ public enum ToolchainVersion {
                 }
             }
 
+            public var name: String {
+                switch self {
+                case .main:
+                    return "main"
+                case let .release(major, minor):
+                    return "\(major).\(minor)"
+                }
+            }
+
             public var major: Int? {
                 guard case let .release(major, _) = self else {
                     return nil
@@ -84,10 +93,6 @@ public enum ToolchainVersion {
 
     public init(major: Int, minor: Int, patch: Int) {
         self = .stable(StableRelease(major: major, minor: minor, patch: patch))
-    }
-
-    public init(_ major: Int, _ minor: Int, _ patch: Int) {
-        self.init(major: major, minor: minor, patch: patch)
     }
 
     public init(snapshotBranch: Snapshot.Branch, date: String) {
@@ -310,7 +315,7 @@ extension ToolchainSelector: CustomStringConvertible {
             s += ".\(patch)"
             return s
         case let .snapshot(branch, date):
-            var s = "\(branch)"
+            var s = "\(branch.name)-snapshot"
             if let date {
                 s += "-\(date)"
             }

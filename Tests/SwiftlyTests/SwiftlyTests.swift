@@ -168,20 +168,22 @@ class SwiftlyTests: XCTestCase {
 #endif
     }
 
-    func installMockedToolchain(selector: String, executables: [String]? = ["swift"]) async throws {
-        print(selector)
+    /// Install a mocked toolchain according to the provided selector that includes the provided list of executables
+    /// in its bin directory.
+    ///
+    /// When executed, the mocked executables will simply print the toolchain version and return.
+    func installMockedToolchain(selector: String, executables: [String]? = nil) async throws {
         var install = try self.parseCommand(Install.self, ["install", "\(selector)"])
-        // TODO: executables
-        install.httpClient = HTTP(toolchainDownloader: MockToolchainDownloader())
+        install.httpClient = HTTP(toolchainDownloader: MockToolchainDownloader(executables: executables))
         try await install.run()
     }
 
-    /// Install a mocked toolchain associated with the given version that includes the provided list of executables
+    /// Install a mocked toolchain according to the provided selector that includes the provided list of executables
     /// in its bin directory.
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(toolchain: ToolchainVersion, executables: [String]? = nil) async throws {
-        try await installMockedToolchain(selector: "\(toolchain)", executables: executables)
+        try await installMockedToolchain(selector: "\(toolchain.name)", executables: executables)
     }
 
     /// Install a mocked toolchain associated with the given version that includes the provided list of executables
@@ -190,37 +192,6 @@ class SwiftlyTests: XCTestCase {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: ToolchainSelector, executables: [String]? = nil) async throws {
         try await installMockedToolchain(selector: "\(selector)", executables: executables)
-        // let toolchainDir = Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent(toolchain.name)
-        // try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: true)
-
-        // let toolchainBinDir = toolchainDir
-        //     .appendingPathComponent("usr", isDirectory: true)
-        //     .appendingPathComponent("bin", isDirectory: true)
-        // try FileManager.default.createDirectory(
-        //     at: toolchainBinDir,
-        //     withIntermediateDirectories: true
-        // )
-
-        // // create dummy executable file that just prints the toolchain's version
-        // for executable in executables {
-        //     let executablePath = toolchainBinDir.appendingPathComponent(executable)
-
-        //     let script = """
-        //     #!/usr/bin/env sh
-
-        //     echo '\(toolchain.name)'
-        //     """
-
-        //     let data = script.data(using: .utf8)!
-        //     try data.write(to: executablePath)
-
-        //     // make the file executable
-        //     try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
-        // }
-
-        // try Config.update { config in
-        //     config.installedToolchains.insert(toolchain)
-        // }
     }
 
     /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given URL.
@@ -377,6 +348,12 @@ public struct SwiftExecutable {
 }
 
 public struct MockToolchainDownloader: ToolchainDownloader {
+    private let executables: [String]
+
+    public init(executables: [String]? = nil) {
+        self.executables = executables ?? ["swift"]
+    }
+
     public func downloadToolchain(
         _ toolchain: ToolchainVersion,
         url: String,
@@ -406,25 +383,24 @@ public struct MockToolchainDownloader: ToolchainDownloader {
             withIntermediateDirectories: true
         )
         defer {
-            print("deleting!")
             try? FileManager.default.removeItem(at: tmp)
         }
 
-        let executablePath = toolchainBinDir.appendingPathComponent("swift")
+        for executable in self.executables {
+            let executablePath = toolchainBinDir.appendingPathComponent(executable)
 
-        let script = """
-            #!/usr/bin/env sh
+            let script = """
+                #!/usr/bin/env sh
 
-            echo '\(toolchain.name)'
-            """
+                echo '\(toolchain.name)'
+                """
 
-        let data = script.data(using: .utf8)!
-        try data.write(to: executablePath)
+            let data = script.data(using: .utf8)!
+            try data.write(to: executablePath)
 
-        print("wrote!")
-
-        // make the file executable
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+            // make the file executable
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+        }
 
         let archive = tmp.appendingPathComponent("toolchain.tar.gz")
 
@@ -432,17 +408,9 @@ public struct MockToolchainDownloader: ToolchainDownloader {
         task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         task.arguments = ["bash", "-c", "tar -C \(tmp.path) -czf \(archive.path) \(toolchainDir.lastPathComponent)"]
 
-        print(task.arguments!)
         try task.run()
         task.waitUntilExit()
 
-        print("compressed!")
-
-        print(archive)
-        print(archive.fileExists())
-        let d = try Data(contentsOf: archive)
-        print("read!")
-
-        return d
+        return try Data(contentsOf: archive)
     }
 }

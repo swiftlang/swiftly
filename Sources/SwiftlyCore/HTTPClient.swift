@@ -14,23 +14,6 @@ public protocol ToolchainDownloader {
     ) async throws
 }
 
-struct ToolchainDownloaderHTTP: ToolchainDownloader {
-    private let client: HTTPClientWrapper
-
-    fileprivate init(client: HTTPClientWrapper) {
-        self.client = client
-    }
-
-    func downloadToolchain(
-        _ toolchain: ToolchainVersion,
-        url: String,
-        to destination: String,
-        reportProgress: @escaping (HTTP.DownloadProgress) -> Void
-    ) async throws {
-        
-    }
-}
-
 /// HTTPClient wrapper used for interfacing with various APIs and downloading things.
 public class HTTP {
     private static let client = HTTPClientWrapper()
@@ -40,16 +23,20 @@ public class HTTP {
         let buffer: ByteBuffer
     }
 
-    private let downloader: ToolchainDownloader
+    private let downloader: ToolchainDownloader?
 
     /// The GitHub authentication token to use for any requests made to the GitHub API.
     public var githubToken: String?
 
     public init(toolchainDownloader: ToolchainDownloader? = nil) {
-        self.downloader = toolchainDownloader ?? ToolchainDownloaderHTTP(client: Self.client)
+        self.downloader = toolchainDownloader
     }
 
-    private func makeRequest(url: String) -> HTTPClientRequest {
+    fileprivate var inner: HTTPClient {
+        Self.client.inner
+    }
+
+    fileprivate func makeRequest(url: String) -> HTTPClientRequest {
         var request = HTTPClientRequest(url: url)
         request.headers.add(name: "User-Agent", value: "swiftly")
         return request
@@ -158,48 +145,47 @@ public class HTTP {
         to destination: String,
         reportProgress: @escaping (DownloadProgress) -> Void
     ) async throws {
-        return try await self.downloader.downloadToolchain(
-            toolchain,
-            url: url,
-            to: destination,
-            reportProgress: reportProgress
-        )
-        // let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: destination))
-        // defer {
-        //     try? fileHandle.close()
-        // }
+        if let downloader = self.downloader {
+            return try await downloader.downloadToolchain(
+                toolchain,
+                url: url,
+                to: destination,
+                reportProgress: reportProgress
+            )
+        } else {
+            let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: destination))
+            defer {
+                try? fileHandle.close()
+            }
 
-        // let request = self.makeRequest(url: url)
-        // let response = try await Self.client.inner.execute(request, timeout: .seconds(30))
+            let request = self.makeRequest(url: url)
+            let response = try await self.inner.execute(request, timeout: .seconds(30))
 
-        // guard case response.status = HTTPResponseStatus.ok else {
-        //     throw Error(message: "Received \(response.status) when trying to download \(url)")
-        // }
+            guard case response.status = HTTPResponseStatus.ok else {
+                throw Error(message: "Received \(response.status) when trying to download \(url)")
+            }
 
-        // // Unknown download.swift.org paths redirect to a 404 page which then returns a 200 status.
-        // // As a heuristic for if we've hit the 404 page, we check to see if the content is HTML.
-        // guard !response.headers["Content-Type"].contains(where: { $0.contains("text/html") }) else {
-        //     throw DownloadNotFoundError(url: url)
-        // }
+            // Unknown download.swift.org paths redirect to a 404 page which then returns a 200 status.
+            // As a heuristic for if we've hit the 404 page, we check to see if the content is HTML.
+            guard !response.headers["Content-Type"].contains(where: { $0.contains("text/html") }) else {
+                throw HTTP.DownloadNotFoundError(url: url)
+            }
 
-        // // if defined, the content-length headers announces the size of the body
-        // let expectedBytes = response.headers.first(name: "content-length").flatMap(Int.init)
+            // if defined, the content-length headers announces the size of the body
+            let expectedBytes = response.headers.first(name: "content-length").flatMap(Int.init)
 
-        // var receivedBytes = 0
-        // for try await buffer in response.body {
-        //     receivedBytes += buffer.readableBytes
+            var receivedBytes = 0
+            for try await buffer in response.body {
+                receivedBytes += buffer.readableBytes
 
-        //     try buffer.withUnsafeReadableBytes { bufferPtr in
-        //         try fileHandle.write(contentsOf: bufferPtr)
-        //     }
-        //     reportProgress(DownloadProgress(receivedBytes: receivedBytes, totalBytes: expectedBytes))
-        // }
+                try buffer.withUnsafeReadableBytes { bufferPtr in
+                    try fileHandle.write(contentsOf: bufferPtr)
+                }
+                reportProgress(HTTP.DownloadProgress(receivedBytes: receivedBytes, totalBytes: expectedBytes))
+            }
 
-        // let data = try makeMockedToolchain(toolchain: ToolchainVersion(major: 6, minor: 0, patch: 0))
-        // try fileHandle.write(contentsOf: data)
-        // reportProgress(DownloadProgress(receivedBytes: data.count, totalBytes: data.count))
-
-        // try fileHandle.synchronize()
+            try fileHandle.synchronize()
+        }
     }
 }
 
@@ -209,55 +195,4 @@ private class HTTPClientWrapper {
     deinit {
         try? self.inner.syncShutdown()
     }
-}
-
-func makeMockedToolchain(toolchain: ToolchainVersion) throws -> Data {
-    let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(12)")
-    let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
-    let toolchainBinDir = toolchainDir
-        .appendingPathComponent("usr", isDirectory: true)
-        .appendingPathComponent("bin", isDirectory: true)
-
-    try FileManager.default.createDirectory(
-        at: toolchainBinDir,
-        withIntermediateDirectories: true
-    )
-    defer {
-        print("deleting!")
-        try? FileManager.default.removeItem(at: tmp)
-    }
-
-    let executablePath = toolchainBinDir.appendingPathComponent("swift")
-
-    let script = """
-        #!/usr/bin/env sh
-
-        echo '\(toolchain.name)'
-        """
-
-    let data = script.data(using: .utf8)!
-    try data.write(to: executablePath)
-
-    print("wrote!")
-
-    // make the file executable
-    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
-
-    let archive = tmp.appendingPathComponent("toolchain.tar.gz")
-
-    let task = Process()
-    task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    task.arguments = ["bash", "-c", "tar -C \(tmp.path) -czf \(archive.path) \(toolchainDir.lastPathComponent)"]
-
-    print(task.arguments!)
-    try task.run()
-
-    print("compressed!")
-
-    print(archive)
-    print(archive.fileExists())
-    let d = try Data(contentsOf: archive)
-    print("read!")
-
-    return d
 }

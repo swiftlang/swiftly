@@ -255,8 +255,4 @@ final class InstallTests: SwiftlyTests {
             try await self.validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
         }
     }
-
-    // func testFoo() throws {
-    //     try makeMockedToolchain(toolchain: ToolchainVersion(major: 6, minor: 0, patch: 0))
-    // }
 }

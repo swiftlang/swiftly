@@ -32,7 +32,7 @@ Target: x86_64-unknown-linux-gnu
 
 - Installing multiple toolchains, including both stable releases and snapshots
 - Switching which installed toolchain is active (i.e. which one is discovered via `$PATH`)
-- Updating installed toolchains to the latest available versions of those toolchains (not yet implemented)
+- Updating installed toolchains to the latest available versions of those toolchains
 - Uninstalling installed toolchains
 - Listing the toolchains that are available to install (not yet implemented)
 
@@ -175,23 +175,27 @@ $ swiftly use main-snapshot
 
 ### Updating a toolchain
 
-Update replaces a given toolchain with a later version of that toolchain. For a stable release, this means updating to a later patch version. For snapshots, this means updating to the most recently available snapshot. 
+Update replaces a given toolchain with a later version of that toolchain. For a stable release, this means updating to a later patch, minor, or major version. For snapshots, this means updating to the most recently available snapshot. 
 
-If no version is provided, update will update the currently selected toolchain to its latest version while removing the old version. The newly installed version will be used.
-
-Note that this command isn't implemented yet, but it will be included in a future release.
+If no version is provided, update will update the currently selected toolchain to its latest patch release if a release toolchain or the latest available snapshot if a snapshot. The newly installed version will be selected.
 
 ```
 $ swiftly update
 ```
 
-To update the latest installed stable version, the “latest” version can be provided:
+To update the latest installed release version to the latest available release version, the “latest” version can be provided. Note that this may update the toolchain to the next minor or even major version
 
 ```
 swiftly update latest
 ```
 
-To update to the latest patch release of a given major/minor version, only the major/minor pair need to be provided. This will update the latest installed toolchain associated with that major/minor version to the latest patch release for that major/minor version.
+If only a major version is specified, the latest installed toolchain with that major version will be updated to the latest available release of that major version:
+
+```
+swiftly update 5
+```
+
+If the major and minor version are specified, the latest installed toolchain associated with that major/minor version will be updated to the latest available patch release for that major/minor version.
 
 ```
 swiftly update 5.3
@@ -213,6 +217,12 @@ You can also update the latest installed main snapshot to the latest available o
 
 ```
 swiftly update main-snapshot
+```
+
+A specific snapshot toolchain can be updated to the newest available snapshot for that branch by including the date:
+
+```
+swiftly update 5.9-snapshot-2023-09-20
 ```
 
 ### Listing toolchains available to install

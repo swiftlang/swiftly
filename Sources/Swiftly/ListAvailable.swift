@@ -35,11 +35,11 @@ struct ListAvailable: SwiftlyCommand {
     ))
     var toolchainSelector: String?
 
-    public var httpClient = HTTP()
+    public var httpClient = SwiftlyHTTPClient()
 
-	private enum CodingKeys: String, CodingKey {
-		case toolchainSelector
-	}
+    private enum CodingKeys: String, CodingKey {
+        case toolchainSelector
+    }
 
     internal mutating func run() async throws {
         let selector = try self.toolchainSelector.map { input in

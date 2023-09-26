@@ -4,7 +4,104 @@ import Foundation
 import XCTest
 
 final class UpdateTests: SwiftlyTests {
-    private let httpClient = HTTP(toolchainDownloader: MockToolchainDownloader())
+    private let mockHttpClient = SwiftlyHTTPClient(toolchainDownloader: MockToolchainDownloader())
+
+    /// Verify updating the most up-to-date toolchain has no effect.
+    func testUpdateLatest() async throws {
+        try await self.withTestHome {
+            try await self.installMockedToolchain(selector: .latest)
+
+            let beforeUpdateConfig = try Config.load()
+
+            var update = try self.parseCommand(Update.self, ["update", "latest"])
+            update.httpClient = self.mockHttpClient
+            try await update.run()
+
+            XCTAssertEqual(try Config.load(), beforeUpdateConfig)
+            try await validateInstalledToolchains(
+                beforeUpdateConfig.installedToolchains,
+                description: "Updating latest toolchain should have no effect"
+            )
+        }
+    }
+
+    /// Verify that attempting to update when no toolchains are installed has no effect.
+    func testUpdateLatestWithNoToolchains() async throws {
+        try await self.withTestHome {
+            var update = try self.parseCommand(Update.self, ["update", "latest"])
+            update.httpClient = self.mockHttpClient
+            try await update.run()
+
+            try await validateInstalledToolchains(
+                [],
+                description: "Updating should not install any toolchains"
+            )
+        }
+    }
+
+    /// Verify that updating the lastest installed toolchain updates it to the latest available toolchain.
+    func testUpdateLatestToLatest() async throws {
+        try await self.withTestHome {
+            try await self.installMockedToolchain(selector: .stable(major: 5, minor: 0, patch: 0))
+            var update = try self.parseCommand(Update.self, ["update", "-y", "latest"])
+            update.httpClient = self.mockHttpClient
+            try await update.run()
+
+            let config = try Config.load()
+            let inUse = config.inUse!.asStableRelease!
+
+            XCTAssertGreaterThan(inUse, .init(major: 5, minor: 0, patch: 0))
+            try await validateInstalledToolchains(
+                [config.inUse!],
+                description: "Updating toolchain should properly install new toolchain and uninstall old"
+            )
+        }
+    }
+
+    /// Verify that the latest installed toolchain for a given major version can be updated to the lastest
+    /// released minor version.
+    func testUpdateToLatestMinor() async throws {
+        try await self.withTestHome {
+            try await self.installMockedToolchain(selector: .stable(major: 5, minor: 0, patch: 0))
+            var update = try self.parseCommand(Update.self, ["update", "-y", "5"])
+            update.httpClient = self.mockHttpClient
+            try await update.run()
+
+            let config = try Config.load()
+            let inUse = config.inUse!.asStableRelease!
+
+            XCTAssertEqual(inUse.major, 5)
+            XCTAssertGreaterThan(inUse.minor, 0)
+
+            try await validateInstalledToolchains(
+                [config.inUse!],
+                description: "Updating toolchain should properly install new toolchain and uninstall old"
+            )
+        }
+    }
+
+    /// Verify that a toolchain can be updated to the latest patch version of that toolchain's minor version.
+    func testUpdateToLatestPatch() async throws {
+        try await self.withTestHome {
+            try await self.installMockedToolchain(selector: "5.0.0")
+
+            var update = try self.parseCommand(Update.self, ["update", "-y", "5.0.0"])
+            update.httpClient = self.mockHttpClient
+            try await update.run()
+
+            let config = try Config.load()
+            let inUse = config.inUse!.asStableRelease!
+
+            XCTAssertEqual(inUse.major, 5)
+            XCTAssertEqual(inUse.minor, 0)
+            XCTAssertGreaterThan(inUse.patch, 0)
+
+            try await validateInstalledToolchains(
+                [config.inUse!],
+                description: "Updating toolchain should properly install new toolchain and uninstall old"
+            )
+        }
+    }
 
     /// Verifies that updating the currently in-use toolchain can be updated, and that after update the new toolchain
     /// will be in-use instead.
@@ -13,7 +110,7 @@ final class UpdateTests: SwiftlyTests {
             try await self.installMockedToolchain(selector: "5.0.0")
 
             var update = try self.parseCommand(Update.self, ["update", "-y"])
-            update.httpClient = self.httpClient
+            update.httpClient = self.mockHttpClient
             try await update.run()
 
             let config = try Config.load()
@@ -32,10 +129,11 @@ final class UpdateTests: SwiftlyTests {
         }
     }
 
+    /// Verifies that snapshots, both from the main branch and from development branches, can be updated.
     func testUpdateSnapshot() async throws {
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
-            .release(major: 5, minor: 9)
+            .release(major: 5, minor: 9),
         ]
 
         for branch in branches {
@@ -44,7 +142,7 @@ final class UpdateTests: SwiftlyTests {
                 try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
                 var update = try self.parseCommand(Update.self, ["update", "-y", "\(branch.name)-snapshot"])
-                update.httpClient = self.httpClient
+                update.httpClient = self.mockHttpClient
                 try await update.run()
 
                 let config = try Config.load()
@@ -68,7 +166,7 @@ final class UpdateTests: SwiftlyTests {
             try await self.installMockedToolchain(selector: "5.0.0")
 
             var update = try self.parseCommand(Update.self, ["update", "-y", "5.0"])
-            update.httpClient = self.httpClient
+            update.httpClient = self.mockHttpClient
             try await update.run()
 
             let config = try Config.load()
@@ -88,7 +186,7 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateSelectsLatestMatchingSnapshotRelease() async throws {
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
-            .release(major: 5, minor: 9)
+            .release(major: 5, minor: 9),
         ]
 
         for branch in branches {
@@ -97,7 +195,7 @@ final class UpdateTests: SwiftlyTests {
                 try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2023-09-16"))
 
                 var update = try self.parseCommand(Update.self, ["update", "-y", "\(branch.name)-snapshot"])
-                update.httpClient = self.httpClient
+                update.httpClient = self.mockHttpClient
                 try await update.run()
 
                 let config = try Config.load()

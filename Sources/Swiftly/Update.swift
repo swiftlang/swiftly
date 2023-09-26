@@ -46,11 +46,11 @@ struct Update: SwiftlyCommand {
     )
     var assumeYes: Bool = false
 
-    public var httpClient = HTTP()
+    public var httpClient = SwiftlyHTTPClient()
 
-	private enum CodingKeys: String, CodingKey {
-		case toolchain, assumeYes
-	}
+    private enum CodingKeys: String, CodingKey {
+        case toolchain, assumeYes
+    }
 
     public mutating func run() async throws {
         var config = try Config.load()
@@ -146,7 +146,7 @@ struct Update: SwiftlyCommand {
             }.first.map(ToolchainVersion.stable)
         case let .snapshot(old):
             return try await self.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
-                return snapshot.branch == old.branch && snapshot.date > old.date
+                snapshot.branch == old.branch && snapshot.date > old.date
             }.first.map(ToolchainVersion.snapshot)
         }
     }
@@ -158,6 +158,7 @@ enum UpdateParameters {
         case latestMinor
         case latestPatch
     }
+
     case stable(old: ToolchainVersion.StableRelease, target: StableUpdateTarget)
     case snapshot(old: ToolchainVersion.Snapshot)
 

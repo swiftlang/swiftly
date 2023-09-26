@@ -10,12 +10,12 @@ public protocol ToolchainDownloader {
         _ toolchain: ToolchainVersion,
         url: String,
         to destination: String,
-        reportProgress: @escaping (HTTP.DownloadProgress) -> Void
+        reportProgress: @escaping (SwiftlyHTTPClient.DownloadProgress) -> Void
     ) async throws
 }
 
 /// HTTPClient wrapper used for interfacing with various APIs and downloading things.
-public class HTTP {
+public class SwiftlyHTTPClient {
     private static let client = HTTPClientWrapper()
 
     private struct Response {
@@ -32,11 +32,11 @@ public class HTTP {
         self.downloader = toolchainDownloader
     }
 
-    fileprivate var inner: HTTPClient {
+    fileprivate var inner: AsyncHTTPClient.HTTPClient {
         Self.client.inner
     }
 
-    fileprivate func makeRequest(url: String) -> HTTPClientRequest {
+    private func makeRequest(url: String) -> HTTPClientRequest {
         var request = HTTPClientRequest(url: url)
         request.headers.add(name: "User-Agent", value: "swiftly")
         return request
@@ -168,7 +168,7 @@ public class HTTP {
             // Unknown download.swift.org paths redirect to a 404 page which then returns a 200 status.
             // As a heuristic for if we've hit the 404 page, we check to see if the content is HTML.
             guard !response.headers["Content-Type"].contains(where: { $0.contains("text/html") }) else {
-                throw HTTP.DownloadNotFoundError(url: url)
+                throw SwiftlyHTTPClient.DownloadNotFoundError(url: url)
             }
 
             // if defined, the content-length headers announces the size of the body
@@ -181,7 +181,11 @@ public class HTTP {
                 try buffer.withUnsafeReadableBytes { bufferPtr in
                     try fileHandle.write(contentsOf: bufferPtr)
                 }
-                reportProgress(HTTP.DownloadProgress(receivedBytes: receivedBytes, totalBytes: expectedBytes))
+                reportProgress(SwiftlyHTTPClient.DownloadProgress(
+                    receivedBytes: receivedBytes,
+                    totalBytes: expectedBytes
+                )
+                )
             }
 
             try fileHandle.synchronize()

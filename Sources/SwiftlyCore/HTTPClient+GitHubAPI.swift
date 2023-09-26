@@ -2,7 +2,7 @@ import _StringProcessing
 import AsyncHTTPClient
 import Foundation
 
-extension HTTP {
+extension SwiftlyHTTPClient {
     /// Get a JSON response from the GitHub REST API.
     /// This will use the authorization token set, if any.
     private func getFromGitHub<T: Decodable>(url: String) async throws -> T {

@@ -53,21 +53,25 @@ struct Install: SwiftlyCommand {
     ))
     var token: String?
 
-    public var httpClient = HTTP()
+    public var httpClient = SwiftlyHTTPClient()
 
-	private enum CodingKeys: String, CodingKey {
-		case version, token
-	}
+    private enum CodingKeys: String, CodingKey {
+        case version, token
+    }
 
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.version)
-        httpClient.githubToken = self.token
+        self.httpClient.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
         var config = try Config.load()
         try await Self.execute(version: toolchainVersion, &config, self.httpClient)
     }
 
-    internal static func execute(version: ToolchainVersion, _ config: inout Config, _ httpClient: HTTP) async throws {
+    internal static func execute(
+        version: ToolchainVersion,
+        _ config: inout Config,
+        _ httpClient: SwiftlyHTTPClient
+    ) async throws {
         guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed, exiting.")
             return
@@ -149,7 +153,7 @@ struct Install: SwiftlyCommand {
                     )
                 }
             )
-        } catch _ as HTTP.DownloadNotFoundError {
+        } catch _ as SwiftlyHTTPClient.DownloadNotFoundError {
             SwiftlyCore.print("\(version) does not exist, exiting")
             return
         } catch {

@@ -174,7 +174,7 @@ class SwiftlyTests: XCTestCase {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: String, executables: [String]? = nil) async throws {
         var install = try self.parseCommand(Install.self, ["install", "\(selector)"])
-        install.httpClient = HTTP(toolchainDownloader: MockToolchainDownloader(executables: executables))
+        install.httpClient = SwiftlyHTTPClient(toolchainDownloader: MockToolchainDownloader(executables: executables))
         try await install.run()
     }
 
@@ -183,7 +183,7 @@ class SwiftlyTests: XCTestCase {
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(toolchain: ToolchainVersion, executables: [String]? = nil) async throws {
-        try await installMockedToolchain(selector: "\(toolchain.name)", executables: executables)
+        try await self.installMockedToolchain(selector: "\(toolchain.name)", executables: executables)
     }
 
     /// Install a mocked toolchain associated with the given version that includes the provided list of executables
@@ -191,7 +191,7 @@ class SwiftlyTests: XCTestCase {
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: ToolchainSelector, executables: [String]? = nil) async throws {
-        try await installMockedToolchain(selector: "\(selector)", executables: executables)
+        try await self.installMockedToolchain(selector: "\(selector)", executables: executables)
     }
 
     /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given URL.
@@ -322,7 +322,7 @@ public struct SwiftExecutable {
             // Get the commit hash from swift --version, look up the corresponding tag via GitHub, and confirm
             // that it matches the expected version.
             guard
-                let tag: GitHubTag = try await HTTP().mapGitHubTags(
+                let tag: GitHubTag = try await SwiftlyHTTPClient().mapGitHubTags(
                     limit: 1,
                     filterMap: { tag in
                         guard tag.commit!.sha.starts(with: commitHash) else {
@@ -330,7 +330,7 @@ public struct SwiftExecutable {
                         }
                         return tag
                     },
-                    fetch: HTTP().getTags
+                    fetch: SwiftlyHTTPClient().getTags
                 ).first,
                 let snapshot = try tag.parseSnapshot()
             else {
@@ -356,9 +356,9 @@ public struct MockToolchainDownloader: ToolchainDownloader {
 
     public func downloadToolchain(
         _ toolchain: ToolchainVersion,
-        url: String,
+        url _: String,
         to destination: String,
-        reportProgress: @escaping (HTTP.DownloadProgress) -> Void
+        reportProgress: @escaping (SwiftlyHTTPClient.DownloadProgress) -> Void
     ) async throws {
         let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: destination))
         defer {
@@ -366,7 +366,7 @@ public struct MockToolchainDownloader: ToolchainDownloader {
         }
         let data = try self.makeMockedToolchain(toolchain: toolchain)
         try fileHandle.write(contentsOf: data)
-        reportProgress(HTTP.DownloadProgress(receivedBytes: data.count, totalBytes: data.count))
+        reportProgress(SwiftlyHTTPClient.DownloadProgress(receivedBytes: data.count, totalBytes: data.count))
 
         try fileHandle.synchronize()
     }
@@ -390,10 +390,10 @@ public struct MockToolchainDownloader: ToolchainDownloader {
             let executablePath = toolchainBinDir.appendingPathComponent(executable)
 
             let script = """
-                #!/usr/bin/env sh
+            #!/usr/bin/env sh
 
-                echo '\(toolchain.name)'
-                """
+            echo '\(toolchain.name)'
+            """
 
             let data = script.data(using: .utf8)!
             try data.write(to: executablePath)

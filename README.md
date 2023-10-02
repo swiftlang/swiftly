@@ -183,7 +183,7 @@ If no version is provided, update will update the currently selected toolchain t
 $ swiftly update
 ```
 
-To update the latest installed release version to the latest available release version, the “latest” version can be provided. Note that this may update the toolchain to the next minor or even major version
+To update the latest installed release version to the latest available release version, the “latest” version can be provided. Note that this may update the toolchain to the next minor or even major version.
 
 ```
 swiftly update latest

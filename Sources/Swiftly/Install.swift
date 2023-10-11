@@ -43,7 +43,7 @@ struct Install: SwiftlyCommand {
     ))
     var version: String
 
-    @Flag(name: .shortAndLong, help: "Whether to mark the newly installed toolchain as in-use.")
+    @Flag(name: .shortAndLong, help: "Mark the newly installed toolchain as in-use.")
     var use: Bool = false
 
     @Option(help: ArgumentHelp(

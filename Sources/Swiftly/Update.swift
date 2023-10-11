@@ -56,7 +56,7 @@ struct Update: SwiftlyCommand {
         }
 
         print("updating \(oldToolchain) -> \(newToolchain)")
-        try await Install.execute(version: newToolchain)
+        try await Install.execute(version: newToolchain, use: false)
         try Swiftly.currentPlatform.uninstall(oldToolchain)
         print("successfully updated \(oldToolchain) -> \(newToolchain)")
     }

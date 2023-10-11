@@ -43,6 +43,9 @@ struct Install: SwiftlyCommand {
     ))
     var version: String
 
+    @Flag(name: .shortAndLong, help: "Whether to mark the newly installed toolchain as in-use.")
+    var use: Bool = false
+
     @Option(help: ArgumentHelp(
         "A GitHub authentiation token to use for any GitHub API requests.",
         discussion: """
@@ -57,10 +60,10 @@ struct Install: SwiftlyCommand {
         let selector = try ToolchainSelector(parsing: self.version)
         HTTP.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
-        try await Self.execute(version: toolchainVersion)
+        try await Self.execute(version: toolchainVersion, use: self.use)
     }
 
-    internal static func execute(version: ToolchainVersion) async throws {
+    internal static func execute(version: ToolchainVersion, use: Bool) async throws {
         var config = try Config.load()
 
         guard !config.installedToolchains.contains(version) else {
@@ -158,8 +161,9 @@ struct Install: SwiftlyCommand {
         config.installedToolchains.insert(version)
         try config.save()
 
-        // If this is the first installed toolchain, mark it as in-use.
-        if config.inUse == nil {
+        // If this is the first installed toolchain, mark it as in-use regardless of whether the
+        // --use argument was provided.
+        if use || config.inUse == nil {
             try await Use.execute(version, config: &config)
         }
 

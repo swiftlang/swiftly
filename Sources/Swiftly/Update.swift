@@ -82,7 +82,7 @@ struct Update: SwiftlyCommand {
             return
         }
 
-        guard let newToolchain = try await self.fetchNewToolchain(parameters) else {
+        guard let newToolchain = try await self.lookupNewToolchain(parameters) else {
             SwiftlyCore.print("\(parameters.oldToolchain) is already up to date")
             return
         }
@@ -110,6 +110,12 @@ struct Update: SwiftlyCommand {
         SwiftlyCore.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
     }
 
+    /// Using the provided toolchain selector and the current config, returns a set of parameters that determines
+    /// what new toolchains the selected toolchain can be updated to.
+    ///
+    /// If the selector does not match an installed toolchain, this returns nil.
+    /// If no selector is provided, the currently in-use toolchain will be used as the basis for the returned
+    /// parameters.
     private func resolveUpdateParameters(_ config: Config) throws -> UpdateParameters? {
         let selector = try self.toolchain.map { try ToolchainSelector(parsing: $0) }
 
@@ -149,7 +155,9 @@ struct Update: SwiftlyCommand {
         }
     }
 
-    private func fetchNewToolchain(_ bounds: UpdateParameters) async throws -> ToolchainVersion? {
+    /// Tries to find a toolchain version that meets the provided parameters, if one exists.
+    /// This does not download the toolchain, but it does query the GitHub API to find the suitable toolchain.
+    private func lookupNewToolchain(_ bounds: UpdateParameters) async throws -> ToolchainVersion? {
         switch bounds {
         case let .stable(old, range):
             return try await self.httpClient.getReleaseToolchains(limit: 1) { release in
@@ -170,14 +178,38 @@ struct Update: SwiftlyCommand {
     }
 }
 
+/// Enum that models an update operation.
+///
+/// For snapshots, includes the old version of the snapshot that will be updated to the latest snapshot on the same
+/// branch.
 enum UpdateParameters {
+    /// Bounds of an update to a stable release toolchain.
     enum StableUpdateTarget {
+        /// No bounds on the update. The old toolchain will be replaced with the latest available stable release of any
+        /// major version.
         case latest
+
+        /// The old toolchain will be replaced with the latest available stable release with the same major version.
         case latestMinor
+
+        /// The old toolchain will be replaced with the latest available stable release with the same major and minor
+        /// versions.
         case latestPatch
     }
 
+    /// Stable release update operation.
+    ///
+    /// "old" refers to the toolchain version being updated, and "target" specifies a range of acceptable versions to
+    /// update to relative to "old".
+    ///
+    /// For example, .stable(old: "5.0.0", target: .latestMinor) models an update operation that will replace the
+    /// installed 5.0.0 release toolchain to the latest 5.x.y release.
     case stable(old: ToolchainVersion.StableRelease, target: StableUpdateTarget)
+
+    /// Snapshot toolchain update operation.
+    ///
+    /// "old" refers to the snapshot toolchain that will be updated. It will be replaced with the latest available
+    /// snapshot toolchain with the same branch as "old", if one exists.
     case snapshot(old: ToolchainVersion.Snapshot)
 
     var oldToolchain: ToolchainVersion {

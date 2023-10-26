@@ -16,6 +16,15 @@ public enum ToolchainVersion {
                 }
             }
 
+            public var name: String {
+                switch self {
+                case .main:
+                    return "main"
+                case let .release(major, minor):
+                    return "\(major).\(minor)"
+                }
+            }
+
             public var major: Int? {
                 guard case let .release(major, _) = self else {
                     return nil
@@ -224,6 +233,10 @@ public enum ToolchainSelector {
     /// associated with the given branch.
     case snapshot(branch: ToolchainVersion.Snapshot.Branch, date: String?)
 
+    public init(major: Int, minor: Int? = nil, patch: Int? = nil) {
+        self = .stable(major: major, minor: minor, patch: patch)
+    }
+
     public init(parsing input: String) throws {
         for parser in parsers {
             guard let selector = try parser.parse(input) else {
@@ -285,7 +298,35 @@ public enum ToolchainSelector {
     }
 }
 
+extension ToolchainSelector: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .latest:
+            return "latest"
+        case let .stable(major, minor, patch):
+            var s = "\(major)"
+            guard let minor else {
+                return s
+            }
+            s += ".\(minor)"
+            guard let patch else {
+                return s
+            }
+            s += ".\(patch)"
+            return s
+        case let .snapshot(branch, date):
+            var s = "\(branch.name)-snapshot"
+            if let date {
+                s += "-\(date)"
+            }
+            return s
+        }
+    }
+}
+
 extension ToolchainSelector: Equatable {}
+
+extension ToolchainSelector: Hashable {}
 
 /// Protocol used to facilitate parsing `ToolchainSelector`s from strings.
 protocol ToolchainSelectorParser {

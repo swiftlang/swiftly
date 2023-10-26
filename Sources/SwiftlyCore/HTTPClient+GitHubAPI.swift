@@ -2,26 +2,23 @@ import _StringProcessing
 import AsyncHTTPClient
 import Foundation
 
-extension HTTP {
-    /// The GitHub authentication token to use for any requests made to the GitHub API.
-    public static var githubToken: String?
-
+extension SwiftlyHTTPClient {
     /// Get a JSON response from the GitHub REST API.
     /// This will use the authorization token set, if any.
-    private static func getFromGitHub<T: Decodable>(url: String) async throws -> T {
+    private func getFromGitHub<T: Decodable>(url: String) async throws -> T {
         var headers: [String: String] = [:]
-        if let token = Self.githubToken ?? ProcessInfo.processInfo.environment["SWIFTLY_GITHUB_TOKEN"] {
+        if let token = self.githubToken ?? ProcessInfo.processInfo.environment["SWIFTLY_GITHUB_TOKEN"] {
             headers["Authorization"] = "Bearer \(token)"
         }
 
-        return try await Self.getFromJSON(url: url, type: T.self, headers: headers)
+        return try await self.getFromJSON(url: url, type: T.self, headers: headers)
     }
 
     /// Function used to iterate over pages of GitHub tags/releases and map + filter them down.
     /// The `fetch` closure is used to retrieve the next page of results. It accepts the page number as its argument.
     /// The `filterMap` closure maps the input GitHub tag to an output. If it returns nil, it will not be included
     /// in the returned array.
-    internal static func mapGitHubTags<T>(
+    internal func mapGitHubTags<T>(
         limit: Int?,
         filterMap: (GitHubTag) throws -> T?,
         fetch: (Int) async throws -> [GitHubTag]
@@ -57,9 +54,9 @@ extension HTTP {
     /// page number.
     ///
     /// The results are returned in lexicographic order.
-    internal static func getReleases(page: Int, perPage: Int = 100) async throws -> [GitHubTag] {
+    internal func getReleases(page: Int, perPage: Int = 100) async throws -> [GitHubTag] {
         let url = "https://api.github.com/repos/apple/swift/releases?per_page=\(perPage)&page=\(page)"
-        let releases: [GitHubRelease] = try await Self.getFromGitHub(url: url)
+        let releases: [GitHubRelease] = try await self.getFromGitHub(url: url)
         return releases.filter { !$0.prerelease }.map { $0.toGitHubTag() }
     }
 
@@ -67,9 +64,9 @@ extension HTTP {
     /// The tags are returned in pages of 100. The page argument specifies the page number.
     ///
     /// The results are returned in lexicographic order.
-    internal static func getTags(page: Int) async throws -> [GitHubTag] {
+    internal func getTags(page: Int) async throws -> [GitHubTag] {
         let url = "https://api.github.com/repos/apple/swift/tags?per_page=100&page=\(page)"
-        return try await Self.getFromGitHub(url: url)
+        return try await self.getFromGitHub(url: url)
     }
 }
 

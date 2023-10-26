@@ -35,6 +35,12 @@ struct ListAvailable: SwiftlyCommand {
     ))
     var toolchainSelector: String?
 
+    public var httpClient = SwiftlyHTTPClient()
+
+    private enum CodingKeys: String, CodingKey {
+        case toolchainSelector
+    }
+
     internal mutating func run() async throws {
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
@@ -47,7 +53,7 @@ struct ListAvailable: SwiftlyCommand {
             }
         }
 
-        let toolchains = try await HTTP.getReleaseToolchains()
+        let toolchains = try await self.httpClient.getReleaseToolchains()
             .map(ToolchainVersion.stable)
             .filter { selector?.matches(toolchain: $0) ?? true }
 

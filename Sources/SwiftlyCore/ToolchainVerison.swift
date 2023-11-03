@@ -16,6 +16,15 @@ public enum ToolchainVersion {
                 }
             }
 
+            public var name: String {
+                switch self {
+                case .main:
+                    return "main"
+                case let .release(major, minor):
+                    return "\(major).\(minor)"
+                }
+            }
+
             public var major: Int? {
                 guard case let .release(major, _) = self else {
                     return nil
@@ -224,6 +233,10 @@ public enum ToolchainSelector {
     /// associated with the given branch.
     case snapshot(branch: ToolchainVersion.Snapshot.Branch, date: String?)
 
+    public init(major: Int, minor: Int? = nil, patch: Int? = nil) {
+        self = .stable(major: major, minor: minor, patch: patch)
+    }
+
     public init(parsing input: String) throws {
         for parser in parsers {
             guard let selector = try parser.parse(input) else {
@@ -285,7 +298,35 @@ public enum ToolchainSelector {
     }
 }
 
+extension ToolchainSelector: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .latest:
+            return "latest"
+        case let .stable(major, minor, patch):
+            var s = "\(major)"
+            guard let minor else {
+                return s
+            }
+            s += ".\(minor)"
+            guard let patch else {
+                return s
+            }
+            s += ".\(patch)"
+            return s
+        case let .snapshot(branch, date):
+            var s = "\(branch.name)-snapshot"
+            if let date {
+                s += "-\(date)"
+            }
+            return s
+        }
+    }
+}
+
 extension ToolchainSelector: Equatable {}
+
+extension ToolchainSelector: Hashable {}
 
 /// Protocol used to facilitate parsing `ToolchainSelector`s from strings.
 protocol ToolchainSelectorParser {
@@ -324,7 +365,7 @@ struct StableReleaseParser: ToolchainSelectorParser {
     }
 }
 
-/// Parser for selectors like the following:
+/// Parser for selectors like the following (with optional "swift-" prefix):
 ///    - a.b-snapshot-YYYY-mm-dd
 ///    - a.b-snapshot
 ///    - a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
@@ -334,7 +375,7 @@ struct StableReleaseParser: ToolchainSelectorParser {
 ///    - a.b-SNAPSHOT
 struct ReleaseSnapshotParser: ToolchainSelectorParser {
     static let regex: Regex<(Substring, Substring, Substring, Substring?)> =
-        try! Regex("^([0-9]+)\\.([0-9]+)-(?:snapshot|DEVELOPMENT-SNAPSHOT|SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
+        try! Regex("^(?:swift-)?([0-9]+)\\.([0-9]+)-(?:snapshot|DEVELOPMENT-SNAPSHOT|SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
 
     func parse(_ input: String) throws -> ToolchainSelector? {
         guard let match = try Self.regex.wholeMatch(in: input) else {

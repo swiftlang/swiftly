@@ -24,7 +24,7 @@ final class ListTests: SwiftlyTests {
     func runListTest(f: () async throws -> Void) async throws {
         try await self.withTestHome(name: Self.homeName) {
             for toolchain in Self.allToolchains {
-                try self.installMockedToolchain(toolchain: toolchain)
+                try await self.installMockedToolchain(toolchain: toolchain)
             }
 
             var use = try self.parseCommand(Use.self, ["use", "latest"])

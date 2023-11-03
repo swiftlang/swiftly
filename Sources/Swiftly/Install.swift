@@ -56,16 +56,26 @@ struct Install: SwiftlyCommand {
     ))
     var token: String?
 
-    mutating func run() async throws {
-        let selector = try ToolchainSelector(parsing: self.version)
-        HTTP.githubToken = self.token
-        let toolchainVersion = try await self.resolve(selector: selector)
-        try await Self.execute(version: toolchainVersion, use: self.use)
+    public var httpClient = SwiftlyHTTPClient()
+
+    private enum CodingKeys: String, CodingKey {
+        case version, token
     }
 
-    internal static func execute(version: ToolchainVersion, use: Bool) async throws {
+    mutating func run() async throws {
+        let selector = try ToolchainSelector(parsing: self.version)
+        self.httpClient.githubToken = self.token
+        let toolchainVersion = try await self.resolve(selector: selector)
         var config = try Config.load()
+        try await Self.execute(version: toolchainVersion, config, self.httpClient, use: self.use)
+    }
 
+    internal static func execute(
+        version: ToolchainVersion,
+        _ config: inout Config,
+        _ httpClient: SwiftlyHTTPClient,
+        useInstalledToolchain: Bool
+    ) async throws {
         guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed, exiting.")
             return
@@ -124,7 +134,8 @@ struct Install: SwiftlyCommand {
         var lastUpdate = Date()
 
         do {
-            try await HTTP.downloadToolchain(
+            try await httpClient.downloadToolchain(
+                version,
                 url: url,
                 to: tmpFile.path,
                 reportProgress: { progress in
@@ -146,7 +157,7 @@ struct Install: SwiftlyCommand {
                     )
                 }
             )
-        } catch _ as HTTP.DownloadNotFoundError {
+        } catch _ as SwiftlyHTTPClient.DownloadNotFoundError {
             SwiftlyCore.print("\(version) does not exist, exiting")
             return
         } catch {
@@ -164,7 +175,7 @@ struct Install: SwiftlyCommand {
         // If this is the first installed toolchain, mark it as in-use regardless of whether the
         // --use argument was provided.
         if use || config.inUse == nil {
-            try await Use.execute(version, config: &config)
+            try await Use.execute(version, &config)
         }
 
         SwiftlyCore.print("\(version) installed successfully!")
@@ -177,7 +188,7 @@ struct Install: SwiftlyCommand {
         case .latest:
             SwiftlyCore.print("Fetching the latest stable Swift release...")
 
-            guard let release = try await HTTP.getReleaseToolchains(limit: 1).first else {
+            guard let release = try await self.httpClient.getReleaseToolchains(limit: 1).first else {
                 throw Error(message: "couldn't get latest releases")
             }
             return .stable(release)
@@ -196,7 +207,7 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest stable Swift \(major).\(minor) release...")
             // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
-            let toolchain = try await HTTP.getReleaseToolchains(limit: 1) { release in
+            let toolchain = try await self.httpClient.getReleaseToolchains(limit: 1) { release in
                 release.major == major && release.minor == minor
             }.first
 
@@ -214,7 +225,7 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest \(branch) branch snapshot...")
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.
-            let snapshot = try await HTTP.getSnapshotToolchains(limit: 1) { snapshot in
+            let snapshot = try await self.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
                 snapshot.branch == branch
             }.first
 

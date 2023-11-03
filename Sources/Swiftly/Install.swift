@@ -59,7 +59,7 @@ struct Install: SwiftlyCommand {
     public var httpClient = SwiftlyHTTPClient()
 
     private enum CodingKeys: String, CodingKey {
-        case version, token
+        case version, token, use
     }
 
     mutating func run() async throws {

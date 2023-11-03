@@ -259,13 +259,11 @@ final class InstallTests: SwiftlyTests {
     /// Verify that the installed toolchain will be marked as in-use if the --use flag is specified.
     func testInstallUseFlag() async throws {
         try await self.withTestHome {
-            try self.installMockedToolchain(toolchain: Self.oldStable)
+            try await self.installMockedToolchain(toolchain: Self.oldStable)
             var use = try self.parseCommand(Use.self, ["use", Self.oldStable.name])
             try await use.run()
             try await validateInUse(expected: Self.oldStable)
-
-            var installOther = try self.parseCommand(Install.self, ["install", "--use", Self.newStable.name])
-            try await installOther.run()
+            try await self.installMockedToolchain(selector: Self.newStable.name, args: ["--use"])
             try await self.validateInUse(expected: Self.newStable)
         }
     }

@@ -100,11 +100,12 @@ struct Update: SwiftlyCommand {
             }
         }
 
-        try await Install.execute(version: newToolchain, &config, self.httpClient)
-
-        if config.inUse == parameters.oldToolchain {
-            try await Use.execute(newToolchain, &config)
-        }
+        try await Install.execute(
+            version: newToolchain,
+            &config,
+            self.httpClient,
+            useInstalledToolchain: config.inUse == parameters.oldToolchain
+        )
 
         try await Uninstall.execute(parameters.oldToolchain, &config)
         SwiftlyCore.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")

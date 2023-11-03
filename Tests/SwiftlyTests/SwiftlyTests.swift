@@ -172,8 +172,8 @@ class SwiftlyTests: XCTestCase {
     /// in its bin directory.
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
-    func installMockedToolchain(selector: String, executables: [String]? = nil) async throws {
-        var install = try self.parseCommand(Install.self, ["install", "\(selector)"])
+    func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
+        var install = try self.parseCommand(Install.self, ["install", "\(selector)"] + args)
         install.httpClient = SwiftlyHTTPClient(toolchainDownloader: MockToolchainDownloader(executables: executables))
         try await install.run()
     }

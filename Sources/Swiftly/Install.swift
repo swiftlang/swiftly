@@ -67,7 +67,7 @@ struct Install: SwiftlyCommand {
         self.httpClient.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
         var config = try Config.load()
-        try await Self.execute(version: toolchainVersion, config, self.httpClient, use: self.use)
+        try await Self.execute(version: toolchainVersion, &config, self.httpClient, useInstalledToolchain: self.use)
     }
 
     internal static func execute(
@@ -174,7 +174,7 @@ struct Install: SwiftlyCommand {
 
         // If this is the first installed toolchain, mark it as in-use regardless of whether the
         // --use argument was provided.
-        if use || config.inUse == nil {
+        if useInstalledToolchain || config.inUse == nil {
             try await Use.execute(version, &config)
         }
 

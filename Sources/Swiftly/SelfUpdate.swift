@@ -5,10 +5,6 @@ import TSCUtility
 
 import SwiftlyCore
 
-fileprivate struct SwiftlyRelease: Decodable {
-    fileprivate let name: String
-}
-
 internal struct SelfUpdate: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Update the version of swiftly itself."
@@ -19,22 +15,27 @@ internal struct SelfUpdate: SwiftlyCommand {
     private enum CodingKeys: CodingKey {}
 
     internal mutating func run() async throws {
-        SwiftlyCore.print("Checking for updates...")
+        SwiftlyCore.print("Checking for swiftly updates...")
 
-        let release: SwiftlyRelease = try await self.httpClient.getFromGitHub(
+        let release: SwiftlyGitHubRelease = try await self.httpClient.getFromGitHub(
             url: "https://api.github.com/repos/swift-server/swiftly/releases/latest"
         )
 
-        // guard release.name > Swiftly.configuration.version else {
-        //     SwiftlyCore.print("Already up to date.")
-        //     return
-        // }
+        let version = try SwiftlyVersion(parsing: release.tag)
 
-        SwiftlyCore.print("A new version is available: \(release.name)")
+        guard version > Swiftly.version else {
+            SwiftlyCore.print("Already up to date.")
+            return
+        }
+
+        SwiftlyCore.print("A new version is available: \(version)")
 
         let config = try Config.load()
         let executableName = Swiftly.currentPlatform.getExecutableName(forArch: config.platform.getArchitecture())
-        let downloadURL = URL(string: "https://github.com/swift-server/swiftly/releases/latest/download/\(executableName)")!
+        let urlString = "https://github.com/swift-server/swiftly/versions/latest/download/\(executableName)"
+        guard let downloadURL = URL(string: urlString) else {
+            throw Error(message: "Invalid download url: \(urlString)")
+        }
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
@@ -44,7 +45,7 @@ internal struct SelfUpdate: SwiftlyCommand {
 
         let animation = PercentProgressAnimation(
             stream: stdoutStream,
-            header: "Downloading swiftly \(release.name)"
+            header: "Downloading swiftly \(version)"
         )
         do {
             try await httpClient.downloadFile(
@@ -71,6 +72,7 @@ internal struct SelfUpdate: SwiftlyCommand {
         try FileManager.default.removeItem(at: swiftlyExecutable)
         try FileManager.default.moveItem(at: tmpFile, to: swiftlyExecutable)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: swiftlyExecutable.path)
-        SwiftlyCore.print("Successfully updated swiftly to \(release.name) (was \(Swiftly.configuration.version))")
+
+        SwiftlyCore.print("Successfully updated swiftly to \(version) (was \(Swiftly.version))")
     }
 }

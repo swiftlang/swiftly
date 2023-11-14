@@ -2,6 +2,10 @@ import _StringProcessing
 import AsyncHTTPClient
 import Foundation
 
+public struct SwiftlyGitHubRelease: Codable {
+    public let tag: String
+}
+
 extension SwiftlyHTTPClient {
     /// Get a JSON response from the GitHub REST API.
     /// This will use the authorization token set, if any.

@@ -8,10 +8,12 @@ import SwiftlyCore
 @main
 @available(macOS 10.15, *)
 public struct Swiftly: SwiftlyCommand {
+    public static let version = SwiftlyVersion(major: 0, minor: 1, patch: 0)
+
     public static var configuration = CommandConfiguration(
         abstract: "A utility for installing and managing Swift toolchains.",
 
-        version: "0.1.0",
+        version: String(describing: Self.version),
 
         subcommands: [
             Install.self,

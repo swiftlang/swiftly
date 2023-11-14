@@ -3,6 +3,8 @@ import ArgumentParser
 @testable import Swiftly
 @testable import SwiftlyCore
 import XCTest
+import AsyncHTTPClient
+import NIO
 
 struct SwiftlyTestError: LocalizedError {
     let message: String
@@ -211,6 +213,66 @@ class SwiftlyTests: XCTestCase {
 
         let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
         return try ToolchainVersion(parsing: toolchainVersion)
+    }
+
+    static let releaseURLRegex: Regex<String> = try! Regex("swift-([0-9]+\\.[0-9]+(?:\\.[0-9]+)?-RELEASE)")
+    static let snapshotURLRegex: Regex<String>
+        = try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
+    func mockedToolchainDownloader(executables: [String] = ["swift"]) -> SwiftlyHTTPClient {
+        return .mocked { request in
+            guard let url = URL(string: request.url) else {
+                throw SwiftlyTestError(message: "invalid download url: \(request.url)")
+            }
+
+            let urlComponent = url.pathComponents[0]
+            let toolchain = ToolchainVersion("bl")!
+
+            if let match = try Self.releaseURLRegex.firstMatch(in: urlComponent) {
+                // TODO: parse match
+            }
+
+            let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+            let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
+            let toolchainBinDir = toolchainDir
+                .appendingPathComponent("usr", isDirectory: true)
+                .appendingPathComponent("bin", isDirectory: true)
+
+            try FileManager.default.createDirectory(
+                at: toolchainBinDir,
+                withIntermediateDirectories: true
+            )
+            defer {
+                try? FileManager.default.removeItem(at: tmp)
+            }
+
+            for executable in executables {
+                let executablePath = toolchainBinDir.appendingPathComponent(executable)
+
+                let script = """
+                    #!/usr/bin/env sh
+
+                    echo '\(toolchain.name)'
+                    """
+
+                let data = script.data(using: .utf8)!
+                try data.write(to: executablePath)
+
+                // make the file executable
+                try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+            }
+
+            let archive = tmp.appendingPathComponent("toolchain.tar.gz")
+
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+            task.arguments = ["bash", "-c", "tar -C \(tmp.path) -czf \(archive.path) \(toolchainDir.lastPathComponent)"]
+
+            try task.run()
+            task.waitUntilExit()
+
+            return HTTPClientResponse(body: .bytes(ByteBuffer(data: try Data(contentsOf: archive))))
+        }
     }
 }
 

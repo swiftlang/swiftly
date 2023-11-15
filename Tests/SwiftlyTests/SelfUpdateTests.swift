@@ -11,11 +11,11 @@ final class SelfUpdateTests: SwiftlyTests {
     }
 
     private static var newMinorVersion: String {
-        "\(Swiftly.version.major).\(Swiftly.version.minor + 1).0)"
+        "\(Swiftly.version.major).\(Swiftly.version.minor + 1).0"
     }
 
     private static var newPatchVersion: String {
-        "\(Swiftly.version.major).\(Swiftly.version.minor).\(Swiftly.version.patch + 1))"
+        "\(Swiftly.version.major).\(Swiftly.version.minor).\(Swiftly.version.patch + 1)"
     }
 
     private static func makeMockHTTPClient(latestVersion: String) -> SwiftlyHTTPClient {
@@ -26,44 +26,48 @@ final class SelfUpdateTests: SwiftlyTests {
 
             switch url.host {
             case "api.github.com":
-                let nextRelease = try SwiftlyGitHubRelease(tag: latestVersion)
+                let nextRelease = SwiftlyGitHubRelease(tag: latestVersion)
                 var buffer = ByteBuffer()
                 try buffer.writeJSONEncodable(nextRelease)
                 return HTTPClientResponse(body: .bytes(buffer))
-            case "download.swift.org":
-                fatalError("blah")
+            case "github.com":
+                var buffer = ByteBuffer()
+                buffer.writeString(latestVersion)
+                return HTTPClientResponse(body: .bytes(buffer))
             default:
-                throw SwiftlyTestError(message: "unknown url host: \(url.host)")
+                throw SwiftlyTestError(message: "unknown url host: \(String(describing: url.host))")
             }
 
         }
     }
 
-    /// Verify updating the most up-to-date toolchain has no effect.
-    func testUpdateLatest() async throws {
+    func runSelfUpdateTest(latestVersion: String, shouldUpdate: Bool = true) async throws {
         try await self.withTestHome {
-            var update = try self.parseCommand(Update.self, ["self-update"])
+            let swiftlyURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
+            try "old".data(using: .utf8)!.write(to: swiftlyURL)
 
-            update.httpClient = .mocked { request in
-                guard let url = URL(string: request.url) else {
-                    throw SwiftlyTestError(message: "invalid url \(request.url)")
-                }
-
-                switch url.host {
-                case "api.github.com":
-                    let nextVersion = "TODO"
-                    let nextRelease = SwiftlyGitHubRelease(name: nextVersion)
-                    var buffer = ByteBuffer()
-                    try buffer.writeJSONEncodable(nextRelease)
-                    return HTTPClientResponse(body: .bytes(buffer))
-                case "download.swift.org":
-                    return 12
-                default:
-                    throw SwiftlyTestError(message: "unknown url host: \(url.host)")
-                }
-            }
+            var update = try self.parseCommand(SelfUpdate.self, ["self-update"])
+            update.httpClient = Self.makeMockHTTPClient(latestVersion: latestVersion)
             try await update.run()
 
+            let swiftly = try Data(contentsOf: swiftlyURL)
+
+            if shouldUpdate {
+                XCTAssertEqual(String(data: swiftly, encoding: .utf8), latestVersion)
+            } else {
+                XCTAssertEqual(String(data: swiftly, encoding: .utf8), "old")
+            }
         }
+    }
+
+    /// Verify updating the most up-to-date toolchain has no effect.
+    func testSelfUpdate() async throws {
+        try await runSelfUpdateTest(latestVersion: Self.newPatchVersion)
+        try await runSelfUpdateTest(latestVersion: Self.newMinorVersion)
+        try await runSelfUpdateTest(latestVersion: Self.newMajorVersion)
+    }
+
+    func testSelfUpdateAlreadyUpToDate() async throws {
+        try await runSelfUpdateTest(latestVersion: String(describing: Swiftly.version), shouldUpdate: false)
     }
 }

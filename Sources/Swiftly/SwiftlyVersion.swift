@@ -2,10 +2,11 @@ import Foundation
 import _StringProcessing
 import SwiftlyCore
 
+/// Struct modeling a version of swiftly itself.
 public struct SwiftlyVersion: Equatable, Comparable, CustomStringConvertible {
     /// Regex matching versions like "a.b.c", "a.b.c-alpha", and "a.b.c-alpha2".
     static let regex: Regex<(Substring, Substring, Substring, Substring, Substring?)> =
-        try! Regex("^(\\d+)\\.(\\d+)\\.(\\d+)(:?-([a-zA-Z0-9]+))?$")
+        try! Regex("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([a-zA-Z0-9]+))?$")
 
     public let major: Int
     public let minor: Int

@@ -81,12 +81,11 @@ class SwiftlyTests: XCTestCase {
         SwiftlyCore.mockedHomeDir = testHome
         defer {
             SwiftlyCore.mockedHomeDir = nil
+            try? testHome.deleteIfExists()
         }
-
-        try testHome.deleteIfExists()
-        try FileManager.default.createDirectory(at: testHome, withIntermediateDirectories: false)
-        defer {
-            try? FileManager.default.removeItem(at: testHome)
+        for dir in Swiftly.requiredDirectories {
+            try dir.deleteIfExists()
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
         }
 
         let config = try self.baseTestConfig()
@@ -176,7 +175,7 @@ class SwiftlyTests: XCTestCase {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
         var install = try self.parseCommand(Install.self, ["install", "\(selector)"] + args)
-        install.httpClient = SwiftlyHTTPClient(toolchainDownloader: MockToolchainDownloader(executables: executables))
+        install.httpClient = SwiftlyHTTPClient(inner: MockToolchainDownloader(executables: executables))
         try await install.run()
     }
 
@@ -213,66 +212,6 @@ class SwiftlyTests: XCTestCase {
 
         let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
         return try ToolchainVersion(parsing: toolchainVersion)
-    }
-
-    static let releaseURLRegex: Regex<String> = try! Regex("swift-([0-9]+\\.[0-9]+(?:\\.[0-9]+)?-RELEASE)")
-    static let snapshotURLRegex: Regex<String>
-        = try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
-
-    func mockedToolchainDownloader(executables: [String] = ["swift"]) -> SwiftlyHTTPClient {
-        return .mocked { request in
-            guard let url = URL(string: request.url) else {
-                throw SwiftlyTestError(message: "invalid download url: \(request.url)")
-            }
-
-            let urlComponent = url.pathComponents[0]
-            let toolchain = ToolchainVersion("bl")!
-
-            if let match = try Self.releaseURLRegex.firstMatch(in: urlComponent) {
-                // TODO: parse match
-            }
-
-            let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-            let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
-            let toolchainBinDir = toolchainDir
-                .appendingPathComponent("usr", isDirectory: true)
-                .appendingPathComponent("bin", isDirectory: true)
-
-            try FileManager.default.createDirectory(
-                at: toolchainBinDir,
-                withIntermediateDirectories: true
-            )
-            defer {
-                try? FileManager.default.removeItem(at: tmp)
-            }
-
-            for executable in executables {
-                let executablePath = toolchainBinDir.appendingPathComponent(executable)
-
-                let script = """
-                    #!/usr/bin/env sh
-
-                    echo '\(toolchain.name)'
-                    """
-
-                let data = script.data(using: .utf8)!
-                try data.write(to: executablePath)
-
-                // make the file executable
-                try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
-            }
-
-            let archive = tmp.appendingPathComponent("toolchain.tar.gz")
-
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            task.arguments = ["bash", "-c", "tar -C \(tmp.path) -czf \(archive.path) \(toolchainDir.lastPathComponent)"]
-
-            try task.run()
-            task.waitUntilExit()
-
-            return HTTPClientResponse(body: .bytes(ByteBuffer(data: try Data(contentsOf: archive))))
-        }
     }
 }
 
@@ -409,28 +348,75 @@ public struct SwiftExecutable {
     }
 }
 
-public struct MockToolchainDownloader: ToolchainDownloader {
+/// An `HTTPRequestExecutor` that responds to all HTTP requests by invoking the provided closure.
+private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
+    private let handler: (HTTPClientRequest) async throws -> HTTPClientResponse
+
+    public init(handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse) {
+        self.handler = handler
+    }
+
+    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
+        return try await self.handler(request)
+    }
+}
+
+extension SwiftlyHTTPClient {
+    public static func mocked(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse) -> Self {
+        return Self(inner: MockHTTPRequestExecutor(handler: handler))
+    }
+}
+
+/// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
+/// All other requests are performed using an actual HTTP client.
+public struct MockToolchainDownloader: HTTPRequestExecutor {
+    private static let releaseURLRegex: Regex<(Substring, Substring, Substring, Substring?)> =
+        try! Regex("swift-(\\d+)\\.(\\d+)(?:\\.(\\d+))?-RELEASE")
+    private static let snapshotURLRegex: Regex<Substring> =
+        try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
     private let executables: [String]
+    private let httpRequestExecutor: HTTPRequestExecutor
 
     public init(executables: [String]? = nil) {
         self.executables = executables ?? ["swift"]
+        self.httpRequestExecutor = HTTPRequestExecutorImpl()
     }
 
-    public func downloadToolchain(
-        _ toolchain: ToolchainVersion,
-        url _: String,
-        to destination: String,
-        reportProgress: @escaping (SwiftlyHTTPClient.DownloadProgress) -> Void
-    ) async throws {
-        let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: destination))
-        defer {
-            try? fileHandle.close()
+    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
+        guard let url = URL(string: request.url) else {
+            throw SwiftlyTestError(message: "invalid request URL: \(request.url)")
         }
-        let data = try self.makeMockedToolchain(toolchain: toolchain)
-        try fileHandle.write(contentsOf: data)
-        reportProgress(SwiftlyHTTPClient.DownloadProgress(receivedBytes: data.count, totalBytes: data.count))
 
-        try fileHandle.synchronize()
+        if url.host == "download.swift.org" {
+            return try self.makeToolchainDownloadResponse(from: url)
+        } else {
+            return try await self.httpRequestExecutor.execute(request, timeout: timeout)
+        }
+    }
+
+    private func makeToolchainDownloadResponse(from url: URL) throws -> HTTPClientResponse {
+        let toolchain: ToolchainVersion
+        if let match = try Self.releaseURLRegex.firstMatch(in: url.path) {
+            var version = "\(match.output.1).\(match.output.2)."
+            if let patch = match.output.3 {
+                version += patch
+            } else {
+                version += "0"
+            }
+            toolchain = try ToolchainVersion(parsing: version)
+        } else if let match = try Self.snapshotURLRegex.firstMatch(in: url.path) {
+            let selector = try ToolchainSelector(parsing: String(match.output))
+            guard case let .snapshot(branch, date) = selector else {
+                throw SwiftlyTestError(message: "unexpected selector: \(selector)")
+            }
+            toolchain = .init(snapshotBranch: branch, date: date!)
+        } else {
+            throw SwiftlyTestError(message: "invalid toolchain download URL: \(url.path)")
+        }
+
+        let mockedToolchain = try self.makeMockedToolchain(toolchain: toolchain)
+        return HTTPClientResponse(body: .bytes(ByteBuffer(data: mockedToolchain)))
     }
 
     func makeMockedToolchain(toolchain: ToolchainVersion) throws -> Data {

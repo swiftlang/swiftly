@@ -10,7 +10,7 @@ internal struct SelfUpdate: SwiftlyCommand {
         abstract: "Update the version of swiftly itself."
     )
 
-    private var httpClient = SwiftlyHTTPClient()
+    internal var httpClient = SwiftlyHTTPClient()
 
     private enum CodingKeys: CodingKey {}
 

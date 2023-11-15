@@ -5,34 +5,12 @@ import NIO
 import NIOFoundationCompat
 import NIOHTTP1
 
-/// Protocol describing the behavior for downloading a tooclhain.
-/// This is used to abstract over the underlying HTTP client to allow for mocking downloads in tests.
-public protocol ToolchainDownloader {
-    func downloadToolchain(
-        _ toolchain: ToolchainVersion,
-        url: String,
-        to destination: String,
-        reportProgress: @escaping (SwiftlyHTTPClient.DownloadProgress) -> Void
-    ) async throws
-}
-
 public protocol HTTPRequestExecutor {
     func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse
 }
 
-private struct MockHTTPClient: HTTPRequestExecutor {
-    private let handler: (HTTPClientRequest) async throws -> HTTPClientResponse
-
-    public init(handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse) {
-        self.handler = handler
-    }
-
-    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
-        return try await self.handler(request)
-    }
-}
-
-private struct AsyncHTTPClient: HTTPRequestExecutor {
+/// An `HTTPRequestExecutor` backed by an `HTTPClient`.
+internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
     fileprivate static let client = HTTPClientWrapper()
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
@@ -58,12 +36,8 @@ public struct SwiftlyHTTPClient {
     /// The GitHub authentication token to use for any requests made to the GitHub API.
     public var githubToken: String?
 
-    public static func mocked(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse) -> Self {
-        return Self(inner: MockHTTPClient(handler: handler))
-    }
-
     public init(inner: HTTPRequestExecutor? = nil) {
-        self.inner = inner ?? AsyncHTTPClient()
+        self.inner = inner ?? HTTPRequestExecutorImpl()
     }
 
     private func get(url: String, headers: [String: String]) async throws -> Response {
@@ -215,12 +189,6 @@ public struct SwiftlyHTTPClient {
 
 private class HTTPClientWrapper {
     fileprivate let inner = HTTPClient(eventLoopGroupProvider: .singleton)
-
-    fileprivate func makeRequest(url: String) -> HTTPClientRequest {
-        var request = HTTPClientRequest(url: url)
-        request.headers.add(name: "User-Agent", value: "swiftly")
-        return request
-    }
 
     deinit {
         try? self.inner.syncShutdown()

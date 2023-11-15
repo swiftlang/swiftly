@@ -25,7 +25,7 @@ public struct Config: Codable, Equatable {
         public let architecture: String?
 
         public func getArchitecture() -> String {
-            return self.architecture ?? "x86_64"
+            self.architecture ?? "x86_64"
         }
     }
 

@@ -48,7 +48,7 @@ internal struct SelfUpdate: SwiftlyCommand {
             header: "Downloading swiftly \(version)"
         )
         do {
-            try await httpClient.downloadFile(
+            try await self.httpClient.downloadFile(
                 url: downloadURL,
                 to: tmpFile,
                 reportProgress: { progress in

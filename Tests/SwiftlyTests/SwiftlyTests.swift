@@ -1,10 +1,10 @@
 import _StringProcessing
 import ArgumentParser
+import AsyncHTTPClient
+import NIO
 @testable import Swiftly
 @testable import SwiftlyCore
 import XCTest
-import AsyncHTTPClient
-import NIO
 
 struct SwiftlyTestError: LocalizedError {
     let message: String
@@ -356,14 +356,14 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
         self.handler = handler
     }
 
-    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
-        return try await self.handler(request)
+    public func execute(_ request: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse {
+        try await self.handler(request)
     }
 }
 
 extension SwiftlyHTTPClient {
     public static func mocked(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse) -> Self {
-        return Self(inner: MockHTTPRequestExecutor(handler: handler))
+        Self(inner: MockHTTPRequestExecutor(handler: handler))
     }
 }
 

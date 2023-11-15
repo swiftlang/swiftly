@@ -1,9 +1,9 @@
 import AsyncHTTPClient
 import Foundation
+import NIO
 @testable import Swiftly
 @testable import SwiftlyCore
 import XCTest
-import NIO
 
 final class SelfUpdateTests: SwiftlyTests {
     private static var newMajorVersion: String {
@@ -19,7 +19,7 @@ final class SelfUpdateTests: SwiftlyTests {
     }
 
     private static func makeMockHTTPClient(latestVersion: String) -> SwiftlyHTTPClient {
-        return .mocked { request in
+        .mocked { request in
             guard let url = URL(string: request.url) else {
                 throw SwiftlyTestError(message: "invalid url \(request.url)")
             }
@@ -37,7 +37,6 @@ final class SelfUpdateTests: SwiftlyTests {
             default:
                 throw SwiftlyTestError(message: "unknown url host: \(String(describing: url.host))")
             }
-
         }
     }
 
@@ -62,12 +61,12 @@ final class SelfUpdateTests: SwiftlyTests {
 
     /// Verify updating the most up-to-date toolchain has no effect.
     func testSelfUpdate() async throws {
-        try await runSelfUpdateTest(latestVersion: Self.newPatchVersion)
-        try await runSelfUpdateTest(latestVersion: Self.newMinorVersion)
-        try await runSelfUpdateTest(latestVersion: Self.newMajorVersion)
+        try await self.runSelfUpdateTest(latestVersion: Self.newPatchVersion)
+        try await self.runSelfUpdateTest(latestVersion: Self.newMinorVersion)
+        try await self.runSelfUpdateTest(latestVersion: Self.newMajorVersion)
     }
 
     func testSelfUpdateAlreadyUpToDate() async throws {
-        try await runSelfUpdateTest(latestVersion: String(describing: Swiftly.version), shouldUpdate: false)
+        try await self.runSelfUpdateTest(latestVersion: String(describing: Swiftly.version), shouldUpdate: false)
     }
 }

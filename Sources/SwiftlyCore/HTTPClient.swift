@@ -14,11 +14,11 @@ internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
     fileprivate static let client = HTTPClientWrapper()
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
-        return try await Self.client.inner.execute(request, timeout: timeout)
+        try await Self.client.inner.execute(request, timeout: timeout)
     }
 }
 
-fileprivate func makeRequest(url: String) -> HTTPClientRequest {
+private func makeRequest(url: String) -> HTTPClientRequest {
     var request = HTTPClientRequest(url: url)
     request.headers.add(name: "User-Agent", value: "swiftly")
     return request
@@ -178,8 +178,9 @@ public struct SwiftlyHTTPClient {
             if lastUpdate.distance(to: now) > 0.25 || receivedBytes == expectedBytes {
                 lastUpdate = now
                 reportProgress(SwiftlyHTTPClient.DownloadProgress(
-                                   receivedBytes: receivedBytes,
-                                   totalBytes: expectedBytes))
+                    receivedBytes: receivedBytes,
+                    totalBytes: expectedBytes
+                ))
             }
         }
 

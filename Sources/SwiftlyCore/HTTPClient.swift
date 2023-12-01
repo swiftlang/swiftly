@@ -146,20 +146,13 @@ public struct SwiftlyHTTPClient {
         let request = makeRequest(url: url.absoluteString)
         let response = try await self.executor.execute(request, timeout: .seconds(30))
 
-        guard case response.status = HTTPResponseStatus.ok else {
-            throw Error(message: "Received \(response.status) when trying to download \(url)")
-        }
-
-        // Unknown download.swift.org paths redirect to a 404 page which then returns a 200 status.
-        // As a heuristic for if we've hit the 404 page, we check to see if the content is HTML.
-        if url.host == "download.swift.org" {
-            guard !response.headers["Content-Type"].contains(where: { $0.contains("text/html") }) else {
-                throw SwiftlyHTTPClient.DownloadNotFoundError(url: url.path)
-            }
-        }
-
-        guard response.status != .notFound else {
+        switch response.status {
+        case .ok:
+            break
+        case .notFound:
             throw SwiftlyHTTPClient.DownloadNotFoundError(url: url.path)
+        default:
+            throw Error(message: "Received \(response.status) when trying to download \(url)")
         }
 
         // if defined, the content-length headers announces the size of the body

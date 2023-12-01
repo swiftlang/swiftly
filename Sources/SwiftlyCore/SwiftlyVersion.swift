@@ -1,6 +1,5 @@
 import _StringProcessing
 import Foundation
-import SwiftlyCore
 
 /// Struct modeling a version of swiftly itself.
 public struct SwiftlyVersion: Equatable, Comparable, CustomStringConvertible {

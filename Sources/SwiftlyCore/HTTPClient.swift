@@ -20,7 +20,7 @@ internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
 
 private func makeRequest(url: String) -> HTTPClientRequest {
     var request = HTTPClientRequest(url: url)
-    request.headers.add(name: "User-Agent", value: "swiftly")
+    request.headers.add(name: "User-Agent", value: "swiftly/\(SwiftlyCore.version)")
     return request
 }
 

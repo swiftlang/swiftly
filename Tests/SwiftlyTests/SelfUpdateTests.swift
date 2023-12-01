@@ -7,15 +7,15 @@ import XCTest
 
 final class SelfUpdateTests: SwiftlyTests {
     private static var newMajorVersion: String {
-        "\(Swiftly.version.major + 1).0.0"
+        "\(SwiftlyCore.version.major + 1).0.0"
     }
 
     private static var newMinorVersion: String {
-        "\(Swiftly.version.major).\(Swiftly.version.minor + 1).0"
+        "\(SwiftlyCore.version.major).\(SwiftlyCore.version.minor + 1).0"
     }
 
     private static var newPatchVersion: String {
-        "\(Swiftly.version.major).\(Swiftly.version.minor).\(Swiftly.version.patch + 1)"
+        "\(SwiftlyCore.version.major).\(SwiftlyCore.version.minor).\(SwiftlyCore.version.patch + 1)"
     }
 
     private static func makeMockHTTPClient(latestVersion: String) -> SwiftlyHTTPClient {
@@ -67,6 +67,6 @@ final class SelfUpdateTests: SwiftlyTests {
     }
 
     func testSelfUpdateAlreadyUpToDate() async throws {
-        try await self.runSelfUpdateTest(latestVersion: String(describing: Swiftly.version), shouldUpdate: false)
+        try await self.runSelfUpdateTest(latestVersion: String(describing: SwiftlyCore.version), shouldUpdate: false)
     }
 }

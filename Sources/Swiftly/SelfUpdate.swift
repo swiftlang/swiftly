@@ -23,7 +23,7 @@ internal struct SelfUpdate: SwiftlyCommand {
 
         let version = try SwiftlyVersion(parsing: release.tag)
 
-        guard version > Swiftly.version else {
+        guard version > SwiftlyCore.version else {
             SwiftlyCore.print("Already up to date.")
             return
         }
@@ -73,6 +73,6 @@ internal struct SelfUpdate: SwiftlyCommand {
         try FileManager.default.moveItem(at: tmpFile, to: swiftlyExecutable)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: swiftlyExecutable.path)
 
-        SwiftlyCore.print("Successfully updated swiftly to \(version) (was \(Swiftly.version))")
+        SwiftlyCore.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
     }
 }

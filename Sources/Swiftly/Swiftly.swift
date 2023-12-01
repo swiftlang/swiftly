@@ -11,7 +11,7 @@ public struct Swiftly: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "A utility for installing and managing Swift toolchains.",
 
-        version: "0.1.0",
+        version: String(describing: SwiftlyCore.version),
 
         subcommands: [
             Install.self,
@@ -19,6 +19,7 @@ public struct Swiftly: SwiftlyCommand {
             Uninstall.self,
             List.self,
             Update.self,
+            SelfUpdate.self,
         ]
     )
 

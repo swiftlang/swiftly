@@ -2,10 +2,14 @@ import _StringProcessing
 import AsyncHTTPClient
 import Foundation
 
+public struct SwiftlyGitHubRelease: Codable {
+    public let tag: String
+}
+
 extension SwiftlyHTTPClient {
     /// Get a JSON response from the GitHub REST API.
     /// This will use the authorization token set, if any.
-    private func getFromGitHub<T: Decodable>(url: String) async throws -> T {
+    public func getFromGitHub<T: Decodable>(url: String) async throws -> T {
         var headers: [String: String] = [:]
         if let token = self.githubToken ?? ProcessInfo.processInfo.environment["SWIFTLY_GITHUB_TOKEN"] {
             headers["Authorization"] = "Bearer \(token)"

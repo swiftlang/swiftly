@@ -126,6 +126,10 @@ struct Install: SwiftlyCommand {
             url += "\(snapshotString)-\(release.date)-a-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
         }
 
+        guard let url = URL(string: url) else {
+            throw Error(message: "Invalid toolchain URL: \(url)")
+        }
+
         let animation = PercentProgressAnimation(
             stream: stdoutStream,
             header: "Downloading \(version)"
@@ -134,10 +138,9 @@ struct Install: SwiftlyCommand {
         var lastUpdate = Date()
 
         do {
-            try await httpClient.downloadToolchain(
-                version,
+            try await httpClient.downloadFile(
                 url: url,
-                to: tmpFile.path,
+                to: tmpFile,
                 reportProgress: { progress in
                     let now = Date()
 

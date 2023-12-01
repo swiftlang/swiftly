@@ -4,7 +4,7 @@ import Foundation
 import XCTest
 
 final class UpdateTests: SwiftlyTests {
-    private let mockHttpClient = SwiftlyHTTPClient(inner: MockToolchainDownloader())
+    private let mockHttpClient = SwiftlyHTTPClient(executor: MockToolchainDownloader())
 
     /// Verify updating the most up-to-date toolchain has no effect.
     func testUpdateLatest() async throws {

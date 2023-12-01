@@ -31,13 +31,13 @@ public struct SwiftlyHTTPClient {
         let buffer: ByteBuffer
     }
 
-    private let inner: HTTPRequestExecutor
+    private let executor: HTTPRequestExecutor
 
     /// The GitHub authentication token to use for any requests made to the GitHub API.
     public var githubToken: String?
 
-    public init(inner: HTTPRequestExecutor? = nil) {
-        self.inner = inner ?? HTTPRequestExecutorImpl()
+    public init(executor: HTTPRequestExecutor? = nil) {
+        self.executor = executor ?? HTTPRequestExecutorImpl()
     }
 
     private func get(url: String, headers: [String: String]) async throws -> Response {
@@ -47,7 +47,7 @@ public struct SwiftlyHTTPClient {
             request.headers.add(name: k, value: v)
         }
 
-        let response = try await self.inner.execute(request, timeout: .seconds(30))
+        let response = try await self.executor.execute(request, timeout: .seconds(30))
 
         // if defined, the content-length headers announces the size of the body
         let expectedBytes = response.headers.first(name: "content-length").flatMap(Int.init) ?? 1024 * 1024
@@ -144,7 +144,7 @@ public struct SwiftlyHTTPClient {
         }
 
         let request = makeRequest(url: url.absoluteString)
-        let response = try await self.inner.execute(request, timeout: .seconds(30))
+        let response = try await self.executor.execute(request, timeout: .seconds(30))
 
         guard case response.status = HTTPResponseStatus.ok else {
             throw Error(message: "Received \(response.status) when trying to download \(url)")

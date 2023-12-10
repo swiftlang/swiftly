@@ -335,7 +335,7 @@ set -o errexit
 shopt -s extglob
 
 short_options='yhvp:'
-long_options='disable-confirmation,no-modify-profile,no-install-system-deps,help,version,platform:'
+long_options='disable-confirmation,no-modify-profile,no-install-system-deps,help,version,platform:,overwrite'
 
 args=$(getopt --options "$short_options" --longoptions "$long_options" --name "swiftly-install" -- "${@}")
 eval "set -- ${args}"
@@ -351,7 +351,7 @@ USAGE:
     swiftly-install [options]
 
 OPTIONS:
-    -y, --disable-confirmation  Disable confirmation prompt.
+    -y, --disable-confirmation  Disable confirmation prompts.
     --no-modify-profile         Do not attempt to modify the profile file to set environment 
                                 variables (e.g. PATH) on login.
     --no-install-system-deps    Do not attempt to install Swift's required system dependencies.
@@ -359,6 +359,10 @@ OPTIONS:
                                 unspecified, the platform will be automatically detected. Available
                                 options are "ubuntu22.04", "ubuntu20.04", "ubuntu18.04", "rhel9", and
                                 "amazonlinux2".
+    --overwrite                 Overwrite the existing swiftly installation found at the configured
+                                SWIFTLY_HOME, if any. If this option is unspecified and an existing
+                                installation is found, the swiftly executable will be updated, but
+                                the rest of the installation will not be modified.
     -h, --help                  Prints help information.
     --version                   Prints version information.
 EOF
@@ -413,6 +417,11 @@ EOF
                     ;;
             esac
             shift 2
+            ;;
+
+        "--overwrite")
+            overwrite_existing_intallation="true"
+            shift
             ;;
 
         --)
@@ -535,19 +544,13 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
 done
 
 if [[ -d "$HOME_DIR" ]]; then
-    if [[ "$DISABLE_CONFIRMATION" == "true" ]]; then
+    detected_existing_installation="true"
+    if [[ "$overwrite_existing_intallation" == "true" ]]; then
         echo "Overwriting existing swiftly installation at $(replace_home_path $HOME_DIR)"
+        rm -r $HOME_DIR
     else
-        echo "Existing swiftly installation detected at $(replace_home_path $HOME_DIR), overwrite? (Y/n)"
-
-        read_yn_input "true"
-        if [[ "$READ_INPUT_RETURN" == "false" ]]; then
-            echo "Cancelling installation."
-            exit 0
-        fi
+        echo "Updating existing swiftly installation at $(replace_home_path $HOME_DIR)"
     fi
-
-    rm -r $HOME_DIR
 fi
 
 mkdir -p $HOME_DIR/toolchains
@@ -566,35 +569,37 @@ curl \
 
 chmod +x "$BIN_DIR/swiftly"
 
-echo "$JSON_OUT" > "$HOME_DIR/config.json"
+if [[ "$detected_existing_installation" != "true" || "$overwrite_existing_intallation" == "true" ]]; then
+    echo "$JSON_OUT" > "$HOME_DIR/config.json"
 
-# Verify the downloaded executable works. The script will exit if this fails due to errexit.
-SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
+    # Verify the downloaded executable works. The script will exit if this fails due to errexit.
+    SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
 
-ENV_OUT=$(cat <<EOF
+    ENV_OUT=$(cat <<EOF
 export SWIFTLY_HOME_DIR="$(replace_home_path $HOME_DIR)"
 export SWIFTLY_BIN_DIR="$(replace_home_path $BIN_DIR)"
 if [[ ":\$PATH:" != *":\$SWIFTLY_BIN_DIR:"* ]]; then
    export PATH="\$SWIFTLY_BIN_DIR:\$PATH"
 fi
 EOF
-)
+           )
 
-echo "$ENV_OUT" > "$HOME_DIR/env.sh"
+    echo "$ENV_OUT" > "$HOME_DIR/env.sh"
 
-if [[ "$MODIFY_PROFILE" == "true" ]]; then
-    SOURCE_LINE=". $(replace_home_path $HOME_DIR)/env.sh"
+    if [[ "$MODIFY_PROFILE" == "true" ]]; then
+        SOURCE_LINE=". $(replace_home_path $HOME_DIR)/env.sh"
 
-    # Only append the line if it isn't in .profile already.
-    if [[ ! -f "$PROFILE_FILE" ]] || [[ ! "$(cat $PROFILE_FILE)" =~ "$SOURCE_LINE" ]]; then
-        echo "$SOURCE_LINE" >> "$PROFILE_FILE"
+        # Only append the line if it isn't in .profile already.
+        if [[ ! -f "$PROFILE_FILE" ]] || [[ ! "$(cat $PROFILE_FILE)" =~ "$SOURCE_LINE" ]]; then
+            echo "$SOURCE_LINE" >> "$PROFILE_FILE"
+        fi
     fi
-fi
 
-if [[ "$SWIFTLY_INSTALL_SYSTEM_DEPS" != "false" ]]; then
-    echo ""
-    echo "Installing Swift's system dependencies via $package_manager (note: this may require root access)..."
-    install_system_deps
+    if [[ "$SWIFTLY_INSTALL_SYSTEM_DEPS" != "false" ]]; then
+        echo ""
+        echo "Installing Swift's system dependencies via $package_manager (note: this may require root access)..."
+        install_system_deps
+    fi
 fi
 
 echo ""

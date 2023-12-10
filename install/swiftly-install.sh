@@ -547,6 +547,7 @@ if [[ -d "$HOME_DIR" ]]; then
     detected_existing_installation="true"
     if [[ "$overwrite_existing_intallation" == "true" ]]; then
         echo "Overwriting existing swiftly installation at $(replace_home_path $HOME_DIR)"
+        find $BIN_DIR -lname "$HOME_DIR/toolchains/**/bin/*" -delete
         rm -r $HOME_DIR
     else
         echo "Updating existing swiftly installation at $(replace_home_path $HOME_DIR)"

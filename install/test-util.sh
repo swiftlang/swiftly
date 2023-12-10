@@ -4,6 +4,12 @@
 
 export SWIFTLY_READ_FROM_STDIN=1
 
+test_log () {
+    echo "==========================="
+    echo "$1"
+    echo "==========================="
+}
+
 has_command () {
     command -v "$1" > /dev/null
 }

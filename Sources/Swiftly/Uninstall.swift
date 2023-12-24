@@ -33,6 +33,10 @@ struct Uninstall: SwiftlyCommand {
         The latest installed stable release can be uninstalled by specifying  'latest':
 
             $ swiftly uninstall latest
+
+        Finally, all installed toolchains can be uninstalled by specifying 'all':
+
+            $ swiftly uninstall all
         """
     ))
     var toolchain: String
@@ -44,7 +48,11 @@ struct Uninstall: SwiftlyCommand {
     var assumeYes: Bool = false
 
     mutating func run() async throws {
-        let selector = try ToolchainSelector(parsing: self.toolchain)
+        let selector: ToolchainSelector? = if self.toolchain != "all" {
+            try ToolchainSelector(parsing: self.toolchain)
+        } else {
+            nil // a nil selector causes listInstalledToolchains to return all toolchains, which is what we want
+        }
         let startingConfig = try Config.load()
         let toolchains = startingConfig.listInstalledToolchains(selector: selector)
 

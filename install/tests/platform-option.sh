@@ -17,7 +17,7 @@ trap cleanup EXIT
 platforms=("ubuntu22.04" "ubuntu20.04" "ubuntu18.04" "amazonlinux2" "rhel9")
 
 for platform in "${platforms[@]}"; do
-    ./swiftly-install.sh --disable-confirmation --no-install-system-deps --platform "$platform"
+    ./swiftly-install.sh --overwrite --disable-confirmation --no-install-system-deps --platform "$platform"
     cat $HOME/.local/share/swiftly/config.json
 
     if [[ "$platform" == "rhel9" ]]; then

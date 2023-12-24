@@ -34,7 +34,7 @@ if [[ "$(cat $HOME/.bash_login)" != "" ]]; then
 fi
 
 rm "$HOME/.bash_profile"
-printf "1\ny\n" | ./swiftly-install.sh --no-install-system-deps
+./swiftly-install.sh -y --overwrite --no-install-system-deps
 
 if [[ -f "$HOME/.bash_profile" ]]; then
    test_fail "install created .bash_profile when it should not have"

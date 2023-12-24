@@ -4,8 +4,18 @@
 
 export SWIFTLY_READ_FROM_STDIN=1
 
+test_log () {
+    echo "==========================="
+    echo "$1"
+    echo "==========================="
+}
+
 has_command () {
     command -v "$1" > /dev/null
+}
+
+test_name () {
+    basename "$0"
 }
 
 test_fail () {
@@ -17,10 +27,14 @@ test_fail () {
         printf "actual: $2\n"
         printf "expected: $3\n"
     fi
+    echo ""
+    echo "$(test_name) FAILED"
     exit 1
 }
 
 test_pass () {
+    echo ""
+    echo "$(test_name) PASSED"
     exit 0
 }
 

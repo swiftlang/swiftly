@@ -29,22 +29,7 @@ bash --login -c "swiftly --version"
 . "$HOME/.local/share/swiftly/env.sh"
 
 if ! has_command "swiftly" ; then
-    fail_test "Can't find swiftly on the PATH"
-fi
-
-DUMMY_CONTENT="should be overwritten"
-echo "$DUMMY_CONTENT" > "$HOME/.local/share/swiftly/config.json"
-
-# Running it again should overwrite the previous installation without asking us for permission.
-./swiftly-install.sh --disable-confirmation
-
-if ! has_command "swiftly" ; then
-    fail_test "Can't find swiftly on the PATH"
-fi
-
-CONFIG_CONTENTS="$(cat $HOME/.local/share/swiftly/config.json)"
-if [ "$CONFIG_CONTENTS" == "$DUMMY_CONTENT" ]; then
-    fail_test "Config should have been overwritten after second install"
+    test_fail "Can't find swiftly on the PATH"
 fi
 
 if has_command dpkg ; then

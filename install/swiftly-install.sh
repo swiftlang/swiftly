@@ -543,7 +543,7 @@ while [ -z "$DISABLE_CONFIRMATION" ]; do
     esac
 done
 
-if [[ -d "$HOME_DIR" ]]; then
+if [[ -f "$HOME_DIR/config.json" ]]; then
     detected_existing_installation="true"
     if [[ "$overwrite_existing_intallation" == "true" ]]; then
         echo "Overwriting existing swiftly installation at $(replace_home_path $HOME_DIR)"

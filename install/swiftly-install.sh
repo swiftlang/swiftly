@@ -316,7 +316,7 @@ verify_getopt_install () {
     return "$?"
 }
 
-SWIFTLY_INSTALL_VERSION="0.2.0"
+SWIFTLY_INSTALL_VERSION="0.3.0"
 
 MODIFY_PROFILE="true"
 SWIFTLY_INSTALL_SYSTEM_DEPS="true"

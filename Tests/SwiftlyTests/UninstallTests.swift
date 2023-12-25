@@ -283,4 +283,17 @@ final class UninstallTests: SwiftlyTests {
             )
         }
     }
+
+    /// Tests that providing "all" as an argument to uninstall will uninstall all toolchains.
+    func testUninstallAll() async throws {
+        let toolchains = Set([Self.oldStable, Self.newStable, Self.newMainSnapshot, Self.oldReleaseSnapshot])
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: toolchains, inUse: Self.newMainSnapshot) {
+            var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", "-y", "all"])
+            _ = try await uninstall.run()
+            try await self.validateInstalledToolchains(
+                [],
+                description: "uninstall did not uninstall all toolchains"
+            )
+        }
+    }
 }

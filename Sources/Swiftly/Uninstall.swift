@@ -48,13 +48,19 @@ struct Uninstall: SwiftlyCommand {
     var assumeYes: Bool = false
 
     mutating func run() async throws {
-        let selector: ToolchainSelector? = if self.toolchain != "all" {
-            try ToolchainSelector(parsing: self.toolchain)
-        } else {
-            nil // a nil selector causes listInstalledToolchains to return all toolchains, which is what we want
-        }
         let startingConfig = try Config.load()
-        let toolchains = startingConfig.listInstalledToolchains(selector: selector)
+
+        let toolchains: [ToolchainVersion]
+        if self.toolchain == "all" {
+            // Sort the uninstalled toolchains such that the in-use toolchain will be uninstalled last.
+            // This avoids printing any unnecessary output from using new toolchains while the uninstall is in progress.
+            toolchains = startingConfig.listInstalledToolchains(selector: nil).sorted { a, b in
+                a != startingConfig.inUse && (b == startingConfig.inUse || a < b)
+            }
+        } else {
+            let selector = try ToolchainSelector(parsing: self.toolchain)
+            toolchains = startingConfig.listInstalledToolchains(selector: selector)
+        }
 
         guard !toolchains.isEmpty else {
             SwiftlyCore.print("No toolchains matched \"\(self.toolchain)\"")

@@ -141,5 +141,58 @@ public struct Linux: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
+    public func validateSignture(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws {
+        guard self.commandExists("gpg") else {
+            SwiftlyCore.print("gpg not installed, skipping signature validation.")
+            return
+        }
+
+        SwiftlyCore.print("Refreshing Swift PGP keys...")
+        do {
+            try self.runShellCommand("gpg",
+                                "--quiet",
+                                "--keyserver", "hkp://keyserver.ubuntu.com",
+                                "--refresh-keys", "Swift")
+        } catch {
+            throw Error(message: "Failed to refresh PGP keys: \(error)")
+        }
+
+        SwiftlyCore.print("Downloading toolchain signature...")
+        let sigFile = self.getTempFilePath()
+        FileManager.default.createFile(atPath: sigFile.path, contents: nil)
+        defer {
+            try? FileManager.default.removeItem(at: sigFile)
+        }
+
+        try await httpClient.downloadFile(
+            url: archiveDownloadURL.appendingPathExtension("sig"),
+            to: sigFile
+        )
+
+        SwiftlyCore.print("Validating toolchain signature...")
+        do {
+            try self.runShellCommand("gpg", "--verify", sigFile.path, archive.path)
+        } catch {
+            throw Error(message: "Toolchain signature validation failed: \(error)")
+        }
+    }
+
+    private func commandExists(_ program: String) -> Bool {
+        return (try? self.runShellCommand("command", "-v", program, "> /dev/null")) != nil
+    }
+
+    private func runShellCommand(_ command: String...) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["sh", "-c"] + command
+
+        try process.run()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            throw Error(message: "\(command.first!) exited with non-zero status: \(process.terminationStatus)")
+        }
+    }
+
     public static let currentPlatform: any Platform = Linux()
 }

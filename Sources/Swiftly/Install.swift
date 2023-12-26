@@ -167,9 +167,9 @@ struct Install: SwiftlyCommand {
             animation.complete(success: false)
             throw error
         }
-
         animation.complete(success: true)
 
+        try await Swiftly.currentPlatform.validateSignture(httpClient: httpClient, archiveDownloadURL: url, archive: tmpFile)
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)
 
         config.installedToolchains.insert(version)
@@ -182,6 +182,10 @@ struct Install: SwiftlyCommand {
         }
 
         SwiftlyCore.print("\(version) installed successfully!")
+    }
+
+    func validateSignature(archive: Foundation.URL, signature: Foundation.URL) async throws {
+        return
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.

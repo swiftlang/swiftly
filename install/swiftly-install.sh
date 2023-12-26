@@ -143,6 +143,7 @@ install_system_deps () {
 
     # Read the lines between those two, deleting any spaces and backslashes.
     readarray -t package_list < <(printf "$dockerfile" | sed -n "$((beg_line_num + 1)),${end_line_num}p" | sed -r 's/[\ ]//g')
+    package_list+=("gpg")
 
     # If the installation command from the Dockerfile included some cleanup as part of a second command, drop that.
     if [[ "${package_list[-1]}" =~ ^\&\& ]]; then
@@ -600,6 +601,14 @@ EOF
         echo ""
         echo "Installing Swift's system dependencies via $package_manager (note: this may require root access)..."
         install_system_deps
+    fi
+
+    if has_command gpg; then
+        echo ""
+        echo "Importing Swift's PGP keys..."
+        curl --silent --retry 3 --location --fail https://swift.org/keys/all-keys.asc | gpg --import -
+    else
+        echo "gpg not installed, skipping import of Swift's PGP keys."
     fi
 fi
 

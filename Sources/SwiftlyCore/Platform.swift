@@ -39,6 +39,8 @@ public protocol Platform {
     /// Get a path pointing to a unique, temporary file.
     /// This does not need to actually create the file.
     func getTempFilePath() -> URL
+
+    func validateSignture(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws
 }
 
 extension Platform {

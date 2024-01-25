@@ -4,6 +4,10 @@ import Foundation
 
 public struct SwiftlyGitHubRelease: Codable {
     public let tag: String
+
+    enum CodingKeys: String, CodingKey {
+        case tag = "tag_name"
+    }
 }
 
 extension SwiftlyHTTPClient {

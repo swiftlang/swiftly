@@ -59,14 +59,25 @@ final class SelfUpdateTests: SwiftlyTests {
         }
     }
 
-    /// Verify updating the most up-to-date toolchain has no effect.
     func testSelfUpdate() async throws {
         try await self.runSelfUpdateTest(latestVersion: Self.newPatchVersion)
         try await self.runSelfUpdateTest(latestVersion: Self.newMinorVersion)
         try await self.runSelfUpdateTest(latestVersion: Self.newMajorVersion)
     }
 
+    /// Verify updating the most up-to-date toolchain has no effect.
     func testSelfUpdateAlreadyUpToDate() async throws {
         try await self.runSelfUpdateTest(latestVersion: String(describing: SwiftlyCore.version), shouldUpdate: false)
+    }
+
+    /// Tests that attempting to self-update using the actual GitHub API works as expected.
+    func testSelfUpdateIntegration() async throws {
+        try await self.withTestHome {
+            let swiftlyURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
+            try "old".data(using: .utf8)!.write(to: swiftlyURL)
+
+            var update = try self.parseCommand(SelfUpdate.self, ["self-update"])
+            try await update.run()
+        }
     }
 }

@@ -613,10 +613,11 @@ if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR
     echo ""
     echo "    . $(replace_home_path $HOME_DIR)/env.sh"
     echo ""
-    echo "Then to install the latest version of Swift, run 'swiftly install latest'"
-    echo ""
     echo "If you already have a version of Swift installed and depending on your "
     echo "shell you may have to run 'rehash' as well."
+    echo ""
+    echo "Then to install the latest version of Swift, run 'swiftly install latest'"
+    echo ""
 
 else
     echo "To install the latest version of Swift, run 'swiftly install latest'"

@@ -619,7 +619,7 @@ if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR
     echo ""
     echo "     export PATH=$(replace_home_path $HOME_DIR):$PATH"
     echo ""
-    echo "to give the swiftly install directory predence immediately."
+    echo "to give the swiftly install directory precedence immediately."
 else
     echo "To install the latest version of Swift, run 'swiftly install latest'"
 fi

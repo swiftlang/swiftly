@@ -141,15 +141,27 @@ public struct Linux: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
-    public func validateSignture(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws {
-        guard self.commandExists("gpg") else {
-            SwiftlyCore.print("gpg not installed, skipping signature validation.")
+    public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws {
+        guard (try? self.runProgram("gpg", "--version", quiet: true)) != nil else {
+            SwiftlyCore.print("gpg not installed, skipping signature verification.")
+            return
+        }
+
+        let foundKeys = (try? self.runProgram(
+                             "gpg",
+                             "--list-keys",
+                             "swift-infrastructure@forums.swift.org",
+                             "swift-infrastructure@swift.org",
+                             quiet: true)) != nil
+        guard foundKeys else {
+            SwiftlyCore.print("Swift PGP keys not imported, skipping signature verification.")
+            SwiftlyCore.print("To enable verification, import the keys from https://swift.org/keys/all-keys.asc")
             return
         }
 
         SwiftlyCore.print("Refreshing Swift PGP keys...")
         do {
-            try self.runShellCommand("gpg",
+            try self.runProgram("gpg",
                                 "--quiet",
                                 "--keyserver", "hkp://keyserver.ubuntu.com",
                                 "--refresh-keys", "Swift")
@@ -169,28 +181,29 @@ public struct Linux: Platform {
             to: sigFile
         )
 
-        SwiftlyCore.print("Validating toolchain signature...")
+        SwiftlyCore.print("Verifying toolchain signature...")
         do {
-            try self.runShellCommand("gpg", "--verify", sigFile.path, archive.path)
+            try self.runProgram("gpg", "--verify", sigFile.path, archive.path)
         } catch {
-            throw Error(message: "Toolchain signature validation failed: \(error)")
+            throw Error(message: "Toolchain signature verification failed: \(error)")
         }
     }
 
-    private func commandExists(_ program: String) -> Bool {
-        return (try? self.runShellCommand("command", "-v", program, "> /dev/null")) != nil
-    }
-
-    private func runShellCommand(_ command: String...) throws {
+    private func runProgram(_ args: String..., quiet: Bool = false) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["sh", "-c"] + command
+        process.arguments = args
+
+        if quiet {
+            process.standardOutput = nil
+            process.standardError = nil
+        }
 
         try process.run()
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw Error(message: "\(command.first!) exited with non-zero status: \(process.terminationStatus)")
+            throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
         }
     }
 

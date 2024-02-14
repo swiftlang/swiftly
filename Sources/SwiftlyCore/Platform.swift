@@ -40,7 +40,10 @@ public protocol Platform {
     /// This does not need to actually create the file.
     func getTempFilePath() -> URL
 
-    func validateSignture(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws
+    /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
+    /// Throws an error if the signature does not match.
+    /// On Linux, signature verification will be skipped if gpg is not installed.
+    func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws
 }
 
 extension Platform {

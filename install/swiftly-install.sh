@@ -608,7 +608,9 @@ echo "swiftly has been succesfully installed!"
 echo ""
 
 if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then
-    echo "Once you log in again, swiftly should be accessible from your PATH."
+    if [[ "$MODIFY_PROFILE" == "true" ]]; then
+        echo "Once you log in again, swiftly should be accessible from your PATH."
+    fi
     echo "To begin using swiftly from your current shell, first run the following command:"
     echo ""
     echo "    . $(replace_home_path $HOME_DIR)/env.sh"
@@ -616,4 +618,11 @@ if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR
     echo "Then to install the latest version of Swift, run 'swiftly install latest'"
 else
     echo "To install the latest version of Swift, run 'swiftly install latest'"
+fi
+
+if has_command "swift" ; then
+    echo ""
+    echo "Warning: existing installation of Swift detected at $(command -v swift)"
+    echo "To ensure swiftly-installed toolchains can be found by the shell, uninstall any existing Swift installation(s)."
+    echo "To ensure the current shell can find swiftly-installed toolchains, you may also need to run 'hash -r'."
 fi

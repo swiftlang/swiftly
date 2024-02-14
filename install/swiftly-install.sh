@@ -604,7 +604,7 @@ EOF
 fi
 
 echo ""
-echo "swiftly has been succesfully installed!"
+echo "swiftly has been successfully installed!"
 echo ""
 
 if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then

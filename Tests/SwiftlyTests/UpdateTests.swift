@@ -142,7 +142,8 @@ final class UpdateTests: SwiftlyTests {
                 try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
                 var update = try self.parseCommand(
-                    Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify"])
+                    Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify"]
+                )
                 update.httpClient = self.mockHttpClient
                 try await update.run()
 
@@ -196,7 +197,8 @@ final class UpdateTests: SwiftlyTests {
                 try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2023-09-16"))
 
                 var update = try self.parseCommand(
-                    Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify"])
+                    Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify"]
+                )
                 update.httpClient = self.mockHttpClient
                 try await update.run()
 

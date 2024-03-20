@@ -148,11 +148,12 @@ public struct Linux: Platform {
         }
 
         let foundKeys = (try? self.runProgram(
-                             "gpg",
-                             "--list-keys",
-                             "swift-infrastructure@forums.swift.org",
-                             "swift-infrastructure@swift.org",
-                             quiet: true)) != nil
+            "gpg",
+            "--list-keys",
+            "swift-infrastructure@forums.swift.org",
+            "swift-infrastructure@swift.org",
+            quiet: true
+        )) != nil
         guard foundKeys else {
             SwiftlyCore.print("Swift PGP keys not imported, skipping signature verification.")
             SwiftlyCore.print("To enable verification, import the keys from https://swift.org/keys/all-keys.asc")
@@ -161,10 +162,14 @@ public struct Linux: Platform {
 
         SwiftlyCore.print("Refreshing Swift PGP keys...")
         do {
-            try self.runProgram("gpg",
-                                "--quiet",
-                                "--keyserver", "hkp://keyserver.ubuntu.com",
-                                "--refresh-keys", "Swift")
+            try self.runProgram(
+                "gpg",
+                "--quiet",
+                "--keyserver",
+                "hkp://keyserver.ubuntu.com",
+                "--refresh-keys",
+                "Swift"
+            )
         } catch {
             throw Error(message: "Failed to refresh PGP keys: \(error)")
         }

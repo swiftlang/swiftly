@@ -201,9 +201,7 @@ struct Install: SwiftlyCommand {
         SwiftlyCore.print("\(version) installed successfully!")
     }
 
-    func validateSignature(archive: Foundation.URL, signature: Foundation.URL) async throws {
-        return
-    }
+    func validateSignature(archive _: Foundation.URL, signature _: Foundation.URL) async throws {}
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
     /// TODO: update this to use an official swift.org API

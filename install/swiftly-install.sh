@@ -143,12 +143,14 @@ install_system_deps () {
 
     # Read the lines between those two, deleting any spaces and backslashes.
     readarray -t package_list < <(printf "$dockerfile" | sed -n "$((beg_line_num + 1)),${end_line_num}p" | sed -r 's/[\ ]//g')
-    package_list+=("gpg")
 
     # If the installation command from the Dockerfile included some cleanup as part of a second command, drop that.
     if [[ "${package_list[-1]}" =~ ^\&\& ]]; then
         unset 'package_list[-1]'
     fi
+
+    # Always install gpg, since swiftly itself needs it for signature verification.
+    package_list+=("gpg")
 
     install_args=(--quiet -y)
 

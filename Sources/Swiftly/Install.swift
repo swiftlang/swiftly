@@ -56,13 +56,13 @@ struct Install: SwiftlyCommand {
     ))
     var token: String?
 
-    @Flag(help: "Skip PGP verification of the installed toolchain's signature.")
-    var noVerify = false
+    @Flag(inversion: .prefixedNo, help: "Skip PGP verification of the installed toolchain's signature.")
+    var verify = true
 
     public var httpClient = SwiftlyHTTPClient()
 
     private enum CodingKeys: String, CodingKey {
-        case version, token, use, noVerify
+        case version, token, use, verify
     }
 
     mutating func run() async throws {
@@ -75,7 +75,7 @@ struct Install: SwiftlyCommand {
             &config,
             self.httpClient,
             useInstalledToolchain: self.use,
-            verifySignature: !self.noVerify
+            verifySignature: self.verify
         )
     }
 

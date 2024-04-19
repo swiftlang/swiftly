@@ -40,6 +40,12 @@ public protocol Platform {
     /// This does not need to actually create the file.
     func getTempFilePath() -> URL
 
+    /// Verifies that the system meets the requirements needed to install a toolchain.
+    /// `requireSignatureValidation` specifies whether the system's support for toolchain signature validation should be verified.
+    ///
+    /// Throws if system does not meet the requirements.
+    func verifySystemPrerequisitesForInstall(requireSignatureValidation: Bool) throws
+
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.
     /// On Linux, signature verification will be skipped if gpg is not installed.

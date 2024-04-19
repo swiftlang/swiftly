@@ -90,6 +90,10 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("\(version) is already installed, exiting.")
             return
         }
+
+        // Ensure the system is set up correctly to install a toolchain before downloading it.
+        try Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(requireSignatureValidation: verifySignature)
+
         SwiftlyCore.print("Installing \(version)")
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()

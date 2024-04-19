@@ -141,10 +141,13 @@ public struct Linux: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
+    private static let skipVerificationMessage: String = "To skip signature verification, specify the --no-verify flag."
+
     public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws {
         guard (try? self.runProgram("gpg", "--version", quiet: true)) != nil else {
-            SwiftlyCore.print("gpg not installed, skipping signature verification.")
-            return
+            throw Error(message: "gpg not installed, cannot perform signature verification. To set up gpg for " +
+                "toolchain signature validation, follow the instructions at " +
+                "https://www.swift.org/install/linux/#installation-via-tarball. " + Self.skipVerificationMessage)
         }
 
         let foundKeys = (try? self.runProgram(
@@ -155,9 +158,10 @@ public struct Linux: Platform {
             quiet: true
         )) != nil
         guard foundKeys else {
-            SwiftlyCore.print("Swift PGP keys not imported, skipping signature verification.")
-            SwiftlyCore.print("To enable verification, import the keys from https://swift.org/keys/all-keys.asc")
-            return
+            throw Error(message: "Swift PGP keys not imported, cannot perform signature verification. " +
+                "To enable verification, import the keys with the following command: " +
+                "'wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -' " +
+                Self.skipVerificationMessage)
         }
 
         SwiftlyCore.print("Refreshing Swift PGP keys...")

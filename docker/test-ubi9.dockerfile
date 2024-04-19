@@ -14,6 +14,8 @@ RUN yum install -y --allowerasing \
 COPY ./scripts/install-libarchive.sh /
 RUN /install-libarchive.sh
 
+RUN curl -L https://swift.org/keys/all-keys.asc | gpg --import
+
 # tools
 RUN mkdir -p $HOME/.tools
 RUN echo 'export PATH="$HOME/.tools:$PATH"' >> $HOME/.profile

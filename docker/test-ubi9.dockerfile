@@ -9,9 +9,12 @@ RUN yum install -y --allowerasing \
     curl \
     gcc \
     gcc-c++ \
-    make
+    make \
+    gpg
 COPY ./scripts/install-libarchive.sh /
 RUN /install-libarchive.sh
+
+RUN curl -L https://swift.org/keys/all-keys.asc | gpg --import
 
 # tools
 RUN mkdir -p $HOME/.tools

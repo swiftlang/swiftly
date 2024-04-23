@@ -64,10 +64,13 @@ struct Update: SwiftlyCommand {
     )
     var assumeYes: Bool = false
 
+    @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
+    var verify = true
+
     public var httpClient = SwiftlyHTTPClient()
 
     private enum CodingKeys: String, CodingKey {
-        case toolchain, assumeYes
+        case toolchain, assumeYes, verify
     }
 
     public mutating func run() async throws {
@@ -104,7 +107,8 @@ struct Update: SwiftlyCommand {
             version: newToolchain,
             &config,
             self.httpClient,
-            useInstalledToolchain: config.inUse == parameters.oldToolchain
+            useInstalledToolchain: config.inUse == parameters.oldToolchain,
+            verifySignature: self.verify
         )
 
         try await Uninstall.execute(parameters.oldToolchain, &config)

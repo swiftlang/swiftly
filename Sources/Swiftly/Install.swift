@@ -56,7 +56,7 @@ struct Install: SwiftlyCommand {
     ))
     var token: String?
 
-    @Flag(inversion: .prefixedNo, help: "Skip PGP verification of the installed toolchain's signature.")
+    @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
     public var httpClient = SwiftlyHTTPClient()

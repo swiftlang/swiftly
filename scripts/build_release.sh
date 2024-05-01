@@ -5,11 +5,11 @@ set -o errexit
 version="$1"
 
 if [[ -z "$version" ]]; then
-    echo "Usage: build.sh <version tag>"
+    echo "Usage: build_release.sh <version tag>"
     exit 1
 fi
 
-raw_arch="$(uname --machine)"
+raw_arch="$(uname -m)"
 case "$raw_arch" in
     "x86_64")
         arch="x86_64"
@@ -20,7 +20,7 @@ case "$raw_arch" in
         ;;
 
     *)
-        echo "Error: Unsupported CPU architecture: $RAW_ARCH"
+        echo "Error: Unsupported CPU architecture: $raw_arch"
         ;;
 esac
 

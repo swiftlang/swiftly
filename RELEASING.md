@@ -1,6 +1,6 @@
 # Releasing
 
-Swiftly and the swiftly-install release script can be released separate from each other. Below is instructions for releasing each.
+Swiftly and the swiftly-install release script have different release schedules and their version numbers do not correspond. Below is instructions for releasing each.
 
 ## Releasing swiftly
 

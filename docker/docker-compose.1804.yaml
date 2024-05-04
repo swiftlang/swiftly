@@ -6,7 +6,7 @@ services:
     image: swiftly:18.04-test
     build:
       args:
-        base_image: "swift:5.8-bionic"
+        base_image: "swift:5.10-bionic"
 
   test:
     image: swiftly:18.04-test

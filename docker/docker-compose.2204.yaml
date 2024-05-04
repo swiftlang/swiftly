@@ -6,7 +6,7 @@ services:
     image: swiftly:22.04-test
     build:
       args:
-        base_image: "swift:5.8-jammy"
+        base_image: "swift:5.10-jammy"
 
   test:
     image: swiftly:22.04-test

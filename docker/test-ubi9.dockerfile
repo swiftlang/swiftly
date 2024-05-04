@@ -1,4 +1,4 @@
-ARG base_image=swift:5.8-rhel-ubi9
+ARG base_image=swift:5.10-rhel-ubi9
 FROM $base_image
 # needed to do again after FROM due to docker limitation
 ARG swift_version

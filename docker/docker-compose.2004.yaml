@@ -6,7 +6,7 @@ services:
     image: swiftly:20.04-test
     build:
       args:
-        base_image: "swift:5.8-focal"
+        base_image: "swift:5.10-focal"
 
   test:
     image: swiftly:20.04-test

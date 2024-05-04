@@ -8,7 +8,7 @@ services:
       context: ..
       dockerfile: docker/test-amazonlinux2.dockerfile
       args:
-        base_image: "swift:5.8-amazonlinux2"
+        base_image: "swift:5.10-amazonlinux2"
 
   test:
     image: swiftly:amazonlinux2-test

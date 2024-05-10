@@ -31,8 +31,7 @@ final class SelfUpdateTests: SwiftlyTests {
                 try buffer.writeJSONEncodable(nextRelease)
                 return HTTPClientResponse(body: .bytes(buffer))
             case "github.com":
-                var buffer = ByteBuffer()
-                buffer.writeString(latestVersion)
+                let buffer = ByteBuffer(string: latestVersion)
                 return HTTPClientResponse(body: .bytes(buffer))
             default:
                 throw SwiftlyTestError(message: "unknown url host: \(String(describing: url.host))")
@@ -43,7 +42,7 @@ final class SelfUpdateTests: SwiftlyTests {
     func runSelfUpdateTest(latestVersion: String, shouldUpdate: Bool = true) async throws {
         try await self.withTestHome {
             let swiftlyURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
-            try "old".data(using: .utf8)!.write(to: swiftlyURL)
+            try Data("old".utf8).write(to: swiftlyURL)
 
             var update = try self.parseCommand(SelfUpdate.self, ["self-update"])
             update.httpClient = Self.makeMockHTTPClient(latestVersion: latestVersion)
@@ -52,9 +51,9 @@ final class SelfUpdateTests: SwiftlyTests {
             let swiftly = try Data(contentsOf: swiftlyURL)
 
             if shouldUpdate {
-                XCTAssertEqual(String(data: swiftly, encoding: .utf8), latestVersion)
+                XCTAssertEqual(String(decoding: swiftly, as: UTF8.self), latestVersion)
             } else {
-                XCTAssertEqual(String(data: swiftly, encoding: .utf8), "old")
+                XCTAssertEqual(String(decoding: swiftly, as: UTF8.self), "old")
             }
         }
     }
@@ -74,7 +73,7 @@ final class SelfUpdateTests: SwiftlyTests {
     func testSelfUpdateIntegration() async throws {
         try await self.withTestHome {
             let swiftlyURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
-            try "old".data(using: .utf8)!.write(to: swiftlyURL)
+            try Data("old".utf8).write(to: swiftlyURL)
 
             var update = try self.parseCommand(SelfUpdate.self, ["self-update"])
             try await update.run()

@@ -91,7 +91,7 @@ struct ListAvailable: SwiftlyCommand {
 
             let message = "Available \(modifier) toolchains"
             SwiftlyCore.print(message)
-            SwiftlyCore.print(String(repeating: "-", count: message.utf8.count))
+            SwiftlyCore.print(String(repeating: "-", count: message.count))
             for toolchain in toolchains {
                 printToolchain(toolchain)
             }

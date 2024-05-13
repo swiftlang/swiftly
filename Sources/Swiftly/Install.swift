@@ -121,24 +121,18 @@ struct Install: SwiftlyCommand {
             }
 
             url += "swift-\(versionString)-release/"
-            url += "\(platformString)/"
-            url += "swift-\(versionString)-RELEASE/"
-            url += "swift-\(versionString)-RELEASE-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
         case let .snapshot(release):
-            let snapshotString: String
             switch release.branch {
             case let .release(major, minor):
                 url += "swift-\(major).\(minor)-branch/"
-                snapshotString = "swift-\(major).\(minor)-DEVELOPMENT-SNAPSHOT"
             case .main:
                 url += "development/"
-                snapshotString = "swift-DEVELOPMENT-SNAPSHOT"
             }
-
-            url += "\(platformString)/"
-            url += "\(snapshotString)-\(release.date)-a/"
-            url += "\(snapshotString)-\(release.date)-a-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
         }
+
+        url += "\(platformString)/"
+        url += "\(version.identifier)/"
+        url += "\(version.identifier)-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
 
         guard let url = URL(string: url) else {
             throw Error(message: "Invalid toolchain URL: \(url)")
@@ -194,6 +188,7 @@ struct Install: SwiftlyCommand {
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)
 
         config.installedToolchains.insert(version)
+
         try config.save()
 
         // If this is the first installed toolchain, mark it as in-use regardless of whether the

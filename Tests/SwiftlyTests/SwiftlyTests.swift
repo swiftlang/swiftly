@@ -6,6 +6,10 @@ import NIO
 @testable import SwiftlyCore
 import XCTest
 
+#if os(macOS)
+import MacOSPlatform
+#endif
+
 struct SwiftlyTestError: LocalizedError {
     let message: String
 }
@@ -38,6 +42,18 @@ class SwiftlyTests: XCTestCase {
             return v
         }
 
+#if os(macOS)
+        return Config(
+            inUse: nil,
+            installedToolchains: [],
+            platform: Config.PlatformDefinition(
+                name: "xcode",
+                nameFull: "osx",
+                namePretty: "macOS",
+                architecture: nil
+            )
+        )
+#else
         return Config(
             inUse: nil,
             installedToolchains: [],
@@ -48,6 +64,7 @@ class SwiftlyTests: XCTestCase {
                 architecture: try? getEnv("SWIFTLY_PLATFORM_ARCH")
             )
         )
+#endif
     }
 
     func parseCommand<T: ParsableCommand>(_ commandType: T.Type, _ arguments: [String]) throws -> T {
@@ -419,6 +436,7 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
         return HTTPClientResponse(body: .bytes(ByteBuffer(data: mockedToolchain)))
     }
 
+#if os(Linux)
     func makeMockedToolchain(toolchain: ToolchainVersion) throws -> Data {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
         let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
@@ -461,4 +479,67 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
 
         return try Data(contentsOf: archive)
     }
+
+#elseif os(macOS)
+
+    func makeMockedToolchain(toolchain: ToolchainVersion) throws -> Data {
+        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
+        let toolchainBinDir = toolchainDir.appendingPathComponent("usr/bin", isDirectory: true)
+
+        try FileManager.default.createDirectory(
+            at: toolchainBinDir,
+            withIntermediateDirectories: true
+        )
+
+        defer {
+            try? FileManager.default.removeItem(at: tmp)
+        }
+
+        for executable in self.executables {
+            let executablePath = toolchainBinDir.appendingPathComponent(executable)
+
+            let script = """
+            #!/usr/bin/env sh
+
+            echo '\(toolchain.name)'
+            """
+
+            let data = Data(script.utf8)
+            try data.write(to: executablePath)
+
+            // make the file executable
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+        }
+
+        // Add a skeletal Info.plist at the top
+        let encoder = PropertyListEncoder()
+        encoder.outputFormat = .xml
+        let pkgInfo = SwiftPkgInfo(CFBundleIdentifier: "org.swift.swift.mock.\(toolchain.name)")
+        let data = try encoder.encode(pkgInfo)
+        try data.write(to: toolchainDir.appendingPathComponent("Info.plist"))
+
+        let pkg = tmp.appendingPathComponent("toolchain.pkg")
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        task.arguments = [
+            "pkgbuild",
+            "--root",
+            toolchainDir.path,
+            "--install-location",
+            "Library/Developer/Toolchains/\(toolchain.identifier).xctoolchain",
+            "--version",
+            "\(toolchain.name)",
+            "--identifier",
+            pkgInfo.CFBundleIdentifier,
+            pkg.path,
+        ]
+        try task.run()
+        task.waitUntilExit()
+
+        return try Data(contentsOf: pkg)
+    }
+
+#endif
 }

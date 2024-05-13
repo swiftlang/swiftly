@@ -56,7 +56,12 @@ public struct Config: Codable, Equatable {
             error: \"\(error)\".
             To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
             """
+#if !os(macOS)
             throw Error(message: msg)
+#else
+            let pd = PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS", architecture: nil)
+            return Config(inUse: nil, installedToolchains: [], platform: pd)
+#endif
         }
     }
 

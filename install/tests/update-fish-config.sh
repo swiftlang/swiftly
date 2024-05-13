@@ -34,5 +34,4 @@ if [[ ! "$(cat $XDG_CONFIG_HOME/fish/conf.d/swiftly.fish)" =~ "swiftly/env.fish"
    test_fail "install did not update \$XDG_CONFIG_HOME/fish/conf.d/swiftly.fish"
 fi
 
-
 test_pass

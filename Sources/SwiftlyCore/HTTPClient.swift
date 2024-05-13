@@ -65,9 +65,8 @@ public struct SwiftlyHTTPClient {
 
         guard case .ok = response.status else {
             var message = "received status \"\(response.status)\" when reaching \(url)"
-            if let json = response.buffer.getString(at: 0, length: response.buffer.readableBytes) {
-                message += ": \(json)"
-            }
+            let json = String(buffer: response.buffer)
+            message += ": \(json)"
             throw Error(message: message)
         }
 
@@ -186,9 +185,5 @@ public struct SwiftlyHTTPClient {
 }
 
 private class HTTPClientWrapper {
-    fileprivate let inner = HTTPClient(eventLoopGroupProvider: .singleton)
-
-    deinit {
-        try? self.inner.syncShutdown()
-    }
+    fileprivate let inner = HTTPClient.shared
 }

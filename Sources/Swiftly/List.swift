@@ -70,7 +70,7 @@ struct List: SwiftlyCommand {
 
             let message = "Installed \(modifier) toolchains"
             SwiftlyCore.print(message)
-            SwiftlyCore.print(String(repeating: "-", count: message.utf8.count))
+            SwiftlyCore.print(String(repeating: "-", count: message.count))
             for toolchain in toolchains {
                 printToolchain(toolchain)
             }

@@ -230,7 +230,7 @@ final class UseTests: SwiftlyTests {
             // Add an unrelated executable to the binary directory.
             let existingFileName = "existing"
             let existingExecutableURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(existingFileName)
-            let data = "hello world\n".data(using: .utf8)!
+            let data = Data("hello world\n".utf8)
             try data.write(to: existingExecutableURL)
 
             for (toolchain, files) in spec {
@@ -264,7 +264,7 @@ final class UseTests: SwiftlyTests {
             let existingText = "existing"
             for fileName in existingExecutables {
                 let existingExecutableURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(fileName)
-                let data = existingText.data(using: .utf8)!
+                let data = Data(existingText.utf8)
                 try data.write(to: existingExecutableURL)
             }
 

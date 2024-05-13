@@ -443,7 +443,7 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
             echo '\(toolchain.name)'
             """
 
-            let data = script.data(using: .utf8)!
+            let data = Data(script.utf8)
             try data.write(to: executablePath)
 
             // make the file executable

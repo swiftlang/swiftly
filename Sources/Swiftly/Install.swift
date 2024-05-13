@@ -194,6 +194,7 @@ struct Install: SwiftlyCommand {
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)
 
         config.installedToolchains.insert(version)
+
         try config.save()
 
         // If this is the first installed toolchain, mark it as in-use regardless of whether the

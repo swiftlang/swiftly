@@ -88,7 +88,12 @@ extension Platform {
 
     /// The "toolchains" subdirectory of swiftly's home directory. Contains the Swift toolchains managed by swiftly.
     public var swiftlyToolchainsDir: URL {
+        #if !os(macOS)
         self.swiftlyHomeDir.appendingPathComponent("toolchains", isDirectory: true)
+        #else
+        SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("Library/Developer/Toolchains", isDirectory: true) }
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Developer/Toolchains", isDirectory: true)
+        #endif
     }
 
     /// The URL of the configuration file in swiftly's home directory.

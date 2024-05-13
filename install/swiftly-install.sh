@@ -330,18 +330,27 @@ if ! has_command "curl" ; then
     exit 1
 fi
 
-if ! verify_getopt_install ; then
-    echo "Error: getopt must be installed from the util-linux package to run swiftly-install"
-    exit 1
+IS_MACOS="false"
+if has_command "sw_vers"; then
+    IS_MACOS="true"
+fi
+
+if [ "$IS_MACOS" == "false" ]; then
+    if ! verify_getopt_install ; then
+        echo "Error: getopt must be installed from the util-linux package to run swiftly-install"
+        exit 1
+    fi
 fi
 
 set -o errexit
 shopt -s extglob
 
-short_options='yhvp:'
-long_options='disable-confirmation,no-modify-profile,no-install-system-deps,help,version,platform:,overwrite'
+if [ "$IS_MACOS" == "true" ]; then
+    args=$(getopt ynohvp: $*)
+else
+    args=$(getopt --options ynohvp: --longoptions disable-confirmation,no-modify-profile,no-install-system-deps,help,version,platform:,overwrite --name swiftly-install -- "${@}")
+fi
 
-args=$(getopt --options "$short_options" --longoptions "$long_options" --name "swiftly-install" -- "${@}")
 eval "set -- ${args}"
 
 while [ true ]; do
@@ -356,20 +365,24 @@ USAGE:
 
 OPTIONS:
     -y, --disable-confirmation  Disable confirmation prompts.
-    --no-modify-profile         Do not attempt to modify the profile file to set environment 
+    -n, --no-modify-profile     Do not attempt to modify the profile file to set environment
                                 variables (e.g. PATH) on login.
-    --no-install-system-deps    Do not attempt to install Swift's required system dependencies.
-    --no-import-pgp-keys        Do not attempt to import Swift's PGP keys.
+    --no-install-system-deps    Do not attempt to install Swift's required system dependencies (LINUX ONLY)
+    --no-import-pgp-keys        Do not attempt to import Swift's PGP keys. (LINUX ONLY)
     -p, --platform <platform>   Specifies which platform's toolchains swiftly will download. If
                                 unspecified, the platform will be automatically detected. Available
                                 options are "ubuntu22.04", "ubuntu20.04", "ubuntu18.04", "rhel9", and
-                                "amazonlinux2".
-    --overwrite                 Overwrite the existing swiftly installation found at the configured
+                                "amazonlinux2". (LINUX ONLY)
+    -o, --overwrite             Overwrite the existing swiftly installation found at the configured
                                 SWIFTLY_HOME, if any. If this option is unspecified and an existing
                                 installation is found, the swiftly executable will be updated, but
                                 the rest of the installation will not be modified.
     -h, --help                  Prints help information.
-    --version                   Prints version information.
+    -v, --version               Prints version information.
+
+NOTES:
+    macOS only works with the short options (e.g. -v and not --version).
+
 EOF
             exit 0
             ;;
@@ -379,7 +392,7 @@ EOF
             shift
             ;;
 
-        "--no-modify-profile")
+        "--no-modify-profile" | "-n")
             MODIFY_PROFILE="false"
             shift
             ;;
@@ -394,7 +407,7 @@ EOF
             shift
             ;;
 
-        "--version")
+        "--version" | "-v")
             echo "$SWIFTLY_INSTALL_VERSION"
             exit 0
             ;;
@@ -429,7 +442,7 @@ EOF
             shift 2
             ;;
 
-        "--overwrite")
+        "--overwrite" | "-o")
             overwrite_existing_intallation="true"
             shift
             ;;
@@ -438,16 +451,20 @@ EOF
             shift
             break
             ;;
-
         *)
-            echo "Error: unrecognized option \"$arg\""
+            echo "Error: unrecognized option \"$1\""
+            if [ "$IS_MACOS" == "true" ]; then
+                echo "Note that on macOS you must use the short options (e.g. -v, not --version)."
+            fi
             exit 1
             ;;
     esac
 done
 
-if [[ -z "$PLATFORM_NAME" ]]; then
-    detect_platform
+if [ "$IS_MACOS" == "false" ]; then
+    if [[ -z "$PLATFORM_NAME" ]]; then
+        detect_platform
+    fi
 fi
 
 RAW_ARCH="$(uname -m)"
@@ -468,7 +485,8 @@ case "$RAW_ARCH" in
         ;;
 esac
 
-JSON_OUT=$(cat <<EOF
+if [ "$IS_MACOS" == "false" ]; then
+    JSON_OUT=$(cat <<EOF
 {
   "platform": {
     "name": "$PLATFORM_NAME",
@@ -480,7 +498,8 @@ JSON_OUT=$(cat <<EOF
   "inUse": null
 }
 EOF
-)
+    )
+fi
 
 PROFILE_FILE="$HOME/.profile"
 case "$SHELL" in
@@ -566,19 +585,27 @@ if [[ -f "$HOME_DIR/config.json" ]]; then
     detected_existing_installation="true"
     if [[ "$overwrite_existing_intallation" == "true" ]]; then
         echo "Overwriting existing swiftly installation at $(replace_home_path $HOME_DIR)"
-        find $BIN_DIR -lname "$HOME_DIR/toolchains/**/bin/*" -delete
+        if [ "$IS_MACOS" == "false" ]; then
+            find $BIN_DIR -lname "$HOME_DIR/toolchains/**/bin/*" -delete
+        else
+            rm "$HOME_DIR/config.json"
+        fi
         rm -r $HOME_DIR
     else
         echo "Updating existing swiftly installation at $(replace_home_path $HOME_DIR)"
     fi
 fi
 
-mkdir -p $HOME_DIR/toolchains
-mkdir -p $BIN_DIR
+mkdir -p "$BIN_DIR"
 
-EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
+if [ "$IS_MACOS" == "false" ]; then
+    EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
+else
+    EXECUTABLE_NAME="swiftly-$ARCH-macos-osx"
+fi
 DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
 echo "Downloading swiftly from $DOWNLOAD_URL..."
+
 curl \
     --retry 3 \
     --location \
@@ -617,7 +644,10 @@ EOF
 esac
 
 if [[ "$detected_existing_installation" != "true" || "$overwrite_existing_intallation" == "true" ]]; then
-    echo "$JSON_OUT" > "$HOME_DIR/config.json"
+    mkdir -p "$HOME_DIR"
+    if [ "$IS_MACOS" == "false" ]; then
+        echo "$JSON_OUT" > "$HOME_DIR/config.json"
+    fi
 
     # Verify the downloaded executable works. The script will exit if this fails due to errexit.
     SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null
@@ -632,19 +662,23 @@ if [[ "$detected_existing_installation" != "true" || "$overwrite_existing_intall
     fi
 fi
 
-if [[ "$SWIFTLY_INSTALL_SYSTEM_DEPS" != "false" ]]; then
-    echo ""
-    echo "Installing Swift's system dependencies via $package_manager (note: this may require root access)..."
-    install_system_deps
+if [ "$IS_MACOS" == "false" ]; then
+    if [[ "$SWIFTLY_INSTALL_SYSTEM_DEPS" != "false" ]]; then
+        echo ""
+        echo "Installing Swift's system dependencies via $package_manager (note: this may require root access)..."
+        install_system_deps
+    fi
 fi
 
-if [[ "$swiftly_import_pgp_keys" != "false" ]]; then
-    if has_command gpg ; then
-        echo ""
-        echo "Importing Swift's PGP keys..."
-        curl --silent --retry 3 --location --fail https://swift.org/keys/all-keys.asc | gpg --import -
-    else
-        echo "gpg not installed, skipping import of Swift's PGP keys."
+if [ "$IS_MACOS" == "false" ]; then
+    if [[ "$swiftly_import_pgp_keys" != "false" ]]; then
+        if has_command gpg ; then
+            echo ""
+            echo "Importing Swift's PGP keys..."
+            curl --silent --retry 3 --location --fail https://swift.org/keys/all-keys.asc | gpg --import -
+        else
+            echo "gpg not installed, skipping import of Swift's PGP keys."
+        fi
     fi
 fi
 

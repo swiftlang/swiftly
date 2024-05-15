@@ -600,6 +600,7 @@ end
 EOF
                )
         ENV_FILE="env.fish"
+        SOURCE_LINE="source $(replace_home_path $HOME_DIR)/$ENV_FILE"
         ;;
     *)
         ENV_OUT=$(cat <<EOF
@@ -611,6 +612,7 @@ fi
 EOF
                )
         ENV_FILE="env.sh"
+        SOURCE_LINE=". $(replace_home_path $HOME_DIR)/$ENV_FILE"
         ;;
 esac
 
@@ -623,8 +625,6 @@ if [[ "$detected_existing_installation" != "true" || "$overwrite_existing_intall
     echo "$ENV_OUT" > "$HOME_DIR/$ENV_FILE"
 
     if [[ "$MODIFY_PROFILE" == "true" ]]; then
-        SOURCE_LINE=". $(replace_home_path $HOME_DIR)/$ENV_FILE"
-
         # Only append the line if it isn't in .profile already.
         if [[ ! -f "$PROFILE_FILE" ]] || [[ ! "$(cat $PROFILE_FILE)" =~ "$SOURCE_LINE" ]]; then
             echo "$SOURCE_LINE" >> "$PROFILE_FILE"
@@ -658,7 +658,7 @@ if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR
     fi
     echo "To begin using swiftly from your current shell, first run the following command:"
     echo ""
-    echo "    . $(replace_home_path $HOME_DIR)/$ENV_FILE"
+    echo "    $SOURCE_LINE"
     echo ""
     echo "Then to install the latest version of Swift, run 'swiftly install latest'"
 else

@@ -33,12 +33,15 @@ struct List: SwiftlyCommand {
     ))
     var toolchainSelector: String?
 
+    @OptionGroup var root: GlobalOptions
+
     internal mutating func run() async throws {
+        // First, validate the installation of swiftly
+        let config = try await validate(root)
+
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
-
-        let config = try Config.load()
 
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
         let activeToolchain = config.inUse

@@ -42,8 +42,11 @@ internal struct Use: SwiftlyCommand {
     ))
     var toolchain: String?
 
+    @OptionGroup var root: GlobalOptions
+
     internal mutating func run() async throws {
-        var config = try Config.load()
+        // First, validate the installation of swiftly
+        var config = try await validate(root)
 
         guard let toolchain = self.toolchain else {
             if let inUse = config.inUse {

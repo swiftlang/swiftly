@@ -41,14 +41,11 @@ struct Uninstall: SwiftlyCommand {
     ))
     var toolchain: String
 
-    @Flag(
-        name: [.long, .customShort("y")],
-        help: "Uninstall all selected toolchains without prompting for confirmation."
-    )
-    var assumeYes: Bool = false
+    @OptionGroup var root: GlobalOptions
 
     mutating func run() async throws {
-        let startingConfig = try Config.load()
+        // First, validate the installation of swiftly
+        let startingConfig = try await validate(root)
 
         let toolchains: [ToolchainVersion]
         if self.toolchain == "all" {
@@ -67,7 +64,7 @@ struct Uninstall: SwiftlyCommand {
             return
         }
 
-        if !self.assumeYes {
+        if !root.assumeYes {
             SwiftlyCore.print("The following toolchains will be uninstalled:")
 
             for toolchain in toolchains {
@@ -83,7 +80,7 @@ struct Uninstall: SwiftlyCommand {
         SwiftlyCore.print()
 
         for toolchain in toolchains {
-            var config = try Config.load()
+            var config = try await Config.load(disableConfirmation: true)
 
             // If the in-use toolchain was one of the uninstalled toolchains, use a new toolchain.
             if toolchain == config.inUse {

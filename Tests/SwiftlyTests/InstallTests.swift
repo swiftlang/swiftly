@@ -14,7 +14,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "latest"])
             try await cmd.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
 
             XCTAssertTrue(!config.installedToolchains.isEmpty)
 
@@ -43,7 +43,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "5.7"])
             try await cmd.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
 
             XCTAssertTrue(!config.installedToolchains.isEmpty)
 
@@ -123,7 +123,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot"])
             try await cmd.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
 
             XCTAssertTrue(!config.installedToolchains.isEmpty)
 
@@ -150,7 +150,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot"])
             try await cmd.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
 
             XCTAssertTrue(!config.installedToolchains.isEmpty)
 
@@ -199,7 +199,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", version])
             try await cmd.run()
 
-            let before = try Config.load()
+            let before = try await Config.load(disableConfirmation: true)
 
             let startTime = Date()
             cmd = try self.parseCommand(Install.self, ["install", version])
@@ -208,7 +208,7 @@ final class InstallTests: SwiftlyTests {
             // Assert that swiftly didn't attempt to download a new toolchain.
             XCTAssertTrue(startTime.timeIntervalSinceNow.magnitude < 5)
 
-            let after = try Config.load()
+            let after = try await Config.load(disableConfirmation: true)
             XCTAssertEqual(before, after)
         }
     }
@@ -239,7 +239,7 @@ final class InstallTests: SwiftlyTests {
         }
 
         try await self.withTestHome {
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
             XCTAssertTrue(config.inUse == nil)
             try await validateInUse(expected: nil)
 

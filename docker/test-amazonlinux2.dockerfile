@@ -6,7 +6,7 @@ ARG ubuntu_version
 
 # dependencies
 RUN yum install -y \
-    curl \
+    ca-certificates \
     gcc \
     gcc-c++ \
     make \

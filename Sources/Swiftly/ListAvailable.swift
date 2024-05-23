@@ -35,13 +35,18 @@ struct ListAvailable: SwiftlyCommand {
     ))
     var toolchainSelector: String?
 
+    @OptionGroup var root: GlobalOptions
+
     public var httpClient = SwiftlyHTTPClient()
 
     private enum CodingKeys: String, CodingKey {
-        case toolchainSelector
+        case toolchainSelector, root
     }
 
     internal mutating func run() async throws {
+        // First, validate the installation of swiftly
+        let config = try await validate(root)
+
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
@@ -56,8 +61,6 @@ struct ListAvailable: SwiftlyCommand {
         let toolchains = try await self.httpClient.getReleaseToolchains()
             .map(ToolchainVersion.stable)
             .filter { selector?.matches(toolchain: $0) ?? true }
-
-        let config = try Config.load()
 
         let installedToolchains = Set(config.listInstalledToolchains(selector: selector))
         let activeToolchain = config.inUse

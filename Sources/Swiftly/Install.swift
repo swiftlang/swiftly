@@ -11,6 +11,8 @@ struct Install: SwiftlyCommand {
         abstract: "Install a new toolchain."
     )
 
+    @OptionGroup var root: GlobalOptions
+
     @Argument(help: ArgumentHelp(
         "The version of the toolchain to install.",
         discussion: """
@@ -62,14 +64,16 @@ struct Install: SwiftlyCommand {
     public var httpClient = SwiftlyHTTPClient()
 
     private enum CodingKeys: String, CodingKey {
-        case version, token, use, verify
+        case version, token, use, verify, root
     }
 
     mutating func run() async throws {
+        // First, validate the installation of swiftly
+        var config = try await validate(root)
+
         let selector = try ToolchainSelector(parsing: self.version)
         self.httpClient.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
-        var config = try Config.load()
         try await Self.execute(
             version: toolchainVersion,
             &config,
@@ -92,7 +96,7 @@ struct Install: SwiftlyCommand {
         }
 
         // Ensure the system is set up correctly to install a toolchain before downloading it.
-        try Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(requireSignatureValidation: verifySignature)
+        try await Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(httpClient: httpClient, requireSignatureValidation: verifySignature)
 
         SwiftlyCore.print("Installing \(version)")
 

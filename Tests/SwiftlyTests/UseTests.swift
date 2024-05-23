@@ -12,7 +12,8 @@ final class UseTests: SwiftlyTests {
         var use = try self.parseCommand(Use.self, ["use", argument])
         try await use.run()
 
-        XCTAssertEqual(try Config.load().inUse, expectedVersion)
+        let config = try await Config.load(disableConfirmation: true)
+        XCTAssertEqual(config.inUse, expectedVersion)
 
         let toolchainVersion = try self.getMockedToolchainVersion(
             at: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift")
@@ -174,13 +175,13 @@ final class UseTests: SwiftlyTests {
             var use = try self.parseCommand(Use.self, ["use", "latest"])
             try await use.run()
 
-            var config = try Config.load()
+            var config = try await Config.load(disableConfirmation: true)
             XCTAssertEqual(config.inUse, nil)
 
             use = try self.parseCommand(Use.self, ["use", "5.6.0"])
             try await use.run()
 
-            config = try Config.load()
+            config = try await Config.load(disableConfirmation: true)
             XCTAssertEqual(config.inUse, nil)
         }
     }
@@ -202,7 +203,7 @@ final class UseTests: SwiftlyTests {
     /// Tests that the `use` command works with all the installed toolchains in this test harness.
     func testUseAll() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
 
             for toolchain in config.installedToolchains {
                 try await self.useAndValidate(
@@ -238,9 +239,10 @@ final class UseTests: SwiftlyTests {
                 try await use.run()
 
                 // Verify that only the symlinks for the active toolchain remain.
-                let symlinks = try FileManager.default.contentsOfDirectory(
+                var symlinks = try FileManager.default.contentsOfDirectory(
                     atPath: Swiftly.currentPlatform.swiftlyBinDir.path
                 )
+                symlinks.removeAll(where: { $0 == "swiftly"} ) // Swiftly is not a symlink under consideration
                 XCTAssertEqual(symlinks.sorted(), (files + [existingFileName]).sorted())
 
                 // Verify that any all the symlinks point to the right toolchain.
@@ -287,7 +289,7 @@ final class UseTests: SwiftlyTests {
                 XCTAssertEqual(contents, existingText)
             }
 
-            let nConfig = try Config.load()
+            let nConfig = try await Config.load(disableConfirmation: true)
             XCTAssertEqual(nConfig.inUse, nil)
 
             let yOutput = try await use.runWithMockedIO(input: ["y"])
@@ -302,7 +304,7 @@ final class UseTests: SwiftlyTests {
                 XCTAssertNotEqual(contents, existingText)
             }
 
-            let yConfig = try Config.load()
+            let yConfig = try await Config.load(disableConfirmation: true)
             XCTAssertEqual(yConfig.inUse, toolchain)
         }
     }

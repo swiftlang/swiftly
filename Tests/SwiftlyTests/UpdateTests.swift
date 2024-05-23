@@ -11,13 +11,14 @@ final class UpdateTests: SwiftlyTests {
         try await self.withTestHome {
             try await self.installMockedToolchain(selector: .latest)
 
-            let beforeUpdateConfig = try Config.load()
+            let beforeUpdateConfig = try await Config.load(disableConfirmation: true)
 
             var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify"])
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            XCTAssertEqual(try Config.load(), beforeUpdateConfig)
+            let config = try await Config.load(disableConfirmation: true)
+            XCTAssertEqual(config, beforeUpdateConfig)
             try await validateInstalledToolchains(
                 beforeUpdateConfig.installedToolchains,
                 description: "Updating latest toolchain should have no effect"
@@ -47,7 +48,7 @@ final class UpdateTests: SwiftlyTests {
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
             let inUse = config.inUse!.asStableRelease!
 
             XCTAssertGreaterThan(inUse, .init(major: 5, minor: 0, patch: 0))
@@ -67,7 +68,7 @@ final class UpdateTests: SwiftlyTests {
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
             let inUse = config.inUse!.asStableRelease!
 
             XCTAssertEqual(inUse.major, 5)
@@ -89,7 +90,7 @@ final class UpdateTests: SwiftlyTests {
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
             let inUse = config.inUse!.asStableRelease!
 
             XCTAssertEqual(inUse.major, 5)
@@ -113,7 +114,7 @@ final class UpdateTests: SwiftlyTests {
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
             let inUse = config.inUse!.asStableRelease!
             XCTAssertGreaterThan(inUse, .init(major: 5, minor: 0, patch: 0))
             XCTAssertEqual(inUse.major, 5)
@@ -147,7 +148,7 @@ final class UpdateTests: SwiftlyTests {
                 update.httpClient = self.mockHttpClient
                 try await update.run()
 
-                let config = try Config.load()
+                let config = try await Config.load(disableConfirmation: true)
                 let inUse = config.inUse!.asSnapshot!
                 XCTAssertGreaterThan(inUse, .init(branch: branch, date: date))
                 XCTAssertEqual(inUse.branch, branch)
@@ -171,7 +172,7 @@ final class UpdateTests: SwiftlyTests {
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            let config = try Config.load()
+            let config = try await Config.load(disableConfirmation: true)
             let inUse = config.inUse!.asStableRelease!
             XCTAssertEqual(inUse.major, 5)
             XCTAssertEqual(inUse.minor, 0)
@@ -202,7 +203,7 @@ final class UpdateTests: SwiftlyTests {
                 update.httpClient = self.mockHttpClient
                 try await update.run()
 
-                let config = try Config.load()
+                let config = try await Config.load(disableConfirmation: true)
                 let inUse = config.inUse!.asSnapshot!
 
                 XCTAssertEqual(inUse.branch, branch)

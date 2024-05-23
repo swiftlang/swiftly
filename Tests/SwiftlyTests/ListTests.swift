@@ -52,7 +52,9 @@ final class ListTests: SwiftlyTests {
         }
 
         // Ensure extra toolchains weren't accidentally included in the output.
-        guard parsedToolchains.count == output.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") }).count else {
+        // Note that swiftly produces output during self installation that might match "Swift" because "Swift(ly)" and so
+        // the extra space is important to filter those from the standard output.
+        guard parsedToolchains.count == output.filter({ $0.hasPrefix("Swift ") || $0.contains("-snapshot") }).count else {
             throw SwiftlyTestError(message: "unexpected listed toolchains in \(output)")
         }
 

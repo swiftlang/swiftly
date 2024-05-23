@@ -21,13 +21,32 @@ public struct Linux: Platform {
         "tar.gz"
     }
 
-    public func isSystemDependencyPresent(_: SystemDependency) -> Bool {
-        true
+    public func isSystemDependencyPresent(_ dependency: SystemDependency) -> Bool {
+        switch dependency {
+        case .caCertificates:
+            // Check if the root CA certificates are installed on this system for NIOSSL to use.
+            // This list comes from LinuxCABundle.swift in NIOSSL.
+            var foundTrustedCAs = false
+            for crtFile in ["/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt"] {
+                if URL(fileURLWithPath: crtFile).fileExists() {
+                    foundTrustedCAs = true
+                    break
+                }
+            }
+
+            if !foundTrustedCAs {
+                SwiftlyCore.print("The ca-certificates package is not installed. Swiftly won't be able to trust the sites to " +
+                    "perform its downloads. Please install the ca-certificates package and try again.")
+                return false
+            }
+
+            return true
+        }
     }
 
     private static let skipVerificationMessage: String = "To skip signature verification, specify the --no-verify flag."
 
-    public func verifySystemPrerequisitesForInstall(requireSignatureValidation: Bool) throws {
+    public func verifySystemPrerequisitesForInstall(httpClient: SwiftlyHTTPClient, requireSignatureValidation: Bool) async throws {
         // The only prerequisite at the moment is that gpg is installed and the Swift project's keys have been imported.
         guard requireSignatureValidation else {
             return
@@ -46,11 +65,25 @@ public struct Linux: Platform {
             "swift-infrastructure@swift.org",
             quiet: true
         )) != nil
-        guard foundKeys else {
-            throw Error(message: "Swift PGP keys not imported, cannot perform signature verification. " +
-                "To enable verification, import the keys with the following command: " +
-                "'wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -' " +
-                Self.skipVerificationMessage)
+
+        if !foundKeys {
+            SwiftlyCore.print("Importing Swift PGP keys...")
+            let tmpFile = getTempFilePath()
+            FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0600])
+            try await httpClient.downloadFile(
+                url: URL(string: "https://swift.org/keys/all-keys.asc")!,
+                to: tmpFile
+            )
+
+            do {
+                try self.runProgram(
+                    "gpg",
+                    "--import",
+                    tmpFile.path
+                )
+            } catch {
+                throw Error(message: "Failed to import Swift PGP keys: \(error)")
+            }
         }
 
         SwiftlyCore.print("Refreshing Swift PGP keys...")
@@ -71,10 +104,6 @@ public struct Linux: Platform {
     public func install(from tmpFile: URL, version: ToolchainVersion) throws {
         guard tmpFile.fileExists() else {
             throw Error(message: "\(tmpFile) doesn't exist")
-        }
-
-        if !self.swiftlyToolchainsDir.fileExists() {
-            try FileManager.default.createDirectory(at: self.swiftlyToolchainsDir, withIntermediateDirectories: false)
         }
 
         SwiftlyCore.print("Extracting toolchain...")
@@ -181,7 +210,8 @@ public struct Linux: Platform {
     public func currentToolchain() throws -> ToolchainVersion? { nil }
 
     public func getTempFilePath() -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        let tmpFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        return tmpFile
     }
 
     public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws {
@@ -221,6 +251,172 @@ public struct Linux: Platform {
         guard process.terminationStatus == 0 else {
             throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
         }
+    }
+
+    private func manualSelectPlatform(_ platformPretty: String?, _ architecture: String) -> PlatformDefinition {
+        if let platformPretty = platformPretty {
+            print("\(platformPretty) is not an officially supported platform, but the toolchains for another platform may still work on it.")
+        } else {
+            print("This platform could not be detected, but a toolchain for one of the supported platforms may work on it.")
+        }
+
+        print("""
+        Please select the platform to use for toolchain downloads:
+
+        0) Cancel
+        1) Ubuntu 22.04
+        2) Ubuntu 20.04
+        3) Ubuntu 18.04
+        4) RHEL 9
+        5) Amazon Linux 2
+        """)
+
+        let choice = SwiftlyCore.readLine(prompt: "> ") ?? "0"
+
+        switch choice {
+            case "1":
+                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04", architecture: architecture)
+            case "2":
+                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04", architecture: architecture)
+            case "3":
+                return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04", architecture: architecture)
+            case "4":
+                return PlatformDefinition(name: "ubi", nameFull: "ubi", namePretty: "RHEL 9", architecture: architecture)
+            case "5":
+                return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2", architecture: architecture)
+            default:
+                fatalError("Installation canceled")
+        }
+    }
+
+    public func detectPlatform(disableConfirmation: Bool) async throws -> PlatformDefinition {
+        #if arch(x86_64)
+        let architecture = "x86_64"
+        #elseif arch(arm64)
+        let architecture = "aarch64"
+        #else
+        fatalError("Unsupported processor architecture")
+        #endif
+
+        let osReleaseFiles = ["/etc/os-release", "/usr/lib/os-release"]
+        var releaseFile: String?
+        for file in osReleaseFiles {
+            if FileManager.default.fileExists(atPath: file) {
+                releaseFile = file
+                break
+            }
+        }
+
+        var platformPretty: String?
+
+        guard let releaseFile = releaseFile else {
+            let message = "Unable to detect the type of Linux OS and the release"
+            if disableConfirmation {
+                throw Error(message: message)
+            } else {
+                print(message)
+            }
+            return manualSelectPlatform(platformPretty, architecture)
+        }
+
+        let data = FileManager.default.contents(atPath: releaseFile)
+        guard let data = data else {
+            let message = "Unable to read release information from file \(releaseFile)"
+            if disableConfirmation {
+                throw Error(message: message)
+            } else {
+                print(message)
+            }
+            return manualSelectPlatform(platformPretty, architecture)
+        }
+
+        guard let releaseInfo = String(data: data, encoding: .utf8) else {
+            let message = "Unable to read release information from file \(releaseFile)"
+            if disableConfirmation {
+                throw Error(message: message)
+            } else {
+                print(message)
+            }
+            return manualSelectPlatform(platformPretty, architecture)
+        }
+ 
+        var id: String?
+        var idlike: String?
+        var versionID: String?
+        var ubuntuCodeName: String?
+        for info in releaseInfo.split(separator: "\n").map(String.init) {
+            if info.hasPrefix("ID=") {
+                id = String(info.dropFirst("ID=".count)).replacingOccurrences(of: "\"", with: "")
+            } else if info.hasPrefix("ID_LIKE=") {
+                idlike = String(info.dropFirst("ID_LINE=".count)).replacingOccurrences(of: "\"", with: "")
+            } else if info.hasPrefix("VERSION_ID=") {
+                versionID = String(info.dropFirst("VERSION_ID".count)).replacingOccurrences(of: "\"", with: "")
+            } else if info.hasPrefix("UBUNTU_CODENAME=") {
+                ubuntuCodeName = String(info.dropFirst("UBUNTU_CODENAME=".count)).replacingOccurrences(of: "\"", with: "")
+            } else if info.hasPrefix("PRETTY_NAME=") {
+                platformPretty = String(info.dropFirst("PRETTY_NAME=".count)).replacingOccurrences(of: "\"", with: "")
+            }
+        }
+
+        guard let id = id, let idlike = idlike else {
+            let message = "Unable to find release information from file \(releaseFile)"
+            if disableConfirmation {
+                throw Error(message: message)
+            } else {
+                print(message)
+            }
+            return manualSelectPlatform(platformPretty, architecture)
+        }
+
+        if (id+idlike).contains("amzn") {
+            guard let versionID = versionID, versionID == "2" else {
+                let message = "Unsupported version of Amazon Linux"
+                if disableConfirmation {
+                    throw Error(message: message)
+                } else {
+                    print(message)
+                }
+                return manualSelectPlatform(platformPretty, architecture)
+            }
+
+            return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2", architecture: architecture)
+        } else if (id+idlike).contains("ubuntu") {
+            if ubuntuCodeName == "jammy" {
+                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04", architecture: architecture)
+            } else if ubuntuCodeName == "focal" {
+                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04", architecture: architecture)
+            } else if ubuntuCodeName == "bionic" {
+                return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04", architecture: architecture)
+            } else {
+                let message = "Unsupported version of Ubuntu Linux"
+                if disableConfirmation {
+                    throw Error(message: message)
+                } else {
+                    print(message)
+                }
+                return manualSelectPlatform(platformPretty, architecture)
+            }
+        } else if (id+idlike).contains("rhel") {
+            guard let versionID = versionID, versionID.hasPrefix("9") else {
+                let message = "Unsupported version of RHEL"
+                if disableConfirmation {
+                    throw Error(message: message)
+                } else {
+                    print(message)
+                }
+                return manualSelectPlatform(platformPretty, architecture)
+            }
+
+            return PlatformDefinition(name: "ubi", nameFull: "ubi", namePretty: "RHEL 9", architecture: architecture)
+        }
+
+        let message = "Unsupported Linux platform"
+        if disableConfirmation {
+            throw Error(message: message)
+        } else {
+            print(message)
+        }
+        return manualSelectPlatform(platformPretty, architecture)
     }
 
     public static let currentPlatform: any Platform = Linux()

@@ -1,5 +1,35 @@
 import Foundation
 
+public struct PlatformDefinition: Codable, Equatable {
+    /// The name of the platform as it is used in the Swift download URLs.
+    /// For instance, for Ubuntu 16.04 this would return “ubuntu1604”.
+    /// For macOS / Xcode, this would return “xcode”.
+    public let name: String
+
+    /// The full name of the platform as it is used in the Swift download URLs.
+    /// For instance, for Ubuntu 16.04 this would return “ubuntu16.04”.
+    public let nameFull: String
+
+    /// A human-readable / pretty-printed version of the platform’s name, used for terminal
+    /// output and logging.
+    /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
+    public let namePretty: String
+
+    /// The CPU architecture of the platform. If omitted, assumed to be x86_64.
+    public let architecture: String?
+
+    public func getArchitecture() -> String {
+        self.architecture ?? "x86_64"
+    }
+
+    public init(name: String, nameFull: String, namePretty: String, architecture: String?) {
+        self.name = name
+        self.nameFull = nameFull
+        self.namePretty = namePretty
+        self.architecture = architecture
+    }
+}
+
 public protocol Platform {
     /// The platform-specific location on disk where applications are
     /// supposed to store their custom data.
@@ -44,12 +74,15 @@ public protocol Platform {
     /// `requireSignatureValidation` specifies whether the system's support for toolchain signature validation should be verified.
     ///
     /// Throws if system does not meet the requirements.
-    func verifySystemPrerequisitesForInstall(requireSignatureValidation: Bool) throws
+    func verifySystemPrerequisitesForInstall(httpClient: SwiftlyHTTPClient, requireSignatureValidation: Bool) async throws
 
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.
     /// On Linux, signature verification will be skipped if gpg is not installed.
     func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws
+
+    /// Detect the platform definition for this platform.
+    func detectPlatform(disableConfirmation: Bool) async throws -> PlatformDefinition
 }
 
 extension Platform {
@@ -102,6 +135,8 @@ extension Platform {
     }
 }
 
-public struct SystemDependency {}
+public enum SystemDependency {
+    case caCertificates
+}
 
 public struct Snapshot: Decodable {}

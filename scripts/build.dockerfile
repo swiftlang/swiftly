@@ -5,7 +5,8 @@ FROM swift:5.10-amazonlinux2
 
 # swiftly build depdenencies
 RUN yum install -y \
-    curl \
+    gpg \
+    ca-certificates \
     gcc \
     make
 

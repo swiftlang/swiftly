@@ -28,7 +28,7 @@ public struct MacOS: Platform {
         true
     }
 
-    public func verifySystemPrerequisitesForInstall(requireSignatureValidation: Bool) throws {
+    public func verifySystemPrerequisitesForInstall(httpClient: SwiftlyHTTPClient, requireSignatureValidation: Bool) throws {
         // All system prerequisites should be there for macOS
     }
 
@@ -183,6 +183,11 @@ public struct MacOS: Platform {
         guard process.terminationStatus == 0 else {
             throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
         }
+    }
+
+    public func detectPlatform(disableConfirmation: Bool) async -> PlatformDefinition {
+        // No special detection required on macOS platform
+        return PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS", architecture: Optional<String>.none)
     }
 
     public static let currentPlatform: any Platform = MacOS()

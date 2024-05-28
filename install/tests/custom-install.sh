@@ -10,6 +10,7 @@ export CUSTOM_HOME_DIR="$(pwd)custom-test-home"
 export CUSTOM_BIN_DIR="$CUSTOM_HOME_DIR/bin"
 export PATH="$CUSTOM_BIN_DIR:$PATH"
 
+touch "$HOME/.profile"
 cp "$HOME/.profile" "$HOME/.profile.bak"
 cleanup () {
     set +o errexit
@@ -24,11 +25,19 @@ cleanup () {
 }
 trap cleanup EXIT
 
+# Swiftly needs these things at a minimum and will abort telling the user
+#  if they are missing.
+if has_command apt-get ; then
+    apt-get update
+    apt-get install -y ca-certificates gpg # These are needed for swiftly
+elif has_command yum ; then
+    yum install -y ca-certificates gpg # These are needed for swiftly to function
+fi
+
 # Custom home dir
 # Custom bin dir
 # Modify login config (yes)
-# Install system dependencies (no)
-printf "2\n$CUSTOM_HOME_DIR\n$CUSTOM_BIN_DIR\ny\nn\n1\n" | ./swiftly-install.sh
+printf "1\n" | SWIFTLY_HOME_DIR="$CUSTOM_HOME_DIR" SWIFTLY_BIN_DIR="$CUSTOM_BIN_DIR" $(get_swiftly) list
 
 # .profile should be updated to update PATH and SWIFTLY_HOME_DIR/SWIFTLY_BIN_DIR.
 bash --login -c "swiftly --version"
@@ -56,6 +65,11 @@ if [[ -d "$HOME/.local/share/swiftly" ]]; then
 fi
 
 swiftly install 5.10.0
+
+# At this point the user was given the information about what system packages
+# the toolchain required. Install them now.
+
+install_system_deps
 
 swift --version
 

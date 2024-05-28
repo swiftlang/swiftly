@@ -6,9 +6,10 @@ Ongoing maintenance and stewardship of this project is led by the [SSWG](https:/
 
 ### Installation
 
-To download swiftly and install Swift, run the following in your terminal, then follow the on-screen instructions.
+To install swiftly and the latest Swift, download the latest version of swiftly and run the following command:
+
 ```
-curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
+path/to/swiftly install latest # Replace path/to with the path to where you downloaded the swiftly executable
 ```
 
 ### Basic usage

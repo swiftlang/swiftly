@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Tests that swiftly-install properly handles an existing installation of swiftly.
+# Tests that swiftly install properly handles an existing installation of swiftly.
 # WARNING: this test makes changes to the local filesystem and is intended to be run in a containerized environment.
 
 set -o errexit
@@ -9,6 +9,7 @@ source ./test-util.sh
 export SWIFTLY_HOME_DIR="./overwrite-test-home"
 export SWIFTLY_BIN_DIR="./overwrite-bin-dir"
 
+touch "$HOME/.profile"
 cp "$HOME/.profile" "$HOME/.profile.bak"
 
 cleanup () {
@@ -18,8 +19,17 @@ cleanup () {
 }
 trap cleanup EXIT
 
+# Swiftly needs these things at a minimum and will abort telling the user
+#  if they are missing.
+if has_command apt-get ; then
+    apt-get update
+    apt-get install -y ca-certificates gpg # These are needed for swiftly
+elif has_command yum ; then
+    yum install -y ca-certificates gpg # These are needed for swiftly to function
+fi
+
 test_log "Performing initial installation"
-./swiftly-install.sh -y --no-install-system-deps
+$(get_swiftly) -y list
 
 . "$SWIFTLY_HOME_DIR/env.sh"
 
@@ -41,7 +51,7 @@ touch "$toolchain_dir/usr/bin/$dummy_executable_name"
 ln -s -t $SWIFTLY_BIN_DIR "$toolchain_dir/usr/bin/$dummy_executable_name"
 
 test_log "Attempting the same installation (no --overwrite flag specified)"
-./swiftly-install.sh -y --no-install-system-deps
+$(get_swiftly) -y list
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
@@ -61,7 +71,7 @@ if [[ ! -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]]; then
 fi
 
 test_log "Attempting the same installation (--overwrite flag is specified)"
-./swiftly-install.sh -y --overwrite --no-install-system-deps
+$(get_swiftly) -y --overwrite list
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
@@ -78,10 +88,6 @@ fi
 
 if [[ -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]]; then
     test_fail "Expected installed toolchain directory to have been overwritten, but it still exists"
-fi
-
-if [ -L "$SWIFTLY_BIN_DIR/$dummy_executable_name" ]; then
-    test_fail "Expected symlink to have been deleted, but it still exists"
 fi
 
 swiftly --version

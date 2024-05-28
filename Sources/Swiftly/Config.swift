@@ -23,12 +23,12 @@ public struct Config: Codable, Equatable {
     }
 
     /// Read the config file from disk.
-    public static func load(disableConfirmation: Bool) async throws -> Config {
+    public static func load(options: GlobalOptions) async throws -> Config {
         do {
             let data = try Data(contentsOf: Swiftly.currentPlatform.swiftlyConfigFile)
             return try JSONDecoder().decode(Config.self, from: data)
         } catch {
-            let pd = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: disableConfirmation)
+            let pd = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: options.assumeYes, platform: options.platform)
             return Config(inUse: nil, installedToolchains: [], platform: pd)
         }
     }
@@ -60,7 +60,9 @@ public struct Config: Codable, Equatable {
     /// Load the config, pass it to the provided closure, and then
     /// save the modified config to disk.
     public static func update(f: (inout Config) throws -> Void) async throws {
-        var config = try await Config.load(disableConfirmation: true)
+        var options = GlobalOptions()
+        options.assumeYes = true
+        var config = try await Config.load(options: options)
         try f(&config)
         // only save the updates if the prior closure invocation succeeded
         try config.save()

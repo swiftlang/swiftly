@@ -245,7 +245,9 @@ final class UninstallTests: SwiftlyTests {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: [Self.oldStable], inUse: Self.oldStable) {
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.oldStable.name])
             _ = try await uninstall.runWithMockedIO(input: ["y"])
-            let config = try await Config.load(disableConfirmation: true)
+            var options = GlobalOptions()
+            options.assumeYes = true
+            let config = try await Config.load(options: options)
             XCTAssertEqual(config.inUse, nil)
 
             // Ensure all symlinks have been cleaned up.
@@ -260,7 +262,9 @@ final class UninstallTests: SwiftlyTests {
     /// Tests that aborting an uninstall works correctly.
     func testUninstallAbort() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains, inUse: Self.oldStable) {
-            let preConfig = try await Config.load(disableConfirmation: true)
+            var options = GlobalOptions()
+            options.assumeYes = true
+            let preConfig = try await Config.load(options: options)
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.oldStable.name])
             _ = try await uninstall.runWithMockedIO(input: ["n"])
             try await self.validateInstalledToolchains(
@@ -269,7 +273,7 @@ final class UninstallTests: SwiftlyTests {
             )
 
             // Ensure config did not change.
-            let config = try await Config.load(disableConfirmation: true)
+            let config = try await Config.load(options: options)
             XCTAssertEqual(config, preConfig)
         }
     }

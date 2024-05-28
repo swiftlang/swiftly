@@ -6,7 +6,16 @@
 set -o errexit
 source ./test-util.sh
 
-echo "3" | ./swiftly-install.sh
+# Swiftly needs these things at a minimum and will abort telling the user
+#  if they are missing.
+if has_command apt-get ; then
+    apt-get update
+    apt-get install -y ca-certificates gpg # These are needed for swiftly
+elif has_command yum ; then
+    yum install -y ca-certificates gpg # These are needed for swiftly to function
+fi
+
+echo "0" | $(get_swiftly) list || echo 'Swiftly exited'
 
 if has_command "swiftly" ; then
     test_fail "swiftly executable should not have been installed"

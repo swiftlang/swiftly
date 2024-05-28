@@ -12,7 +12,10 @@ final class UseTests: SwiftlyTests {
         var use = try self.parseCommand(Use.self, ["use", argument])
         try await use.run()
 
-        let config = try await Config.load(disableConfirmation: true)
+        var options = GlobalOptions()
+        options.assumeYes = true
+        let config = try await Config.load(options: options)
+
         XCTAssertEqual(config.inUse, expectedVersion)
 
         let toolchainVersion = try self.getMockedToolchainVersion(
@@ -175,13 +178,16 @@ final class UseTests: SwiftlyTests {
             var use = try self.parseCommand(Use.self, ["use", "latest"])
             try await use.run()
 
-            var config = try await Config.load(disableConfirmation: true)
+            var options = GlobalOptions()
+            options.assumeYes = true
+            var config = try await Config.load(options: options)
+
             XCTAssertEqual(config.inUse, nil)
 
             use = try self.parseCommand(Use.self, ["use", "5.6.0"])
             try await use.run()
 
-            config = try await Config.load(disableConfirmation: true)
+            config = try await Config.load(options: options)
             XCTAssertEqual(config.inUse, nil)
         }
     }
@@ -203,7 +209,9 @@ final class UseTests: SwiftlyTests {
     /// Tests that the `use` command works with all the installed toolchains in this test harness.
     func testUseAll() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
-            let config = try await Config.load(disableConfirmation: true)
+            var options = GlobalOptions()
+            options.assumeYes = true
+            let config = try await Config.load(options: options)
 
             for toolchain in config.installedToolchains {
                 try await self.useAndValidate(
@@ -289,7 +297,9 @@ final class UseTests: SwiftlyTests {
                 XCTAssertEqual(contents, existingText)
             }
 
-            let nConfig = try await Config.load(disableConfirmation: true)
+            var options = GlobalOptions()
+            options.assumeYes = true
+            let nConfig = try await Config.load(options: options)
             XCTAssertEqual(nConfig.inUse, nil)
 
             let yOutput = try await use.runWithMockedIO(input: ["y"])
@@ -304,7 +314,7 @@ final class UseTests: SwiftlyTests {
                 XCTAssertNotEqual(contents, existingText)
             }
 
-            let yConfig = try await Config.load(disableConfirmation: true)
+            let yConfig = try await Config.load(options: options)
             XCTAssertEqual(yConfig.inUse, toolchain)
         }
     }

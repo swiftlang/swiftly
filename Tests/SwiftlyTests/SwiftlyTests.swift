@@ -123,7 +123,9 @@ class SwiftlyTests: XCTestCase {
     /// configuration file and by executing `swift --version` using the swift executable in the `bin` directory.
     /// If nil is provided, this validates that no toolchain is currently in use.
     func validateInUse(expected: ToolchainVersion?) async throws {
-        let config = try await Config.load(disableConfirmation: true)
+        var options = GlobalOptions()
+        options.assumeYes = true
+        let config = try await Config.load(options: options)
         XCTAssertEqual(config.inUse, expected)
 
         let executable = SwiftExecutable(path: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift"))
@@ -143,7 +145,9 @@ class SwiftlyTests: XCTestCase {
     /// This method ensures that config.json reflects the expected installed toolchains and also
     /// validates that the toolchains on disk match their expected versions via `swift --version`.
     func validateInstalledToolchains(_ toolchains: Set<ToolchainVersion>, description: String) async throws {
-        let config = try await Config.load(disableConfirmation: true)
+        var options = GlobalOptions()
+        options.assumeYes = true
+        let config = try await Config.load(options: options)
 
         guard config.installedToolchains == toolchains else {
             throw SwiftlyTestError(message: "\(description): expected \(toolchains) but got \(config.installedToolchains)")

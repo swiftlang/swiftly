@@ -82,7 +82,10 @@ public protocol Platform {
     func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws
 
     /// Detect the platform definition for this platform.
-    func detectPlatform(disableConfirmation: Bool) async throws -> PlatformDefinition
+    func detectPlatform(disableConfirmation: Bool, platform: String?) async throws -> PlatformDefinition
+
+    /// Provide the command to install the provided system dependencies on the system
+    func getSysDepsCommand(with: [SystemDependency], in: PlatformDefinition) -> String?
 }
 
 extension Platform {
@@ -135,8 +138,14 @@ extension Platform {
     }
 }
 
+public enum SystemPackageManager {
+    case apt
+    case yum
+}
+
 public enum SystemDependency {
     case caCertificates
+    case systemPackage(package: String, manager: SystemPackageManager?)
 }
 
 public struct Snapshot: Decodable {}

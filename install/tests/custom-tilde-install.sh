@@ -10,6 +10,7 @@ export CUSTOM_HOME_DIR_NAME="tilde-substitution-test-home"
 export CUSTOM_HOME_DIR="$HOME/$CUSTOM_HOME_DIR_NAME"
 export CUSTOM_BIN_DIR="$CUSTOM_HOME_DIR/bin"
 
+touch "$HOME/.profile"
 cp "$HOME/.profile" "$HOME/.profile.bak"
 
 cleanup () {
@@ -18,8 +19,17 @@ cleanup () {
 }
 trap cleanup EXIT
 
+# Swiftly needs these things at a minimum and will abort telling the user
+#  if they are missing.
+if has_command apt-get ; then
+    apt-get update
+    apt-get install -y ca-certificates gpg # These are needed for swiftly
+elif has_command yum ; then
+    yum install -y ca-certificates gpg # These are needed for swiftly to function
+fi
+
 # Make sure that the "~" character is handled properly.
-printf "2\n~/${CUSTOM_HOME_DIR_NAME}\n~/${CUSTOM_HOME_DIR_NAME}/bin\ny\nn\n1\n" | ./swiftly-install.sh
+printf "1\n" | SWIFTLY_HOME_DIR=~/"${CUSTOM_HOME_DIR_NAME}" SWIFTLY_BIN_DIR=~/"${CUSTOM_HOME_DIR_NAME}/bin" $(get_swiftly) list
 
 # .profile should be updated to update PATH and SWIFTLY_HOME_DIR/SWIFTLY_BIN_DIR.
 bash --login -c "swiftly --version"

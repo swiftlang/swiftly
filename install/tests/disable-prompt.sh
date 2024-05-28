@@ -6,6 +6,7 @@
 set -o errexit
 source ./test-util.sh
 
+touch "$HOME/.profile"
 cp "$HOME/.profile" "$HOME/.profile.bak"
 
 cleanup () {
@@ -15,13 +16,16 @@ cleanup () {
 }
 trap cleanup EXIT
 
+# Swiftly needs these things at a minimum and will abort telling the user
+#  if they are missing.
 if has_command apt-get ; then
-    apt-get remove -y zlib1g-dev
+    apt-get update
+    apt-get install -y ca-certificates gpg # These are needed for swiftly
 elif has_command yum ; then
-    yum remove -y libcurl-devel
+    yum install -y ca-certificates gpg # These are needed for swiftly to function
 fi
 
-./swiftly-install.sh -y
+$(get_swiftly) -y list
 
 # .profile should be updated to update PATH.
 bash --login -c "swiftly --version"
@@ -30,16 +34,6 @@ bash --login -c "swiftly --version"
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
-fi
-
-if has_command dpkg ; then
-    if ! dpkg --status zlib1g-dev ; then
-        test_fail "System dependencies were not installed properly"
-    fi
-elif has_command rpm ; then
-    if ! rpm -q libcurl-devel ; then
-        test_fail "System dependencies were not installed properly"
-    fi
 fi
 
 test_pass

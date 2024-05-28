@@ -41,6 +41,21 @@ public struct Linux: Platform {
             }
 
             return true
+        case .systemPackage(let package, let manager):
+            do {
+                switch manager {
+                    case .apt:
+                       try self.runProgram("dpkg", "-l", package, quiet: true)
+                    case .yum:
+                       try self.runProgram("yum", "list", "installed", package, quiet: true)
+                    default:
+                       break
+                }
+            } catch {
+                return false
+            }
+
+            return true
         }
     }
 
@@ -281,7 +296,7 @@ public struct Linux: Platform {
             case "3":
                 return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04", architecture: architecture)
             case "4":
-                return PlatformDefinition(name: "ubi", nameFull: "ubi", namePretty: "RHEL 9", architecture: architecture)
+                return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9", architecture: architecture)
             case "5":
                 return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2", architecture: architecture)
             default:
@@ -289,7 +304,7 @@ public struct Linux: Platform {
         }
     }
 
-    public func detectPlatform(disableConfirmation: Bool) async throws -> PlatformDefinition {
+    public func detectPlatform(disableConfirmation: Bool, platform: String?) async throws -> PlatformDefinition {
         #if arch(x86_64)
         let architecture = "x86_64"
         #elseif arch(arm64)
@@ -297,6 +312,24 @@ public struct Linux: Platform {
         #else
         fatalError("Unsupported processor architecture")
         #endif
+
+        // We've been given a hint to use
+        if let platform = platform {
+            switch(platform) {
+            case "ubuntu22.04":
+                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04", architecture: architecture)
+            case "ubuntu20.04":
+                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04", architecture: architecture)
+            case "ubuntu18.04":
+                 return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04", architecture: architecture)
+            case "amazonlinux2":
+                 return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2", architecture: architecture)
+            case "rhel9":
+                 return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9", architecture: architecture)
+            default:
+                fatalError("Unrecognized platform \(platform)")
+            }
+        }
 
         let osReleaseFiles = ["/etc/os-release", "/usr/lib/os-release"]
         var releaseFile: String?
@@ -350,7 +383,7 @@ public struct Linux: Platform {
             } else if info.hasPrefix("ID_LIKE=") {
                 idlike = String(info.dropFirst("ID_LINE=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("VERSION_ID=") {
-                versionID = String(info.dropFirst("VERSION_ID".count)).replacingOccurrences(of: "\"", with: "")
+                versionID = String(info.dropFirst("VERSION_ID=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("UBUNTU_CODENAME=") {
                 ubuntuCodeName = String(info.dropFirst("UBUNTU_CODENAME=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("PRETTY_NAME=") {
@@ -407,7 +440,7 @@ public struct Linux: Platform {
                 return manualSelectPlatform(platformPretty, architecture)
             }
 
-            return PlatformDefinition(name: "ubi", nameFull: "ubi", namePretty: "RHEL 9", architecture: architecture)
+            return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9", architecture: architecture)
         }
 
         let message = "Unsupported Linux platform"
@@ -417,6 +450,30 @@ public struct Linux: Platform {
             print(message)
         }
         return manualSelectPlatform(platformPretty, architecture)
+    }
+
+    /// Provide the command to install the provided system dependencies on the system
+    public func getSysDepsCommand(with sysDeps: [SystemDependency], in platform: PlatformDefinition) -> String? {
+        guard sysDeps.count != 0 else {
+            return nil
+        }
+
+        let packages = sysDeps.map( { sysDep in
+            switch sysDep {
+            case .systemPackage(let name, _):
+                name
+            default:
+                fatalError("Unexpected system dependency type \(sysDep)")
+            }
+        } ).joined(separator: " ")
+
+        if ["ubuntu1804", "ubuntu2004", "ubuntu2204", "amazonlinux2"].contains(platform.name) {
+            return "apt-get -y update && apt-get -y install \(packages)"
+        } else if ["ubi9"].contains(platform.name) {
+            return "yum -y install \(packages)"
+        }
+
+        return nil
     }
 
     public static let currentPlatform: any Platform = Linux()

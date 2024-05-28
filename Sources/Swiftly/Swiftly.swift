@@ -14,6 +14,8 @@ public struct GlobalOptions: ParsableArguments {
     var noModifyProfile: Bool = false
     @Flag(name: .shortAndLong, help: "Overwrite the existing swiftly installation found at the configured SWIFTLY_HOME, if any. If this option is unspecified and an existing installation is found, the swiftly executable will be updated, but the rest of the installation will not be modified.")
     var overwrite: Bool = false
+    @Option(name: .long, help: "Specify the current Linux platform for swiftly.")
+    var platform: String?
 
     public init() {}
 }
@@ -206,6 +208,11 @@ extension SwiftlyCommand {
             }
         }
 
+        if overwrite {
+            try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyToolchainsDir)
+            try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyHomeDir)
+        }
+
         // Go ahead and create the directories as needed
         for requiredDir in Swiftly.requiredDirectories {
             if !requiredDir.fileExists() {
@@ -218,17 +225,21 @@ extension SwiftlyCommand {
         }
 
         // Force the configuration to be present. Generate it if it doesn't already exist
-        let config = try await Config.load(disableConfirmation: assumeYes)
+        let config = try await Config.load(options: root)
+        if overwrite {
+            try config.save()
+        }
 
         // Copy the swiftly binary if it isn't there or overwrite is specified
         // CommandLine.arguments
         if case let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false), !FileManager.default.fileExists(atPath: swiftlyBin.path) || overwrite  {
             SwiftlyCore.print("Copying swiftly into the installation directory...")
+            try? FileManager.default.removeItem(at: swiftlyBin)
             try FileManager.default.copyItem(at: URL(fileURLWithPath: CommandLine.arguments[0]), to: swiftlyBin)
         }
 
         // If everything is installed then we can leave at this point
-        if installed {
+        if installed && !overwrite {
             return config
         }
 
@@ -277,10 +288,14 @@ extension SwiftlyCommand {
                     profileHome = userHome.appendingPathComponent(".profile", isDirectory: false)
                 }
             } else if shell.hasSuffix("fish") {
-                if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"], let xdgConfigURL = URL(string: xdgConfigHome) {
-                    profileHome = xdgConfigURL.appendingPathComponent("fish/conf.d/swiftly.fish", isDirectory: false)
+                if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"], case let xdgConfigURL = URL(fileURLWithPath: xdgConfigHome) {
+                    let confDir = xdgConfigURL.appendingPathComponent("fish/conf.d", isDirectory: true)
+                    try FileManager.default.createDirectory(at: confDir, withIntermediateDirectories: true)
+                    profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
                 } else {
-                    profileHome = userHome.appendingPathComponent(".config/fish/conf.d/swiftly.fish", isDirectory: false)
+                    let confDir = userHome.appendingPathComponent(".config/fish/conf.d", isDirectory: true)
+                    try FileManager.default.createDirectory(at: confDir, withIntermediateDirectories: true)
+                    profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
                 }
             } else {
                 profileHome = userHome.appendingPathComponent(".profile", isDirectory: false)

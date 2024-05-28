@@ -208,6 +208,134 @@ struct Install: SwiftlyCommand {
         }
 
         SwiftlyCore.print("\(version) installed successfully!")
+
+        // TODO these are hard-coded until we have a place to query for these
+        // These lists are taken from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
+        // When updating this list be sure to update the function in the tests: install/test-util.sh
+        let packages: [String] = switch(config.platform.name) {
+            case "ubuntu1804":
+                [
+                    "libatomic1",
+                    "libcurl4-openssl-dev",
+                    "libxml2-dev",
+                    "libedit2",
+                    "libsqlite3-0",
+                    "libc6-dev",
+                    "binutils",
+                    "libgcc-5-dev",
+                    "libstdc++-5-dev",
+                    "zlib1g-dev",
+                    "libpython3.6",
+                    "tzdata",
+                    "git",
+                    "unzip",
+                    "pkg-config",
+                ]
+            case "ubuntu2004":
+                [
+                    "binutils",
+                    "git",
+                    "unzip",
+                    "gnupg2",
+                    "libc6-dev",
+                    "libcurl4-openssl-dev",
+                    "libedit2",
+                    "libgcc-9-dev",
+                    "libpython3.8",
+                    "libsqlite3-0",
+                    "libstdc++-9-dev",
+                    "libxml2-dev",
+                    "libz3-dev",
+                    "pkg-config",
+                    "tzdata",
+                    "zlib1g-dev",
+                ]
+            case "ubuntu2204":
+                [
+                    "binutils",
+                    "git",
+                    "unzip",
+                    "gnupg2",
+                    "libc6-dev",
+                    "libcurl4-openssl-dev",
+                    "libedit2",
+                    "libgcc-11-dev",
+                    "libpython3-dev",
+                    "libsqlite3-0",
+                    "libstdc++-11-dev",
+                    "libxml2-dev",
+                    "libz3-dev",
+                    "pkg-config",
+                    "python3-lldb-13",
+                    "tzdata",
+                    "zlib1g-dev",
+                ]
+            case "amazonlinux2":
+                [
+                    "binutils",
+                    "gcc",
+                    "git",
+                    "unzip",
+                    "glibc-static",
+                    "gzip",
+                    "libbsd",
+                    "libcurl-devel",
+                    "libedit",
+                    "libicu",
+                    "libsqlite",
+                    "libstdc++-static",
+                    "libuuid",
+                    "libxml2-devel",
+                    "tar",
+                    "tzdata",
+                    "zlib-devel",
+                ]
+            case "ubi9":
+                [
+                    "git",
+                    "gcc-c++",
+                    "libcurl-devel",
+                    "libedit-devel",
+                    "libuuid-devel",
+                    "libxml2-devel",
+                    "ncurses-devel",
+                    "python3-devel",
+                    "rsync",
+                    "sqlite-devel",
+                    "unzip",
+                    "zip",
+                ]
+            default:
+                []
+        }
+
+        let manager: SystemPackageManager? = switch(config.platform.name) {
+        case "ubuntu1804":
+            .apt
+        case "ubuntu2004":
+            .apt
+        case "ubuntu2204":
+            .apt
+        case "amazonlinux2":
+            .apt
+        case "ubi9":
+            .yum
+        default:
+            nil
+        }
+
+        let sysDeps = packages.map( { SystemDependency.systemPackage(package: $0, manager: manager) } ).filter( { !Swiftly.currentPlatform.isSystemDependencyPresent($0) })
+
+        // Give the user a list of system packages that they require to use this toolchain.
+        if let sysDepsCommand = Swiftly.currentPlatform.getSysDepsCommand(with: sysDeps, in: config.platform) {
+            SwiftlyCore.print("""
+                Note that additional system packages are required for this toolchain to function.
+                You can install them using the following command:
+
+                \(sysDepsCommand)
+                """)
+        }
+
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.

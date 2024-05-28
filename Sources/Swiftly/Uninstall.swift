@@ -80,7 +80,7 @@ struct Uninstall: SwiftlyCommand {
         SwiftlyCore.print()
 
         for toolchain in toolchains {
-            var config = try await Config.load(disableConfirmation: true)
+            var config = try await Config.load(options: root)
 
             // If the in-use toolchain was one of the uninstalled toolchains, use a new toolchain.
             if toolchain == config.inUse {

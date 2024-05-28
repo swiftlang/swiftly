@@ -185,9 +185,13 @@ public struct MacOS: Platform {
         }
     }
 
-    public func detectPlatform(disableConfirmation: Bool) async -> PlatformDefinition {
+    public func detectPlatform(disableConfirmation: Bool, platform: String?) async -> PlatformDefinition {
         // No special detection required on macOS platform
         return PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS", architecture: Optional<String>.none)
+    }
+
+    public func getSysDepsCommand(with: [SystemDependency], in: PlatformDefinition) -> String? {
+        return nil
     }
 
     public static let currentPlatform: any Platform = MacOS()

@@ -166,8 +166,9 @@ public struct SwiftlyHTTPClient {
         for try await buffer in response.body {
             receivedBytes += buffer.readableBytes
 
-            try buffer.withUnsafeReadableBytes { bufferPtr in
-                try fileHandle.write(contentsOf: bufferPtr)
+            let byteData = buffer.getData(at: buffer.readerIndex, length: buffer.readableBytes)
+            if let data = byteData {
+                try fileHandle.write(contentsOf: data)
             }
 
             let now = Date()

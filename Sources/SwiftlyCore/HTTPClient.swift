@@ -11,10 +11,8 @@ public protocol HTTPRequestExecutor {
 
 /// An `HTTPRequestExecutor` backed by an `HTTPClient`.
 internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
-    fileprivate static let client = HTTPClientWrapper()
-
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
-        try await Self.client.inner.execute(request, timeout: timeout)
+        try await HTTPClient.shared.execute(request, timeout: timeout)
     }
 }
 
@@ -166,9 +164,7 @@ public struct SwiftlyHTTPClient {
         for try await buffer in response.body {
             receivedBytes += buffer.readableBytes
 
-            try buffer.withUnsafeReadableBytes { bufferPtr in
-                try fileHandle.write(contentsOf: bufferPtr)
-            }
+            try fileHandle.write(contentsOf: buffer.readableBytesView)
 
             let now = Date()
             if let reportProgress, lastUpdate.distance(to: now) > 0.25 || receivedBytes == expectedBytes {
@@ -182,8 +178,4 @@ public struct SwiftlyHTTPClient {
 
         try fileHandle.synchronize()
     }
-}
-
-private class HTTPClientWrapper {
-    fileprivate let inner = HTTPClient.shared
 }

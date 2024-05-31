@@ -23,7 +23,6 @@ cleanup () {
     rm "$HOME/.xdg/config/fish/conf.d/swiftly.fish"
 
     rm -r "$HOME/.local/share/swiftly"
-    rm "$HOME/.local/bin/swiftly"
 
     chsh --shell "$oldshell"
 
@@ -57,7 +56,7 @@ elif has_command yum ; then
     yum install -y ca-certificates gpg # These are needed for swiftly to function
 fi
 
-echo "1" | $(get_swiftly) list
+echo "1" | $(get_swiftly) init
 
 if [[ ! "$(cat $HOME/.config/fish/conf.d/swiftly.fish)" =~ "swiftly/env.fish" ]]; then
    test_fail "install did not update ~/.config/fish/conf.d/swiftly.fish"
@@ -65,7 +64,7 @@ fi
 
 export XDG_CONFIG_HOME="$HOME/.xdg/config"
 mkdir -p "$XDG_CONFIG_HOME/fish/conf.d"
-$(get_swiftly) -y --overwrite list
+$(get_swiftly) -y init --overwrite
 
 if [[ ! "$(cat $XDG_CONFIG_HOME/fish/conf.d/swiftly.fish)" =~ "swiftly/env.fish" ]]; then
    test_fail "install did not update \$XDG_CONFIG_HOME/fish/conf.d/swiftly.fish"

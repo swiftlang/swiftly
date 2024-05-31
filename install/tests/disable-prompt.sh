@@ -12,7 +12,6 @@ cp "$HOME/.profile" "$HOME/.profile.bak"
 cleanup () {
     mv "$HOME/.profile.bak" "$HOME/.profile"
     rm -r "$HOME/.local/share/swiftly"
-    rm -r "$HOME/.local/bin/swiftly"
 }
 trap cleanup EXIT
 
@@ -25,7 +24,7 @@ elif has_command yum ; then
     yum install -y ca-certificates gpg # These are needed for swiftly to function
 fi
 
-$(get_swiftly) -y list
+$(get_swiftly) -y init
 
 # .profile should be updated to update PATH.
 bash --login -c "swiftly --version"

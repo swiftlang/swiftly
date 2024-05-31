@@ -216,7 +216,7 @@ final class UninstallTests: SwiftlyTests {
             try await uninstallInUseTest(&installed, toRemove: Self.newStable, expectedInUse: Self.newMainSnapshot)
 
             // Switch to the old main snapshot to ensure uninstalling it selects the new one.
-            var use = try self.parseCommand(Use.self, ["use", Self.oldMainSnapshot.name])
+            var use = try self.parseCommand(Use.self, ["use", "-g", Self.oldMainSnapshot.name])
             try await use.run()
             try await uninstallInUseTest(&installed, toRemove: Self.oldMainSnapshot, expectedInUse: Self.newMainSnapshot)
             try await uninstallInUseTest(
@@ -225,7 +225,7 @@ final class UninstallTests: SwiftlyTests {
                 expectedInUse: Self.newReleaseSnapshot
             )
             // Switch to the old release snapshot to ensure uninstalling it selects the new one.
-            use = try self.parseCommand(Use.self, ["use", Self.oldReleaseSnapshot.name])
+            use = try self.parseCommand(Use.self, ["use", "-g", Self.oldReleaseSnapshot.name])
             try await use.run()
             try await uninstallInUseTest(
                 &installed,
@@ -245,26 +245,15 @@ final class UninstallTests: SwiftlyTests {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: [Self.oldStable], inUse: Self.oldStable) {
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.oldStable.name])
             _ = try await uninstall.runWithMockedIO(input: ["y"])
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
             XCTAssertEqual(config.inUse, nil)
-
-            // Ensure all symlinks have been cleaned up.
-            let symlinks = try FileManager.default.contentsOfDirectory(
-                atPath: Swiftly.currentPlatform.swiftlyBinDir.path
-            ).filter({ $0 != "swiftly" }) // Swiftly binary is not a symlink under consideration
-
-            XCTAssertEqual(symlinks, [])
         }
     }
 
     /// Tests that aborting an uninstall works correctly.
     func testUninstallAbort() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains, inUse: Self.oldStable) {
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let preConfig = try await Config.load(options: options)
+            let preConfig = try Config.load()
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", Self.oldStable.name])
             _ = try await uninstall.runWithMockedIO(input: ["n"])
             try await self.validateInstalledToolchains(
@@ -273,7 +262,7 @@ final class UninstallTests: SwiftlyTests {
             )
 
             // Ensure config did not change.
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
             XCTAssertEqual(config, preConfig)
         }
     }

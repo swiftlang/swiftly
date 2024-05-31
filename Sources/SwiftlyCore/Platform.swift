@@ -15,18 +15,10 @@ public struct PlatformDefinition: Codable, Equatable {
     /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
     public let namePretty: String
 
-    /// The CPU architecture of the platform. If omitted, assumed to be x86_64.
-    public let architecture: String?
-
-    public func getArchitecture() -> String {
-        self.architecture ?? "x86_64"
-    }
-
-    public init(name: String, nameFull: String, namePretty: String, architecture: String?) {
+    public init(name: String, nameFull: String, namePretty: String) {
         self.name = name
         self.nameFull = nameFull
         self.namePretty = namePretty
-        self.architecture = architecture
     }
 }
 
@@ -51,20 +43,13 @@ public protocol Platform {
     /// If this version is in use, the next latest version will be used afterwards.
     func uninstall(_ version: ToolchainVersion) throws
 
-    /// Select the toolchain associated with the given version.
-    /// Returns whether the selection was successful.
-    func use(_ version: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool
-
-    /// Clear the current active toolchain.
-    func unUse(currentToolchain: ToolchainVersion) throws
-
     /// Get a list of snapshot builds for the platform. If a version is specified, only
     /// return snapshots associated with the version.
     /// This will likely have a default implementation.
     func listAvailableSnapshots(version: String?) async -> [Snapshot]
 
-    /// Get the name of the release binary for this platform with the given CPU arch.
-    func getExecutableName(forArch: String) -> String
+    /// Get the name of the release binary for this platform.
+    func getExecutableName() -> String
 
     /// Get a path pointing to a unique, temporary file.
     /// This does not need to actually create the file.
@@ -86,6 +71,9 @@ public protocol Platform {
 
     /// Provide the command to install the provided system dependencies on the system
     func getSysDepsCommand(with: [SystemDependency], in: PlatformDefinition) -> String?
+
+    /// Proxy through the invocation of the provided command to the specified toolchain
+    func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws
 }
 
 extension Platform {
@@ -117,9 +105,7 @@ extension Platform {
     public var swiftlyBinDir: URL {
         SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
-            ?? FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".local", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
+            ?? self.appDataDirectory.appendingPathComponent("swiftly/bin", isDirectory: true)
     }
 
     /// The "toolchains" subdirectory of swiftly's home directory. Contains the Swift toolchains managed by swiftly.

@@ -80,7 +80,7 @@ struct Install: SwiftlyCommand {
             self.httpClient,
             useInstalledToolchain: self.use,
             verifySignature: self.verify
-        )
+        ).get()
     }
 
     internal static func execute(
@@ -89,10 +89,10 @@ struct Install: SwiftlyCommand {
         _ httpClient: SwiftlyHTTPClient,
         useInstalledToolchain: Bool,
         verifySignature: Bool
-    ) async throws {
+    ) async throws -> Result<(),Error> {
         guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed, exiting.")
-            return
+            return .success(())
         }
 
         // Ensure the system is set up correctly to install a toolchain before downloading it.
@@ -110,10 +110,18 @@ struct Install: SwiftlyCommand {
 
         var platformString = config.platform.name
         var platformFullString = config.platform.nameFull
-        if let arch = config.platform.architecture {
-            platformString += "-\(arch)"
-            platformFullString += "-\(arch)"
-        }
+
+        #if !os(macOS)
+        #if arch(x86_64)
+        let arch = "x86_64"
+        #elseif arch(arm64)
+        let arch = "aarch64"
+        #else
+        fatalError("Unsupported processor architecture")
+        #endif
+        platformString += "-\(arch)"
+        platformFullString += "-\(arch)"
+        #endif
 
         switch version {
         case let .stable(stableVersion):
@@ -179,8 +187,7 @@ struct Install: SwiftlyCommand {
                 }
             )
         } catch _ as SwiftlyHTTPClient.DownloadNotFoundError {
-            SwiftlyCore.print("\(version) does not exist, exiting")
-            return
+            throw Error(message: "\(version) does not exist, exiting")
         } catch {
             animation.complete(success: false)
             throw error
@@ -204,7 +211,7 @@ struct Install: SwiftlyCommand {
         // If this is the first installed toolchain, mark it as in-use regardless of whether the
         // --use argument was provided.
         if useInstalledToolchain || config.inUse == nil {
-            try await Use.execute(version, &config)
+            try await Use.execute(version, &config, globalDefault: true)
         }
 
         SwiftlyCore.print("\(version) installed successfully!")
@@ -334,8 +341,11 @@ struct Install: SwiftlyCommand {
 
                 \(sysDepsCommand)
                 """)
+
+             return .failure(Error(message: "Some system dependencies must be installed before the swift toolchain can be used"))
         }
 
+        return .success(())
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.

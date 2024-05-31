@@ -44,8 +44,7 @@ class SwiftlyTests: XCTestCase {
             platform: PlatformDefinition(
                 name: try getEnv("SWIFTLY_PLATFORM_NAME"),
                 nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
-                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY"),
-                architecture: try? getEnv("SWIFTLY_PLATFORM_ARCH")
+                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
             )
         )
     }
@@ -79,13 +78,10 @@ class SwiftlyTests: XCTestCase {
     ) async throws {
         let testHome = Self.getTestHomePath(name: name)
         SwiftlyCore.mockedHomeDir = testHome
+        try await Init.execute(assumeYes: true, noModifyProfile: true, overwrite: true, platform: nil)
         defer {
             SwiftlyCore.mockedHomeDir = nil
             try? testHome.deleteIfExists()
-        }
-        for dir in Swiftly.requiredDirectories {
-            try dir.deleteIfExists()
-            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
         }
 
         let config = try self.baseTestConfig()
@@ -106,7 +102,7 @@ class SwiftlyTests: XCTestCase {
             }
 
             if !toolchains.isEmpty {
-                var use = try self.parseCommand(Use.self, ["use", inUse?.name ?? "latest"])
+                var use = try self.parseCommand(Use.self, ["use", "-g", inUse?.name ?? "latest"])
                 try await use.run()
             } else {
                 try FileManager.default.createDirectory(
@@ -123,21 +119,8 @@ class SwiftlyTests: XCTestCase {
     /// configuration file and by executing `swift --version` using the swift executable in the `bin` directory.
     /// If nil is provided, this validates that no toolchain is currently in use.
     func validateInUse(expected: ToolchainVersion?) async throws {
-        var options = GlobalOptions()
-        options.assumeYes = true
-        let config = try await Config.load(options: options)
+        let config = try Config.load()
         XCTAssertEqual(config.inUse, expected)
-
-        let executable = SwiftExecutable(path: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift"))
-
-        XCTAssertEqual(executable.exists(), expected != nil)
-
-        guard let expected else {
-            return
-        }
-
-        let inUseVersion = try await executable.version()
-        XCTAssertEqual(inUseVersion, expected)
     }
 
     /// Validate that all of the provided toolchains have been installed.
@@ -145,32 +128,11 @@ class SwiftlyTests: XCTestCase {
     /// This method ensures that config.json reflects the expected installed toolchains and also
     /// validates that the toolchains on disk match their expected versions via `swift --version`.
     func validateInstalledToolchains(_ toolchains: Set<ToolchainVersion>, description: String) async throws {
-        var options = GlobalOptions()
-        options.assumeYes = true
-        let config = try await Config.load(options: options)
+        let config = try Config.load()
 
         guard config.installedToolchains == toolchains else {
             throw SwiftlyTestError(message: "\(description): expected \(toolchains) but got \(config.installedToolchains)")
         }
-
-#if os(Linux)
-        // Verify that the toolchains on disk correspond to those in the config.
-        for toolchain in toolchains {
-            let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir
-                .appendingPathComponent("toolchains")
-                .appendingPathComponent(toolchain.name)
-            XCTAssertTrue(toolchainDir.fileExists())
-
-            let swiftBinary = toolchainDir
-                .appendingPathComponent("usr")
-                .appendingPathComponent("bin")
-                .appendingPathComponent("swift")
-
-            let executable = SwiftExecutable(path: swiftBinary)
-            let actualVersion = try await executable.version()
-            XCTAssertEqual(actualVersion, toolchain)
-        }
-#endif
     }
 
     /// Install a mocked toolchain according to the provided selector that includes the provided list of executables
@@ -197,25 +159,6 @@ class SwiftlyTests: XCTestCase {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: ToolchainSelector, executables: [String]? = nil) async throws {
         try await self.installMockedToolchain(selector: "\(selector)", executables: executables)
-    }
-
-    /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given URL.
-    func getMockedToolchainVersion(at url: URL) throws -> ToolchainVersion {
-        let process = Process()
-        process.executableURL = url
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
-            throw SwiftlyTestError(message: "got no output from swift binary at path \(url.path)")
-        }
-
-        let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
-        return try ToolchainVersion(parsing: toolchainVersion)
     }
 }
 
@@ -283,72 +226,6 @@ public struct SwiftExecutable {
 
     public func exists() -> Bool {
         self.path.fileExists()
-    }
-
-    /// Gets the version of this executable by parsing the `swift --version` output, potentially looking
-    /// up the commit hash via the GitHub API.
-    public func version() async throws -> ToolchainVersion {
-        let process = Process()
-        process.executableURL = self.path
-        process.arguments = ["--version"]
-
-        let binPath = ProcessInfo.processInfo.environment["PATH"]!
-        process.environment = ["PATH": "\(self.path.deletingLastPathComponent().path):\(binPath)"]
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
-            throw SwiftlyTestError(message: "got no output from swift binary at path \(self.path.path)")
-        }
-
-        let outputString = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
-
-        if let match = try Self.stableRegex.firstMatch(in: outputString) {
-            let versions = match.output.1.split(separator: ".")
-
-            let major = Int(versions[0])!
-            let minor = Int(versions[1])!
-
-            let patch: Int
-            if versions.count == 3 {
-                patch = Int(versions[2])!
-            } else {
-                patch = 0
-            }
-
-            return ToolchainVersion(major: major, minor: minor, patch: patch)
-        } else if let match = try Self.snapshotRegex.firstMatch(in: outputString) {
-            let commitHash = match.output.1
-
-            // Get the commit hash from swift --version, look up the corresponding tag via GitHub, and confirm
-            // that it matches the expected version.
-            guard
-                let tag: GitHubTag = try await SwiftlyHTTPClient().mapGitHubTags(
-                    limit: 1,
-                    filterMap: { tag in
-                        guard tag.commit!.sha.starts(with: commitHash) else {
-                            return nil
-                        }
-                        return tag
-                    },
-                    fetch: SwiftlyHTTPClient().getTags
-                ).first,
-                let snapshot = try tag.parseSnapshot()
-            else {
-                throw SwiftlyTestError(message: "could not find tag matching hash \(commitHash)")
-            }
-
-            return .snapshot(snapshot)
-        } else if let version = try? ToolchainVersion(parsing: outputString) {
-            // This branch is taken if the toolchain in question is mocked.
-            return version
-        } else {
-            throw SwiftlyTestError(message: "bad version: \(outputString)")
-        }
     }
 }
 

@@ -100,7 +100,7 @@ struct Update: SwiftlyCommand {
             }
         }
 
-        try await Install.execute(
+        let r = try await Install.execute(
             version: newToolchain,
             &config,
             self.httpClient,
@@ -110,6 +110,9 @@ struct Update: SwiftlyCommand {
 
         try await Uninstall.execute(parameters.oldToolchain, &config)
         SwiftlyCore.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
+
+        // throw any deferred failures due to the install system dependency checks.
+        try r.get()
     }
 
     /// Using the provided toolchain selector and the current config, returns a set of parameters that determines

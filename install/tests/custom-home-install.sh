@@ -29,7 +29,7 @@ elif has_command yum ; then
 fi
 
 # Customizing the installation directories for swiftly involves setting environment variables
-printf "1\n" | SWIFTLY_HOME_DIR="$HOME/${CUSTOM_HOME_DIR_NAME}" SWIFTLY_BIN_DIR="$HOME/${CUSTOM_HOME_DIR_NAME}/bin" $(get_swiftly) list
+printf "1\n" | SWIFTLY_HOME_DIR="$HOME/${CUSTOM_HOME_DIR_NAME}" SWIFTLY_BIN_DIR="$HOME/${CUSTOM_HOME_DIR_NAME}/bin" $(get_swiftly) init
 
 # .profile should be updated to update PATH and SWIFTLY_HOME_DIR/SWIFTLY_BIN_DIR.
 bash --login -c "swiftly --version"

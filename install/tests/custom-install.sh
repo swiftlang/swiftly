@@ -37,7 +37,7 @@ fi
 # Custom home dir
 # Custom bin dir
 # Modify login config (yes)
-printf "1\n" | SWIFTLY_HOME_DIR="$CUSTOM_HOME_DIR" SWIFTLY_BIN_DIR="$CUSTOM_BIN_DIR" $(get_swiftly) list
+printf "1\n" | SWIFTLY_HOME_DIR="$CUSTOM_HOME_DIR" SWIFTLY_BIN_DIR="$CUSTOM_BIN_DIR" $(get_swiftly) init
 
 # .profile should be updated to update PATH and SWIFTLY_HOME_DIR/SWIFTLY_BIN_DIR.
 bash --login -c "swiftly --version"
@@ -64,11 +64,10 @@ if [[ -d "$HOME/.local/share/swiftly" ]]; then
     test_fail "expected default home directory to not be created, but it was"
 fi
 
-swiftly install 5.10.0
+swiftly install 5.10.0 || echo "expected that the install exits with 1 to indicate that system dependencies need to be installed"
 
-# At this point the user was given the information about what system packages
-# the toolchain required. Install them now.
-
+# The user would have been instructed to install the system dependencies
+# after installing the toolchain. Pre-install those now.
 install_system_deps
 
 swift --version

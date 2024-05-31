@@ -39,17 +39,17 @@ struct List: SwiftlyCommand {
         // First, validate the installation of swiftly
         let config = try await validate(root)
 
-        let selector = try self.toolchainSelector.map { input in
+        let selector: ToolchainSelector? = try self.toolchainSelector.map( { input in
             try ToolchainSelector(parsing: input)
-        }
+        })
 
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
-        let activeToolchain = config.inUse
+        let defaultToolchain = config.inUse
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"
-            if toolchain == activeToolchain {
-                message += " (in use)"
+            if toolchain == defaultToolchain {
+                message += " (default)"
             }
             SwiftlyCore.print(message)
         }

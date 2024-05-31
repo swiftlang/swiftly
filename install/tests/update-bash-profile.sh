@@ -22,7 +22,6 @@ cleanup () {
     rm "$HOME/.bash_login"
 
     rm -r "$HOME/.local/share/swiftly"
-    rm "$HOME/.local/bin/swiftly"
 
     chsh --shell "$oldshell"
 }
@@ -43,7 +42,7 @@ elif has_command yum ; then
     yum install -y ca-certificates gpg # These are needed for swiftly to function
 fi
 
-echo "1" | $(get_swiftly) list
+echo "1" | $(get_swiftly) init
 
 if [[ ! "$(cat $HOME/.bash_profile)" =~ "swiftly/env.sh" ]]; then
    test_fail "install did not update .bash_profile"
@@ -54,7 +53,7 @@ if [[ "$(cat $HOME/.bash_login)" != "" ]]; then
 fi
 
 rm "$HOME/.bash_profile"
-$(get_swiftly) -y --overwrite list
+$(get_swiftly) init -y --overwrite
 
 if [[ -f "$HOME/.bash_profile" ]]; then
    test_fail "install created .bash_profile when it should not have"

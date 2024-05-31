@@ -15,7 +15,7 @@ elif has_command yum ; then
     yum install -y ca-certificates gpg # These are needed for swiftly to function
 fi
 
-echo "0" | $(get_swiftly) list || echo 'Swiftly exited'
+echo "0" | $(get_swiftly) init || echo 'Swiftly exited'
 
 if has_command "swiftly" ; then
     test_fail "swiftly executable should not have been installed"

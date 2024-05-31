@@ -39,13 +39,13 @@ Next up is the installation tests. These are designed to run in a containerized 
 profile.
 
 ```
-docker run -it -v $(pwd):/swiftly ubuntu:22.04 bash -c "cd /swiftly/install; ./run-tests.sh" # Replace ubuntu:22.04 with other supported distributions for more coverage
+docker run -v $(pwd):/swiftly ubuntu:22.04 bash -c "cd /swiftly/install; ./run-tests.sh" # Replace ubuntu:22.04 with other supported distributions for more coverage
 ```
 
 You can re-run a single test script in isolation.
 
 ```
-docker run -it -v $(pwd):/swiftly ubuntu:22.04 bash -c "cd /swiftly/install; ./tests/default-install.sh"
+docker run -v $(pwd):/swiftly ubuntu:22.04 bash -c "cd /swiftly/install; ./tests/default-install.sh"
 ```
 
 Run all of the tests in isolation to make sure that there isn't any leaking system state between tests.

@@ -14,9 +14,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "latest"])
             try await cmd.run()
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
 
             XCTAssertTrue(!config.installedToolchains.isEmpty)
 
@@ -45,9 +43,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "5.7"])
             try await cmd.run()
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
 
             XCTAssertTrue(!config.installedToolchains.isEmpty)
 
@@ -127,9 +123,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot"])
             try await cmd.run()
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
 
             XCTAssertTrue(!config.installedToolchains.isEmpty)
 
@@ -156,9 +150,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot"])
             try await cmd.run()
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
 
             XCTAssertTrue(!config.installedToolchains.isEmpty)
 
@@ -207,9 +199,7 @@ final class InstallTests: SwiftlyTests {
             var cmd = try self.parseCommand(Install.self, ["install", version])
             try await cmd.run()
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let before = try await Config.load(options: options)
+            let before = try Config.load()
 
             let startTime = Date()
             cmd = try self.parseCommand(Install.self, ["install", version])
@@ -218,7 +208,7 @@ final class InstallTests: SwiftlyTests {
             // Assert that swiftly didn't attempt to download a new toolchain.
             XCTAssertTrue(startTime.timeIntervalSinceNow.magnitude < 5)
 
-            let after = try await Config.load(options: options)
+            let after = try Config.load()
             XCTAssertEqual(before, after)
         }
     }
@@ -249,9 +239,7 @@ final class InstallTests: SwiftlyTests {
         }
 
         try await self.withTestHome {
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
             XCTAssertTrue(config.inUse == nil)
             try await validateInUse(expected: nil)
 
@@ -272,7 +260,7 @@ final class InstallTests: SwiftlyTests {
     func testInstallUseFlag() async throws {
         try await self.withTestHome {
             try await self.installMockedToolchain(toolchain: Self.oldStable)
-            var use = try self.parseCommand(Use.self, ["use", Self.oldStable.name])
+            var use = try self.parseCommand(Use.self, ["use", "-g", Self.oldStable.name])
             try await use.run()
             try await validateInUse(expected: Self.oldStable)
             try await self.installMockedToolchain(selector: Self.newStable.name, args: ["--use"])

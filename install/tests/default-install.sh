@@ -19,7 +19,6 @@ cleanup () {
     fi
 
     rm -r "$HOME/.local/share/swiftly"
-    rm "$HOME/.local/bin/swiftly"
 }
 trap cleanup EXIT
 
@@ -32,7 +31,12 @@ elif has_command yum ; then
     yum install -y ca-certificates gpg # These are needed for swiftly to function
 fi
 
-printf "1\n" | $(get_swiftly) install latest
+printf "\n" | $(get_swiftly) init
+
+$(get_swiftly) install latest || echo "the install completes but exits with 1 to indicate that further action is necessary"
+
+# The user will be told to ensure that the system deps are installed before continuing
+install_system_deps
 
 # .profile should be updated to update PATH.
 bash --login -c "swiftly --version"
@@ -50,9 +54,6 @@ fi
 if ! gpg --list-keys Swift ; then
     test_fail "Swift PGP keys were not installed by default."
 fi
-
-# The user will be told to ensure that the system deps are installed before continuing
-install_system_deps
 
 swift --version
 

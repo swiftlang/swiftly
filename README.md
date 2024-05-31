@@ -6,13 +6,15 @@ Ongoing maintenance and stewardship of this project is led by the [SSWG](https:/
 
 ### Installation
 
-To install swiftly and the latest Swift, download the latest version of swiftly and run the following command:
+Download swiftly-init and run it to initialize swiftly:
 
 ```
-path/to/swiftly install latest # Replace path/to with the path to where you downloaded the swiftly executable
+swiftly-init
 ```
 
 ### Basic usage
+
+Once swiftly is ready you can install the latest swift toolchain like this:
 
 ```
 $ swiftly install latest
@@ -35,6 +37,7 @@ Target: x86_64-unknown-linux-gnu
 - Switching which installed toolchain is active (i.e. which one is discovered via `$PATH`)
 - Updating installed toolchains to the latest available versions of those toolchains
 - Uninstalling installed toolchains
+- Run swift toolchain commands in a particular version of the toolchain
 - Listing the toolchains that are available to install (not yet implemented)
 
 ## Platform support
@@ -131,7 +134,28 @@ $ swiftly list
 
 ### Selecting a toolchain for use
 
-“Using” a toolchain sets it as the active toolchain, meaning it will be the one found via $PATH and invoked via `swift` commands executed in the shell.
+You can run your usual commands and select a toolchain with a special '+' parameter. The following example will test the current project using the latest main snapshot toolchain:
+
+```
+$ swift test +main-snapshot
+```
+
+Swiftly proxies the swift command and automatically downloads, installs, and then uses the specified toolchain.
+
+If you want to adopt a newer version of the swift toolchain, you can test your project with it like this:
+
+```
+$ swift test +5.10.0
+```
+
+If after some testing you want to continue to use this version from now on you can "use" it like this so that you don't have to keep giving the version.
+
+```
+$ swiftly use 5.10.0
+$ swift build          # Swift build now knows that 5.10.0 is the toolchain that is in use because of the proxy
+```
+
+Assuming that your team uses swiftly and you want to update everyone to the new toolchain you can commit and push the changes to the `.swift-version` file. Next time that they run a toolchain command swiftly will automatically download and install the 5.10.0 toolchain so that everyone is using the same toolchain.
 
 To use the toolchain associated with the most up-to-date Swift version, the “latest” version can be specified:
 
@@ -247,6 +271,8 @@ $ swiftly list-available 5.7-snapshot
 
 ### Updating swiftly
 
+NOTE: versions of swiftly <= 0.4.0 cannot be self updated since the release mechanism and website have both changed. You can manually uninstall swiftly and then install the newest version using the instructions above. See below for more details.
+
 This command checks to see if there are new versions of `swiftly` itself and upgrades to them if so.
 
 Note that this command isn't implemented yet, but it will be included in a future release.
@@ -285,6 +311,18 @@ Contributions to Swiftly are welcomed and encouraged! Please see the [Contributi
 To be a truly great community, Swift needs to welcome developers from all walks of life, with different backgrounds, and with a wide range of experience. A diverse and friendly community will have more great ideas, more unique perspectives, and produce more great code. We will work diligently to make the Swift community welcoming to everyone.
 
 To give clarity of what is expected of our members, Swift has adopted the code of conduct defined by the Contributor Covenant. This document is used across many open source communities, and we think it articulates our values well. For more, see the [Code of Conduct](https://www.swift.org/code-of-conduct/).
+
+### Uninstalling older (0.4.0 and earlier) versions of swiftly
+
+To remove an older swiftly, first remove the old SWIFTLY_HOME, which is usually in `$HOME/.local/share/swiftly`. Then you can remove the source line in your profile. It usually looks something like this in your `.profile`, `.zprofile`, `.bash_profile`, or `.bash_login` file.
+
+```
+. "$HOME/.local/share/swiftly/env.sh"
+```
+
+If you are using the fish shell then there is a file in your `$HOME/.config/fish/conf.d` called `swiftly.fish`. Remove this file.
+
+Once you've removed all of the files and updated your user profile restart your shell session and/or terminal to remove traces of swiftly from your system.
  
 ## FAQ
 

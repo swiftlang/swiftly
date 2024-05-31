@@ -24,7 +24,7 @@ fi
 
 for platform in "${platforms[@]}"; do
     echo "Performing installation with platform $platform..."
-    $(get_swiftly) --overwrite -y --platform "$platform" list
+    $(get_swiftly) -y init --overwrite --platform "$platform"
     cat $HOME/.local/share/swiftly/config.json
 
     if [[ "$platform" == "rhel9" ]]; then
@@ -36,7 +36,6 @@ for platform in "${platforms[@]}"; do
     fi
 
     rm -rf $HOME/.local/share/swiftly
-    rm -rf $HOME/.local/bin/swiftly
 done
 
 test_pass

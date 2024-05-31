@@ -10,17 +10,126 @@ import SwiftlyCore
 public struct GlobalOptions: ParsableArguments {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
     var assumeYes: Bool = false
-    @Flag(name: [.customShort("n"), .long], help: "Do not attempt to modify the profile file to set environment variables (e.g. PATH) on login.")
-    var noModifyProfile: Bool = false
-    @Flag(name: .shortAndLong, help: "Overwrite the existing swiftly installation found at the configured SWIFTLY_HOME, if any. If this option is unspecified and an existing installation is found, the swiftly executable will be updated, but the rest of the installation will not be modified.")
-    var overwrite: Bool = false
-    @Option(name: .long, help: "Specify the current Linux platform for swiftly.")
-    var platform: String?
 
     public init() {}
 }
 
+private func findSwiftVersionFromFile() -> String? {
+    var cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+    while true {
+        guard FileManager.default.fileExists(atPath: cwd.path) else {
+            break
+        }
+
+        let svFile = cwd.appendingPathComponent(".swift-version", isDirectory: false)
+
+        if FileManager.default.fileExists(atPath: svFile.path) {
+            do {
+                let contents = try String(contentsOf: svFile, encoding: .utf8)
+                if !contents.isEmpty {
+                    return contents.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: "\r", with: "")
+                }
+            } catch {}
+        }
+
+        cwd = cwd.deletingLastPathComponent()
+    }
+
+    return nil
+}
+
+private func findInstalledToolchain(_ config: Config, _ selection: String) async throws -> ToolchainVersion {
+    let selector = try ToolchainSelector(parsing: selection)
+
+    if let matched = config.listInstalledToolchains(selector: selector).max() {
+        return matched
+    } else {
+        // Run ourselves to try and install the selected toolchain
+        let process = Process()
+        process.executableURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
+        process.arguments = ["install", selection]
+        process.standardInput = FileHandle.nullDevice
+        process.standardOutput = FileHandle.standardError
+        process.standardError = FileHandle.standardError
+
+        try process.run()
+        // Attach this process to our process group so that Ctrl-C and other signals work
+        let pgid = tcgetpgrp(STDOUT_FILENO)
+        if pgid != -1 {
+            tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
+        }
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            exit(process.terminationStatus)
+        }
+
+        let config = try Config.load()
+
+        guard let matched = config.listInstalledToolchains(selector: selector).max() else {
+            throw Error(message: "Unable to install selected toolchain: \(selector)")
+        }
+
+        return matched
+    }
+}
+
+let proxyList = ["clang", "lldb", "lldb-dap", "lldb-server", "clang++", "sourcekit-lsp", "clangd",
+                 "swift", "docc", "swiftc", "lld", "llvm-ar", "plutil", "repl_swift", "wasm-ld"]
+
+// This is the main entry point for the proxy.
 @main
+public struct Proxy {
+    static func main() async throws {
+        do {
+            let zero = CommandLine.arguments[0]
+            guard let binName = zero.components(separatedBy: "/").last else {
+                fatalError("Could not determine the binary name for proxying")
+            }
+
+            guard proxyList.contains(binName) else {
+                // Treat this as a swiftly invocation
+
+                // Special case of swiftly-init that bootstraps the installation process
+                //  and just folds into the init subcommand. Note that the binary name can
+                //  get appended by a web browser download with "-1", or "(1)" and so on
+                //  so this is a prefix check.
+                if binName.hasPrefix("swiftly-init") {
+                    await Init.main()
+                    exit(0)
+                }
+
+                await Swiftly.main()
+                return
+            }
+
+            let config = try Config.load()
+            let proxyArgs = CommandLine.arguments.filter( { $0.hasPrefix("+") } ).map( { String($0.dropFirst(1)) } )
+            let toolchain: ToolchainVersion
+
+            if proxyArgs.count > 0 {
+                guard proxyArgs.count == 1 else {
+                    throw Error(message: "More than one toolchain selector specified")
+                }
+
+                toolchain = try await findInstalledToolchain(config, proxyArgs[0])
+            } else if let swiftVersion = findSwiftVersionFromFile() {
+                toolchain = try await findInstalledToolchain(config, swiftVersion)
+            } else if let inUse = config.inUse {
+                toolchain = inUse
+            } else {
+                throw Error(message: "No toolchain could be determined either through a toolchain selector (e.g. +5.7.2, +latest), or one that is in use.")
+            }
+            try await Swiftly.currentPlatform.proxy(toolchain, binName, CommandLine.arguments[1...].filter( { !$0.hasPrefix("+") }))
+        } catch {
+            SwiftlyCore.print("\(error)")
+            exit(1)
+        }
+    }
+}
+
+
 public struct Swiftly: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "A utility for installing and managing Swift toolchains.",
@@ -34,6 +143,7 @@ public struct Swiftly: SwiftlyCommand {
             List.self,
             Update.self,
             SelfUpdate.self,
+            Init.self,
         ]
     )
 
@@ -74,74 +184,7 @@ extension Data {
     }
 }
 
-internal func runProgramOutput(_ args: String...) async throws -> String? {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-    process.arguments = args
-
-    let outPipe = Pipe()
-    process.standardInput = FileHandle.nullDevice
-    process.standardError = FileHandle.nullDevice
-    process.standardOutput = outPipe
-
-    try process.run()
-
-    let outData = try outPipe.fileHandleForReading.readToEnd()
-
-    process.waitUntilExit()
-
-    guard process.terminationStatus == 0 else {
-        throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
-    }
-
-    if let outData = outData {
-        return String(data: outData, encoding: .utf8)
-    } else {
-        return nil
-    }
-}
-
 extension SwiftlyCommand {
-    #if os(macOS)
-    internal func getShell() async throws -> String {
-        if let shell = ProcessInfo.processInfo.environment["SHELL"] {
-            return shell
-        }
-
-        if let directoryInfo = try await runProgramOutput("dscl", ".", "-read", FileManager.default.homeDirectoryForCurrentUser.path) {
-            for line in directoryInfo.components(separatedBy: "\n") {
-                if line.hasPrefix("UserShell: ") {
-                    if case let comps = line.components(separatedBy: ": "), comps.count == 2 {
-                        return comps[1]
-                    }
-                }
-            }
-        }
-
-        // Fall back to zsh on macOS
-        return "/bin/zsh"
-    }
-    #else
-    internal func getShell() async throws -> String {
-        if let shell = ProcessInfo.processInfo.environment["SHELL"] {
-            return shell
-        }
-
-        if let passwds = try await runProgramOutput("getent", "passwd") {
-            for line in passwds.components(separatedBy: "\n") {
-                if line.hasPrefix("root:") {
-                    if case let comps = line.components(separatedBy: ":"), comps.count > 1 {
-                        return comps[comps.count-1]
-                    }
-                }
-            }
-        }
-
-        // Fall back on bash on Linux and other Unixes
-        return "/bin/bash"
-    }
-    #endif
-
     public mutating func validate(_ root: GlobalOptions) async throws -> Config {
         // Check if the system has CA certificate trust installed so that swiftly
         //  can use trusted TLS for its http requests.
@@ -149,20 +192,24 @@ extension SwiftlyCommand {
             throw Error(message: "CA certificate trust is not available")
         }
 
-        let assumeYes = root.assumeYes
-        let noModifyProfile = root.noModifyProfile
-        let overwrite = root.overwrite
-
         // Let's check to see if swiftly is installed, or this is the first time
         //  it has been run. This includes the required directories, the swift binary
         //  and potentially whether the PATH has been updated.
         var installed = Swiftly.requiredDirectories.allSatisfy { $0.fileExists() }
 
-        if case let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false), !FileManager.default.fileExists(atPath: swiftlyBin.path)  {
+        if case let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false),
+           !FileManager.default.fileExists(atPath: swiftlyBin.path) {
             installed = false
         }
 
-        let shell = try await getShell()
+        if !proxyList.allSatisfy({ proxy in
+            let bin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(proxy, isDirectory: false)
+            return FileManager.default.fileExists(atPath: bin.path)
+        }) {
+            installed = false
+        }
+
+        let shell = try await Init.getShell()
 
         let envFile: URL
         if shell.hasSuffix("fish") {
@@ -171,7 +218,7 @@ extension SwiftlyCommand {
             envFile = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.sh", isDirectory: false)
         }
 
-        let sourceLine = "\n. \(envFile.path)\n"
+        let sourceLine = "\n. \"\(envFile.path)\"\n"
 
         if !FileManager.default.fileExists(atPath: envFile.path) {
             installed = false
@@ -184,144 +231,35 @@ extension SwiftlyCommand {
             To use the installed swiftly from shell you can run the following command:
                 \(sourceLine)
             """)
-        }
 
-        // Give the user the prompt and the choice to abort to abort at this point.
-        if !assumeYes && !installed {
+            #if os(macOS)
             SwiftlyCore.print("""
-            Swiftly can be installed into the following locations:
+                NOTE: On macOS it is possible that the shell will pick up the system Swift on the path
+                instead of the one that swiftly has installed for you. You can run the 'hash -r'
+                command to update the shell with the latest PATHs.
 
-            \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Data and configuration files directory including toolchains
-            \(Swiftly.currentPlatform.swiftlyBinDir.path) - Executables installation directory
-
-            Note that the locations can be changed with SWIFTLY_HOME and SWIFTLY_BIN environment variables and run
-            this again.
-
-            Proceed with the installation?
-
-            0) Cancel
-            1) Install
-            """)
-
-            if SwiftlyCore.readLine(prompt: "> ") == "0" {
-                throw Error(message: "Swiftly installation has been cancelled")
-            }
-        }
-
-        if overwrite {
-            try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyToolchainsDir)
-            try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyHomeDir)
-        }
-
-        // Go ahead and create the directories as needed
-        for requiredDir in Swiftly.requiredDirectories {
-            if !requiredDir.fileExists() {
-                do {
-                    try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
-                } catch {
-                    throw Error(message: "Failed to create required directory \"\(requiredDir.path)\": \(error)")
-                }
-            }
-        }
-
-        // Force the configuration to be present. Generate it if it doesn't already exist
-        let config = try await Config.load(options: root)
-        if overwrite {
-            try config.save()
-        }
-
-        // Copy the swiftly binary if it isn't there or overwrite is specified
-        // CommandLine.arguments
-        if case let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false), !FileManager.default.fileExists(atPath: swiftlyBin.path) || overwrite  {
-            SwiftlyCore.print("Copying swiftly into the installation directory...")
-            try? FileManager.default.removeItem(at: swiftlyBin)
-            try FileManager.default.copyItem(at: URL(fileURLWithPath: CommandLine.arguments[0]), to: swiftlyBin)
-        }
-
-        // If everything is installed then we can leave at this point
-        if installed && !overwrite {
-            return config
-        }
-
-        if !FileManager.default.fileExists(atPath: envFile.path) {
-            SwiftlyCore.print("Creating shell environment file for the user...")
-            var env = ""
-            if shell.hasSuffix("fish") {
-                env = """
-                set -x SWIFTLY_HOME_DIR "\(Swiftly.currentPlatform.swiftlyHomeDir.path)"
-                set -x SWIFTLY_BIN_DIR "\(Swiftly.currentPlatform.swiftlyBinDir.path)"
-                if not contains "$SWIFTLY_BIN_DIR" $PATH
-                    set -x PATH "$SWIFTLY_BIN_DIR" $PATH
-                end
-
+                    hash -r
                 """
-            } else {
-                env = """
-                export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir.path)"
-                export SWIFTLY_BIN_DIR=""\(Swiftly.currentPlatform.swiftlyBinDir.path)
-                if [[ ":$PATH:" != *":$SWIFTLY_BIN_DIR:"* ]]; then
-                    export PATH="$SWIFTLY_BIN_DIR:$PATH"
-                fi
-
-                """
-            }
-
-            try Data(env.utf8).write(to: envFile, options: .atomic)
+            )
+            #endif
         }
 
-        if !noModifyProfile && !ProcessInfo.processInfo.environment["PATH"]!.contains(Swiftly.currentPlatform.swiftlyBinDir.path) {
-            SwiftlyCore.print("Updating profile...")
-
-            guard let homeVar = ProcessInfo.processInfo.environment["HOME"], case let userHome = URL(fileURLWithPath: homeVar) else {
-                fatalError("User's HOME is not set")
-            }
-
-            let profileHome: URL
-            if shell.hasSuffix("zsh") {
-                profileHome = userHome.appendingPathComponent(".zprofile", isDirectory: false)
-            } else if shell.hasSuffix("bash") {
-                if case let p = userHome.appendingPathComponent(".bash_profile", isDirectory: false), FileManager.default.fileExists(atPath: p.path) {
-                    profileHome = p
-                } else if case let p = userHome.appendingPathComponent(".bash_login", isDirectory: false), FileManager.default.fileExists(atPath: p.path) {
-                    profileHome = p
-                } else {
-                    profileHome = userHome.appendingPathComponent(".profile", isDirectory: false)
-                }
-            } else if shell.hasSuffix("fish") {
-                if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"], case let xdgConfigURL = URL(fileURLWithPath: xdgConfigHome) {
-                    let confDir = xdgConfigURL.appendingPathComponent("fish/conf.d", isDirectory: true)
-                    try FileManager.default.createDirectory(at: confDir, withIntermediateDirectories: true)
-                    profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
-                } else {
-                    let confDir = userHome.appendingPathComponent(".config/fish/conf.d", isDirectory: true)
-                    try FileManager.default.createDirectory(at: confDir, withIntermediateDirectories: true)
-                    profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
-                }
-            } else {
-                profileHome = userHome.appendingPathComponent(".profile", isDirectory: false)
-            }
-
-            var addEnvToProfile = false
-            do {
-                if !FileManager.default.fileExists(atPath: profileHome.path) {
-                    addEnvToProfile = true
-                } else if case let profileContents = try String(contentsOf: profileHome), !profileContents.contains(sourceLine) {
-                    addEnvToProfile = true
-                }
-            } catch {
-                addEnvToProfile = true
-            }
-
-            if addEnvToProfile {
-                try Data(sourceLine.utf8).append(file: profileHome)
-
-                SwiftlyCore.print("""
-                To begin using installed swiftly from your current shell, first run the following command:
-                    \(sourceLine)
-                """)
-            }
+        if !FileManager.default.fileExists(atPath: Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("config.json", isDirectory: false).path) {
+            installed = false
         }
 
+        if !proxyList.allSatisfy({ proxy in
+            let bin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(proxy, isDirectory: false)
+            return FileManager.default.fileExists(atPath: bin.path)
+        }) {
+            installed = false
+        }
+
+        guard installed else {
+            throw Error(message: "swiftly is not installed. Please run 'swiftly init' or 'swiftly-init' to install it.")
+        }
+
+        let config = try Config.load()
         return config
     }
 }

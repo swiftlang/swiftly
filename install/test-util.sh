@@ -48,7 +48,7 @@ get_swiftly () {
 }
 
 install_system_deps() {
-    // Keep this list in sync with the hardcoded metadata in Sources/Swiftly/Install.swift
+    # Keep this list in sync with the hardcoded metadata in Sources/Swiftly/Install.swift
     case "$(get_os)" in
         "ubuntu1804")
             system_deps=(binutils
@@ -88,6 +88,7 @@ install_system_deps() {
             system_deps=(binutils
                          git
                          gnupg2
+                         unzip
                          libc6-dev
                          libcurl4-openssl-dev
                          libedit2
@@ -97,6 +98,7 @@ install_system_deps() {
                          libxml2-dev
                          libz3-dev
                          pkg-config
+                         python3-lldb-13
                          tzdata
                          zip
                          zlib1g-dev)

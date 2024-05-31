@@ -11,15 +11,13 @@ final class UpdateTests: SwiftlyTests {
         try await self.withTestHome {
             try await self.installMockedToolchain(selector: .latest)
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let beforeUpdateConfig = try await Config.load(options: options)
+            let beforeUpdateConfig = try Config.load()
 
             var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify"])
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
             XCTAssertEqual(config, beforeUpdateConfig)
             try await validateInstalledToolchains(
                 beforeUpdateConfig.installedToolchains,
@@ -50,9 +48,7 @@ final class UpdateTests: SwiftlyTests {
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
 
             let inUse = config.inUse!.asStableRelease!
 
@@ -75,7 +71,7 @@ final class UpdateTests: SwiftlyTests {
 
             var options = GlobalOptions()
             options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
             let inUse = config.inUse!.asStableRelease!
 
             XCTAssertEqual(inUse.major, 5)
@@ -97,9 +93,7 @@ final class UpdateTests: SwiftlyTests {
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
             let inUse = config.inUse!.asStableRelease!
 
             XCTAssertEqual(inUse.major, 5)
@@ -119,13 +113,17 @@ final class UpdateTests: SwiftlyTests {
         try await self.withTestHome {
             try await self.installMockedToolchain(selector: "5.0.0")
 
+            let prevConfig = try Config.load()
+            let prevInUse = prevConfig.inUse!.asStableRelease!
+            XCTAssertEqual(prevInUse.major, 5)
+            XCTAssertEqual(prevInUse.minor, 0)
+            XCTAssertEqual(prevInUse.patch, 0)
+
             var update = try self.parseCommand(Update.self, ["update", "-y", "--no-verify"])
             update.httpClient = self.mockHttpClient
             try await update.run()
 
-            var options = GlobalOptions()
-            options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
             let inUse = config.inUse!.asStableRelease!
             XCTAssertGreaterThan(inUse, .init(major: 5, minor: 0, patch: 0))
             XCTAssertEqual(inUse.major, 5)
@@ -159,9 +157,7 @@ final class UpdateTests: SwiftlyTests {
                 update.httpClient = self.mockHttpClient
                 try await update.run()
 
-                var options = GlobalOptions()
-                options.assumeYes = true
-                let config = try await Config.load(options: options)
+                let config = try Config.load()
                 let inUse = config.inUse!.asSnapshot!
                 XCTAssertGreaterThan(inUse, .init(branch: branch, date: date))
                 XCTAssertEqual(inUse.branch, branch)
@@ -187,7 +183,7 @@ final class UpdateTests: SwiftlyTests {
 
             var options = GlobalOptions()
             options.assumeYes = true
-            let config = try await Config.load(options: options)
+            let config = try Config.load()
             let inUse = config.inUse!.asStableRelease!
             XCTAssertEqual(inUse.major, 5)
             XCTAssertEqual(inUse.minor, 0)
@@ -220,7 +216,7 @@ final class UpdateTests: SwiftlyTests {
 
                 var options = GlobalOptions()
                 options.assumeYes = true
-                let config = try await Config.load(options: options)
+                let config = try Config.load()
                 let inUse = config.inUse!.asSnapshot!
 
                 XCTAssertEqual(inUse.branch, branch)

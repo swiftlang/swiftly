@@ -1,5 +1,54 @@
 import ArgumentParser
 import SwiftlyCore
+import Foundation
+
+func findSwiftVersionFile() -> (file: URL, selector: ToolchainSelector)? {
+    var cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+    while true {
+        guard FileManager.default.fileExists(atPath: cwd.path) else {
+            break
+        }
+
+        let svFile = cwd.appendingPathComponent(".swift-version", isDirectory: false)
+
+        if FileManager.default.fileExists(atPath: svFile.path) {
+            do {
+                let contents = try String(contentsOf: svFile, encoding: .utf8)
+                if !contents.isEmpty {
+                    do {
+                        let selector = try ToolchainSelector(parsing: contents.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: "\r", with: ""))
+                        return (svFile, selector)
+                    } catch {}
+                }
+            } catch {}
+        }
+
+        cwd = cwd.deletingLastPathComponent()
+    }
+
+    return nil
+}
+
+private func findCurrentSwiftPackageLocation() -> URL? {
+    var cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+
+    while true {
+        guard FileManager.default.fileExists(atPath: cwd.path) else {
+            break
+        }
+
+        let svFile = cwd.appendingPathComponent("Package.swift", isDirectory: false)
+
+        if FileManager.default.fileExists(atPath: svFile.path) {
+            return cwd
+        }
+
+        cwd = cwd.deletingLastPathComponent()
+    }
+
+    return nil
+}
 
 internal struct Use: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
@@ -44,13 +93,18 @@ internal struct Use: SwiftlyCommand {
 
     @OptionGroup var root: GlobalOptions
 
+    @Flag(name: .shortAndLong, help: "Update the global default toolchain setting without updating any local .swift-version file.")
+    var globalDefault: Bool = false
+
     internal mutating func run() async throws {
         // First, validate the installation of swiftly
         var config = try await validate(root)
 
         guard let toolchain = self.toolchain else {
-            if let inUse = config.inUse {
-                SwiftlyCore.print("\(inUse) (in use)")
+            if let (file, selector) = findSwiftVersionFile(), !globalDefault {
+                SwiftlyCore.print("\(selector) (selected by \(file.path))")
+            } else if let inUse = config.inUse {
+                SwiftlyCore.print("\(inUse) (default)")
             }
             return
         }
@@ -62,29 +116,45 @@ internal struct Use: SwiftlyCommand {
             return
         }
 
-        try await Self.execute(toolchain, &config)
+        try await Self.execute(toolchain, &config, globalDefault: globalDefault)
     }
 
     /// Use a toolchain. This method modifies and saves the input config.
-    internal static func execute(_ toolchain: ToolchainVersion, _ config: inout Config) async throws {
-        let previousToolchain = config.inUse
+    internal static func execute(_ toolchain: ToolchainVersion, _ config: inout Config, globalDefault: Bool) async throws {
+        if let (file, selector) = findSwiftVersionFile(), !globalDefault {
+            guard toolchain.name != selector.description else {
+                SwiftlyCore.print("\(toolchain) is already in use")
+                return
+            }
 
-        guard toolchain != previousToolchain else {
-            SwiftlyCore.print("\(toolchain) is already in use")
-            return
+            try Data(toolchain.name.utf8).write(to: file, options: .atomic)
+
+            SwiftlyCore.print("Set the active toolchain selector to \(toolchain) in \(file.path) (was \(selector.description))")
+        } else {
+            let previousToolchain = config.inUse
+
+            guard toolchain != previousToolchain else {
+                SwiftlyCore.print("\(toolchain) is already in use")
+                return
+            }
+
+            if let swiftPackageLoc = findCurrentSwiftPackageLocation(), !globalDefault {
+                let swiftVersionFile = swiftPackageLoc.appendingPathComponent(".swift-version", isDirectory: false)
+                try Data(toolchain.name.utf8).write(to: swiftVersionFile, options: .atomic)
+
+                SwiftlyCore.print("Set the selected toolchain to \(toolchain) in \(swiftVersionFile.path)")
+            } else {
+                config.inUse = toolchain
+                try config.save()
+
+                let was = if let previousToolchain {
+                    " (was \(previousToolchain))"
+                } else {
+                    ""
+                }
+
+                SwiftlyCore.print("Set the global default toolchain to \(toolchain)\(was)")
+            }
         }
-
-        guard try Swiftly.currentPlatform.use(toolchain, currentToolchain: previousToolchain) else {
-            return
-        }
-        config.inUse = toolchain
-        try config.save()
-
-        var message = "Set the active toolchain to \(toolchain)"
-        if let previousToolchain {
-            message += " (was \(previousToolchain))"
-        }
-
-        SwiftlyCore.print(message)
     }
 }

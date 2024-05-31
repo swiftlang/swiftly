@@ -142,84 +142,20 @@ public struct Linux: Platform {
         try FileManager.default.removeItem(at: toolchainDir)
     }
 
-    public func use(_ toolchain: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool {
-        let toolchainBinURL = self.swiftlyToolchainsDir
-            .appendingPathComponent(toolchain.name, isDirectory: true)
-            .appendingPathComponent("usr", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
-
-        // Delete existing symlinks from previously in-use toolchain.
-        if let currentToolchain {
-            try self.unUse(currentToolchain: currentToolchain)
-        }
-
-        // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-        let swiftlyBinDirContents = try FileManager.default.contentsOfDirectory(atPath: self.swiftlyBinDir.path)
-        let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path)
-        let willBeOverwritten = Set(toolchainBinDirContents).intersection(swiftlyBinDirContents)
-        if !willBeOverwritten.isEmpty {
-            SwiftlyCore.print("The following existing executables will be overwritten:")
-
-            for executable in willBeOverwritten {
-                SwiftlyCore.print("  \(self.swiftlyBinDir.appendingPathComponent(executable).path)")
-            }
-
-            let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
-
-            guard proceed == "y" else {
-                SwiftlyCore.print("Aborting use")
-                return false
-            }
-        }
-
-        for executable in toolchainBinDirContents {
-            let linkURL = self.swiftlyBinDir.appendingPathComponent(executable)
-            let executableURL = toolchainBinURL.appendingPathComponent(executable)
-
-            // Deletion confirmed with user above.
-            try linkURL.deleteIfExists()
-
-            try FileManager.default.createSymbolicLink(
-                atPath: linkURL.path,
-                withDestinationPath: executableURL.path
-            )
-        }
-
-        return true
-    }
-
-    public func unUse(currentToolchain: ToolchainVersion) throws {
-        let currentToolchainBinURL = self.swiftlyToolchainsDir
-            .appendingPathComponent(currentToolchain.name, isDirectory: true)
-            .appendingPathComponent("usr", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
-
-        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: currentToolchainBinURL.path) {
-            guard existingExecutable != "swiftly" else {
-                continue
-            }
-
-            let url = self.swiftlyBinDir.appendingPathComponent(existingExecutable)
-            let vals = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
-
-            guard let islink = vals.isSymbolicLink, islink else {
-                throw Error(message: "Found executable not managed by swiftly in SWIFTLY_BIN_DIR: \(url.path)")
-            }
-            let symlinkDest = url.resolvingSymlinksInPath()
-            guard symlinkDest.deletingLastPathComponent() == currentToolchainBinURL else {
-                throw Error(message: "Found symlink that points to non-swiftly managed executable: \(symlinkDest.path)")
-            }
-
-            try self.swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
-        }
-    }
-
     public func listAvailableSnapshots(version _: String?) async -> [Snapshot] {
         []
     }
 
-    public func getExecutableName(forArch: String) -> String {
-        "swiftly-\(forArch)-unknown-linux-gnu"
+    public func getExecutableName() -> String {
+        #if arch(x86_64)
+        let architecture = "x86_64"
+        #elseif arch(arm64)
+        let architecture = "aarch64"
+        #else
+        fatalError("Unsupported processor architecture")
+        #endif
+
+        return "swiftly-\(architecture)-unknown-linux-gnu"
     }
 
     public func currentToolchain() throws -> ToolchainVersion? { nil }
@@ -261,6 +197,11 @@ public struct Linux: Platform {
         }
 
         try process.run()
+        // Attach this process to our process group so that Ctrl-C and other signals work
+        let pgid = tcgetpgrp(STDOUT_FILENO)
+        if pgid != -1 {
+            tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
+        }
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
@@ -268,7 +209,7 @@ public struct Linux: Platform {
         }
     }
 
-    private func manualSelectPlatform(_ platformPretty: String?, _ architecture: String) -> PlatformDefinition {
+    private func manualSelectPlatform(_ platformPretty: String?) -> PlatformDefinition {
         if let platformPretty = platformPretty {
             print("\(platformPretty) is not an officially supported platform, but the toolchains for another platform may still work on it.")
         } else {
@@ -290,42 +231,34 @@ public struct Linux: Platform {
 
         switch choice {
             case "1":
-                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04", architecture: architecture)
+                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04")
             case "2":
-                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04", architecture: architecture)
+                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04")
             case "3":
-                return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04", architecture: architecture)
+                return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
             case "4":
-                return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9", architecture: architecture)
+                return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9")
             case "5":
-                return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2", architecture: architecture)
+                return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2")
             default:
                 fatalError("Installation canceled")
         }
     }
 
     public func detectPlatform(disableConfirmation: Bool, platform: String?) async throws -> PlatformDefinition {
-        #if arch(x86_64)
-        let architecture = "x86_64"
-        #elseif arch(arm64)
-        let architecture = "aarch64"
-        #else
-        fatalError("Unsupported processor architecture")
-        #endif
-
         // We've been given a hint to use
         if let platform = platform {
             switch(platform) {
             case "ubuntu22.04":
-                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04", architecture: architecture)
+                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04")
             case "ubuntu20.04":
-                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04", architecture: architecture)
+                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04")
             case "ubuntu18.04":
-                 return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04", architecture: architecture)
+                 return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
             case "amazonlinux2":
-                 return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2", architecture: architecture)
+                 return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2")
             case "rhel9":
-                 return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9", architecture: architecture)
+                 return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9")
             default:
                 fatalError("Unrecognized platform \(platform)")
             }
@@ -349,7 +282,7 @@ public struct Linux: Platform {
             } else {
                 print(message)
             }
-            return manualSelectPlatform(platformPretty, architecture)
+            return manualSelectPlatform(platformPretty)
         }
 
         let data = FileManager.default.contents(atPath: releaseFile)
@@ -360,7 +293,7 @@ public struct Linux: Platform {
             } else {
                 print(message)
             }
-            return manualSelectPlatform(platformPretty, architecture)
+            return manualSelectPlatform(platformPretty)
         }
 
         guard let releaseInfo = String(data: data, encoding: .utf8) else {
@@ -370,7 +303,7 @@ public struct Linux: Platform {
             } else {
                 print(message)
             }
-            return manualSelectPlatform(platformPretty, architecture)
+            return manualSelectPlatform(platformPretty)
         }
  
         var id: String?
@@ -398,7 +331,7 @@ public struct Linux: Platform {
             } else {
                 print(message)
             }
-            return manualSelectPlatform(platformPretty, architecture)
+            return manualSelectPlatform(platformPretty)
         }
 
         if (id+idlike).contains("amzn") {
@@ -409,17 +342,17 @@ public struct Linux: Platform {
                 } else {
                     print(message)
                 }
-                return manualSelectPlatform(platformPretty, architecture)
+                return manualSelectPlatform(platformPretty)
             }
 
-            return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2", architecture: architecture)
+            return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2")
         } else if (id+idlike).contains("ubuntu") {
             if ubuntuCodeName == "jammy" {
-                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04", architecture: architecture)
+                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04")
             } else if ubuntuCodeName == "focal" {
-                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04", architecture: architecture)
+                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04")
             } else if ubuntuCodeName == "bionic" {
-                return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04", architecture: architecture)
+                return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
             } else {
                 let message = "Unsupported version of Ubuntu Linux"
                 if disableConfirmation {
@@ -427,7 +360,7 @@ public struct Linux: Platform {
                 } else {
                     print(message)
                 }
-                return manualSelectPlatform(platformPretty, architecture)
+                return manualSelectPlatform(platformPretty)
             }
         } else if (id+idlike).contains("rhel") {
             guard let versionID = versionID, versionID.hasPrefix("9") else {
@@ -437,10 +370,10 @@ public struct Linux: Platform {
                 } else {
                     print(message)
                 }
-                return manualSelectPlatform(platformPretty, architecture)
+                return manualSelectPlatform(platformPretty)
             }
 
-            return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9", architecture: architecture)
+            return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9")
         }
 
         let message = "Unsupported Linux platform"
@@ -449,7 +382,7 @@ public struct Linux: Platform {
         } else {
             print(message)
         }
-        return manualSelectPlatform(platformPretty, architecture)
+        return manualSelectPlatform(platformPretty)
     }
 
     /// Provide the command to install the provided system dependencies on the system
@@ -474,6 +407,26 @@ public struct Linux: Platform {
         }
 
         return nil
+    }
+
+    public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws {
+        let process = Process()
+        process.executableURL = self.swiftlyToolchainsDir
+            .appendingPathComponent(toolchain.name, isDirectory: true)
+            .appendingPathComponent("usr/bin", isDirectory: true)
+            .appendingPathComponent(command, isDirectory: false)
+        process.arguments = arguments
+        process.standardInput = FileHandle.standardInput
+
+        try process.run()
+        // Attach this process to our process group so that Ctrl-C and other signals work
+        let pgid = tcgetpgrp(STDOUT_FILENO)
+        if pgid != -1 {
+            tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
+        }
+        process.waitUntilExit()
+
+        exit(process.terminationStatus)
     }
 
     public static let currentPlatform: any Platform = Linux()

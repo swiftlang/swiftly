@@ -29,7 +29,11 @@ elif has_command yum ; then
 fi
 
 test_log "Performing initial installation"
-$(get_swiftly) -y list
+$(get_swiftly) -y init
+
+if [[ ! -f "$SWIFTLY_HOME_DIR/config.json" ]]; then
+    test_fail "config file not found in $SWIFTLY_HOME_DIR/config.json"
+fi
 
 . "$SWIFTLY_HOME_DIR/env.sh"
 
@@ -38,7 +42,7 @@ if ! has_command "swiftly" ; then
 fi
 
 # Modify the home dir to be able to to tell if it is changed with subsequent installs.
-DUMMY_CONFIG_CONTENTS="hello world"
+DUMMY_CONFIG_CONTENTS='{"inUse": null, "installedToolchains": ["1.1.1"], "platform": {"nameFull": "hello", "name": "world", "namePretty": "hello world"}}'
 PROFILE_CONTENTS="$(cat $HOME/.profile)"
 echo "$DUMMY_CONFIG_CONTENTS" > "$SWIFTLY_HOME_DIR/config.json"
 
@@ -51,7 +55,7 @@ touch "$toolchain_dir/usr/bin/$dummy_executable_name"
 ln -s -t $SWIFTLY_BIN_DIR "$toolchain_dir/usr/bin/$dummy_executable_name"
 
 test_log "Attempting the same installation (no --overwrite flag specified)"
-$(get_swiftly) -y list
+$(get_swiftly) -y init
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"
@@ -71,7 +75,7 @@ if [[ ! -d "$SWIFTLY_HOME_DIR/toolchains/5.7.3" ]]; then
 fi
 
 test_log "Attempting the same installation (--overwrite flag is specified)"
-$(get_swiftly) -y --overwrite list
+$(get_swiftly) -y init --overwrite
 
 if ! has_command "swiftly" ; then
     test_fail "Can't find swiftly on the PATH"

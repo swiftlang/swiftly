@@ -22,7 +22,6 @@ cleanup () {
     rm "$HOME/.zprofile"
 
     rm -r "$HOME/.local/share/swiftly"
-    rm "$HOME/.local/bin/swiftly"
 
     chsh --shell "$oldshell"
 
@@ -53,7 +52,7 @@ fi
 touch "$HOME/.zprofile"
 chsh --shell "/bin/zsh"
 
-echo "1" | $(get_swiftly) list
+echo "1" | $(get_swiftly) init
 
 if [[ ! "$(cat $HOME/.zprofile)" =~ "swiftly/env.sh" ]]; then
    test_fail "install did not update .zprofile"

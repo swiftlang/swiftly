@@ -27,7 +27,7 @@ final class ListTests: SwiftlyTests {
                 try await self.installMockedToolchain(toolchain: toolchain)
             }
 
-            var use = try self.parseCommand(Use.self, ["use", "latest"])
+            var use = try self.parseCommand(Use.self, ["use", "-g", "latest"])
             try await use.run()
 
             try await f()
@@ -116,10 +116,10 @@ final class ListTests: SwiftlyTests {
         }
     }
 
-    /// Tests that the "(in use)" marker is correctly printed when listing installed toolchains.
+    /// Tests that the "(default)" marker is correctly printed when listing installed toolchains.
     func testListInUse() async throws {
         func inUseTest(toolchain: ToolchainVersion, selector: String?) async throws {
-            var use = try self.parseCommand(Use.self, ["use", toolchain.name])
+            var use = try self.parseCommand(Use.self, ["use", "-g", toolchain.name])
             try await use.run()
 
             var listArgs = ["list"]
@@ -129,8 +129,8 @@ final class ListTests: SwiftlyTests {
             var list = try self.parseCommand(List.self, listArgs)
             let output = try await list.runWithMockedIO()
 
-            let inUse = output.filter { $0.contains("in use") }
-            XCTAssertEqual(inUse, ["\(toolchain) (in use)"])
+            let inUse = output.filter { $0.contains("default") }
+            XCTAssertEqual(inUse, ["\(toolchain) (default)"])
         }
 
         try await self.runListTest {

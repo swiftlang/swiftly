@@ -22,15 +22,11 @@ public struct Config: Codable, Equatable {
         return encoder
     }
 
-    /// Read the config file from disk.
-    public static func load(options: GlobalOptions) async throws -> Config {
-        do {
-            let data = try Data(contentsOf: Swiftly.currentPlatform.swiftlyConfigFile)
-            return try JSONDecoder().decode(Config.self, from: data)
-        } catch {
-            let pd = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: options.assumeYes, platform: options.platform)
-            return Config(inUse: nil, installedToolchains: [], platform: pd)
-        }
+    /// Read the config file from disk, or create a default configuration
+    /// if the file is not present.
+    public static func load() throws -> Config {
+        let data = try Data(contentsOf: Swiftly.currentPlatform.swiftlyConfigFile)
+        return try JSONDecoder().decode(Config.self, from: data)
     }
 
     /// Write the contents of this `Config` struct to disk.
@@ -59,10 +55,8 @@ public struct Config: Codable, Equatable {
 
     /// Load the config, pass it to the provided closure, and then
     /// save the modified config to disk.
-    public static func update(f: (inout Config) throws -> Void) async throws {
-        var options = GlobalOptions()
-        options.assumeYes = true
-        var config = try await Config.load(options: options)
+    public static func update(f: (inout Config) throws -> Void) throws {
+        var config = try Config.load()
         try f(&config)
         // only save the updates if the prior closure invocation succeeded
         try config.save()

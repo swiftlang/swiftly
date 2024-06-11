@@ -8,7 +8,7 @@ Ongoing maintenance and stewardship of this project is led by the [SSWG](https:/
 
 To download swiftly and install Swift, run the following in your terminal, then follow the on-screen instructions.
 ```
-curl -L https://swift-server.github.io/swiftly/swiftly-install.sh | bash
+curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
 ```
 
 ### Basic usage

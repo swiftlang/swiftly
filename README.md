@@ -275,7 +275,15 @@ swiftly currently uses the GitHub API to look up the available Swift toolchains.
 ```
 $ swiftly install latest --token <GitHub authentication token>
 ```
+## Contributing 
+Welcome to the Swift community!
 
+Contributions to Swiftly are welcomed and encouraged! Please see the [Contributing to Swift guide](swift.org/contributing) and check out the [structure of the community](https://www.swift.org/community/#community-structure).
+
+To be a truly great community, Swift needs to welcome developers from all walks of life, with different backgrounds, and with a wide range of experience. A diverse and friendly community will have more great ideas, more unique perspectives, and produce more great code. We will work diligently to make the Swift community welcoming to everyone.
+
+To give clarity of what is expected of our members, Swift has adopted the code of conduct defined by the Contributor Covenant. This document is used across many open source communities, and we think it articulates our values well. For more, see the [Code of Conduct](https://www.swift.org/code-of-conduct/).
+ 
 ## FAQ
 
 #### Why not install Swift through the package manager (e.g. `apt` or `yum`)?

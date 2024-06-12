@@ -232,6 +232,14 @@ detect_platform () {
 
         *"ubuntu"*)
             case "$UBUNTU_CODENAME" in
+                "noble")
+                    set_platform_ubuntu "24" "04"
+                    ;;
+
+                "mantic")
+                    set_platform_ubuntu "23" "10"
+                    ;;
+
                 "jammy")
                     set_platform_ubuntu "22" "04"
                     ;;
@@ -274,31 +282,41 @@ manually_select_platform () {
     echo "Please select the platform to use for toolchain downloads:"
 
     echo "0) Cancel"
-    echo "1) Ubuntu 22.04"
-    echo "2) Ubuntu 20.04"
-    echo "3) Ubuntu 18.04"
-    echo "4) RHEL 9"
-    echo "5) Amazon Linux 2"
+    echo "1) Ubuntu 24.04"
+    echo "2) Ubuntu 23.10"
+    echo "3) Ubuntu 22.04"
+    echo "4) Ubuntu 20.04"
+    echo "5) Ubuntu 18.04"
+    echo "6) RHEL 9"
+    echo "7) Amazon Linux 2"
 
     read_input_with_default "0"
     case "$READ_INPUT_RETURN" in
         "1" | "1)")
-            set_platform_ubuntu "22" "04"
+            set_platform_ubuntu "24" "04"
             ;;
 
         "2" | "2)")
-            set_platform_ubuntu "20" "04"
+            set_platform_ubuntu "23" "10"
             ;;
 
         "3" | "3)")
-            set_platform_ubuntu "18" "04"
+            set_platform_ubuntu "22" "04"
             ;;
 
         "4" | "4)")
-            set_platform_rhel "9"
+            set_platform_ubuntu "20" "04"
             ;;
 
         "5" | "5)")
+            set_platform_ubuntu "18" "04"
+            ;;
+
+        "6" | "6)")
+            set_platform_rhel "9"
+            ;;
+
+        "7" | "7)")
             set_platform_amazonlinux "2"
             ;;
 
@@ -362,8 +380,8 @@ OPTIONS:
     --no-import-pgp-keys        Do not attempt to import Swift's PGP keys.
     -p, --platform <platform>   Specifies which platform's toolchains swiftly will download. If
                                 unspecified, the platform will be automatically detected. Available
-                                options are "ubuntu22.04", "ubuntu20.04", "ubuntu18.04", "rhel9", and
-                                "amazonlinux2".
+                                options are "ubuntu24.04", "ubuntu23.10", "ubuntu22.04", "ubuntu20.04", 
+                                "ubuntu18.04", "rhel9", and "amazonlinux2".
     --overwrite                 Overwrite the existing swiftly installation found at the configured
                                 SWIFTLY_HOME, if any. If this option is unspecified and an existing
                                 installation is found, the swiftly executable will be updated, but
@@ -401,6 +419,14 @@ EOF
 
         "--platform" | "-p")
             case "$2" in
+                "ubuntu24.04")
+                    set_platform_ubuntu "24" "04"
+                    ;;
+
+                "ubuntu23.10")
+                    set_platform_ubuntu "23" "10"
+                    ;;
+
                 "ubuntu22.04")
                     set_platform_ubuntu "22" "04"
                     ;;
@@ -577,7 +603,7 @@ mkdir -p $HOME_DIR/toolchains
 mkdir -p $BIN_DIR
 
 EXECUTABLE_NAME="swiftly-$ARCH-unknown-linux-gnu"
-DOWNLOAD_URL="https://github.com/swift-server/swiftly/releases/latest/download/$EXECUTABLE_NAME"
+DOWNLOAD_URL="https://github.com/swiftlang/swiftly/releases/latest/download/$EXECUTABLE_NAME"
 echo "Downloading swiftly from $DOWNLOAD_URL..."
 curl \
     --retry 3 \

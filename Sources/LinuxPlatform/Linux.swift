@@ -314,7 +314,7 @@ public struct Linux: Platform {
             if info.hasPrefix("ID=") {
                 id = String(info.dropFirst("ID=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("ID_LIKE=") {
-                idlike = String(info.dropFirst("ID_LINE=".count)).replacingOccurrences(of: "\"", with: "")
+                idlike = String(info.dropFirst("ID_LIKE=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("VERSION_ID=") {
                 versionID = String(info.dropFirst("VERSION_ID=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("UBUNTU_CODENAME=") {
@@ -400,9 +400,9 @@ public struct Linux: Platform {
             }
         } ).joined(separator: " ")
 
-        if ["ubuntu1804", "ubuntu2004", "ubuntu2204", "amazonlinux2"].contains(platform.name) {
-            return "apt-get -y update && apt-get -y install \(packages)"
-        } else if ["ubi9"].contains(platform.name) {
+        if ["ubuntu1804", "ubuntu2004", "ubuntu2204"].contains(platform.name) {
+            return "apt-get update && apt-get -y install \(packages)"
+        } else if ["ubi9", "amazonlinux2"].contains(platform.name) {
             return "yum -y install \(packages)"
         }
 

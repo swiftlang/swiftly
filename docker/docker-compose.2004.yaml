@@ -13,7 +13,7 @@ services:
     environment:
       - SWIFTLY_PLATFORM_NAME=ubuntu2004
       - SWIFTLY_PLATFORM_NAME_FULL=ubuntu20.04
-      - SWIFTLY_PLATFORM_NAME_PRETTY="Ubuntu 20.04"
+      - SWIFTLY_PLATFORM_NAME_PRETTY=Ubuntu 20.04
 
   install-test-setup:
     image: swiftly:20.04-install-test

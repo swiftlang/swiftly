@@ -186,5 +186,5 @@ public struct SwiftlyHTTPClient {
 }
 
 private class HTTPClientWrapper {
-    fileprivate let inner = HTTPClient.shared
+    fileprivate let inner = HTTPClient(eventLoopGroupProvider: .singleton)
 }

@@ -51,6 +51,8 @@ if [[ ! -d "$HOME/.local/share/swiftly/toolchains" ]]; then
     test_fail "the toolchains directory was not created in SWIFTLY_HOME_DIR"
 fi
 
+swiftly install latest
+
 if ! gpg --list-keys Swift ; then
     test_fail "Swift PGP keys were not installed by default."
 fi

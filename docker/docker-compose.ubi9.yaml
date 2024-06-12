@@ -15,7 +15,7 @@ services:
     environment:
       - SWIFTLY_PLATFORM_NAME=ubi9
       - SWIFTLY_PLATFORM_NAME_FULL=ubi9
-      - SWIFTLY_PLATFORM_NAME_PRETTY="Red Hat Enterprise Linux 9"
+      - SWIFTLY_PLATFORM_NAME_PRETTY=Red Hat Enterprise Linux 9
 
   install-test-setup:
     image: swiftly:ubi9-install-test

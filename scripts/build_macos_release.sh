@@ -2,7 +2,12 @@
 
 set -e
 
-VERSION="0.5.0"
+version="$1"
+
+if [[ -z "$version" ]]; then
+    echo "Usage: $0 <version tag>"
+    exit 1
+fi
 
 buildtmp=$(mktemp -d)
 swift build -c release "--build-path=$buildtmp" --arch arm64
@@ -19,7 +24,7 @@ fi
 
 pkgbuild --root "${pkgtmp}" \
    --install-location "usr/local/bin" \
-   --version "$VERSION" \
-   --identifier "org.swift.swiftly-init" \
+   --version "$version" \
+   --identifier "org.swift.swiftly" \
    $SIGN \
-    "swiftly-init.pkg"
+   "swiftly-$version-RELEASE-osx.pkg"

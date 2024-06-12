@@ -130,6 +130,12 @@ internal struct Use: SwiftlyCommand {
             try Data(toolchain.name.utf8).write(to: file, options: .atomic)
 
             SwiftlyCore.print("Set the active toolchain selector to \(toolchain) in \(file.path) (was \(selector.description))")
+        } else if let swiftPackageLoc = findCurrentSwiftPackageLocation(), !globalDefault {
+            let swiftVersionFile = swiftPackageLoc.appendingPathComponent(".swift-version", isDirectory: false)
+
+            try Data(toolchain.name.utf8).write(to: swiftVersionFile, options: .atomic)
+
+            SwiftlyCore.print("Set the selected toolchain to \(toolchain) in \(swiftVersionFile.path)")
         } else {
             let previousToolchain = config.inUse
 
@@ -138,23 +144,16 @@ internal struct Use: SwiftlyCommand {
                 return
             }
 
-            if let swiftPackageLoc = findCurrentSwiftPackageLocation(), !globalDefault {
-                let swiftVersionFile = swiftPackageLoc.appendingPathComponent(".swift-version", isDirectory: false)
-                try Data(toolchain.name.utf8).write(to: swiftVersionFile, options: .atomic)
+            config.inUse = toolchain
+            try config.save()
 
-                SwiftlyCore.print("Set the selected toolchain to \(toolchain) in \(swiftVersionFile.path)")
+            let was = if let previousToolchain {
+                " (was \(previousToolchain))"
             } else {
-                config.inUse = toolchain
-                try config.save()
-
-                let was = if let previousToolchain {
-                    " (was \(previousToolchain))"
-                } else {
-                    ""
-                }
-
-                SwiftlyCore.print("Set the global default toolchain to \(toolchain)\(was)")
+                ""
             }
+
+            SwiftlyCore.print("Set the global default toolchain to \(toolchain)\(was)")
         }
     }
 }

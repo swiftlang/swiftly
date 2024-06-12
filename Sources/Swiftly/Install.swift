@@ -285,14 +285,12 @@ struct Install: SwiftlyCommand {
                     "unzip",
                     "glibc-static",
                     "gzip",
-                    "libbsd",
                     "libcurl-devel",
                     "libedit",
                     "libicu",
-                    "libsqlite",
-                    "libstdc++-static",
                     "libuuid",
                     "libxml2-devel",
+                    "sqlite-devel",
                     "tar",
                     "tzdata",
                     "zlib-devel",
@@ -324,7 +322,7 @@ struct Install: SwiftlyCommand {
         case "ubuntu2204":
             .apt
         case "amazonlinux2":
-            .apt
+            .yum
         case "ubi9":
             .yum
         default:

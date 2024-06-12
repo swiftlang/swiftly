@@ -62,9 +62,10 @@ Run all of the tests in isolation to make sure that there isn't any leaking syst
 
 3. Create a tag on that commit with the format "x.y.z". Do not omit "z", even if its value is 0.
 
-4. Build the executables for the release by running ./scripts/build_release.sh from the root of the swiftly repository (do this once on an x86_64 machine and once on an aarch64 one)
+4. Build the Linux executables for the release by running ./scripts/build_release.sh from the root of the swiftly repository
+  * Pick an older Linux with an older glibc version (e.g. Amazon Linux 2) so that the symbol versions will work a wide variety of Linux versions
+  * Do this once on an x86_64 machine and once on an aarch64 one
 
-5. Push the tag to `origin`. `git push origin <tag_name>`
+5. Build the macOS package for the release by running ./scripts/build_macos_pkg.sh from the root of the swiftly repository (do this from an Apple Silicon machine and it will produce a universal package)
 
-6. Go to the GitHub page for the new tag, click edit tag, add an appropriate description, attach the prebuilt executables, and click "Publish Release".
-
+6. Push the tag to `origin`. `git push origin <tag_name>`

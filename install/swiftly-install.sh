@@ -127,9 +127,14 @@ install_system_deps () {
         return
     fi
 
-    dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/swift-ci/master/$docker_platform_name/$docker_platform_version/Dockerfile"
+    dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/nightly-main/$docker_platform_name/$docker_platform_version/Dockerfile"
     set +e
     dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
+    # if we couldn't find Dockerfile in nightly-main use swift-ci/master version
+    if [[ -z "$dockerfile" ]]; then
+        dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/swift-ci/master/$docker_platform_name/$docker_platform_version/Dockerfile"
+        dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
+    fi
     set -e
     if [[ -z "$dockerfile" ]]; then
         echo "Error enumerating system dependencies, skipping installation of system dependencies."
@@ -137,16 +142,16 @@ install_system_deps () {
     fi
 
     # Find the line number of the RUN command associated with installing system dependencies.
-    beg_line_num=$(printf "$dockerfile" | grep -n --max-count=1 "$package_manager.*install" | cut -d ":" -f1)
+    beg_line_num=$(echo "$dockerfile" | grep -n --max-count=1 "$package_manager.*install" | cut -d ":" -f1)
 
     # Starting from there, find the first line that starts with an & or doesn't end in a backslash.
-    relative_end_line_num=$(printf "$dockerfile" |
+    relative_end_line_num=$(echo "$dockerfile" |
                                 tail --lines=+"$((beg_line_num + 1))" |
                                 grep -n --max-count=1 --invert-match '[[:space:]]*[^&].*\\$' | cut -d ":" -f1)
     end_line_num=$((beg_line_num + relative_end_line_num))
 
     # Read the lines between those two, deleting any spaces and backslashes.
-    readarray -t package_list < <(printf "$dockerfile" | sed -n "$((beg_line_num + 1)),${end_line_num}p" | sed -r 's/[\ ]//g')
+    readarray -t package_list < <(echo "$dockerfile" | sed -n "$((beg_line_num + 1)),${end_line_num}p" | sed -r 's/[\ ]//g')
 
     # If the installation command from the Dockerfile included some cleanup as part of a second command, drop that.
     if [[ "${package_list[-1]}" =~ ^\&\& ]]; then

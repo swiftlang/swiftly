@@ -127,10 +127,13 @@ install_system_deps () {
         return
     fi
 
-    dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/nightly-main/$docker_platform_name/$docker_platform_version/Dockerfile"
+    dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/swift-ci/master/$docker_platform_name/$docker_platform_version/Dockerfile"
+    set +e
     dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
-    if [[ "$?" -ne 0 ]]; then
+    set -e
+    if [[ -z "$dockerfile" ]]; then
         echo "Error enumerating system dependencies, skipping installation of system dependencies."
+        return
     fi
 
     # Find the line number of the RUN command associated with installing system dependencies.
@@ -149,6 +152,8 @@ install_system_deps () {
     if [[ "${package_list[-1]}" =~ ^\&\& ]]; then
         unset 'package_list[-1]'
     fi
+
+    echo "Found ${package_list[@]}"
 
     # Always install gpg, since swiftly itself needs it for signature verification.
     package_list+=("gpg")
@@ -209,6 +214,30 @@ set_platform_rhel () {
     fi
 }
 
+set_platform_debian () {
+    PLATFORM_NAME="debian$1"
+    PLATFORM_NAME_FULL="debian$1"
+    docker_platform_name="debian"
+    docker_platform_version="$1"
+    package_manager="apt-get"
+
+    if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
+        PLATFORM_NAME_PRETTY="Debian $1"
+    fi
+}
+
+set_platform_fedora () {
+    PLATFORM_NAME="fedora$1"
+    PLATFORM_NAME_FULL="fedora$1"
+    docker_platform_name="fedora"
+    docker_platform_version="$1"
+    package_manager="yum"
+
+    if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
+        PLATFORM_NAME_PRETTY="Fedora Linux $1"
+    fi
+}
+
 detect_platform () {
     if [[ -f "/etc/os-release" ]]; then
         OS_RELEASE="/etc/os-release"
@@ -266,6 +295,22 @@ detect_platform () {
             fi
             ;;
 
+        *"debian"*)
+            if [[ "$VERSION_ID" != 12 ]]; then
+                manually_select_platform
+            else
+                set_platform_debian "12"
+            fi
+            ;;
+
+        *"fedora"*)
+            if [[ "$VERSION_ID" != 39 ]]; then
+                manually_select_platform
+            else
+                set_platform_fedora "39"
+            fi
+            ;;
+
         *)
             manually_select_platform
             ;;
@@ -289,6 +334,8 @@ manually_select_platform () {
     echo "5) Ubuntu 18.04"
     echo "6) RHEL 9"
     echo "7) Amazon Linux 2"
+    echo "8) Debian 12"
+    echo "9) Fedora 39"
 
     read_input_with_default "0"
     case "$READ_INPUT_RETURN" in
@@ -318,6 +365,14 @@ manually_select_platform () {
 
         "7" | "7)")
             set_platform_amazonlinux "2"
+            ;;
+
+        "8" | "8)")
+            set_platform_debian "12"
+            ;;
+
+        "9" | "9)")
+            set_platform_fedora "39"
             ;;
 
         *)
@@ -381,7 +436,7 @@ OPTIONS:
     -p, --platform <platform>   Specifies which platform's toolchains swiftly will download. If
                                 unspecified, the platform will be automatically detected. Available
                                 options are "ubuntu24.04", "ubuntu23.10", "ubuntu22.04", "ubuntu20.04", 
-                                "ubuntu18.04", "rhel9", and "amazonlinux2".
+                                "ubuntu18.04", "rhel9", "amazonlinux2", "debian12 and "fedora39".
     --overwrite                 Overwrite the existing swiftly installation found at the configured
                                 SWIFTLY_HOME, if any. If this option is unspecified and an existing
                                 installation is found, the swiftly executable will be updated, but
@@ -445,6 +500,14 @@ EOF
 
                 "rhel9")
                     set_platform_rhel "9"
+                    ;;
+
+                "debian12")
+                    set_platform_debian "12"
+                    ;;
+
+                "fedora39")
+                    set_platform_fedora "39"
                     ;;
 
                 *)

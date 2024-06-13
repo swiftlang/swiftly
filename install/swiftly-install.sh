@@ -113,7 +113,7 @@ bold () {
     echo "$(tput bold)$1$(tput sgr0)"
 }
 
-# Fetch the list of required system dependencies from the apple/swift-docker
+# Fetch the list of required system dependencies from the swiftlang/swift-docker
 # repository and attempt to install them using the system's package manager.
 #
 # $docker_platform_name, $docker_platform_version, and $package manager need
@@ -127,12 +127,12 @@ install_system_deps () {
         return
     fi
 
-    dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/nightly-main/$docker_platform_name/$docker_platform_version/Dockerfile"
+    dockerfile_url="https://raw.githubusercontent.com/swiftlang/swift-docker/main/nightly-main/$docker_platform_name/$docker_platform_version/Dockerfile"
     set +e
     dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
     # if we couldn't find Dockerfile in nightly-main use swift-ci/master version
     if [[ -z "$dockerfile" ]]; then
-        dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/swift-ci/master/$docker_platform_name/$docker_platform_version/Dockerfile"
+        dockerfile_url="https://raw.githubusercontent.com/swiftlang/swift-docker/main/swift-ci/master/$docker_platform_name/$docker_platform_version/Dockerfile"
         dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
     fi
     set -e

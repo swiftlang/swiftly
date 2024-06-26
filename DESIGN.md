@@ -19,33 +19,30 @@ This document contains the high level design of swiftly. Not all features have b
   - [Implementation sketch - macOS](#implementation-sketch---macos)
   - [`config.json` schema](#configjson-schema)
 
-### Installation of swiftly
+## Installation of swiftly
 
-We'll need an initialization mode which, detects information about the OS and distribution in the case of Linux. The initialization mode is also responsible for setting up the directory structure for the toolchains (if necessary), setting up the shell environment for the user, and determining any operating system level dependencies that are required, but missing. Swiftly can perform these tasks itself with the capabilities provided by the Swift language and libraries, such as rich argument parsing, and launching system processes provided that the binary is somehow delivered to the user.
+The installation of swiftly is divided into two phases: delivery and initialization. Delivery of the swiftly binary can be accomplished using different methods:
 
-The delivery of the binary onto the user's system can be accomplished in a number of ways, such as direct download from a trusted website with some guidance for the user to pick the right one for their OS and architecture. There might also be a copy/paste of a simple shell command-line for some more automation. Swiftly might be provided as a system-level package (e.g. homebrew, apt, yum, macOS pkg, etc). In some cases delivery might come from manual compilation from this git repository and the "swift build" command, useful for swiftly development and testing.
+* Shell "one-liner" with a string of commands that can be copy/pasted into the user's shell to securely download from the trusted website and proceed to initialization
+* Direct download from a trusted website with guidance on the correct binary for the user's platform to download and then how move on to initialization
+* System-level package (e.g. homebrew, pkg, apt-get, rpm) that downloads and places the swiftly binary in a system location outside of the user's home directory, often runnable from the user's path
+* Manual compilation of the swiftly binary from this git repository (e.g. from a development environment)
 
-In any case the delivery mechanism transitions to the initialization and these two parts form the complete installation process. Initialization is still needed since none of the delivery mechanisms typically modify the users' home directory and environment and it will be very useful to manage one workflow for everyone.
+We'll need an initialization phase, which detects information about the OS and distribution in the case of Linux. The initialization mode is also responsible for setting up the directory structure for the toolchains (if necessary), setting up the shell environment for the user, and determining any operating system level dependencies that are required, but missing. Swiftly has its own configuration stored in the form of a `config.json` file, which will be created as part of initialization. None of the delivery methods can perform all of these steps on their own. System package managers don't normally update all users' environment or update the user's home directory structure directly.
 
-The trigger for initialization is primarily swiftly's init subcommand, which can be invoked at any time to ensure that swiftly is initialized for the user, guiding them through the process if it isn't. This also serves as an entry point to upgrade if the user has an older swiftly installation. The init subcommand is responsible for setting up an initial directory structure for storing toolchains, the swiftly configuration `config.json`, and a shell environment `env.sh` (or similar for the user's shell). Operating system depenencies are checked, and if any are missing then the user is prompted to either install them automatically, or they are given the package installation commands to do so themselves. Note that the init can be invoked without any prompts, with supporting flags to provide needed information, to support scripted installations.
+Swiftly can perform these tasks itself with the capabilities provided by the Swift language and libraries, such as rich argument parsing, and launching system processes provided that the binary is delivered to the user. The trigger for the initialization is done via an `init` subcommand with some initialization detection for the other subcommands to help guide users who have gone off track.
 
 ```
 swiftly init
 ```
 
-Since an end user may not be aware that swiftly has an initialiation step, its possible that they will invoke it in an uninitialized state on their account. If this happens then swiftly validates its own installation every time it is invoked and helps the user to discover the init subcommand. A system package, or website, can use an accelerator to help guide the user to the init subcommand by naming the swiftly binary as `swiftly-init*`. Swiftly discovers that it is being invoked in this way and automatically runs the initialization right away. If the system package installs swiftly-init in a location that's on the user's default path, tab completion of `swiftly` will usually complete to the full name and the user is directed to run the initialization by default. However, if swiftly is already on the user's path then the completion will be unintrusive.
+Initialization also covers creating symbolic links for various toolchain commands (e.g. swift, swiftc, clang, clang++, etc.) so that swiftly can configure the targets. These need to be installed into a user controlled directory so that swiftly can operate on the without super user permissions. Also, the swiftly binary itself is copied into this location if it is not run from a system location, managed by a system package manager.
 
-```
-swiftly-init-0.4.0 # Runs 'swiftly init' subcommand to initialize swiftly
-```
+## Swiftly upgrade
 
-### Swiftly upgrades
+As part of swiftly's regular operations it can detect that the current configuration is out of date and error out. The `config.json` file contains a version at the moment it was created or last upgraded. In the case of an older version it will direct the user to run init to perform the upgrade. If a downgrade situation is detected then swiflty will fail with an error.
 
-It is possible that initialization will detect an existing swiftly installation at an older version, which then performs an upgrade procedure. If the existing installation is newer (using the `--version flag`) then the initialization is aborted. This gives the user the opportunity to upgrade to a newer version of swiftly by manually downloading it from a trusted website or ad-hoc test a pre-release.
-
-Another upgrade mechanism is through a system package manager that updates the swiftly-init package. Whenever you run swiftly for any reason it will check if there's a newer swiftly-init binary and warn that a new release is available.
-
-Regardless of the delivery mechanism, swiftly has its own self-update subcommand that downloads and verifies swiftly from the trusted source, and delegates to its init to perform the upgrade. This gives the user an escape hatch to get the latest independently of the delivery mechanism that they chose initially.
+There is also a self-update mechanism that will automate the delivery of the new swiftly binary, verifies it and runs the init subcommand to initiate the upgrade procedure. Note that the self-update will error out without performing any operations if swiftly is installed in the system, outside of the user's home directory.
 
 ## Linux
 

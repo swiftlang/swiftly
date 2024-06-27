@@ -10,11 +10,49 @@ import XCTest
 import MacOSPlatform
 #endif
 
+import AsyncHTTPClient
+import NIO
+
 struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
 class SwiftlyTests: XCTestCase {
+    /// An `HTTPRequestExecutor` backed by an `HTTPClient` that can take http proxy
+    /// information from the environment in either HTTP_PROXY or HTTPS_PROXY
+    internal struct TestHTTPRequestExecutorImpl: HTTPRequestExecutor {
+        let httpClient: HTTPClient
+        public init() {
+            var proxy: HTTPClient.Configuration.Proxy?
+
+            let environment = ProcessInfo.processInfo.environment
+            let httpProxy = environment["HTTP_PROXY"]
+            if let httpProxy, let url = URL(string: httpProxy), let host = url.host, let port = url.port {
+                proxy = .server(host: host, port: port)
+            }
+
+            let httpsProxy = environment["HTTPS_PROXY"]
+            if let httpsProxy, let url = URL(string: httpsProxy), let host = url.host, let port = url.port {
+                proxy = .server(host: host, port: port)
+            }
+
+            self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
+        }
+
+        public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
+            try await httpClient.execute(request, timeout: timeout)
+        }
+    }
+
+    private static var setupComplete = false
+
+    override class func setUp() {
+        if !Self.setupComplete {
+            Install.httpClient = SwiftlyHTTPClient(executor: TestHTTPRequestExecutorImpl())
+            Self.setupComplete = true
+        }
+    }
+
     // Below are some constants that can be used to write test cases.
     static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
     static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
@@ -192,7 +230,7 @@ class SwiftlyTests: XCTestCase {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
         var install = try self.parseCommand(Install.self, ["install", "\(selector)", "--no-verify"] + args)
-        install.httpClient = SwiftlyHTTPClient(executor: MockToolchainDownloader(executables: executables))
+        Install.httpClient = SwiftlyHTTPClient(executor: MockToolchainDownloader(executables: executables))
         try await install.run()
     }
 

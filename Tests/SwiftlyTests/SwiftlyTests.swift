@@ -36,7 +36,11 @@ class SwiftlyTests: XCTestCase {
                 proxy = .server(host: host, port: port)
             }
 
-            self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
+            if proxy != nil {
+                self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
+            } else {
+                self.httpClient = HTTPClient.shared
+            }
         }
 
         public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {

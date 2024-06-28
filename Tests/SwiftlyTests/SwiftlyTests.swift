@@ -59,7 +59,7 @@ class SwiftlyTests: XCTestCase {
 
     override class func tearDown() {
         if let requestExecutor = Self.requestExecutor {
-            requestExecutor.httpClient.shutdown()
+            try? requestExecutor.httpClient.syncShutdown()
             Self.requestExecutor = nil
         }
     }

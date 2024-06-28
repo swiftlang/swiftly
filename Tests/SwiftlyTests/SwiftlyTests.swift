@@ -48,12 +48,19 @@ class SwiftlyTests: XCTestCase {
         }
     }
 
-    private static var setupComplete = false
+    private static var requestExecutor: TestHTTPRequestExecutorImpl?
 
     override class func setUp() {
-        if !Self.setupComplete {
-            Install.httpClient = SwiftlyHTTPClient(executor: TestHTTPRequestExecutorImpl())
-            Self.setupComplete = true
+        if Self.requestExecutor == nil {
+            Self.requestExecutor = TestHTTPRequestExecutorImpl()
+            Install.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
+        }
+    }
+
+    override class func tearDown() {
+        if let requestExecutor = Self.requestExecutor {
+            requestExecutor.httpClient.shutdown()
+            Self.requestExecutor = nil
         }
     }
 

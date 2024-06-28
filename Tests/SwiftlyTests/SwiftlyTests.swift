@@ -60,6 +60,7 @@ class SwiftlyTests: XCTestCase {
         if Self.requestExecutor == nil {
             Self.requestExecutor = ProxyHTTPRequestExecutorImpl()
             Install.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
+            SelfUpdate.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
         }
     }
 

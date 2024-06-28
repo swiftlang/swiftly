@@ -17,42 +17,48 @@ struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
-class SwiftlyTests: XCTestCase {
-    /// An `HTTPRequestExecutor` backed by an `HTTPClient` that can take http proxy
-    /// information from the environment in either HTTP_PROXY or HTTPS_PROXY
-    internal struct TestHTTPRequestExecutorImpl: HTTPRequestExecutor {
-        let httpClient: HTTPClient
-        public init() {
-            var proxy: HTTPClient.Configuration.Proxy?
+/// An `HTTPRequestExecutor` backed by an `HTTPClient` that can take http proxy
+/// information from the environment in either HTTP_PROXY or HTTPS_PROXY
+class ProxyHTTPRequestExecutorImpl: HTTPRequestExecutor {
+    let httpClient: HTTPClient
+    public init() {
+        var proxy: HTTPClient.Configuration.Proxy?
 
-            let environment = ProcessInfo.processInfo.environment
-            let httpProxy = environment["HTTP_PROXY"]
-            if let httpProxy, let url = URL(string: httpProxy), let host = url.host, let port = url.port {
-                proxy = .server(host: host, port: port)
-            }
-
-            let httpsProxy = environment["HTTPS_PROXY"]
-            if let httpsProxy, let url = URL(string: httpsProxy), let host = url.host, let port = url.port {
-                proxy = .server(host: host, port: port)
-            }
-
-            if proxy != nil {
-                self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
-            } else {
-                self.httpClient = HTTPClient.shared
-            }
+        let environment = ProcessInfo.processInfo.environment
+        let httpProxy = environment["HTTP_PROXY"]
+        if let httpProxy, let url = URL(string: httpProxy), let host = url.host, let port = url.port {
+            proxy = .server(host: host, port: port)
         }
 
-        public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
-            try await httpClient.execute(request, timeout: timeout)
+        let httpsProxy = environment["HTTPS_PROXY"]
+        if let httpsProxy, let url = URL(string: httpsProxy), let host = url.host, let port = url.port {
+            proxy = .server(host: host, port: port)
+        }
+
+        if proxy != nil {
+            self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
+        } else {
+            self.httpClient = HTTPClient.shared
         }
     }
 
-    private static var requestExecutor: TestHTTPRequestExecutorImpl?
+    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
+        try await httpClient.execute(request, timeout: timeout)
+    }
+
+    deinit {
+        if self.httpClient !== HTTPClient.shared {
+            try? self.httpClient.syncShutdown()
+        }
+    }
+}
+
+class SwiftlyTests: XCTestCase {
+    private static var requestExecutor: ProxyHTTPRequestExecutorImpl?
 
     override class func setUp() {
         if Self.requestExecutor == nil {
-            Self.requestExecutor = TestHTTPRequestExecutorImpl()
+            Self.requestExecutor = ProxyHTTPRequestExecutorImpl()
             Install.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
         }
     }
@@ -446,7 +452,7 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
 
     public init(executables: [String]? = nil) {
         self.executables = executables ?? ["swift"]
-        self.httpRequestExecutor = HTTPRequestExecutorImpl()
+        self.httpRequestExecutor = ProxyHTTPRequestExecutorImpl()
     }
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {

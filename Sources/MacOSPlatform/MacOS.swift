@@ -60,7 +60,7 @@ public struct MacOS: Platform {
             // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
             //  the installer will not install to an arbitrary path, only a volume or user home directory.
             let tmpDir = getTempFilePath()
-            let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent("\(version.identifier).xctoolchain", isDirectory: true)
+            let toolchainDir = swiftlyToolchainsDir.appendingPathComponent("\(version.identifier).xctoolchain", isDirectory: true)
             if !toolchainDir.fileExists() {
                 try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: false)
             }

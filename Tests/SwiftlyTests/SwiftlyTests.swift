@@ -36,9 +36,9 @@ class ProxyHTTPRequestExecutorImpl: HTTPRequestExecutor {
         }
 
         if proxy != nil {
-            self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
+            httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
         } else {
-            self.httpClient = HTTPClient.shared
+            httpClient = HTTPClient.shared
         }
     }
 

@@ -36,7 +36,7 @@ Swiftly can perform these tasks itself with the capabilities provided by the Swi
 swiftly init
 ```
 
-Initialization also covers creating symbolic links for various toolchain commands (e.g. swift, swiftc, clang, clang++, etc.) so that swiftly can configure the targets. These need to be installed into a user controlled directory so that swiftly can operate on the without super user permissions. Also, the swiftly binary itself is copied into this location if it is not run from a system location, managed by a system package manager.
+Also, the swiftly binary itself is copied into this location if it is not run from a system location, managed by a system package manager. In this case the user is notified that a copy of swiftly has been made in the swiftly bin directory (where the symlinks to the toolchain commands will be managed) so that they can remove the temporary copy that they used to initialize.
 
 ## Swiftly upgrade
 

@@ -36,14 +36,14 @@ class ProxyHTTPRequestExecutorImpl: HTTPRequestExecutor {
         }
 
         if proxy != nil {
-            httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
+            self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
         } else {
-            httpClient = HTTPClient.shared
+            self.httpClient = HTTPClient.shared
         }
     }
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
-        try await httpClient.execute(request, timeout: timeout)
+        try await self.httpClient.execute(request, timeout: timeout)
     }
 
     deinit {

@@ -49,8 +49,8 @@ public struct MacOS: Platform {
             throw Error(message: "\(tmpFile) doesn't exist")
         }
 
-        if !self.swiftlyToolchainsDir.fileExists() {
-            try FileManager.default.createDirectory(at: self.swiftlyToolchainsDir, withIntermediateDirectories: false)
+        if !swiftlyToolchainsDir.fileExists() {
+            try FileManager.default.createDirectory(at: swiftlyToolchainsDir, withIntermediateDirectories: false)
         }
 
         if SwiftlyCore.mockedHomeDir == nil {
@@ -78,7 +78,7 @@ public struct MacOS: Platform {
     public func uninstall(_ toolchain: ToolchainVersion) throws {
         SwiftlyCore.print("Uninstalling package in user home directory...")
 
-        let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent("\(toolchain.identifier).xctoolchain", isDirectory: true)
+        let toolchainDir = swiftlyToolchainsDir.appendingPathComponent("\(toolchain.identifier).xctoolchain", isDirectory: true)
 
         let decoder = PropertyListDecoder()
         let infoPlist = toolchainDir.appendingPathComponent("Info.plist")
@@ -97,25 +97,25 @@ public struct MacOS: Platform {
     }
 
     public func use(_ toolchain: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool {
-        let toolchainBinURL = self.swiftlyToolchainsDir
+        let toolchainBinURL = swiftlyToolchainsDir
             .appendingPathComponent(toolchain.identifier + ".xctoolchain", isDirectory: true)
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
 
         // Delete existing symlinks from previously in-use toolchain.
         if let currentToolchain {
-            try self.unUse(currentToolchain: currentToolchain)
+            try unUse(currentToolchain: currentToolchain)
         }
 
         // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-        let swiftlyBinDirContents = try FileManager.default.contentsOfDirectory(atPath: self.swiftlyBinDir.path)
+        let swiftlyBinDirContents = try FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)
         let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path)
         let willBeOverwritten = Set(toolchainBinDirContents).intersection(swiftlyBinDirContents)
         if !willBeOverwritten.isEmpty {
             SwiftlyCore.print("The following existing executables will be overwritten:")
 
             for executable in willBeOverwritten {
-                SwiftlyCore.print("  \(self.swiftlyBinDir.appendingPathComponent(executable).path)")
+                SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
             }
 
             let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
@@ -127,7 +127,7 @@ public struct MacOS: Platform {
         }
 
         for executable in toolchainBinDirContents {
-            let linkURL = self.swiftlyBinDir.appendingPathComponent(executable)
+            let linkURL = swiftlyBinDir.appendingPathComponent(executable)
             let executableURL = toolchainBinURL.appendingPathComponent(executable)
 
             // Deletion confirmed with user above.
@@ -153,7 +153,7 @@ public struct MacOS: Platform {
     }
 
     public func unUse(currentToolchain: ToolchainVersion) throws {
-        let currentToolchainBinURL = self.swiftlyToolchainsDir
+        let currentToolchainBinURL = swiftlyToolchainsDir
             .appendingPathComponent(currentToolchain.identifier + ".xctoolchain", isDirectory: true)
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
@@ -163,7 +163,7 @@ public struct MacOS: Platform {
                 continue
             }
 
-            let url = self.swiftlyBinDir.appendingPathComponent(existingExecutable)
+            let url = swiftlyBinDir.appendingPathComponent(existingExecutable)
             let vals = try url.resourceValues(forKeys: [URLResourceKey.isSymbolicLinkKey])
 
             guard let islink = vals.isSymbolicLink, islink else {
@@ -174,7 +174,7 @@ public struct MacOS: Platform {
                 throw Error(message: "Found symlink that points to non-swiftly managed executable: \(symlinkDest.path)")
             }
 
-            try self.swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
+            try swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
         }
     }
 

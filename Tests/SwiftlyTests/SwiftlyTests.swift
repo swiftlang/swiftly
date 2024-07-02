@@ -47,8 +47,8 @@ class ProxyHTTPRequestExecutorImpl: HTTPRequestExecutor {
     }
 
     deinit {
-        if self.httpClient !== HTTPClient.shared {
-            try? self.httpClient.syncShutdown()
+        if httpClient !== HTTPClient.shared {
+            try? httpClient.syncShutdown()
         }
     }
 }

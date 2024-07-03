@@ -2,6 +2,15 @@
 
 import PackageDescription
 
+let swiftlyTarget: Target = .executableTarget(
+    name: "Swiftly",
+    dependencies: [
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        .target(name: "SwiftlyCore"),
+        .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core")
+    ]
+)
+
 let package = Package(
     name: "swiftly",
     platforms: [.macOS(.v13)],
@@ -18,37 +27,12 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.6.1"),
     ],
     targets: [
-        .executableTarget(
-            name: "Swiftly",
-            dependencies: [
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .target(name: "SwiftlyCore"),
-                .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
-                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
-            ]
-        ),
+        swiftlyTarget,
         .target(
             name: "SwiftlyCore",
             dependencies: [
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "NIOFoundationCompat", package: "swift-nio"),
-            ]
-        ),
-        .target(
-            name: "LinuxPlatform",
-            dependencies: [
-                "SwiftlyCore",
-                "CLibArchive",
-            ],
-            linkerSettings: [
-                .linkedLibrary("z"),
-            ]
-        ),
-        .systemLibrary(
-            name: "CLibArchive",
-            pkgConfig: "libarchive",
-            providers: [
-                .apt(["libarchive-dev"]),
             ]
         ),
         .testTarget(
@@ -57,3 +41,29 @@ let package = Package(
         ),
     ]
 )
+
+#if os(Linux)
+package.targets.append(
+    .target(
+        name: "LinuxPlatform",
+        dependencies: [
+            "SwiftlyCore",
+            "CLibArchive",
+        ],
+        linkerSettings: [
+            .linkedLibrary("z"),
+        ]
+    )
+)
+package.targets.append(
+    .target(
+        name: "CLibArchive",
+        path: "libarchive/libarchive",
+        exclude: ["test"],
+        cSettings: [
+            .define("HAVE_CONFIG_H", to: "1")
+        ]
+    )
+)
+swiftlyTarget.dependencies.append(.target(name: "LinuxPlatform"))
+#endif

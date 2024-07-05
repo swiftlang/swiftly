@@ -28,7 +28,7 @@ The installation of swiftly is divided into two phases: delivery and initializat
 * System-level package (e.g. homebrew, pkg, apt-get, rpm) that downloads and places the swiftly binary in a system location outside of the user's home directory, often runnable from the user's path
 * Manual compilation of the swiftly binary from this git repository (e.g. from a development environment)
 
-We'll need an initialization phase, which detects information about the OS and distribution in the case of Linux. The initialization mode is also responsible for setting up the directory structure for the toolchains (if necessary), setting up the shell environment for the user, and determining any operating system level dependencies that are required, but missing. Swiftly has its own configuration stored in the form of a `config.json` file, which will be created as part of initialization. None of the delivery methods can perform all of these steps on their own. System package managers don't normally update all users' environment or update the user's home directory structure directly.
+We'll need an initialization phase, which detects information about the OS and distribution in the case of Linux. The initialization mode is also responsible for setting up the directory structure for the toolchains (if necessary), setting up the shell environment for the user, and determining any operating system level dependencies that are required, but missing. Swiftly has its own configuration stored in the form of a `config.json` file, which will be created as part of initialization. None of the delivery methods can perform all of these steps on their own. System package managers don't normally update all users' profile or update the user's home directory structure directly.
 
 Swiftly can perform these tasks itself with the capabilities provided by the Swift language and libraries, such as rich argument parsing, and launching system processes provided that the binary is delivered to the user. The trigger for the initialization is done via an `init` subcommand with some initialization detection for the other subcommands to help guide users who have gone off track.
 
@@ -36,13 +36,13 @@ Swiftly can perform these tasks itself with the capabilities provided by the Swi
 swiftly init
 ```
 
-Also, the swiftly binary itself is copied into this location if it is not run from a system location, managed by a system package manager. In this case the user is notified that a copy of swiftly has been made in the swiftly bin directory (where the symlinks to the toolchain commands will be managed) so that they can remove the temporary copy that they used to initialize.
+The swiftly binary itself is moved (or copied as a fallback) into the SWIFTLY_BIN_DIR location (or platform default) if it is not run from a system location where it is managed by a system package manager. If the binary could not be moved then the user is notified that they can remove the original.
 
-## Swiftly upgrade
+## Swiftly update
 
 As part of swiftly's regular operations it can detect that the current configuration is out of date and error out. The `config.json` file contains a version at the moment it was created or last upgraded. In the case of an older version it will direct the user to run init to perform the upgrade. If a downgrade situation is detected then swiflty will fail with an error.
 
-There is also a self-update mechanism that will automate the delivery of the new swiftly binary, verifies it and runs the init subcommand to initiate the upgrade procedure. Note that the self-update will error out without performing any operations if swiftly is installed in the system, outside of the user's home directory.
+There is also a self-update mechanism that will automate the delivery of the new swiftly binary, verifies it and runs the init subcommand to initiate the upgrade procedure. Note that the self-update will error out without performing any operations if swiftly is installed in the system, outside of the SWIFTLY_BIN_DIR (or platform default) and the user's home directory. In any case the self-update will exit successfully right away if it determines that the current swiftly is the latest version and report to the user that it is up-to-date.
 
 ## Linux
 

@@ -213,8 +213,6 @@ public struct Linux: Platform {
         do {
             try self.runProgram("gpg", "--verify", sigFile.path, archive.path)
         } catch {
-            try self.runProgram("file", sigFile.path)
-            try self.runProgram("file", archive.path)
             throw Error(message: "Toolchain signature verification failed: \(error).")
         }
     }

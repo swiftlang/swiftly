@@ -262,7 +262,7 @@ class SwiftlyTests: XCTestCase {
     func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
         var install = try self.parseCommand(Install.self, ["install", "\(selector)", "--no-verify"] + args)
 
-        try await withMockedToolchain(executables: executables) {
+        try await self.withMockedToolchain(executables: executables) {
             try await install.run()
         }
     }

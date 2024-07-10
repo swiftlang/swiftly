@@ -10,14 +10,12 @@ internal struct SelfUpdate: SwiftlyCommand {
         abstract: "Update the version of swiftly itself."
     )
 
-    public static var httpClient = SwiftlyHTTPClient()
-
     private enum CodingKeys: CodingKey {}
 
     internal mutating func run() async throws {
         SwiftlyCore.print("Checking for swiftly updates...")
 
-        let release: SwiftlyGitHubRelease = try await Self.httpClient.getFromGitHub(
+        let release: SwiftlyGitHubRelease = try await SwiftlyCore.httpClient.getFromGitHub(
             url: "https://api.github.com/repos/swift-server/swiftly/releases/latest"
         )
 
@@ -48,7 +46,7 @@ internal struct SelfUpdate: SwiftlyCommand {
             header: "Downloading swiftly \(version)"
         )
         do {
-            try await Self.httpClient.downloadFile(
+            try await SwiftlyCore.httpClient.downloadFile(
                 url: downloadURL,
                 to: tmpFile,
                 reportProgress: { progress in

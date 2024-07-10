@@ -17,6 +17,8 @@ struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
+var proxyExecutorInstalled = false
+
 /// An `HTTPRequestExecutor` backed by an `HTTPClient` that can take http proxy
 /// information from the environment in either HTTP_PROXY or HTTPS_PROXY
 class ProxyHTTPRequestExecutorImpl: HTTPRequestExecutor {
@@ -54,22 +56,10 @@ class ProxyHTTPRequestExecutorImpl: HTTPRequestExecutor {
 }
 
 class SwiftlyTests: XCTestCase {
-    private static var requestExecutor: ProxyHTTPRequestExecutorImpl?
-
     override class func setUp() {
-        Self.requestExecutor = ProxyHTTPRequestExecutorImpl()
-        Install.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
-        SelfUpdate.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
-    }
-
-    override class func tearDown() {
-        if let requestExecutor = Self.requestExecutor {
-            try? requestExecutor.httpClient.syncShutdown()
+        if !proxyExecutorInstalled {
+            SwiftlyCore.httpRequestExecutor = ProxyHTTPRequestExecutorImpl()
         }
-
-        Self.requestExecutor = nil
-        Install.httpClient = SwiftlyHTTPClient()
-        SelfUpdate.httpClient = SwiftlyHTTPClient()
     }
 
     // Below are some constants that can be used to write test cases.
@@ -193,6 +183,28 @@ class SwiftlyTests: XCTestCase {
         }
     }
 
+    func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
+        let prevExecutor = SwiftlyCore.httpRequestExecutor
+        let mockDownloader = MockToolchainDownloader(executables: executables, prevExecutor: prevExecutor)
+        SwiftlyCore.httpRequestExecutor = mockDownloader
+        defer {
+            SwiftlyCore.httpRequestExecutor = prevExecutor
+        }
+
+        try await f()
+    }
+
+    func withMockedHTTPRequests(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse, _ f: () async throws -> Void) async throws {
+       let prevExecutor = SwiftlyCore.httpRequestExecutor
+       let mockedRequestExecutor = MockHTTPRequestExecutor(handler: handler)
+       SwiftlyCore.httpRequestExecutor = mockedRequestExecutor
+       defer {
+           SwiftlyCore.httpRequestExecutor = prevExecutor
+       }
+
+       try await f()
+    }
+
     /// Validates that the provided toolchain is the one currently marked as "in use", both by checking the
     /// configuration file and by executing `swift --version` using the swift executable in the `bin` directory.
     /// If nil is provided, this validates that no toolchain is currently in use.
@@ -249,12 +261,10 @@ class SwiftlyTests: XCTestCase {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
         var install = try self.parseCommand(Install.self, ["install", "\(selector)", "--no-verify"] + args)
-        let prevHttpClient = Install.httpClient
-        defer {
-            Install.httpClient = prevHttpClient
+
+        try await withMockedToolchain(executables: executables) {
+            try await install.run()
         }
-        Install.httpClient = SwiftlyHTTPClient(executor: MockToolchainDownloader(executables: executables))
-        try await install.run()
     }
 
     /// Install a mocked toolchain according to the provided selector that includes the provided list of executables
@@ -439,12 +449,6 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
     }
 }
 
-extension SwiftlyHTTPClient {
-    public static func mocked(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse) -> Self {
-        Self(executor: MockHTTPRequestExecutor(handler: handler))
-    }
-}
-
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
 /// All other requests are performed using an actual HTTP client.
 public struct MockToolchainDownloader: HTTPRequestExecutor {
@@ -454,11 +458,11 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
         try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
     private let executables: [String]
-    private let httpRequestExecutor: HTTPRequestExecutor
+    public let httpRequestExecutor: HTTPRequestExecutor
 
-    public init(executables: [String]? = nil) {
+    public init(executables: [String]? = nil, prevExecutor: HTTPRequestExecutor) {
         self.executables = executables ?? ["swift"]
-        self.httpRequestExecutor = ProxyHTTPRequestExecutorImpl()
+        self.httpRequestExecutor = prevExecutor
     }
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {

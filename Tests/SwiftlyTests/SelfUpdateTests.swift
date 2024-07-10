@@ -18,8 +18,8 @@ final class SelfUpdateTests: SwiftlyTests {
         "\(SwiftlyCore.version.major).\(SwiftlyCore.version.minor).\(SwiftlyCore.version.patch + 1)"
     }
 
-    private static func makeMockHTTPClient(latestVersion: String) -> SwiftlyHTTPClient {
-        .mocked { request in
+    private static func mockHTTPHandler(latestVersion: String) -> ((HTTPClientRequest) async throws -> HTTPClientResponse) {
+        return { request in
             guard let url = URL(string: request.url) else {
                 throw SwiftlyTestError(message: "invalid url \(request.url)")
             }
@@ -45,8 +45,10 @@ final class SelfUpdateTests: SwiftlyTests {
             try Data("old".utf8).write(to: swiftlyURL)
 
             var update = try self.parseCommand(SelfUpdate.self, ["self-update"])
-            SelfUpdate.httpClient = Self.makeMockHTTPClient(latestVersion: latestVersion)
-            try await update.run()
+
+            try await self.withMockedHTTPRequests(Self.mockHTTPHandler(latestVersion: latestVersion)) {
+                try await update.run()
+            }
 
             let swiftly = try Data(contentsOf: swiftlyURL)
 

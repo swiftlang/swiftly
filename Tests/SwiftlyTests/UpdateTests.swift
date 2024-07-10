@@ -4,7 +4,21 @@ import Foundation
 import XCTest
 
 final class UpdateTests: SwiftlyTests {
-    private let mockHttpClient = SwiftlyHTTPClient(executor: MockToolchainDownloader())
+    private var mockedToolchainDownloader: MockToolchainDownloader?
+
+    override public func setUp() {
+        if !proxyExecutorInstalled {
+            SwiftlyCore.httpRequestExecutor = ProxyHTTPRequestExecutorImpl()
+        }
+
+        mockedToolchainDownloader = MockToolchainDownloader(prevExecutor: SwiftlyCore.httpRequestExecutor)
+        SwiftlyCore.httpRequestExecutor = mockedToolchainDownloader!
+    }
+
+    override public func tearDown() {
+        SwiftlyCore.httpRequestExecutor = mockedToolchainDownloader!.httpRequestExecutor
+        mockedToolchainDownloader = nil
+    }
 
     /// Verify updating the most up-to-date toolchain has no effect.
     func testUpdateLatest() async throws {
@@ -14,7 +28,6 @@ final class UpdateTests: SwiftlyTests {
             let beforeUpdateConfig = try Config.load()
 
             var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify"])
-            update.httpClient = self.mockHttpClient
             try await update.run()
 
             XCTAssertEqual(try Config.load(), beforeUpdateConfig)
@@ -29,7 +42,6 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateLatestWithNoToolchains() async throws {
         try await self.withTestHome {
             var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify"])
-            update.httpClient = self.mockHttpClient
             try await update.run()
 
             try await validateInstalledToolchains(
@@ -44,7 +56,6 @@ final class UpdateTests: SwiftlyTests {
         try await self.withTestHome {
             try await self.installMockedToolchain(selector: .stable(major: 5, minor: 0, patch: 0))
             var update = try self.parseCommand(Update.self, ["update", "-y", "latest", "--no-verify"])
-            update.httpClient = self.mockHttpClient
             try await update.run()
 
             let config = try Config.load()
@@ -64,7 +75,6 @@ final class UpdateTests: SwiftlyTests {
         try await self.withTestHome {
             try await self.installMockedToolchain(selector: .stable(major: 5, minor: 0, patch: 0))
             var update = try self.parseCommand(Update.self, ["update", "-y", "5", "--no-verify"])
-            update.httpClient = self.mockHttpClient
             try await update.run()
 
             let config = try Config.load()
@@ -86,7 +96,6 @@ final class UpdateTests: SwiftlyTests {
             try await self.installMockedToolchain(selector: "5.0.0")
 
             var update = try self.parseCommand(Update.self, ["update", "-y", "5.0.0", "--no-verify"])
-            update.httpClient = self.mockHttpClient
             try await update.run()
 
             let config = try Config.load()
@@ -110,7 +119,6 @@ final class UpdateTests: SwiftlyTests {
             try await self.installMockedToolchain(selector: "5.0.0")
 
             var update = try self.parseCommand(Update.self, ["update", "-y", "--no-verify"])
-            update.httpClient = self.mockHttpClient
             try await update.run()
 
             let config = try Config.load()
@@ -144,7 +152,6 @@ final class UpdateTests: SwiftlyTests {
                 var update = try self.parseCommand(
                     Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify"]
                 )
-                update.httpClient = self.mockHttpClient
                 try await update.run()
 
                 let config = try Config.load()
@@ -168,7 +175,6 @@ final class UpdateTests: SwiftlyTests {
             try await self.installMockedToolchain(selector: "5.0.0")
 
             var update = try self.parseCommand(Update.self, ["update", "-y", "5.0", "--no-verify"])
-            update.httpClient = self.mockHttpClient
             try await update.run()
 
             let config = try Config.load()
@@ -199,7 +205,6 @@ final class UpdateTests: SwiftlyTests {
                 var update = try self.parseCommand(
                     Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify"]
                 )
-                update.httpClient = self.mockHttpClient
                 try await update.run()
 
                 let config = try Config.load()

@@ -9,7 +9,7 @@ public protocol HTTPRequestExecutor {
     func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse
 }
 
-/// An `HTTPRequestExecutor` backed by an `HTTPClient`.
+/// An `HTTPRequestExecutor` backed by the shared `HTTPClient`.
 internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
         try await HTTPClient.shared.execute(request, timeout: timeout)
@@ -29,14 +29,10 @@ public struct SwiftlyHTTPClient {
         let buffer: ByteBuffer
     }
 
-    private let executor: HTTPRequestExecutor
+    public init() {}
 
     /// The GitHub authentication token to use for any requests made to the GitHub API.
     public var githubToken: String?
-
-    public init(executor: HTTPRequestExecutor? = nil) {
-        self.executor = executor ?? HTTPRequestExecutorImpl()
-    }
 
     private func get(url: String, headers: [String: String]) async throws -> Response {
         var request = makeRequest(url: url)
@@ -45,7 +41,7 @@ public struct SwiftlyHTTPClient {
             request.headers.add(name: k, value: v)
         }
 
-        let response = try await self.executor.execute(request, timeout: .seconds(30))
+        let response = try await SwiftlyCore.httpRequestExecutor.execute(request, timeout: .seconds(30))
 
         // if defined, the content-length headers announces the size of the body
         let expectedBytes = response.headers.first(name: "content-length").flatMap(Int.init) ?? 1024 * 1024
@@ -145,7 +141,7 @@ public struct SwiftlyHTTPClient {
         }
 
         let request = makeRequest(url: url.absoluteString)
-        let response = try await self.executor.execute(request, timeout: .seconds(30))
+        let response = try await SwiftlyCore.httpRequestExecutor.execute(request, timeout: .seconds(30))
 
         switch response.status {
         case .ok:

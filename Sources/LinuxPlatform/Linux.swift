@@ -213,7 +213,9 @@ public struct Linux: Platform {
         do {
             try self.runProgram("gpg", "--verify", sigFile.path, archive.path)
         } catch {
-            throw Error(message: "Toolchain signature verification failed: \(error)")
+            let sigAttrs = (try? FileManager.default.attributesOfItem(atPath: sigFile.path)) ?? [FileAttributeKey : Any]()
+            let archiveAttrs = (try? FileManager.default.attributesOfItem(atPath: archive.path)) ?? [FileAttributeKey : Any]()
+            throw Error(message: "Toolchain signature verification failed: \(error). Signature attributes: \(sigAttrs). Archive attributes: \(archiveAttrs).")
         }
     }
 

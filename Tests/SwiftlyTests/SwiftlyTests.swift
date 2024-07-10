@@ -57,18 +57,19 @@ class SwiftlyTests: XCTestCase {
     private static var requestExecutor: ProxyHTTPRequestExecutorImpl?
 
     override class func setUp() {
-        if Self.requestExecutor == nil {
-            Self.requestExecutor = ProxyHTTPRequestExecutorImpl()
-            Install.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
-            SelfUpdate.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
-        }
+        Self.requestExecutor = ProxyHTTPRequestExecutorImpl()
+        Install.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
+        SelfUpdate.httpClient = SwiftlyHTTPClient(executor: Self.requestExecutor)
     }
 
     override class func tearDown() {
         if let requestExecutor = Self.requestExecutor {
             try? requestExecutor.httpClient.syncShutdown()
-            Self.requestExecutor = nil
         }
+
+        Self.requestExecutor = nil
+        Install.httpClient = SwiftlyHTTPClient()
+        SelfUpdate.httpClient = SwiftlyHTTPClient()
     }
 
     // Below are some constants that can be used to write test cases.

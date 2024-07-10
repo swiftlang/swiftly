@@ -87,7 +87,7 @@ extension CommandInfoV0 {
             result += "\(abstract)\n\n"
         }
 
-        if let args = self.arguments {
+        if let args = self.arguments, args.count != 0 {
             result += "```\n"
             result += (path + [self.commandName]).joined(separator: " ") + " " + self.usage()
             result += "\n```\n\n"

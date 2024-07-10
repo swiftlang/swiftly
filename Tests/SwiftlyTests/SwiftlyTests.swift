@@ -195,14 +195,14 @@ class SwiftlyTests: XCTestCase {
     }
 
     func withMockedHTTPRequests(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse, _ f: () async throws -> Void) async throws {
-       let prevExecutor = SwiftlyCore.httpRequestExecutor
-       let mockedRequestExecutor = MockHTTPRequestExecutor(handler: handler)
-       SwiftlyCore.httpRequestExecutor = mockedRequestExecutor
-       defer {
-           SwiftlyCore.httpRequestExecutor = prevExecutor
-       }
+        let prevExecutor = SwiftlyCore.httpRequestExecutor
+        let mockedRequestExecutor = MockHTTPRequestExecutor(handler: handler)
+        SwiftlyCore.httpRequestExecutor = mockedRequestExecutor
+        defer {
+            SwiftlyCore.httpRequestExecutor = prevExecutor
+        }
 
-       try await f()
+        try await f()
     }
 
     /// Validates that the provided toolchain is the one currently marked as "in use", both by checking the

@@ -71,7 +71,6 @@ struct Install: SwiftlyCommand {
         try await Self.execute(
             version: toolchainVersion,
             &config,
-            SwiftlyCore.httpClient,
             useInstalledToolchain: self.use,
             verifySignature: self.verify
         )
@@ -80,7 +79,6 @@ struct Install: SwiftlyCommand {
     internal static func execute(
         version: ToolchainVersion,
         _ config: inout Config,
-        _ httpClient: SwiftlyHTTPClient,
         useInstalledToolchain: Bool,
         verifySignature: Bool
     ) async throws {

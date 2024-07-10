@@ -11,13 +11,13 @@ final class UpdateTests: SwiftlyTests {
             SwiftlyCore.httpRequestExecutor = ProxyHTTPRequestExecutorImpl()
         }
 
-        mockedToolchainDownloader = MockToolchainDownloader(prevExecutor: SwiftlyCore.httpRequestExecutor)
-        SwiftlyCore.httpRequestExecutor = mockedToolchainDownloader!
+        self.mockedToolchainDownloader = MockToolchainDownloader(prevExecutor: SwiftlyCore.httpRequestExecutor)
+        SwiftlyCore.httpRequestExecutor = self.mockedToolchainDownloader!
     }
 
     override public func tearDown() {
-        SwiftlyCore.httpRequestExecutor = mockedToolchainDownloader!.httpRequestExecutor
-        mockedToolchainDownloader = nil
+        SwiftlyCore.httpRequestExecutor = self.mockedToolchainDownloader!.httpRequestExecutor
+        self.mockedToolchainDownloader = nil
     }
 
     /// Verify updating the most up-to-date toolchain has no effect.

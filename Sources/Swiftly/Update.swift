@@ -104,7 +104,6 @@ struct Update: SwiftlyCommand {
         try await Install.execute(
             version: newToolchain,
             &config,
-            SwiftlyCore.httpClient,
             useInstalledToolchain: config.inUse == parameters.oldToolchain,
             verifySignature: self.verify
         )

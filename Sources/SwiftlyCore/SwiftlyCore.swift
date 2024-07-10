@@ -8,7 +8,7 @@ public var mockedHomeDir: URL?
 
 /// This is the default http client that swiftly uses for its network
 /// requests.
-public var httpClient: SwiftlyHTTPClient = SwiftlyHTTPClient()
+public var httpClient = SwiftlyHTTPClient()
 
 /// An HTTP request executor that allows different transport level configuration
 /// such as allowing a proxy to be configured, or for the purpose of mocking

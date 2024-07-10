@@ -34,7 +34,7 @@ public struct SwiftlyHTTPClient {
     /// The GitHub authentication token to use for any requests made to the GitHub API.
     public var githubToken: String?
 
-    private func get(url: String, headers: [String: String]) async throws -> Response {
+    private func get(url: String, headers: [String: String], maxBytes: Int) async throws -> Response {
         var request = makeRequest(url: url)
 
         for (k, v) in headers {
@@ -43,9 +43,7 @@ public struct SwiftlyHTTPClient {
 
         let response = try await SwiftlyCore.httpRequestExecutor.execute(request, timeout: .seconds(30))
 
-        // if defined, the content-length headers announces the size of the body
-        let expectedBytes = response.headers.first(name: "content-length").flatMap(Int.init) ?? 1024 * 1024
-        return Response(status: response.status, buffer: try await response.body.collect(upTo: expectedBytes))
+        return Response(status: response.status, buffer: try await response.body.collect(upTo: maxBytes))
     }
 
     /// Decode the provided type `T` from the JSON body of the response from a GET request
@@ -55,7 +53,8 @@ public struct SwiftlyHTTPClient {
         type: T.Type,
         headers: [String: String] = [:]
     ) async throws -> T {
-        let response = try await self.get(url: url, headers: headers)
+        // Maximum expected size for a JSON payload for an API is 1MB
+        let response = try await self.get(url: url, headers: headers, maxBytes: 1024 * 1024)
 
         guard case .ok = response.status else {
             var message = "received status \"\(response.status)\" when reaching \(url)"

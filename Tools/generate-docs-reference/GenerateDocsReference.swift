@@ -4,83 +4,85 @@ import Foundation
 
 @main
 struct GenerateDocsReferencel: ParsableCommand {
-  enum Error: Swift.Error {
-    case failedToRunSubprocess(error: Swift.Error)
-    case unableToParseToolOutput(error: Swift.Error)
-    case unsupportedDumpHelpVersion(expected: Int, found: Int)
-    case failedToGenerateDocsReferencePage(error: Swift.Error)
-  }
-
-  static let configuration = CommandConfiguration(
-    commandName: "generate-docs-reference",
-    abstract: "Generate a docs reference for the provided tool.")
-
-  @Argument(help: "Tool to generate docs.")
-  var tool: String
-
-  @Option(name: .shortAndLong, help: "File to save generated docs. Use '-' for stdout.")
-  var outputFile: String
-
-  func validate() throws {}
-
-  func run() throws {
-    let data: Data
-    do {
-      let tool = URL(fileURLWithPath: tool)
-      let output = try executeCommand(executable: tool, arguments: ["--experimental-dump-help"])
-      data = output.data(using: .utf8) ?? Data()
-    } catch {
-      throw Error.failedToRunSubprocess(error: error)
+    enum Error: Swift.Error {
+        case failedToRunSubprocess(error: Swift.Error)
+        case unableToParseToolOutput(error: Swift.Error)
+        case unsupportedDumpHelpVersion(expected: Int, found: Int)
+        case failedToGenerateDocsReferencePage(error: Swift.Error)
     }
 
-    do {
-      let toolInfoThin = try JSONDecoder().decode(ToolInfoHeader.self, from: data)
-      guard toolInfoThin.serializationVersion == 0 else {
-        throw Error.unsupportedDumpHelpVersion(
-          expected: 0,
-          found: toolInfoThin.serializationVersion)
-      }
-    } catch {
-      throw Error.unableToParseToolOutput(error: error)
+    static let configuration = CommandConfiguration(
+        commandName: "generate-docs-reference",
+        abstract: "Generate a docs reference for the provided tool.")
+
+    @Argument(help: "Tool to generate docs.")
+    var tool: String
+
+    @Option(name: .shortAndLong, help: "File to save generated docs. Use '-' for stdout.")
+    var outputFile: String
+
+    func validate() throws {}
+
+    func run() throws {
+        let data: Data
+        do {
+            let tool = URL(fileURLWithPath: tool)
+            let output = try executeCommand(
+                executable: tool, arguments: ["--experimental-dump-help"])
+            data = output.data(using: .utf8) ?? Data()
+        } catch {
+            throw Error.failedToRunSubprocess(error: error)
+        }
+
+        do {
+            let toolInfoThin = try JSONDecoder().decode(ToolInfoHeader.self, from: data)
+            guard toolInfoThin.serializationVersion == 0 else {
+                throw Error.unsupportedDumpHelpVersion(
+                    expected: 0,
+                    found: toolInfoThin.serializationVersion)
+            }
+        } catch {
+            throw Error.unableToParseToolOutput(error: error)
+        }
+
+        let toolInfo: ToolInfoV0
+        do {
+            toolInfo = try JSONDecoder().decode(ToolInfoV0.self, from: data)
+        } catch {
+            throw Error.unableToParseToolOutput(error: error)
+        }
+
+        do {
+            if outputFile == "-" {
+                try generatePages(from: toolInfo.command, savingTo: nil)
+            } else {
+                try generatePages(
+                    from: toolInfo.command,
+                    savingTo: URL(fileURLWithPath: outputFile))
+            }
+        } catch {
+            throw Error.failedToGenerateDocsReferencePage(error: error)
+        }
     }
 
-    let toolInfo: ToolInfoV0
-    do {
-      toolInfo = try JSONDecoder().decode(ToolInfoV0.self, from: data)
-    } catch {
-      throw Error.unableToParseToolOutput(error: error)
-    }
+    func generatePages(from command: CommandInfoV0, savingTo file: URL?) throws {
+        let page = command.toMD([])
 
-    do {
-      if outputFile == "-" {
-        try generatePages(from: toolInfo.command, savingTo: nil)
-      } else {
-        try generatePages(
-          from: toolInfo.command,
-          savingTo: URL(fileURLWithPath: outputFile))
-      }
-    } catch {
-      throw Error.failedToGenerateDocsReferencePage(error: error)
+        if let file = file {
+            try page.write(to: file, atomically: true, encoding: .utf8)
+        } else {
+            print(page)
+        }
     }
-  }
-
-  func generatePages(from command: CommandInfoV0, savingTo file: URL?) throws {
-    let page = command.toMD([])
-
-    if let file = file {
-      try page.write(to: file, atomically: true, encoding: .utf8)
-    } else {
-      print(page)
-    }
-  }
 }
 
 extension CommandInfoV0 {
     public func toMD(_ path: [String]) -> String {
-        var result = String(repeating: "#", count: path.count+1) + " \(self.commandName)\n\n"
+        var result = String(repeating: "#", count: path.count + 1) + " \(self.commandName)\n\n"
 
         if path.count == 0 {
-            result += "<!-- THIS FILE HAS BEEN GENERATED using the following command: swift package plugin generate-docs-reference -->\n\n"
+            result +=
+                "<!-- THIS FILE HAS BEEN GENERATED using the following command: swift package plugin generate-docs-reference -->\n\n"
         }
 
         if let abstract = self.abstract {
@@ -147,14 +149,15 @@ extension ArgumentInfoV0 {
 
         // TODO default values, short, etc.
 
-        var inner = switch self.kind {
-        case .positional:
-            "<\(name)>"
-        case .option:
-            "--\(name)=<\(self.valueName ?? "")>"
-        case .flag:
-            "--\(name)"
-        }
+        var inner =
+            switch self.kind {
+            case .positional:
+                "<\(name)>"
+            case .option:
+                "--\(name)=<\(self.valueName ?? "")>"
+            case .flag:
+                "--\(name)"
+            }
 
         if self.isRepeating {
             inner += "..."
@@ -179,14 +182,15 @@ extension ArgumentInfoV0 {
 
         // TODO default values, values, short, etc.
 
-        let inner = switch self.kind {
-        case .positional:
-            "\(name)"
-        case .option:
-            "--\(name)=\\<\(self.valueName ?? "")\\>"
-        case .flag:
-            "--\(name)"
-        }
+        let inner =
+            switch self.kind {
+            case .positional:
+                "\(name)"
+            case .option:
+                "--\(name)=\\<\(self.valueName ?? "")\\>"
+            case .flag:
+                "--\(name)"
+            }
 
         return inner
     }

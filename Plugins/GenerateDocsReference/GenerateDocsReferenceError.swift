@@ -12,24 +12,24 @@ enum GenerateDocsReferencePluginError: Error {
 extension GenerateDocsReferencePluginError: CustomStringConvertible {
     var description: String {
         switch self {
-        case .unknownBuildConfiguration(let configuration):
+        case let .unknownBuildConfiguration(configuration):
             return "Build failed: Unknown build configuration '\(configuration)'."
-        case .buildFailed(let logText):
+        case let .buildFailed(logText):
             return "Build failed: \(logText)."
-        case .createOutputDirectoryFailed(let error):
+        case let .createOutputDirectoryFailed(error):
             return """
-                Failed to create output directory: '\(error.localizedDescription)'
-                """
-        case .subprocessFailedNonZeroExit(let tool, let exitCode):
+            Failed to create output directory: '\(error.localizedDescription)'
+            """
+        case let .subprocessFailedNonZeroExit(tool, exitCode):
             return """
-                '\(tool.lastComponent)' invocation failed with a nonzero exit code: \
-                '\(exitCode)'.
-                """
-        case .subprocessFailedError(let tool, let error):
+            '\(tool.lastComponent)' invocation failed with a nonzero exit code: \
+            '\(exitCode)'.
+            """
+        case let .subprocessFailedError(tool, error):
             return """
-                '\(tool.lastComponent)' invocation failed: \
-                '\(error.localizedDescription)'
-                """
+            '\(tool.lastComponent)' invocation failed: \
+            '\(error.localizedDescription)'
+            """
         }
     }
 }

@@ -38,7 +38,8 @@ struct GenerateDocsReferencePlugin: CommandPlugin {
         print("Building package in \(configuration) mode...")
         let buildResult = try packageManager.build(
             .product("swiftly"),
-            parameters: .init(configuration: configuration))
+            parameters: .init(configuration: configuration)
+        )
 
         guard buildResult.succeeded else {
             throw GenerateDocsReferencePluginError.buildFailed(buildResult.logText)

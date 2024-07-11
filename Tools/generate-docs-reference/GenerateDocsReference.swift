@@ -13,7 +13,8 @@ struct GenerateDocsReferencel: ParsableCommand {
 
     static let configuration = CommandConfiguration(
         commandName: "generate-docs-reference",
-        abstract: "Generate a docs reference for the provided tool.")
+        abstract: "Generate a docs reference for the provided tool."
+    )
 
     @Argument(help: "Tool to generate docs.")
     var tool: String
@@ -28,7 +29,8 @@ struct GenerateDocsReferencel: ParsableCommand {
         do {
             let tool = URL(fileURLWithPath: tool)
             let output = try executeCommand(
-                executable: tool, arguments: ["--experimental-dump-help"])
+                executable: tool, arguments: ["--experimental-dump-help"]
+            )
             data = output.data(using: .utf8) ?? Data()
         } catch {
             throw Error.failedToRunSubprocess(error: error)
@@ -39,7 +41,8 @@ struct GenerateDocsReferencel: ParsableCommand {
             guard toolInfoThin.serializationVersion == 0 else {
                 throw Error.unsupportedDumpHelpVersion(
                     expected: 0,
-                    found: toolInfoThin.serializationVersion)
+                    found: toolInfoThin.serializationVersion
+                )
             }
         } catch {
             throw Error.unableToParseToolOutput(error: error)
@@ -53,12 +56,13 @@ struct GenerateDocsReferencel: ParsableCommand {
         }
 
         do {
-            if outputFile == "-" {
-                try generatePages(from: toolInfo.command, savingTo: nil)
+            if self.outputFile == "-" {
+                try self.generatePages(from: toolInfo.command, savingTo: nil)
             } else {
-                try generatePages(
+                try self.generatePages(
                     from: toolInfo.command,
-                    savingTo: URL(fileURLWithPath: outputFile))
+                    savingTo: URL(fileURLWithPath: self.outputFile)
+                )
             }
         } catch {
             throw Error.failedToGenerateDocsReferencePage(error: error)
@@ -68,7 +72,7 @@ struct GenerateDocsReferencel: ParsableCommand {
     func generatePages(from command: CommandInfoV0, savingTo file: URL?) throws {
         let page = command.toMD([])
 
-        if let file = file {
+        if let file {
             try page.write(to: file, atomically: true, encoding: .utf8)
         } else {
             print(page)
@@ -128,7 +132,7 @@ extension CommandInfoV0 {
             return ""
         }
 
-        return args.map({ $0.usage() }).joined(separator: " ")
+        return args.map { $0.usage() }.joined(separator: " ")
     }
 }
 
@@ -147,7 +151,7 @@ extension ArgumentInfoV0 {
             return ""
         }
 
-        // TODO default values, short, etc.
+        // TODO: default values, short, etc.
 
         var inner =
             switch self.kind {
@@ -180,7 +184,7 @@ extension ArgumentInfoV0 {
             return ""
         }
 
-        // TODO default values, values, short, etc.
+        // TODO: default values, values, short, etc.
 
         let inner =
             switch self.kind {

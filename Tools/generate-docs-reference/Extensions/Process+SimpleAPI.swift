@@ -7,16 +7,16 @@ enum SubprocessError: Swift.Error, LocalizedError, CustomStringConvertible {
 
     var description: String {
         switch self {
-        case .missingExecutable(let url):
+        case let .missingExecutable(url):
             return "No executable at '\(url.standardizedFileURL.path)'."
-        case .failedToLaunch(let error):
+        case let .failedToLaunch(error):
             return "Couldn't run command process. \(error.localizedDescription)"
-        case .nonZeroExitCode(let code):
+        case let .nonZeroExitCode(code):
             return "Process returned non-zero exit code '\(code)'."
         }
     }
 
-    var errorDescription: String? { description }
+    var errorDescription: String? { self.description }
 }
 
 func executeCommand(
@@ -57,8 +57,8 @@ func executeCommand(
 
     let outputActual =
         String(data: outputData, encoding: .utf8)?
-        .trimmingCharacters(in: .whitespacesAndNewlines)
-        ?? ""
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            ?? ""
 
     return outputActual
 }

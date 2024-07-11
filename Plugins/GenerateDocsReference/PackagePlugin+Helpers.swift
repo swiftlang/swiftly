@@ -8,7 +8,7 @@ extension ArgumentExtractor {
 
     mutating func configuration() throws -> PackageManager.BuildConfiguration {
         switch self.extractOption(named: "configuration").first {
-        case .some(let configurationString):
+        case let .some(configurationString):
             switch configurationString {
             case "debug":
                 return .debug
@@ -30,7 +30,8 @@ extension Path {
         do {
             try FileManager.default.createDirectory(
                 atPath: self.string,
-                withIntermediateDirectories: true)
+                withIntermediateDirectories: true
+            )
         } catch {
             throw GenerateDocsReferencePluginError.createOutputDirectoryFailed(error)
         }
@@ -48,7 +49,8 @@ extension Path {
                 process.terminationStatus == 0
             else {
                 throw GenerateDocsReferencePluginError.subprocessFailedNonZeroExit(
-                    self, process.terminationStatus)
+                    self, process.terminationStatus
+                )
             }
         } catch {
             throw GenerateDocsReferencePluginError.subprocessFailedError(self, error)
@@ -67,7 +69,7 @@ extension PackageManager.BuildResult.BuiltArtifact {
 
 extension Product {
     func hasDependency(named name: String) -> Bool {
-        recursiveTargetDependencies
+        self.recursiveTargetDependencies
             .contains { $0.name == name }
     }
 

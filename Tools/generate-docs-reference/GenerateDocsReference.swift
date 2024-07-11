@@ -155,14 +155,14 @@ extension ArgumentInfoV0 {
 
         var inner =
             switch self.kind
-            {
-                case .positional:
-                    "<\(name)>"
-                case .option:
-                    "--\(name)=<\(self.valueName ?? "")>"
-                case .flag:
-                    "--\(name)"
-            }
+        {
+        case .positional:
+            "<\(name)>"
+        case .option:
+            "--\(name)=<\(self.valueName ?? "")>"
+        case .flag:
+            "--\(name)"
+        }
 
         if self.isRepeating {
             inner += "..."
@@ -189,14 +189,14 @@ extension ArgumentInfoV0 {
 
         let inner =
             switch self.kind
-            {
-                case .positional:
-                    "\(name)"
-                case .option:
-                    "--\(name)=\\<\(self.valueName ?? "")\\>"
-                case .flag:
-                    "--\(name)"
-            }
+        {
+        case .positional:
+            "\(name)"
+        case .option:
+            "--\(name)=\\<\(self.valueName ?? "")\\>"
+        case .flag:
+            "--\(name)"
+        }
 
         return inner
     }

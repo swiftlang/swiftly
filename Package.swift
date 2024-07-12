@@ -1,10 +1,12 @@
-// swift-tools-version:5.7
+// swift-tools-version:5.10
 
 import PackageDescription
 
 let package = Package(
     name: "swiftly",
-    platforms: [.macOS(.v13)],
+    platforms: [
+        .macOS(.v13),
+    ],
     products: [
         .executable(
             name: "swiftly",
@@ -25,6 +27,7 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .target(name: "SwiftlyCore"),
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
+                .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
             ]
         ),
@@ -67,6 +70,12 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedLibrary("z"),
+            ]
+        ),
+        .target(
+            name: "MacOSPlatform",
+            dependencies: [
+                "SwiftlyCore",
             ]
         ),
         .systemLibrary(

@@ -67,8 +67,6 @@ struct Update: SwiftlyCommand {
     @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
-    public var httpClient = SwiftlyHTTPClient()
-
     private enum CodingKeys: String, CodingKey {
         case toolchain, assumeYes, verify
     }
@@ -106,7 +104,6 @@ struct Update: SwiftlyCommand {
         try await Install.execute(
             version: newToolchain,
             &config,
-            self.httpClient,
             useInstalledToolchain: config.inUse == parameters.oldToolchain,
             verifySignature: self.verify
         )
@@ -165,7 +162,7 @@ struct Update: SwiftlyCommand {
     private func lookupNewToolchain(_ bounds: UpdateParameters) async throws -> ToolchainVersion? {
         switch bounds {
         case let .stable(old, range):
-            return try await self.httpClient.getReleaseToolchains(limit: 1) { release in
+            return try await SwiftlyCore.httpClient.getReleaseToolchains(limit: 1) { release in
                 switch range {
                 case .latest:
                     return release > old
@@ -176,7 +173,7 @@ struct Update: SwiftlyCommand {
                 }
             }.first.map(ToolchainVersion.stable)
         case let .snapshot(old):
-            return try await self.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
+            return try await SwiftlyCore.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
                 snapshot.branch == old.branch && snapshot.date > old.date
             }.first.map(ToolchainVersion.snapshot)
         }

@@ -1,4 +1,4 @@
-// swift-tools-version:5.7
+// swift-tools-version:5.10
 
 import PackageDescription
 
@@ -13,7 +13,9 @@ let swiftlyTarget: Target = .executableTarget(
 
 let package = Package(
     name: "swiftly",
-    platforms: [.macOS(.v13)],
+    platforms: [
+        .macOS(.v13),
+    ],
     products: [
         .executable(
             name: "swiftly",
@@ -43,6 +45,7 @@ let package = Package(
 )
 
 #if os(Linux)
+
 package.targets.append(
     .target(
         name: "LinuxPlatform",
@@ -66,4 +69,17 @@ package.targets.append(
     )
 )
 swiftlyTarget.dependencies.append(.target(name: "LinuxPlatform"))
+
+#elseif os(macOS)
+
+package.targets.append(
+    .target(
+        name: "MacOSPlatform",
+        dependencies: [
+            "SwiftlyCore",
+        ]
+    )
+)
+swiftlyTarget.dependencies.append(.target(name: "MacOSPlatform"))
+
 #endif

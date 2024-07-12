@@ -6,11 +6,62 @@ import NIO
 @testable import SwiftlyCore
 import XCTest
 
+#if os(macOS)
+import MacOSPlatform
+#endif
+
+import AsyncHTTPClient
+import NIO
+
 struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
+var proxyExecutorInstalled = false
+
+/// An `HTTPRequestExecutor` backed by an `HTTPClient` that can take http proxy
+/// information from the environment in either HTTP_PROXY or HTTPS_PROXY
+class ProxyHTTPRequestExecutorImpl: HTTPRequestExecutor {
+    let httpClient: HTTPClient
+    public init() {
+        var proxy: HTTPClient.Configuration.Proxy?
+
+        let environment = ProcessInfo.processInfo.environment
+        let httpProxy = environment["HTTP_PROXY"]
+        if let httpProxy, let url = URL(string: httpProxy), let host = url.host, let port = url.port {
+            proxy = .server(host: host, port: port)
+        }
+
+        let httpsProxy = environment["HTTPS_PROXY"]
+        if let httpsProxy, let url = URL(string: httpsProxy), let host = url.host, let port = url.port {
+            proxy = .server(host: host, port: port)
+        }
+
+        if proxy != nil {
+            self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
+        } else {
+            self.httpClient = HTTPClient.shared
+        }
+    }
+
+    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
+        try await self.httpClient.execute(request, timeout: timeout)
+    }
+
+    deinit {
+        if httpClient !== HTTPClient.shared {
+            try? httpClient.syncShutdown()
+        }
+    }
+}
+
 class SwiftlyTests: XCTestCase {
+    override class func setUp() {
+        if !proxyExecutorInstalled {
+            SwiftlyCore.httpRequestExecutor = ProxyHTTPRequestExecutorImpl()
+        }
+    }
+
     // Below are some constants that can be used to write test cases.
     static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
     static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
@@ -38,6 +89,18 @@ class SwiftlyTests: XCTestCase {
             return v
         }
 
+#if os(macOS)
+        return Config(
+            inUse: nil,
+            installedToolchains: [],
+            platform: Config.PlatformDefinition(
+                name: "xcode",
+                nameFull: "osx",
+                namePretty: "macOS",
+                architecture: nil
+            )
+        )
+#else
         return Config(
             inUse: nil,
             installedToolchains: [],
@@ -48,6 +111,7 @@ class SwiftlyTests: XCTestCase {
                 architecture: try? getEnv("SWIFTLY_PLATFORM_ARCH")
             )
         )
+#endif
     }
 
     func parseCommand<T: ParsableCommand>(_ commandType: T.Type, _ arguments: [String]) throws -> T {
@@ -119,6 +183,28 @@ class SwiftlyTests: XCTestCase {
         }
     }
 
+    func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
+        let prevExecutor = SwiftlyCore.httpRequestExecutor
+        let mockDownloader = MockToolchainDownloader(executables: executables, prevExecutor: prevExecutor)
+        SwiftlyCore.httpRequestExecutor = mockDownloader
+        defer {
+            SwiftlyCore.httpRequestExecutor = prevExecutor
+        }
+
+        try await f()
+    }
+
+    func withMockedHTTPRequests(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse, _ f: () async throws -> Void) async throws {
+        let prevExecutor = SwiftlyCore.httpRequestExecutor
+        let mockedRequestExecutor = MockHTTPRequestExecutor(handler: handler)
+        SwiftlyCore.httpRequestExecutor = mockedRequestExecutor
+        defer {
+            SwiftlyCore.httpRequestExecutor = prevExecutor
+        }
+
+        try await f()
+    }
+
     /// Validates that the provided toolchain is the one currently marked as "in use", both by checking the
     /// configuration file and by executing `swift --version` using the swift executable in the `bin` directory.
     /// If nil is provided, this validates that no toolchain is currently in use.
@@ -175,8 +261,10 @@ class SwiftlyTests: XCTestCase {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
         var install = try self.parseCommand(Install.self, ["install", "\(selector)", "--no-verify"] + args)
-        install.httpClient = SwiftlyHTTPClient(executor: MockToolchainDownloader(executables: executables))
-        try await install.run()
+
+        try await self.withMockedToolchain(executables: executables) {
+            try await install.run()
+        }
     }
 
     /// Install a mocked toolchain according to the provided selector that includes the provided list of executables
@@ -361,12 +449,6 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
     }
 }
 
-extension SwiftlyHTTPClient {
-    public static func mocked(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse) -> Self {
-        Self(executor: MockHTTPRequestExecutor(handler: handler))
-    }
-}
-
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
 /// All other requests are performed using an actual HTTP client.
 public struct MockToolchainDownloader: HTTPRequestExecutor {
@@ -376,11 +458,11 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
         try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
     private let executables: [String]
-    private let httpRequestExecutor: HTTPRequestExecutor
+    public let httpRequestExecutor: HTTPRequestExecutor
 
-    public init(executables: [String]? = nil) {
+    public init(executables: [String]? = nil, prevExecutor: HTTPRequestExecutor) {
         self.executables = executables ?? ["swift"]
-        self.httpRequestExecutor = HTTPRequestExecutorImpl()
+        self.httpRequestExecutor = prevExecutor
     }
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
@@ -419,6 +501,7 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
         return HTTPClientResponse(body: .bytes(ByteBuffer(data: mockedToolchain)))
     }
 
+#if os(Linux)
     func makeMockedToolchain(toolchain: ToolchainVersion) throws -> Data {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
         let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
@@ -461,4 +544,67 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
 
         return try Data(contentsOf: archive)
     }
+
+#elseif os(macOS)
+
+    func makeMockedToolchain(toolchain: ToolchainVersion) throws -> Data {
+        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
+        let toolchainBinDir = toolchainDir.appendingPathComponent("usr/bin", isDirectory: true)
+
+        try FileManager.default.createDirectory(
+            at: toolchainBinDir,
+            withIntermediateDirectories: true
+        )
+
+        defer {
+            try? FileManager.default.removeItem(at: tmp)
+        }
+
+        for executable in self.executables {
+            let executablePath = toolchainBinDir.appendingPathComponent(executable)
+
+            let script = """
+            #!/usr/bin/env sh
+
+            echo '\(toolchain.name)'
+            """
+
+            let data = Data(script.utf8)
+            try data.write(to: executablePath)
+
+            // make the file executable
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+        }
+
+        // Add a skeletal Info.plist at the top
+        let encoder = PropertyListEncoder()
+        encoder.outputFormat = .xml
+        let pkgInfo = SwiftPkgInfo(CFBundleIdentifier: "org.swift.swift.mock.\(toolchain.name)")
+        let data = try encoder.encode(pkgInfo)
+        try data.write(to: toolchainDir.appendingPathComponent("Info.plist"))
+
+        let pkg = tmp.appendingPathComponent("toolchain.pkg")
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        task.arguments = [
+            "pkgbuild",
+            "--root",
+            toolchainDir.path,
+            "--install-location",
+            "Library/Developer/Toolchains/\(toolchain.identifier).xctoolchain",
+            "--version",
+            "\(toolchain.name)",
+            "--identifier",
+            pkgInfo.CFBundleIdentifier,
+            pkg.path,
+        ]
+        try task.run()
+        task.waitUntilExit()
+
+        return try Data(contentsOf: pkg)
+    }
+
+#endif
 }

@@ -59,21 +59,18 @@ struct Install: SwiftlyCommand {
     @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
-    public var httpClient = SwiftlyHTTPClient()
-
     private enum CodingKeys: String, CodingKey {
         case version, token, use, verify
     }
 
     mutating func run() async throws {
         let selector = try ToolchainSelector(parsing: self.version)
-        self.httpClient.githubToken = self.token
+        SwiftlyCore.httpClient.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
         var config = try Config.load()
         try await Self.execute(
             version: toolchainVersion,
             &config,
-            self.httpClient,
             useInstalledToolchain: self.use,
             verifySignature: self.verify
         )
@@ -82,7 +79,6 @@ struct Install: SwiftlyCommand {
     internal static func execute(
         version: ToolchainVersion,
         _ config: inout Config,
-        _ httpClient: SwiftlyHTTPClient,
         useInstalledToolchain: Bool,
         verifySignature: Bool
     ) async throws {
@@ -121,24 +117,18 @@ struct Install: SwiftlyCommand {
             }
 
             url += "swift-\(versionString)-release/"
-            url += "\(platformString)/"
-            url += "swift-\(versionString)-RELEASE/"
-            url += "swift-\(versionString)-RELEASE-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
         case let .snapshot(release):
-            let snapshotString: String
             switch release.branch {
             case let .release(major, minor):
                 url += "swift-\(major).\(minor)-branch/"
-                snapshotString = "swift-\(major).\(minor)-DEVELOPMENT-SNAPSHOT"
             case .main:
                 url += "development/"
-                snapshotString = "swift-DEVELOPMENT-SNAPSHOT"
             }
-
-            url += "\(platformString)/"
-            url += "\(snapshotString)-\(release.date)-a/"
-            url += "\(snapshotString)-\(release.date)-a-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
         }
+
+        url += "\(platformString)/"
+        url += "\(version.identifier)/"
+        url += "\(version.identifier)-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
 
         guard let url = URL(string: url) else {
             throw Error(message: "Invalid toolchain URL: \(url)")
@@ -152,7 +142,7 @@ struct Install: SwiftlyCommand {
         var lastUpdate = Date()
 
         do {
-            try await httpClient.downloadFile(
+            try await SwiftlyCore.httpClient.downloadFile(
                 url: url,
                 to: tmpFile,
                 reportProgress: { progress in
@@ -185,7 +175,7 @@ struct Install: SwiftlyCommand {
 
         if verifySignature {
             try await Swiftly.currentPlatform.verifySignature(
-                httpClient: httpClient,
+                httpClient: SwiftlyCore.httpClient,
                 archiveDownloadURL: url,
                 archive: tmpFile
             )
@@ -194,6 +184,7 @@ struct Install: SwiftlyCommand {
         try Swiftly.currentPlatform.install(from: tmpFile, version: version)
 
         config.installedToolchains.insert(version)
+
         try config.save()
 
         // If this is the first installed toolchain, mark it as in-use regardless of whether the
@@ -212,7 +203,7 @@ struct Install: SwiftlyCommand {
         case .latest:
             SwiftlyCore.print("Fetching the latest stable Swift release...")
 
-            guard let release = try await self.httpClient.getReleaseToolchains(limit: 1).first else {
+            guard let release = try await SwiftlyCore.httpClient.getReleaseToolchains(limit: 1).first else {
                 throw Error(message: "couldn't get latest releases")
             }
             return .stable(release)
@@ -231,7 +222,7 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest stable Swift \(major).\(minor) release...")
             // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
-            let toolchain = try await self.httpClient.getReleaseToolchains(limit: 1) { release in
+            let toolchain = try await SwiftlyCore.httpClient.getReleaseToolchains(limit: 1) { release in
                 release.major == major && release.minor == minor
             }.first
 
@@ -249,7 +240,7 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest \(branch) branch snapshot...")
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.
-            let snapshot = try await self.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
+            let snapshot = try await SwiftlyCore.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
                 snapshot.branch == branch
             }.first
 

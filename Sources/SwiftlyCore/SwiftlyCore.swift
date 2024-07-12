@@ -6,6 +6,15 @@ public let version = SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev")
 /// home directory location logic.
 public var mockedHomeDir: URL?
 
+/// This is the default http client that swiftly uses for its network
+/// requests.
+public var httpClient = SwiftlyHTTPClient()
+
+/// An HTTP request executor that allows different transport level configuration
+/// such as allowing a proxy to be configured, or for the purpose of mocking
+/// for tests.
+public var httpRequestExecutor: HTTPRequestExecutor = HTTPRequestExecutorImpl()
+
 /// Protocol defining a handler for information swiftly intends to print to stdout.
 /// This is currently only used to intercept print statements for testing.
 public protocol OutputHandler {

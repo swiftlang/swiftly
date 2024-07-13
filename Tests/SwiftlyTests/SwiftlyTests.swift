@@ -451,30 +451,139 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
 
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
 /// All other requests are performed using an actual HTTP client.
-public struct MockToolchainDownloader: HTTPRequestExecutor {
+public class MockToolchainDownloader: HTTPRequestExecutor {
     private static let releaseURLRegex: Regex<(Substring, Substring, Substring, Substring?)> =
         try! Regex("swift-(\\d+)\\.(\\d+)(?:\\.(\\d+))?-RELEASE")
     private static let snapshotURLRegex: Regex<Substring> =
         try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
     private let executables: [String]
+#if os(Linux)
+    private var signatures: [String: URL]
+#endif
     public let httpRequestExecutor: HTTPRequestExecutor
 
     public init(executables: [String]? = nil, prevExecutor: HTTPRequestExecutor) {
         self.executables = executables ?? ["swift"]
         self.httpRequestExecutor = prevExecutor
+#if os(Linux)
+        self.signatures = [:]
+#endif
     }
 
-    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
+    public func execute(_ request: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse {
         guard let url = URL(string: request.url) else {
             throw SwiftlyTestError(message: "invalid request URL: \(request.url)")
         }
 
         if url.host == "download.swift.org" {
             return try self.makeToolchainDownloadResponse(from: url)
+        } else if url.host == "api.github.com" {
+            if url.path == "/repos/apple/swift/releases" {
+                return try self.makeGitHubReleasesAPIResponse(from: url)
+            } else if url.path == "/repos/apple/swift/tags" {
+                return try self.makeGitHubTagsAPIResponse(from: url)
+            } else {
+                throw SwiftlyTestError(message: "unxpected github API request URL: \(request.url)")
+            }
         } else {
-            return try await self.httpRequestExecutor.execute(request, timeout: timeout)
+            throw SwiftlyTestError(message: "unmocked URL: \(request.url)")
         }
+    }
+
+    private func makeGitHubReleasesAPIResponse(from url: URL) throws -> HTTPClientResponse {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw SwiftlyTestError(message: "unexpected github url: \(url)")
+        }
+
+        guard let queryItems = components.queryItems else {
+            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_releases_page1_json))))
+        }
+
+        guard let page = queryItems.first(where: { $0.name == "page" }) else {
+            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_releases_page1_json))))
+        }
+
+        if page.value != "1" {
+            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(Array("[]".utf8)))))
+        }
+
+        return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_releases_page1_json))))
+    }
+
+    private func makeGitHubTagsAPIResponse(from url: URL) throws -> HTTPClientResponse {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw SwiftlyTestError(message: "unexpected github url: \(url)")
+        }
+
+        guard let queryItems = components.queryItems else {
+            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_tags_page1_json))))
+        }
+
+        guard let page = queryItems.first(where: { $0.name == "page" }) else {
+            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_tags_page1_json))))
+        }
+
+        let payload = switch page.value {
+        case "1":
+            PackageResources.swift_tags_page1_json
+        case "2":
+            PackageResources.swift_tags_page2_json
+        case "3":
+            PackageResources.swift_tags_page3_json
+        case "4":
+            PackageResources.swift_tags_page4_json
+        case "5":
+            PackageResources.swift_tags_page5_json
+        case "6":
+            PackageResources.swift_tags_page6_json
+        case "7":
+            PackageResources.swift_tags_page7_json
+        case "8":
+            PackageResources.swift_tags_page8_json
+        case "9":
+            PackageResources.swift_tags_page9_json
+        case "10":
+            PackageResources.swift_tags_page10_json
+        case "11":
+            PackageResources.swift_tags_page11_json
+        case "12":
+            PackageResources.swift_tags_page12_json
+        case "13":
+            PackageResources.swift_tags_page13_json
+        case "14":
+            PackageResources.swift_tags_page14_json
+        case "15":
+            PackageResources.swift_tags_page15_json
+        case "16":
+            PackageResources.swift_tags_page16_json
+        case "17":
+            PackageResources.swift_tags_page17_json
+        case "18":
+            PackageResources.swift_tags_page18_json
+        case "19":
+            PackageResources.swift_tags_page19_json
+        case "20":
+            PackageResources.swift_tags_page20_json
+        case "21":
+            PackageResources.swift_tags_page21_json
+        case "22":
+            PackageResources.swift_tags_page22_json
+        case "23":
+            PackageResources.swift_tags_page23_json
+        case "24":
+            PackageResources.swift_tags_page24_json
+        case "25":
+            PackageResources.swift_tags_page25_json
+        case "26":
+            PackageResources.swift_tags_page26_json
+        case "27":
+            PackageResources.swift_tags_page27_json
+        default:
+            Array("[]".utf8)
+        }
+
+        return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(payload))))
     }
 
     private func makeToolchainDownloadResponse(from url: URL) throws -> HTTPClientResponse {
@@ -497,12 +606,22 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
             throw SwiftlyTestError(message: "invalid toolchain download URL: \(url.path)")
         }
 
-        let mockedToolchain = try self.makeMockedToolchain(toolchain: toolchain)
+        let mockedToolchain = try self.makeMockedToolchain(toolchain: toolchain, name: url.lastPathComponent)
         return HTTPClientResponse(body: .bytes(ByteBuffer(data: mockedToolchain)))
     }
 
 #if os(Linux)
-    func makeMockedToolchain(toolchain: ToolchainVersion) throws -> Data {
+    func makeMockedToolchain(toolchain: ToolchainVersion, name: String) throws -> Data {
+        // Check our cache if this is a signature request
+        if name.hasSuffix(".sig") {
+            // Signatures will either be in the cache or they don't exist
+            guard let signature = self.signatures[toolchain.name] else {
+                throw SwiftlyTestError(message: "signature wasn't found in the cache")
+            }
+
+            return try Data(contentsOf: signature)
+        }
+
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
         let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
         let toolchainBinDir = toolchainDir
@@ -513,9 +632,6 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
             at: toolchainBinDir,
             withIntermediateDirectories: true
         )
-        defer {
-            try? FileManager.default.removeItem(at: tmp)
-        }
 
         for executable in self.executables {
             let executablePath = toolchainBinDir.appendingPathComponent(executable)
@@ -542,12 +658,56 @@ public struct MockToolchainDownloader: HTTPRequestExecutor {
         try task.run()
         task.waitUntilExit()
 
+        // Extra step involves generating a gpg signature and putting that in a cache for a later request
+        var detachSign = Process()
+        detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        detachSign.arguments = ["gpg", "--detach-sign", archive.path]
+        try detachSign.run()
+        detachSign.waitUntilExit()
+
+        if detachSign.terminationStatus != 0 {
+            // If there's no local gpg key then we generate one
+            let genKeyScript = Data("""
+                Key-Type: 1
+                Key-Length: 2048
+                Subkey-Type: 1
+                Subkey-Length: 2048
+                Name-Real: Test User
+                Name-Email: root@example.com
+                Expire-Date: 0
+                """.utf8
+            )
+            let genKeyScriptFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+            try genKeyScript.write(to: genKeyScriptFile)
+
+            let genKey = Process()
+            genKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+            genKey.arguments = ["gpg", "--batch", "--gen-key", genKeyScriptFile.path]
+            try genKey.run()
+            genKey.waitUntilExit()
+            if genKey.terminationStatus != 0 {
+                throw SwiftlyTestError(message: "unable to generate a gpg key to sign")
+            }
+
+            detachSign = Process()
+            detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+            detachSign.arguments = ["gpg", "--detach-sign", archive.path]
+            try detachSign.run()
+            detachSign.waitUntilExit()
+
+            if detachSign.terminationStatus != 0 {
+                throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
+            }
+        }
+
+        self.signatures[toolchain.name] = archive.appendingPathExtension("sig")
+
         return try Data(contentsOf: archive)
     }
 
 #elseif os(macOS)
 
-    func makeMockedToolchain(toolchain: ToolchainVersion) throws -> Data {
+    func makeMockedToolchain(toolchain: ToolchainVersion, name _: String) throws -> Data {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
         let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
         let toolchainBinDir = toolchainDir.appendingPathComponent("usr/bin", isDirectory: true)

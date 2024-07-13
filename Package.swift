@@ -2,6 +2,8 @@
 
 import PackageDescription
 
+let ghApiCacheResources = (1...27).map { Resource.embedInCode("gh-api-cache/swift-tags-page\($0).json") }
+
 let package = Package(
     name: "swiftly",
     platforms: [
@@ -62,7 +64,8 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftlyTests",
-            dependencies: ["Swiftly"]
+            dependencies: ["Swiftly"],
+            resources: ghApiCacheResources + [.embedInCode("gh-api-cache/swift-releases-page1.json")]
         ),
     ]
 )

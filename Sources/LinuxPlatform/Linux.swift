@@ -1,6 +1,8 @@
 import Foundation
 import SwiftlyCore
 
+var swiftGPGKeysRefreshed = false
+
 /// `Platform` implementation for Linux systems.
 /// This implementation can be reused for any supported Linux platform.
 /// TODO: replace dummy implementations
@@ -65,18 +67,22 @@ public struct Linux: Platform {
                 Self.skipVerificationMessage)
         }
 
-        SwiftlyCore.print("Refreshing Swift PGP keys...")
-        do {
-            try self.runProgram(
-                "gpg",
-                "--quiet",
-                "--keyserver",
-                "hkp://keyserver.ubuntu.com",
-                "--refresh-keys",
-                "Swift"
-            )
-        } catch {
-            throw Error(message: "Failed to refresh PGP keys: \(error)")
+        // We only need to refresh the keys once per session, which will help with performance in tests
+        if !swiftGPGKeysRefreshed {
+            SwiftlyCore.print("Refreshing Swift PGP keys...")
+            do {
+                try self.runProgram(
+                    "gpg",
+                    "--quiet",
+                    "--keyserver",
+                    "hkp://keyserver.ubuntu.com",
+                    "--refresh-keys",
+                    "Swift"
+                )
+            } catch {
+                throw Error(message: "Failed to refresh PGP keys: \(error)")
+            }
+            swiftGPGKeysRefreshed = true
         }
     }
 

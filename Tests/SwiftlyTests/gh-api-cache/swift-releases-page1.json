@@ -1,0 +1,1004 @@
+[
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.10.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.10.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 76,
+      "-1": 0,
+      "laugh": 11,
+      "hooray": 23,
+      "confused": 0,
+      "heart": 22,
+      "rocket": 16,
+      "eyes": 8
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.10-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.10 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 85,
+      "-1": 0,
+      "laugh": 34,
+      "hooray": 91,
+      "confused": 0,
+      "heart": 51,
+      "rocket": 43,
+      "eyes": 12
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.9.2-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.9.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 69,
+      "-1": 0,
+      "laugh": 11,
+      "hooray": 7,
+      "confused": 0,
+      "heart": 29,
+      "rocket": 73,
+      "eyes": 7
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.9.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.9.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 63,
+      "-1": 0,
+      "laugh": 3,
+      "hooray": 61,
+      "confused": 0,
+      "heart": 38,
+      "rocket": 18,
+      "eyes": 5
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.9-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.9 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 71,
+      "-1": 0,
+      "laugh": 10,
+      "hooray": 129,
+      "confused": 0,
+      "heart": 78,
+      "rocket": 55,
+      "eyes": 14
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.8.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.8.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 9,
+      "-1": 0,
+      "laugh": 22,
+      "hooray": 126,
+      "confused": 0,
+      "heart": 76,
+      "rocket": 35,
+      "eyes": 3
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.8-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.8 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 109,
+      "-1": 0,
+      "laugh": 15,
+      "hooray": 53,
+      "confused": 0,
+      "heart": 39,
+      "rocket": 30,
+      "eyes": 10
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.7.3-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.7.3 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 62,
+      "-1": 0,
+      "laugh": 16,
+      "hooray": 12,
+      "confused": 0,
+      "heart": 17,
+      "rocket": 18,
+      "eyes": 18
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.7.2-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.7.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 47,
+      "-1": 0,
+      "laugh": 9,
+      "hooray": 30,
+      "confused": 0,
+      "heart": 19,
+      "rocket": 14,
+      "eyes": 7
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.7.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.7.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 11,
+      "-1": 0,
+      "laugh": 3,
+      "hooray": 52,
+      "confused": 0,
+      "heart": 5,
+      "rocket": 14,
+      "eyes": 3
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.7-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.7 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 35,
+      "-1": 0,
+      "laugh": 3,
+      "hooray": 64,
+      "confused": 0,
+      "heart": 63,
+      "rocket": 13,
+      "eyes": 5
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.6.3-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.6.3 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 38,
+      "-1": 0,
+      "laugh": 11,
+      "hooray": 32,
+      "confused": 0,
+      "heart": 17,
+      "rocket": 19,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.6.2-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.6.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 65,
+      "-1": 0,
+      "laugh": 4,
+      "hooray": 17,
+      "confused": 0,
+      "heart": 19,
+      "rocket": 59,
+      "eyes": 2
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.6.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.6.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 75,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 45,
+      "confused": 0,
+      "heart": 16,
+      "rocket": 11,
+      "eyes": 4
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.6-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.6 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 29,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 20,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 2
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.5.3-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.5.3 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 2,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 17,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 28,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.5.2-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.5.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 13,
+      "-1": 0,
+      "laugh": 2,
+      "hooray": 35,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 9,
+      "eyes": 5
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.5.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.5.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 16,
+      "-1": 0,
+      "laugh": 7,
+      "hooray": 19,
+      "confused": 0,
+      "heart": 9,
+      "rocket": 9,
+      "eyes": 6
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.5-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.5 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 8,
+      "-1": 0,
+      "laugh": 1,
+      "hooray": 27,
+      "confused": 0,
+      "heart": 14,
+      "rocket": 33,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.4.3-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.4.3 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 9,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 8,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.4.2-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.4.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 10,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 17,
+      "eyes": 6
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.4.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.4.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 9,
+      "rocket": 0,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.4-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.4 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 1,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 1,
+      "rocket": 0,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.3.3-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.3.3 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.3.2-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.3.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.3.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 5.3.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.3-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.3 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.2.5-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.2.5 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 1,
+      "rocket": 0,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.2.4-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.2.4 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.2.3-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.2.3 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.2.2-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.2.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.2.1-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.2.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "laugh": 1,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.2-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.1.5-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.1.5 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.1.2-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.1.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.1-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.0.3-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.0.3 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.0.2-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 5.0.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-5.0-RELEASE",
+    "target_commitish": "master",
+    "name": "",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+    "reactions": {
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 1,
+      "rocket": 0,
+      "eyes": 0
+    }
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-4.2.2-RELEASE",
+    "target_commitish": "master",
+    "name": "",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-4.2.1-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 4.2.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-4.2-RELEASE",
+    "target_commitish": "master",
+    "name": "Swift 4.2 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-4.1.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 4.1.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-4.1-RELEASE",
+    "target_commitish": "main",
+    "name": "Swift 4.1 Release",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0.1-PREVIEW-3",
+    "target_commitish": "main",
+    "name": "Swift 3.0.1 Preview 3",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0.1-PREVIEW-2",
+    "target_commitish": "main",
+    "name": "Swift 3.0.1 Preview 2",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0.1-PREVIEW-1",
+    "target_commitish": "main",
+    "name": "Swift 3.0.1 Preview 1",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0-PREVIEW-6",
+    "target_commitish": "main",
+    "name": "Swift 3.0 Preview 6",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0-PREVIEW-5",
+    "target_commitish": "main",
+    "name": "Swift 3.0 Preview 5",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0-PREVIEW-4",
+    "target_commitish": "main",
+    "name": "Swift 3.0 Preview 4",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0-PREVIEW-3",
+    "target_commitish": "main",
+    "name": "Swift 3.0 Preview 3",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0-PREVIEW-2",
+    "target_commitish": "main",
+    "name": "Swift 3.0 Preview 2",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  },
+  {
+    "author": {
+      "type": "User",
+      "site_admin": false
+    },
+    "tag_name": "swift-3.0-PREVIEW-1",
+    "target_commitish": "main",
+    "name": "Swift 3.0 Preview 1",
+    "draft": false,
+    "prerelease": true,
+    "assets": [
+
+    ],
+  }
+]

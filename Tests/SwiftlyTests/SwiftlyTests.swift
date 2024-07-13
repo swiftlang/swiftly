@@ -692,8 +692,11 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                     echo "Entropy is not enough:"
                     cat /proc/sys/kernel/random/entropy_avail
 
-                    yum install -y iputils
-                    ping -c 20 8.8.8.8
+                    yum install -y curl rng-tools
+                    curl http://www.google.com
+                    curl https://www.apple.com
+                    rngd -r /dev/urandom
+                    cat /tmp/* > /dev/zero 2>&1
                 done
                 cat /etc/os-release | grep 'Amazon Linux 2'
                 if [ "$?" != "0" ]; then

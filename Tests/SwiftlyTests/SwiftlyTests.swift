@@ -692,7 +692,13 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                     echo "not enough entropy"
                     exit 1
                 fi
-                timeout 10 gpg --yes --batch --gen-key \(genKeyScriptFile.path)
+                cat /etc/os-release | grep 'Amazon Linux 2'
+                if [ "$?" != "0" ]; then
+                    gpg --yes --batch --gen-key \(genKeyScriptFile.path)
+                else
+                    echo "Amazon Linux 2 can't generate gpg keys headless"
+                    exit 1
+                fi
                 """]
             try genKey.run()
             genKey.waitUntilExit()

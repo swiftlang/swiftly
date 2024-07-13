@@ -669,6 +669,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             // If there's no local gpg key then we generate one
             let genKeyScript = Data("""
                 %no-ask-passphrase
+                %no-protection
                 Key-Type: 1
                 Key-Length: 2048
                 Subkey-Type: 1

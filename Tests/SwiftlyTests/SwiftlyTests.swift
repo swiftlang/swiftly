@@ -687,6 +687,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             genKey.arguments = ["bash", "-c", """
                 mkdir -p $HOME/.gnupg
                 touch $HOME/.gnupg/gpg.conf
+                echo "Entropy is:"
+                cat /proc/sys/kernel/random/entropy_avail
                 if [ "$(cat /proc/sys/kernel/random/entropy_avail)" -lt "200" ]; then
                     echo "not enough entropy"
                     exit 1

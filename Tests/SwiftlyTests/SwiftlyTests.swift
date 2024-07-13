@@ -692,7 +692,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                     echo "not enough entropy"
                     exit 1
                 fi
-                gpg --yes --batch --gen-key \(genKeyScriptFile.path)
+                timeout 10 gpg --yes --batch --gen-key \(genKeyScriptFile.path)
                 """]
             try genKey.run()
             genKey.waitUntilExit()

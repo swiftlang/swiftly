@@ -682,7 +682,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
             let genKey = Process()
             genKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            genKey.arguments = ["gpg", "--yes", "--batch", "--no-tty", "--pinentry-mode", "ask", "--gen-key", genKeyScriptFile.path]
+            //genKey.arguments = ["gpg", "--yes", "--batch", "--no-tty", "--pinentry-mode", "ask", "--gen-key", genKeyScriptFile.path]
+            genKey.arguments = ["bash", "-c", "cat $HOME/.gnupg/gpg.conf"]
             try genKey.run()
             genKey.waitUntilExit()
             if genKey.terminationStatus != 0 {

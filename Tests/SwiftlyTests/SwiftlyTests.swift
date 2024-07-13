@@ -682,7 +682,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
             let genKey = Process()
             genKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            genKey.arguments = ["gpg", "--batch", "--no-tty", "--pinentry-mode", "loopback", "--gen-key", genKeyScriptFile.path]
+            genKey.arguments = ["gpg", "--batch", "--no-tty", "--pinentry-mode", "cancel", "--gen-key", genKeyScriptFile.path]
             try genKey.run()
             genKey.waitUntilExit()
             if genKey.terminationStatus != 0 {

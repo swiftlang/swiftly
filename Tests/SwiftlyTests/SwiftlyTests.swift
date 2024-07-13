@@ -685,7 +685,6 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             let genKey = Process()
             genKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
             genKey.arguments = ["bash", "-c", """
-                set -e
                 mkdir -p $HOME/.gnupg
                 touch $HOME/.gnupg/gpg.conf
                 if [ "$(cat /proc/sys/kernel/random/entropy_avail)" -lt "200" ]; then
@@ -696,8 +695,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                 if [ "$?" != "0" ]; then
                     gpg --yes --batch --gen-key \(genKeyScriptFile.path)
                 else
-                    echo "Amazon Linux 2 can't generate gpg keys headless"
-                    exit 1
+                    timeout -k 10 5 gpg --yes --batch --gen-key \(genKeyScriptFile.path)
                 fi
                 """]
             try genKey.run()

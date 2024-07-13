@@ -1,4 +1,4 @@
-i=mport _StringProcessing
+import _StringProcessing
 import ArgumentParser
 import AsyncHTTPClient
 import NIO

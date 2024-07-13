@@ -669,7 +669,6 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             // If there's no local gpg key then we generate one
             let genKeyScript = Data("""
                 %no-ask-passphrase
-                %no-protection
                 Key-Type: 1
                 Key-Length: 2048
                 Subkey-Type: 1
@@ -684,7 +683,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
             let genKey = Process()
             genKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            genKey.arguments = ["bash", "-c", "mkdir -p $HOME/.gnupg && touch $HOME/.gnupg/gpg.conf && gpg --yes --batch --gen-key \(genKeyScriptFile.path)"]
+            genKey.arguments = ["bash", "-c", "mkdir -p $HOME/.gnupg && touch $HOME/.gnupg/gpg.conf && gpg --batch --gen-key \(genKeyScriptFile.path)"]
             try genKey.run()
             genKey.waitUntilExit()
             if genKey.terminationStatus != 0 {

@@ -687,12 +687,14 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             genKey.arguments = ["bash", "-c", """
                 mkdir -p $HOME/.gnupg
                 touch $HOME/.gnupg/gpg.conf
-                echo "Entropy is:"
-                cat /proc/sys/kernel/random/entropy_avail
-                if [ "$(cat /proc/sys/kernel/random/entropy_avail)" -lt "200" ]; then
-                    echo "not enough entropy"
-                    exit 1
-                fi
+
+                while [ "$(cat /proc/sys/kernel/random/entropy_avail)" -lt "1600" ]; do
+                    echo "Entropy is not enough:"
+                    cat /proc/sys/kernel/random/entropy_avail
+
+                    yum install -y iputils
+                    ping -c 20 8.8.8.8
+                done
                 cat /etc/os-release | grep 'Amazon Linux 2'
                 if [ "$?" != "0" ]; then
                     gpg --yes --batch --gen-key \(genKeyScriptFile.path)

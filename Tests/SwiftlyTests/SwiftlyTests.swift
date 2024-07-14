@@ -63,17 +63,20 @@ class SwiftlyTests: XCTestCase {
     }
 
     override class func tearDown() {
-        #if os(Linux)
+#if os(Linux)
         let deleteTestGPGKeys = Process()
         deleteTestGPGKeys.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        deleteTestGPGKeys.arguments = ["bash", "-c", """
+        deleteTestGPGKeys.arguments = [
+            "bash",
+            "-c",
+            """
             gpg --batch --yes --delete-secret-keys --fingerprint "A2A645E5249D25845C43954E7D210032D2F670B7" >/dev/null 2>&1
             gpg --batch --yes --delete-keys --fingerprint "A2A645E5249D25845C43954E7D210032D2F670B7" >/dev/null 2>&1
-            """
+            """,
         ]
         try? deleteTestGPGKeys.run()
         deleteTestGPGKeys.waitUntilExit()
-        #endif
+#endif
     }
 
     // Below are some constants that can be used to write test cases.
@@ -679,10 +682,10 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         let importKey = Process()
         importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         importKey.arguments = ["bash", "-c", """
-            mkdir -p $HOME/.gnupg
-            touch $HOME/.gnupg/gpg.conf
-            gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
-            """]
+        mkdir -p $HOME/.gnupg
+        touch $HOME/.gnupg/gpg.conf
+        gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
+        """]
         try importKey.run()
         importKey.waitUntilExit()
         if importKey.terminationStatus != 0 {
@@ -692,14 +695,14 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         let detachSign = Process()
         detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         detachSign.arguments = ["bash", "-c", """
-            export GPG_TTY=$(tty)
-            gpg --version | grep '2.0.' > /dev/null
-            if [ "$?" == "0" ]; then
-                gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
-            else
-                gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
-            fi
-            """]
+        export GPG_TTY=$(tty)
+        gpg --version | grep '2.0.' > /dev/null
+        if [ "$?" == "0" ]; then
+            gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+        else
+            gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+        fi
+        """]
         try detachSign.run()
         detachSign.waitUntilExit()
 

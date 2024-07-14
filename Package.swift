@@ -67,7 +67,7 @@ let package = Package(
             dependencies: ["Swiftly"],
             resources: ghApiCacheResources + [
                 .embedInCode("gh-api-cache/swift-releases-page1.json"),
-                .embedInCode("mock-signing-key-private.pgp")
+                .embedInCode("mock-signing-key-private.pgp"),
             ]
         ),
     ]

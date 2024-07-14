@@ -62,6 +62,20 @@ class SwiftlyTests: XCTestCase {
         }
     }
 
+    override class func tearDown() {
+        #if os(Linux)
+        let deleteTestGPGKeys = Process()
+        deleteTestGPGKeys.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        deleteTestGPGKeys.arguments = ["bash", "-c", """
+            gpg --batch --yes --delete-secret-keys --fingerprint "A2A645E5249D25845C43954E7D210032D2F670B7" >/dev/null 2>&1
+            gpg --batch --yes --delete-keys --fingerprint "A2A645E5249D25845C43954E7D210032D2F670B7" >/dev/null 2>&1
+            """
+        ]
+        try? deleteTestGPGKeys.run()
+        deleteTestGPGKeys.waitUntilExit()
+        #endif
+    }
+
     // Below are some constants that can be used to write test cases.
     static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
     static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
@@ -658,68 +672,39 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         try task.run()
         task.waitUntilExit()
 
-        // Extra step involves generating a gpg signature and putting that in a cache for a later request
-        var detachSign = Process()
+        // Extra step involves generating a gpg signature and putting that in a cache for a later request. We will
+        // use a local key for this to avoid running into entropy problems in CI.
+        let gpgKeyFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        try Data(PackageResources.mock_signing_key_private_pgp).write(to: gpgKeyFile)
+        let importKey = Process()
+        importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        importKey.arguments = ["bash", "-c", """
+            mkdir -p $HOME/.gnupg
+            touch $HOME/.gnupg/gpg.conf
+            gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
+            """]
+        try importKey.run()
+        importKey.waitUntilExit()
+        if importKey.terminationStatus != 0 {
+            throw SwiftlyTestError(message: "unable to import test gpg signing key")
+        }
+
+        let detachSign = Process()
         detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        detachSign.arguments = ["gpg", "--detach-sign", archive.path]
+        detachSign.arguments = ["bash", "-c", """
+            export GPG_TTY=$(tty)
+            gpg --version | grep '2.0.' > /dev/null
+            if [ "$?" == "0" ]; then
+                gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+            else
+                gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+            fi
+            """]
         try detachSign.run()
         detachSign.waitUntilExit()
 
         if detachSign.terminationStatus != 0 {
-            // If there's no local gpg key then we generate one
-            let genKeyScript = Data("""
-                %no-ask-passphrase
-                %no-protection
-                Key-Type: 1
-                Key-Length: 2048
-                Subkey-Type: 1
-                Subkey-Length: 2048
-                Name-Real: Test User
-                Name-Email: root@example.com
-                Expire-Date: 0
-                """.utf8
-            )
-            let genKeyScriptFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-            try genKeyScript.write(to: genKeyScriptFile)
-
-            let genKey = Process()
-            genKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            genKey.arguments = ["bash", "-c", """
-                mkdir -p $HOME/.gnupg
-                touch $HOME/.gnupg/gpg.conf
-
-                while [ "$(cat /proc/sys/kernel/random/entropy_avail)" -lt "1600" ]; do
-                    echo "Entropy is not enough:"
-                    cat /proc/sys/kernel/random/entropy_avail
-
-                    yum install -y curl rng-tools
-                    curl http://www.google.com
-                    curl https://www.apple.com
-                    rngd -r /dev/urandom
-                    cat /tmp/* > /dev/zero 2>&1
-                done
-                cat /etc/os-release | grep 'Amazon Linux 2'
-                if [ "$?" != "0" ]; then
-                    gpg --yes --batch --gen-key \(genKeyScriptFile.path)
-                else
-                    timeout -k 10 5 gpg --yes --batch --gen-key \(genKeyScriptFile.path)
-                fi
-                """]
-            try genKey.run()
-            genKey.waitUntilExit()
-            if genKey.terminationStatus != 0 {
-                throw SwiftlyTestError(message: "unable to generate a gpg key to sign")
-            }
-
-            detachSign = Process()
-            detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            detachSign.arguments = ["gpg", "--detach-sign", archive.path]
-            try detachSign.run()
-            detachSign.waitUntilExit()
-
-            if detachSign.terminationStatus != 0 {
-                throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
-            }
+            throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
         }
 
         self.signatures[toolchain.name] = archive.appendingPathExtension("sig")

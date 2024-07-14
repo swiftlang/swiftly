@@ -65,7 +65,10 @@ let package = Package(
         .testTarget(
             name: "SwiftlyTests",
             dependencies: ["Swiftly"],
-            resources: ghApiCacheResources + [.embedInCode("gh-api-cache/swift-releases-page1.json")]
+            resources: ghApiCacheResources + [
+                .embedInCode("gh-api-cache/swift-releases-page1.json"),
+                .embedInCode("mock-signing-key-private.pgp")
+            ]
         ),
     ]
 )

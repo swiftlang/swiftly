@@ -648,7 +648,7 @@ fi
 EOF
                )
         ENV_FILE="env.sh"
-        SOURCE_LINE=". \"$(replace_home_path $HOME_DIR)'/'$ENV_FILE\""
+        SOURCE_LINE='. "'$(replace_home_path $HOME_DIR)'/'$ENV_FILE'"'
         ;;
 esac
 

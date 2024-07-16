@@ -636,7 +636,7 @@ end
 EOF
                )
         ENV_FILE="env.fish"
-        SOURCE_LINE='source "'$(replace_home_path $HOME_DIR)/$ENV_FILE'"'
+        SOURCE_LINE='source "'$(replace_home_path $HOME_DIR)'/'$ENV_FILE'"'
         ;;
     *)
         ENV_OUT=$(cat <<EOF
@@ -648,7 +648,7 @@ fi
 EOF
                )
         ENV_FILE="env.sh"
-        SOURCE_LINE=". \"$(replace_home_path $HOME_DIR)/$ENV_FILE\""
+        SOURCE_LINE=". \"$(replace_home_path $HOME_DIR)'/'$ENV_FILE\""
         ;;
 esac
 

@@ -95,10 +95,10 @@ read_yn_input () {
 # the string "$HOME". This is used when printing to stdout.
 # e.g. "home/user/.local/bin" => "$HOME/.local/bin"
 replace_home_path () {
-    if [[ "$1" =~ ^"$HOME"(/|$) ]]; then
-        echo "\$HOME${1#$HOME}"
+    if [[ "$@" =~ ^"$HOME"(.*|$) ]]; then
+        printf "\$HOME${BASH_REMATCH[1]}"
     else
-        echo "$1"
+        echo "$@"
     fi
 }
 
@@ -111,7 +111,7 @@ expand_home_path () {
 
 # Prints the provided argument using the terminal's bold text effect.
 bold () {
-    echo "$(tput bold)$1$(tput sgr0)"
+    echo "$(tput bold)$@$(tput sgr0)"
 }
 
 # Fetch the list of required system dependencies from the apple/swift-docker
@@ -636,7 +636,7 @@ end
 EOF
                )
         ENV_FILE="env.fish"
-        SOURCE_LINE="source $(replace_home_path $HOME_DIR)/$ENV_FILE"
+        SOURCE_LINE='source "'$(replace_home_path $HOME_DIR)/$ENV_FILE'"'
         ;;
     *)
         ENV_OUT=$(cat <<EOF
@@ -648,7 +648,7 @@ fi
 EOF
                )
         ENV_FILE="env.sh"
-        SOURCE_LINE=". $(replace_home_path $HOME_DIR)/$ENV_FILE"
+        SOURCE_LINE=". \"$(replace_home_path $HOME_DIR)/$ENV_FILE\""
         ;;
 esac
 

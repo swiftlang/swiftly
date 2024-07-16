@@ -96,7 +96,7 @@ read_yn_input () {
 # e.g. "home/user/.local/bin" => "$HOME/.local/bin"
 replace_home_path () {
     if [[ "$@" =~ ^"$HOME"(.*|$) ]]; then
-        printf "\$HOME${BASH_REMATCH[1]}"
+        echo "\$HOME${BASH_REMATCH[1]}"
     else
         echo "$@"
     fi

@@ -6,7 +6,7 @@ Swiftly and the swiftly-install release script have different release schedules 
 
 1. Check out the commit you wish to create a release for. Ensure no other local modifications or changes are present.
 
-2. Check the sanity of the documentation preview  with `swift package --disable-sandbox preview-documentation --target SwiftlyDocs`
+2. Check the validity of the documentation preview  with `swift package --disable-sandbox preview-documentation --target SwiftlyDocs`
 
 3. Verify that the swiftly command-line reference is up-to-date, if not then run `swift package plugin generate-docs-reference` to update it.
 

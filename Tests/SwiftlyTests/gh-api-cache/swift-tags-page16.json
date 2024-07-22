@@ -1,0 +1,602 @@
+[
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-06-16-a",
+    "commit": {
+      "sha": "a9e43a789e93aa0d1f087eb9f288ebca527b7d62",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-06-15-a",
+    "commit": {
+      "sha": "994e1b39fa3840a747da55553ca3c195bcb174d9",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-06-05-a",
+    "commit": {
+      "sha": "7203d52cb1e074dcaf106a979031cde3c850ccd3",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-06-04-a",
+    "commit": {
+      "sha": "22bdcb21b33202d1dd03036ee5b2e15c39848078",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-06-01-a",
+    "commit": {
+      "sha": "3f72cb7eff847ce5a2d4b6f97bb5919b717ac19d",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-31-a",
+    "commit": {
+      "sha": "da77b15206fa1fd2c405bea00cdb3f121b75647c",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-26-a",
+    "commit": {
+      "sha": "79bf28ab8fe8c3c08c1c7f59cdc9703e04ebea40",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-22-a",
+    "commit": {
+      "sha": "6cdd8f7eed07e21308e6163e1ada1b82f0fcec71",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-20-a",
+    "commit": {
+      "sha": "919cf8e3429ad9c8fdb4eb2b913b0204b33f15ed",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-18-a",
+    "commit": {
+      "sha": "0a083b13d08c84df788a663a4c86191a4cf7e733",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-17-a",
+    "commit": {
+      "sha": "1de0c05633fb12240d0b20f668bba3554c297c55",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-16-a",
+    "commit": {
+      "sha": "34684c10449047a716f841130214a3a65dae731a",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-12-a",
+    "commit": {
+      "sha": "385516aee8a9c0cbb29131433d10e4df94becd3b",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-11-a",
+    "commit": {
+      "sha": "39bac1cd3a4764e241bf7a1e0b9a0d4a5c270e6e",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-10-a",
+    "commit": {
+      "sha": "9c997ce7ebd6dcaab08cf76443ed164ce2ee0f64",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-08-a",
+    "commit": {
+      "sha": "d1973d649234ac23f39e6cd33759669d566554dc",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-07-a",
+    "commit": {
+      "sha": "61563515f7926049dabbbfdff8ddf3d368ee408c",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-06-a",
+    "commit": {
+      "sha": "d7ae2e9f5bd3073c87e4df85b9bd3f2463cd7784",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-05-a",
+    "commit": {
+      "sha": "2d89b20e88e026b6279e95f22ef77e7fa92b66bb",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-04-a",
+    "commit": {
+      "sha": "aa695c316253efc15a8057256dbed48640f11545",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-02-a",
+    "commit": {
+      "sha": "71e71be9cbb93e634552688de9c453fb7e30f100",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-05-01-a",
+    "commit": {
+      "sha": "8597eca85f3b0744c21fd7b347cc3c94822ed528",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-29-a",
+    "commit": {
+      "sha": "50148ce42dd0d2cd40fbf4b4f41d5211f539d465",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-28-a",
+    "commit": {
+      "sha": "19ef36629e7eacf48607065e51e2580d3ce357de",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-27-a",
+    "commit": {
+      "sha": "6b6b8da1ccd1a7b1883c5f793b811a7a167080c4",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-26-a",
+    "commit": {
+      "sha": "46b5df0b94cb4f0ed9689edd8ea845258a00e08e",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-25-a",
+    "commit": {
+      "sha": "67e5f77a91a55c6cee7559cb067b73ba73c09f46",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-24-a",
+    "commit": {
+      "sha": "106853649459e883819edf3108ed5c80b27bfb9d",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-22-a",
+    "commit": {
+      "sha": "f7b6740d6186cddb5783288892ca27e010bca4d4",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-20-a",
+    "commit": {
+      "sha": "d7e1ea4794e99a029fddc8b0dc0eed69b7341ffa",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-19-a",
+    "commit": {
+      "sha": "02812e86abc52c21fc98ade7656aa27da36ac927",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-12-a",
+    "commit": {
+      "sha": "563750fbe935a01140a504830e0c6ee0a85c78b1",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-11-a",
+    "commit": {
+      "sha": "347123cb56bd5fe46330244519bc937b1103f063",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-10-a",
+    "commit": {
+      "sha": "5498b22a06c4cd6ec45e2bc006f7ab7e77528434",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-09-a",
+    "commit": {
+      "sha": "de2f1a9e7f1a61c39eaf98af1f3b7f9b351f5caf",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-08-a",
+    "commit": {
+      "sha": "feb5aa621b5ca17b98571544ef97ce0c047fc7cc",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-05-a",
+    "commit": {
+      "sha": "9f9e709c6c2bc16f295d58e291a8fca810f50f35",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-04-a",
+    "commit": {
+      "sha": "e6ee37a7c5cf4edd16991f595feed720f316a92a",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-03-a",
+    "commit": {
+      "sha": "0fa9054f227e2f6b51a50958244993137a92fa94",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-04-01-a",
+    "commit": {
+      "sha": "6ef77d365aeaba97fb1cd598a4c144004cacdefd",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-03-31-a",
+    "commit": {
+      "sha": "a7258c85de337a3eec06902cf96ff72ea9c4844e",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-03-30-a",
+    "commit": {
+      "sha": "97c97d5b24bb34daffb11b435237caf45d76abd4",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-03-28-a",
+    "commit": {
+      "sha": "7abb1e5f91476e22b8ca32e3d9f06d275df891dc",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-03-27-a",
+    "commit": {
+      "sha": "7abb1e5f91476e22b8ca32e3d9f06d275df891dc",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-03-24-a",
+    "commit": {
+      "sha": "109cd55b147a159c79121c75213c53c806504486",
+    },
+  },
+  {
+    "name": "swift-5.9-DEVELOPMENT-SNAPSHOT-2023-03-23-a",
+    "commit": {
+      "sha": "3771dfc64cbb2bd78734658fafe8d59e1ea7852f",
+    },
+  },
+  {
+    "name": "swift-5.8.1-RELEASE",
+    "commit": {
+      "sha": "346fb0204cf979700ddae60da1ca978063536d9d",
+    },
+  },
+  {
+    "name": "swift-5.8-RELEASE",
+    "commit": {
+      "sha": "f9611bc8e745b1b9a98d494236adb6d6c739fe97",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-03-17-a",
+    "commit": {
+      "sha": "ef7a6b85c8f7360744e3d5832bd5d5714013c458",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-03-07-a",
+    "commit": {
+      "sha": "79f282e3c72ccf4b551418e2a6d6d6505d6aac43",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-02-23-a",
+    "commit": {
+      "sha": "b9562e1a860ec0b0f225cfe0492b5cc25d5d0fb3",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-02-20-a",
+    "commit": {
+      "sha": "7cc67db2a780a4b1e326d93034ff866a4af70654",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-02-09-a",
+    "commit": {
+      "sha": "40e02c02ad5b3bbd9f915befb07ac9c23e8bb636",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-02-08-a",
+    "commit": {
+      "sha": "3ec56bab2dd718316973819f726c347a11b14d26",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-02-06-a",
+    "commit": {
+      "sha": "b1b89ca9977b51b39d295f291f477204a5e85418",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-02-04-a",
+    "commit": {
+      "sha": "090704f53d6d04d53d15fa3599954e1d9c5cd091",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-02-03-a",
+    "commit": {
+      "sha": "8b4068b6c915f79cf30150c5c134552200f7b9e2",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-02-01-a",
+    "commit": {
+      "sha": "74ab40be0d09183cb121499e0ee539bc696c508d",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-30-a",
+    "commit": {
+      "sha": "548a77341ef48755e80c117eef8b1489144ad367",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-27-a",
+    "commit": {
+      "sha": "9e6f80fe160e728affaab3f6931bda2c46918065",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-25-a",
+    "commit": {
+      "sha": "3e14777b17614d5aa81a522ec604edd21f54b60e",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-24-a",
+    "commit": {
+      "sha": "3e14777b17614d5aa81a522ec604edd21f54b60e",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-20-a",
+    "commit": {
+      "sha": "aa8ff46124db3b6004be06cf924b56c0c2ecdfd3",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-19-a",
+    "commit": {
+      "sha": "14ed022d537ca878461485aae2bfce70cde8edcd",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-13-a",
+    "commit": {
+      "sha": "7632e9a645bcb05879b02167f38e2435aca87b57",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-11-a",
+    "commit": {
+      "sha": "49c150e0f329ddd4962a2e4b0d30c6ad13902b9c",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-10-a",
+    "commit": {
+      "sha": "24fe6ae8532db5dfcf4205e941ade8652b34ecd3",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-09-a",
+    "commit": {
+      "sha": "a0b3f802c2ce715b3e4c709ea7817bc89736d915",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2023-01-06-a",
+    "commit": {
+      "sha": "9a2e76de37abd8837915450b3b5ca27886f23a9a",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2022-12-29-a",
+    "commit": {
+      "sha": "a2934c0a847db7a49359355b7e13252ef0bebb8d",
+    },
+  },
+  {
+    "name": "swift-5.8-DEVELOPMENT-SNAPSHOT-2022-12-20-a",
+    "commit": {
+      "sha": "87b9e5758b1c75f0a4cff7d2c8df33ba009f31e1",
+    },
+  },
+  {
+    "name": "swift-5.7.3-RELEASE",
+    "commit": {
+      "sha": "0efb82a83d2ea5e8db24e702b1c11733db5ebc26",
+    },
+  },
+  {
+    "name": "swift-5.7.2-RELEASE",
+    "commit": {
+      "sha": "0c49059f0b058ec9e75d655ec1be9e6a64d7372e",
+    },
+  },
+  {
+    "name": "swift-5.7.1-RELEASE",
+    "commit": {
+      "sha": "fc307ff159fe330f77f9be20fc29d03e11b14c6e",
+    },
+  },
+  {
+    "name": "swift-5.7-RELEASE",
+    "commit": {
+      "sha": "50794e1ae31a08b492cc717ead6f99e7d6932e21",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-10-03-a",
+    "commit": {
+      "sha": "2e814ca5d704c9f7f7a737ac0eb0629a64698a61",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-08-30-a",
+    "commit": {
+      "sha": "1e80674d67f5505bffac050290fd92ec94fb0408",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-08-27-a",
+    "commit": {
+      "sha": "4c347d27c92994454783b90b5230eb9d33b853a0",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-08-02-a",
+    "commit": {
+      "sha": "260a80fcce5a2abc41c210f1bdcf0d3647cc58d5",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-07-23-a",
+    "commit": {
+      "sha": "d8b7ece39940996c9c4d51eb95e066b1e67d5561",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-07-17-a",
+    "commit": {
+      "sha": "3a67c1adc57fc805d638fe9b5cdcf8afeac9dc2c",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-07-12-a",
+    "commit": {
+      "sha": "d6e58059cfd20b915cbae0997cc591a3584d38f8",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-07-05-a",
+    "commit": {
+      "sha": "13b3ac91a618617fd60efa3db7715e2c5f7692aa",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-06-26-a",
+    "commit": {
+      "sha": "ad06e7d7251311aa8f1550dfdc1f6aa57a29f700",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-06-22-a",
+    "commit": {
+      "sha": "700f776ca9c0997e21b77940c1d6ed1e1f505c58",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-06-13-a",
+    "commit": {
+      "sha": "c6bb52ea2e91c0eb5788d9e5b9d0d4c8d4391fb3",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-06-04-a",
+    "commit": {
+      "sha": "350e87e740a4844ed95a68e9c9ea9935795a2f63",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-05-18-a",
+    "commit": {
+      "sha": "ddc46e1f5bd885d6f4ecdf13df7a6adc28ee0580",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-05-17-a",
+    "commit": {
+      "sha": "95b1176f5b9b3df49120070912ea1f9b716bb203",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-05-15-a",
+    "commit": {
+      "sha": "8b19baefbc764d8701857430dfb9930e61d5e518",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-05-10-a",
+    "commit": {
+      "sha": "d339d86e8fbcc3c131ceeaef737e8abd5bd721d9",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-05-04-a",
+    "commit": {
+      "sha": "5aa05b27dd8e6ffd5deeebecf74a026492f143c9",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-04-25-a",
+    "commit": {
+      "sha": "31967c6df177cce1ac7bbe6ca32da3d487532644",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-04-22-a",
+    "commit": {
+      "sha": "614981288315847f1b5b5887efc4afad5a6d68fb",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-04-19-a",
+    "commit": {
+      "sha": "d4d9c90cf3f63f39c1bb6429678570901d5db671",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-04-18-a",
+    "commit": {
+      "sha": "a159921d1bf33365fe8429c8ee4423ff2717f9ca",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-04-17-a",
+    "commit": {
+      "sha": "4836917875e6e29b964a8ab277f3433ba7d4481d",
+    },
+  },
+  {
+    "name": "swift-5.7-DEVELOPMENT-SNAPSHOT-2022-04-12-a",
+    "commit": {
+      "sha": "d0691e3240aaa1964cd6b91634d73b4cb3ab58b5",
+    },
+  },
+  {
+    "name": "swift-5.6.3-RELEASE",
+    "commit": {
+      "sha": "2078f75754841cf7fd8b05983f29eeb010caf2ca",
+    },
+  },
+  {
+    "name": "swift-5.6.2-RELEASE",
+    "commit": {
+      "sha": "01cad12afcbc3da159c132ff3e3e4d6477ff5ddf",
+    },
+  }
+]

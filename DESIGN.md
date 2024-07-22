@@ -68,24 +68,19 @@ This is all very similar to how rustup does things, but I figure there's no need
 
 ### Installation of a Swift toolchain
 
-The contents of `~/.swiftly` would look like this:
+The contents of `~/Library/Application Support/swiftly` would look like this:
 
 ```
-~/.swiftly
-
-   |
-   -- bin/
-   |
-   -- active-toolchain/
+~/Library/Application Support/swiftly
    |
    -- config.json
    |
    – env
 ```
 
-Instead of downloading tarballs containing the toolchains and storing them directly in `~/.swiftly/toolchains`, we instead install Swift toolchains to `~/Library/Developer/Toolchains` via the `.pkg` files provided for download at swift.org. (Side note: we’ll need to request that other versions than the latest be made available). To select a toolchain for use, we update the symlink at `~/.swiftly/active-toolchain` to point to the desired toolchain in `~/Library/Developer/Toolchains`. In the env file, we’ll contain a line that looks like `export PATH=”$HOME/.swiftly/active-toolchain/usr/bin:$PATH`, so the version of swift being used will automatically always be from the active toolchain. `config.json` will contain version information about the selected toolchain as well as its actual location on disk.
+Instead of downloading tarballs containing the toolchains and storing them directly in `~/.local/share/swiftly/toolchains`, we instead install Swift toolchains to `~/Library/Developer/Toolchains` via the `.pkg` files provided for download at swift.org. To select a toolchain for use, we update the symlinks at `~/Library/Application Support/swiftly/bin` to point to the desired toolchain in `~/Library/Developer/Toolchains`. In the env file, we’ll contain a line that looks like `export PATH="$HOME/Library/Application Support/swiftly:$PATH"`, so the version of swift being used will automatically always be from the active toolchain. `config.json` will contain version information about the selected toolchain as well as its actual location on disk.
 
-This scheme works for ensuring the version of Swift used on the command line can be controlled, but it doesn’t affect the active toolchain used by Xcode. From what I can tell, there doesn’t seem to be a way to tell Xcode which toolchain to use except through the GUI, which won’t work for us. A possible solution would be to have the active-toolchain symlink live with the rest of the toolchains, and then the user could select it from the GUI (we could name it something like “swiftly Active Toolchain” or something to indicate that it’s managed by swiftly). Alternatively, we could figure out how Xcode selects toolchains and do what it does in swiftly manually.
+This scheme works for ensuring the version of Swift used on the command line can be controlled, but it doesn’t affect the active toolchain used by Xcode, which uses its own mechanisms for that. Xcode, if it is installed, can find the toolchains installed by swiftly.
 
 ## Interface
 

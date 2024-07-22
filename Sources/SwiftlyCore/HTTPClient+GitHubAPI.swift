@@ -62,7 +62,7 @@ extension SwiftlyHTTPClient {
     /// page number.
     ///
     /// The results are returned in lexicographic order.
-    internal func getReleases(page: Int, perPage: Int = 100) async throws -> [GitHubTag] {
+    public func getReleases(page: Int, perPage: Int = 100) async throws -> [GitHubTag] {
         let url = "https://api.github.com/repos/apple/swift/releases?per_page=\(perPage)&page=\(page)"
         let releases: [GitHubRelease] = try await self.getFromGitHub(url: url)
         return releases.filter { !$0.prerelease }.map { $0.toGitHubTag() }
@@ -72,7 +72,7 @@ extension SwiftlyHTTPClient {
     /// The tags are returned in pages of 100. The page argument specifies the page number.
     ///
     /// The results are returned in lexicographic order.
-    internal func getTags(page: Int) async throws -> [GitHubTag] {
+    public func getTags(page: Int) async throws -> [GitHubTag] {
         let url = "https://api.github.com/repos/apple/swift/tags?per_page=100&page=\(page)"
         return try await self.getFromGitHub(url: url)
     }
@@ -80,7 +80,7 @@ extension SwiftlyHTTPClient {
 
 /// Model of a GitHub REST API release object.
 /// See: https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#list-releases
-private struct GitHubRelease: Decodable {
+public struct GitHubRelease: Decodable {
     fileprivate let name: String
     fileprivate let prerelease: Bool
 
@@ -90,7 +90,7 @@ private struct GitHubRelease: Decodable {
 }
 
 /// Model of a GitHub REST API tag/release object.
-internal struct GitHubTag: Decodable {
+public struct GitHubTag: Decodable {
     internal struct Commit: Decodable {
         internal let sha: String
     }

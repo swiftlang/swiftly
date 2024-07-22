@@ -1,6 +1,8 @@
 import Foundation
 import SwiftlyCore
 
+var swiftGPGKeysRefreshed = false
+
 /// `Platform` implementation for Linux systems.
 /// This implementation can be reused for any supported Linux platform.
 /// TODO: replace dummy implementations
@@ -15,6 +17,18 @@ public struct Linux: Platform {
                 .appendingPathComponent(".local", isDirectory: true)
                 .appendingPathComponent("share", isDirectory: true)
         }
+    }
+
+    public var swiftlyBinDir: URL {
+        SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
+            ?? FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".local", isDirectory: true)
+            .appendingPathComponent("bin", isDirectory: true)
+    }
+
+    public var swiftlyToolchainsDir: URL {
+        self.swiftlyHomeDir.appendingPathComponent("toolchains", isDirectory: true)
     }
 
     public var toolchainFileExtension: String {
@@ -53,18 +67,22 @@ public struct Linux: Platform {
                 Self.skipVerificationMessage)
         }
 
-        SwiftlyCore.print("Refreshing Swift PGP keys...")
-        do {
-            try self.runProgram(
-                "gpg",
-                "--quiet",
-                "--keyserver",
-                "hkp://keyserver.ubuntu.com",
-                "--refresh-keys",
-                "Swift"
-            )
-        } catch {
-            throw Error(message: "Failed to refresh PGP keys: \(error)")
+        // We only need to refresh the keys once per session, which will help with performance in tests
+        if !swiftGPGKeysRefreshed {
+            SwiftlyCore.print("Refreshing Swift PGP keys...")
+            do {
+                try self.runProgram(
+                    "gpg",
+                    "--quiet",
+                    "--keyserver",
+                    "hkp://keyserver.ubuntu.com",
+                    "--refresh-keys",
+                    "Swift"
+                )
+            } catch {
+                throw Error(message: "Failed to refresh PGP keys: \(error)")
+            }
+            swiftGPGKeysRefreshed = true
         }
     }
 
@@ -103,6 +121,10 @@ public struct Linux: Platform {
             .appendingPathComponent(toolchain.name, isDirectory: true)
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
+
+        if !FileManager.default.fileExists(atPath: toolchainBinURL.path) {
+            return false
+        }
 
         // Delete existing symlinks from previously in-use toolchain.
         if let currentToolchain {
@@ -201,25 +223,7 @@ public struct Linux: Platform {
         do {
             try self.runProgram("gpg", "--verify", sigFile.path, archive.path)
         } catch {
-            throw Error(message: "Toolchain signature verification failed: \(error)")
-        }
-    }
-
-    private func runProgram(_ args: String..., quiet: Bool = false) throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = args
-
-        if quiet {
-            process.standardOutput = nil
-            process.standardError = nil
-        }
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
+            throw Error(message: "Toolchain signature verification failed: \(error).")
         }
     }
 

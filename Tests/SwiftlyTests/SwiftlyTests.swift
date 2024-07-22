@@ -227,6 +227,12 @@ class SwiftlyTests: XCTestCase {
     /// Backup the user's swiftly installation before running the provided
     /// function and roll it all back afterwards.
     func rollbackLocalChanges(_ f: () async throws -> Void) async throws {
+#if os(macOS)
+        // In some environments, such as CI, we can't install directly to the user's home directory
+        try await self.withTestHome(name: "e2eHome") { try await f() }
+        return
+#endif
+
         // Backup existing configuration and toolchains directories
         let config = Swiftly.currentPlatform.swiftlyConfigFile
         let backupConfig = config.appendingPathExtension("bak")

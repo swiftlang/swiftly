@@ -226,7 +226,7 @@ class SwiftlyTests: XCTestCase {
     ///
     /// Backup the user's swiftly installation before running the provided
     /// function and roll it all back afterwards.
-    func rollbackLocalChanges( _ f: () async throws -> Void) async throws {
+    func rollbackLocalChanges(_ f: () async throws -> Void) async throws {
         // Backup existing configuration and toolchains directories
         let config = Swiftly.currentPlatform.swiftlyConfigFile
         let backupConfig = config.appendingPathExtension("bak")
@@ -623,7 +623,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             Array("[]".utf8)
         }
 
-        return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(payload))))
+        return HTTPClientResponse(body: .bytes(ByteBuffer(bytes: payload)))
     }
 
     private func makeToolchainDownloadResponse(from url: URL) throws -> HTTPClientResponse {

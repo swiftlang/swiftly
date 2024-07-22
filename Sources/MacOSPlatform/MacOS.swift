@@ -102,6 +102,10 @@ public struct MacOS: Platform {
             .appendingPathComponent("usr", isDirectory: true)
             .appendingPathComponent("bin", isDirectory: true)
 
+        if !FileManager.default.fileExists(atPath: toolchainBinURL.path) {
+            return false
+        }
+
         // Delete existing symlinks from previously in-use toolchain.
         if let currentToolchain {
             try self.unUse(currentToolchain: currentToolchain)

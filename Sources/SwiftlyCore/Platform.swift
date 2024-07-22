@@ -21,7 +21,7 @@ public protocol Platform {
     var toolchainFileExtension: String { get }
 
     /// Checks whether a given system dependency has been installed yet or not.
-    /// This will only really be used on Linux.
+    /// This will only really used on Linux.
     func isSystemDependencyPresent(_ dependency: SystemDependency) -> Bool
 
     /// Installs a toolchain from a file on disk pointed to by the given URL.

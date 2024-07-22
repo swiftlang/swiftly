@@ -2,7 +2,7 @@
 
 import PackageDescription
 
-let ghApiCacheResources = (1...27).map { Resource.embedInCode("gh-api-cache/swift-tags-page\($0).json") }
+let ghApiCacheResources = (1...16).map { Resource.embedInCode("gh-api-cache/swift-tags-page\($0).json") }
 
 let package = Package(
     name: "swiftly",

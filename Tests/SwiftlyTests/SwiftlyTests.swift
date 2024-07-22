@@ -202,7 +202,7 @@ class SwiftlyTests: XCTestCase {
 
     func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
         let prevExecutor = SwiftlyCore.httpRequestExecutor
-        let mockDownloader = MockToolchainDownloader(executables: executables, prevExecutor: prevExecutor)
+        let mockDownloader = MockToolchainDownloader(executables: executables)
         SwiftlyCore.httpRequestExecutor = mockDownloader
         defer {
             SwiftlyCore.httpRequestExecutor = prevExecutor
@@ -218,6 +218,53 @@ class SwiftlyTests: XCTestCase {
         defer {
             SwiftlyCore.httpRequestExecutor = prevExecutor
         }
+
+        try await f()
+    }
+
+    /// Backup and rollback local changes to the user's installation.
+    ///
+    /// Backup the user's swiftly installation before running the provided
+    /// function and roll it all back afterwards.
+    func rollbackLocalChanges( _ f: () async throws -> Void) async throws {
+        // Backup existing configuration and toolchains directories
+        let config = Swiftly.currentPlatform.swiftlyConfigFile
+        let backupConfig = config.appendingPathExtension("bak")
+        try? FileManager.default.moveItem(at: config, to: backupConfig)
+        defer {
+            try? FileManager.default.removeItem(at: config)
+            if FileManager.default.fileExists(atPath: config.path) {
+                try? FileManager.default.moveItem(at: backupConfig, to: config)
+            }
+        }
+
+        let toolchainsDir = Swiftly.currentPlatform.swiftlyToolchainsDir
+        let backupToolchainsDir = toolchainsDir.appendingPathExtension("bak")
+        try? FileManager.default.moveItem(at: toolchainsDir, to: backupToolchainsDir)
+        defer {
+            try? FileManager.default.removeItem(at: toolchainsDir)
+            if FileManager.default.fileExists(atPath: backupToolchainsDir.path) {
+                try? FileManager.default.moveItem(at: backupToolchainsDir, to: toolchainsDir)
+            }
+        }
+
+        let binDir = Swiftly.currentPlatform.swiftlyBinDir
+        let backupBinDir = toolchainsDir.appendingPathExtension("bak")
+        try? FileManager.default.moveItem(at: binDir, to: backupBinDir)
+        defer {
+            try? FileManager.default.removeItem(at: binDir)
+            if FileManager.default.fileExists(atPath: backupBinDir.path) {
+                try? FileManager.default.moveItem(at: backupBinDir, to: binDir)
+            }
+        }
+
+        try? FileManager.default.createDirectory(at: config.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: toolchainsDir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
+
+        // create an empty config file and toolchains directory for the test
+        let c = try self.baseTestConfig()
+        try c.save()
 
         try await f()
     }
@@ -478,11 +525,9 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 #if os(Linux)
     private var signatures: [String: URL]
 #endif
-    public let httpRequestExecutor: HTTPRequestExecutor
 
-    public init(executables: [String]? = nil, prevExecutor: HTTPRequestExecutor) {
+    public init(executables: [String]? = nil) {
         self.executables = executables ?? ["swift"]
-        self.httpRequestExecutor = prevExecutor
 #if os(Linux)
         self.signatures = [:]
 #endif
@@ -574,28 +619,6 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             PackageResources.swift_tags_page15_json
         case "16":
             PackageResources.swift_tags_page16_json
-        case "17":
-            PackageResources.swift_tags_page17_json
-        case "18":
-            PackageResources.swift_tags_page18_json
-        case "19":
-            PackageResources.swift_tags_page19_json
-        case "20":
-            PackageResources.swift_tags_page20_json
-        case "21":
-            PackageResources.swift_tags_page21_json
-        case "22":
-            PackageResources.swift_tags_page22_json
-        case "23":
-            PackageResources.swift_tags_page23_json
-        case "24":
-            PackageResources.swift_tags_page24_json
-        case "25":
-            PackageResources.swift_tags_page25_json
-        case "26":
-            PackageResources.swift_tags_page26_json
-        case "27":
-            PackageResources.swift_tags_page27_json
         default:
             Array("[]".utf8)
         }
@@ -628,7 +651,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
     }
 
 #if os(Linux)
-    func makeMockedToolchain(toolchain: ToolchainVersion, name: String) throws -> Data {
+    public func makeMockedToolchain(toolchain: ToolchainVersion, name: String) throws -> Data {
         // Check our cache if this is a signature request
         if name.hasSuffix(".sig") {
             // Signatures will either be in the cache or they don't exist
@@ -717,7 +740,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
 #elseif os(macOS)
 
-    func makeMockedToolchain(toolchain: ToolchainVersion, name _: String) throws -> Data {
+    public func makeMockedToolchain(toolchain: ToolchainVersion, name _: String) throws -> Data {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
         let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
         let toolchainBinDir = toolchainDir.appendingPathComponent("usr/bin", isDirectory: true)

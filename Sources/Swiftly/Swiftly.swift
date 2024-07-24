@@ -7,6 +7,13 @@ import MacOSPlatform
 #endif
 import SwiftlyCore
 
+public struct GlobalOptions: ParsableArguments {
+    @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
+    var assumeYes: Bool = false
+
+    public init() {}
+}
+
 @main
 public struct Swiftly: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
@@ -20,6 +27,7 @@ public struct Swiftly: SwiftlyCommand {
             Uninstall.self,
             List.self,
             Update.self,
+            Init.self,
             SelfUpdate.self,
         ]
     )
@@ -45,8 +53,22 @@ public struct Swiftly: SwiftlyCommand {
 
 public protocol SwiftlyCommand: AsyncParsableCommand {}
 
+extension Data {
+    func append(file: URL) throws {
+        if let fileHandle = FileHandle(forWritingAtPath: file.path) {
+            defer {
+                fileHandle.closeFile()
+            }
+            fileHandle.seekToEndOfFile()
+            fileHandle.write(self)
+        } else {
+            try write(to: file, options: .atomic)
+        }
+    }
+}
+
 extension SwiftlyCommand {
-    public mutating func validate() throws {
+    public mutating func validateSwiftly() throws {
         for requiredDir in Swiftly.requiredDirectories {
             guard requiredDir.fileExists() else {
                 do {

@@ -110,22 +110,20 @@ class SwiftlyTests: XCTestCase {
         return Config(
             inUse: nil,
             installedToolchains: [],
-            platform: Config.PlatformDefinition(
+            platform: PlatformDefinition(
                 name: "xcode",
                 nameFull: "osx",
-                namePretty: "macOS",
-                architecture: nil
+                namePretty: "macOS"
             )
         )
 #else
         return Config(
             inUse: nil,
             installedToolchains: [],
-            platform: Config.PlatformDefinition(
+            platform: PlatformDefinition(
                 name: try getEnv("SWIFTLY_PLATFORM_NAME"),
                 nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
-                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY"),
-                architecture: try? getEnv("SWIFTLY_PLATFORM_ARCH")
+                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
             )
         )
 #endif
@@ -227,46 +225,61 @@ class SwiftlyTests: XCTestCase {
     /// Backup the user's swiftly installation before running the provided
     /// function and roll it all back afterwards.
     func rollbackLocalChanges(_ f: () async throws -> Void) async throws {
+        let userHome = FileManager.default.homeDirectoryForCurrentUser
+
+        // Backup user profile changes in case of init tests
+        let profiles = [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"]
+        for profile in profiles {
+            let config = userHome.appendingPathComponent(profile)
+            let backupConfig = config.appendingPathExtension("swiftly-test-backup")
+            _ = try? FileManager.default.copyItem(at: config, to: backupConfig)
+        }
+        defer {
+            for profile in profiles.reversed() {
+                let config = userHome.appendingPathComponent(profile)
+                let backupConfig = config.appendingPathExtension("swiftly-test-backup")
+                if backupConfig.fileExists() {
+                    if config.fileExists() {
+                        try? FileManager.default.removeItem(at: config)
+                    }
+                    try? FileManager.default.moveItem(at: backupConfig, to: config)
+                } else if config.fileExists() {
+                    try? FileManager.default.removeItem(at: config)
+                }
+            }
+        }
+
 #if os(macOS)
         // In some environments, such as CI, we can't install directly to the user's home directory
         try await self.withTestHome(name: "e2eHome") { try await f() }
         return
 #endif
 
-        // Backup existing configuration and toolchains directories
-        let config = Swiftly.currentPlatform.swiftlyConfigFile
-        let backupConfig = config.appendingPathExtension("bak")
-        try? FileManager.default.moveItem(at: config, to: backupConfig)
-        defer {
-            try? FileManager.default.removeItem(at: config)
-            if FileManager.default.fileExists(atPath: config.path) {
-                try? FileManager.default.moveItem(at: backupConfig, to: config)
+        // Backup config, toolchain, and bin directory
+        let swiftlyFiles = [Swiftly.currentPlatform.swiftlyConfigFile, Swiftly.currentPlatform.swiftlyToolchainsDir, Swiftly.currentPlatform.swiftlyBinDir]
+        for file in swiftlyFiles {
+            let backupFile = file.appendingPathExtension("swiftly-test-backup")
+            _ = try? FileManager.default.moveItem(at: file, to: backupFile)
+
+            if file == Swiftly.currentPlatform.swiftlyConfigFile {
+                _ = try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            } else {
+                _ = try? FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
             }
         }
-
-        let toolchainsDir = Swiftly.currentPlatform.swiftlyToolchainsDir
-        let backupToolchainsDir = toolchainsDir.appendingPathExtension("bak")
-        try? FileManager.default.moveItem(at: toolchainsDir, to: backupToolchainsDir)
         defer {
-            try? FileManager.default.removeItem(at: toolchainsDir)
-            if FileManager.default.fileExists(atPath: backupToolchainsDir.path) {
-                try? FileManager.default.moveItem(at: backupToolchainsDir, to: toolchainsDir)
+            for file in swiftlyFiles.reversed() {
+                let backupFile = file.appendingPathExtension("swiftly-test-backup")
+                if backupFile.fileExists() {
+                    if file.fileExists() {
+                        try? FileManager.default.removeItem(at: file)
+                    }
+                    try? FileManager.default.moveItem(at: backupFile, to: file)
+                } else if file.fileExists() {
+                    try? FileManager.default.removeItem(at: file)
+                }
             }
         }
-
-        let binDir = Swiftly.currentPlatform.swiftlyBinDir
-        let backupBinDir = toolchainsDir.appendingPathExtension("bak")
-        try? FileManager.default.moveItem(at: binDir, to: backupBinDir)
-        defer {
-            try? FileManager.default.removeItem(at: binDir)
-            if FileManager.default.fileExists(atPath: backupBinDir.path) {
-                try? FileManager.default.moveItem(at: backupBinDir, to: binDir)
-            }
-        }
-
-        try? FileManager.default.createDirectory(at: config.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try? FileManager.default.createDirectory(at: toolchainsDir, withIntermediateDirectories: true)
-        try? FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
 
         // create an empty config file and toolchains directory for the test
         let c = try self.baseTestConfig()

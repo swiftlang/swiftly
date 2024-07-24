@@ -186,8 +186,8 @@ public struct MacOS: Platform {
         []
     }
 
-    public func getExecutableName(forArch: String) -> String {
-        "swiftly-\(forArch)-macos-osx"
+    public func getExecutableName() -> String {
+        "swiftly-macos-osx"
     }
 
     public func currentToolchain() throws -> ToolchainVersion? { nil }
@@ -199,6 +199,26 @@ public struct MacOS: Platform {
     public func verifySignature(httpClient _: SwiftlyHTTPClient, archiveDownloadURL _: URL, archive _: URL) async throws {
         // No signature verification is required on macOS since the pkg files have their own signing
         //  mechanism and the swift.org downloadables are trusted by stock macOS installations.
+    }
+
+    public func detectPlatform(disableConfirmation _: Bool, platform _: String?) async -> PlatformDefinition {
+        // No special detection required on macOS platform
+        PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS")
+    }
+
+    public func getShell() async throws -> String {
+        if let directoryInfo = try await runProgramOutput("dscl", ".", "-read", FileManager.default.homeDirectoryForCurrentUser.path) {
+            for line in directoryInfo.components(separatedBy: "\n") {
+                if line.hasPrefix("UserShell: ") {
+                    if case let comps = line.components(separatedBy: ": "), comps.count == 2 {
+                        return comps[1]
+                    }
+                }
+            }
+        }
+
+        // Fall back to zsh on macOS
+        return "/bin/zsh"
     }
 
     public static let currentPlatform: any Platform = MacOS()

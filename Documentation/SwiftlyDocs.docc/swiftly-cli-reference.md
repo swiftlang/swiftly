@@ -178,7 +178,7 @@ Finally, all installed toolchains can be uninstalled by specifying 'all':
 
 **--assume-yes:**
 
-*Uninstall all selected toolchains without prompting for confirmation.*
+*Disable confirmation prompts by assuming 'yes'*
 
 
 **--version:**
@@ -284,12 +284,52 @@ A specific snapshot toolchain can be updated by including the date:
 
 **--assume-yes:**
 
-*Update the selected toolchains without prompting for confirmation.*
+*Disable confirmation prompts by assuming 'yes'*
 
 
 **--verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
+
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+
+## init
+
+Perform swiftly initialization into your user account.
+
+```
+swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--assume-yes] [--version] [--help]
+```
+
+**--no-modify-profile:**
+
+*Do not attempt to modify the profile file to set environment variables (e.g. PATH) on login.*
+
+
+**--overwrite:**
+
+*Overwrite the existing swiftly installation found at the configured SWIFTLY_HOME, if any. If this option is unspecified and an existing installation is found, the swiftly executable will be updated, but the rest of the installation will not be modified.*
+
+
+**--platform=\<platform\>:**
+
+*Specify the current Linux platform for swiftly.*
+
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
 
 
 **--version:**

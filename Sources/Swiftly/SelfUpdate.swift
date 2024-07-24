@@ -13,6 +13,7 @@ internal struct SelfUpdate: SwiftlyCommand {
     private enum CodingKeys: CodingKey {}
 
     internal mutating func run() async throws {
+        try validateSwiftly()
         SwiftlyCore.print("Checking for swiftly updates...")
 
         let release: SwiftlyGitHubRelease = try await SwiftlyCore.httpClient.getFromGitHub(
@@ -28,8 +29,7 @@ internal struct SelfUpdate: SwiftlyCommand {
 
         SwiftlyCore.print("A new version is available: \(version)")
 
-        let config = try Config.load()
-        let executableName = Swiftly.currentPlatform.getExecutableName(forArch: config.platform.getArchitecture())
+        let executableName = Swiftly.currentPlatform.getExecutableName()
         let urlString = "https://github.com/swift-server/swiftly/versions/latest/download/\(executableName)"
         guard let downloadURL = URL(string: urlString) else {
             throw Error(message: "Invalid download url: \(urlString)")

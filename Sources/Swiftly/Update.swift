@@ -58,20 +58,17 @@ struct Update: SwiftlyCommand {
     ))
     var toolchain: String?
 
-    @Flag(
-        name: [.long, .customShort("y")],
-        help: "Update the selected toolchains without prompting for confirmation."
-    )
-    var assumeYes: Bool = false
+    @OptionGroup var root: GlobalOptions
 
     @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
     private enum CodingKeys: String, CodingKey {
-        case toolchain, assumeYes, verify
+        case toolchain, root, verify
     }
 
     public mutating func run() async throws {
+        try validateSwiftly()
         var config = try Config.load()
 
         guard let parameters = try self.resolveUpdateParameters(config) else {
@@ -93,7 +90,7 @@ struct Update: SwiftlyCommand {
             return
         }
 
-        if !self.assumeYes {
+        if !self.root.assumeYes {
             SwiftlyCore.print("Update \(parameters.oldToolchain) ⟶ \(newToolchain)?")
             guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
                 SwiftlyCore.print("Aborting")

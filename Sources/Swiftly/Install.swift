@@ -64,6 +64,8 @@ struct Install: SwiftlyCommand {
     }
 
     mutating func run() async throws {
+        try validateSwiftly()
+
         let selector = try ToolchainSelector(parsing: self.version)
         SwiftlyCore.httpClient.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
@@ -102,10 +104,18 @@ struct Install: SwiftlyCommand {
 
         var platformString = config.platform.name
         var platformFullString = config.platform.nameFull
-        if let arch = config.platform.architecture {
-            platformString += "-\(arch)"
-            platformFullString += "-\(arch)"
-        }
+
+#if !os(macOS)
+#if arch(x86_64)
+        let arch = "x86_64"
+#elseif arch(arm64)
+        let arch = "aarch64"
+#else
+        #error("Unsupported processor architecture")
+#endif
+        platformString += "-\(arch)"
+        platformFullString += "-\(arch)"
+#endif
 
         switch version {
         case let .stable(stableVersion):

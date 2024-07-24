@@ -59,3 +59,22 @@ public struct SwiftlyVersion: Equatable, Comparable, CustomStringConvertible {
         return base
     }
 }
+
+extension SwiftlyVersion: Decodable {
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        let s = try c.decode(String.self)
+        let v = try SwiftlyVersion(parsing: s)
+        major = v.major
+        minor = v.minor
+        patch = v.patch
+        suffix = v.suffix
+    }
+}
+
+extension SwiftlyVersion: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        try c.encode(self.description)
+    }
+}

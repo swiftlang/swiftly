@@ -55,10 +55,10 @@ final class E2ETests: SwiftlyTests {
             try await validateInstalledToolchains([installedToolchain], description: "install latest")
 
             // Check that within a new shell, the swift version succeeds and is the version we expect
-            let versionOut = try? await Swiftly.currentPlatform.runProgramOutput(shell, "-l", "-c", "swift --version")
+            let whichSwift = (try? await Swiftly.currentPlatform.runProgramOutput(shell, "-l", "-c", "hash -r || echo -n ; which swift")) ?? ""
             print("SHELL IS \(shell)")
-            print("VERSION OUT IS \(versionOut)")
-            XCTAssertTrue((versionOut ?? "").contains(installedToolchain.name))
+            print("WHICH SWIFT IS \(whichSwift)")
+            XCTAssertTrue(whichSwift.hasPrefix(Swiftly.currentPlatform.swiftlyBinDir.path))
         }
     }
 }

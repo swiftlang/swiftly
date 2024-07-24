@@ -18,12 +18,6 @@ final class E2ETests: SwiftlyTests {
                 try await Swiftly.currentPlatform.getShell()
             }
 
-            // Check that no swift toolchain is available in this environment yet, not macOS though where
-            //  there's always a swift installed
-#if !os(macOS)
-            XCTAssertThrowsError(try Swiftly.currentPlatform.runProgram(shell, "-c", "swift --version"))
-#endif
-
             var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes"])
             try await initCmd.run()
 

@@ -65,10 +65,10 @@ extension SwiftlyVersion: Decodable {
         let c = try decoder.singleValueContainer()
         let s = try c.decode(String.self)
         let v = try SwiftlyVersion(parsing: s)
-        major = v.major
-        minor = v.minor
-        patch = v.patch
-        suffix = v.suffix
+        self.major = v.major
+        self.minor = v.minor
+        self.patch = v.patch
+        self.suffix = v.suffix
     }
 }
 

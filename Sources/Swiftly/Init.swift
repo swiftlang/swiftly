@@ -68,16 +68,16 @@ internal struct Init: SwiftlyCommand {
             envFile = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.fish", isDirectory: false)
             sourceLine = """
 
-                # Added by swiftly
-                source "\(envFile.path)"
-                """
+            # Added by swiftly
+            source "\(envFile.path)"
+            """
         } else {
             envFile = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.sh", isDirectory: false)
             sourceLine = """
 
-                # Added by swiftly
-                . "\(envFile.path)"
-                """
+            # Added by swiftly
+            . "\(envFile.path)"
+            """
         }
 
         if overwrite {

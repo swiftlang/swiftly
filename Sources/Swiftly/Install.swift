@@ -105,16 +105,9 @@ struct Install: SwiftlyCommand {
         var platformString = config.platform.name
         var platformFullString = config.platform.nameFull
 
-#if !os(macOS)
-#if arch(x86_64)
-        let arch = "x86_64"
-#elseif arch(arm64)
-        let arch = "aarch64"
-#else
-        #error("Unsupported processor architecture")
-#endif
-        platformString += "-\(arch)"
-        platformFullString += "-\(arch)"
+#if !os(macOS) && arch(arm64)
+        platformString += "-aarch64"
+        platformFullString += "-aarch64"
 #endif
 
         switch version {

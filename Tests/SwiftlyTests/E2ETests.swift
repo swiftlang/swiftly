@@ -56,6 +56,8 @@ final class E2ETests: SwiftlyTests {
 
             // Check that within a new shell, the swift version succeeds and is the version we expect
             let versionOut = try? await Swiftly.currentPlatform.runProgramOutput(shell, "-l", "-c", "swift --version")
+            print("SHELL IS \(shell)")
+            print("VERSION OUT IS \(versionOut)")
             XCTAssertTrue((versionOut ?? "").contains(installedToolchain.name))
         }
     }

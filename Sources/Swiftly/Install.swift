@@ -174,8 +174,8 @@ struct Install: SwiftlyCommand {
                     )
                 }
             )
-        } catch _ as SwiftlyHTTPClient.DownloadNotFoundError {
-            SwiftlyCore.print("\(version) does not exist, exiting")
+        } catch let notFound as SwiftlyHTTPClient.DownloadNotFoundError {
+            SwiftlyCore.print("\(version) does not exist at URL \(notFound.url), exiting")
             return
         } catch {
             animation.complete(success: false)

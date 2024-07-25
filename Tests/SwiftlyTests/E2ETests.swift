@@ -64,6 +64,7 @@ final class E2ETests: SwiftlyTests {
 
             if let envScript = envScript {
                 // Check that within a new shell, the swift version succeeds and is the version we expect
+                try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", ". \(envScript.path) ; which swift")
                 let whichSwift = (try? await Swiftly.currentPlatform.runProgramOutput(shell, "-l", "-c", ". \(envScript.path) ; which swift")) ?? ""
                 print("SHELL IS \(shell)")
                 print("WHICH SWIFT IS \(whichSwift)")

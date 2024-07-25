@@ -39,7 +39,7 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that `swiftly install a.b` installs the latest patch version of Swift a.b.
     func testInstallLatestPatchVersion() async throws {
-        guard try self.baseTestConfig().platform.name != "ubi9" else {
+        guard try await self.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }
@@ -73,7 +73,7 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that swiftly can install different stable release versions by their full a.b.c versions.
     func testInstallReleases() async throws {
-        guard try self.baseTestConfig().platform.name != "ubi9" else {
+        guard try await self.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }
@@ -261,7 +261,7 @@ final class InstallTests: SwiftlyTests {
 
     /// Verify that the installed toolchain will be used if no toolchains currently are installed.
     func testInstallUsesFirstToolchain() async throws {
-        guard try self.baseTestConfig().platform.name != "ubi9" else {
+        guard try await self.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }

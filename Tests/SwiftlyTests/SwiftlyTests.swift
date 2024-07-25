@@ -98,7 +98,7 @@ class SwiftlyTests: XCTestCase {
         newReleaseSnapshot,
     ]
 
-    func baseTestConfig() throws -> Config {
+    func baseTestConfig() async throws -> Config {
         let getEnv = { varName in
             guard let v = ProcessInfo.processInfo.environment[varName] else {
                 throw SwiftlyTestError(message: "environment variable \(varName) must be set in order to run tests")
@@ -106,27 +106,25 @@ class SwiftlyTests: XCTestCase {
             return v
         }
 
-#if os(macOS)
+        let name = try? getEnv("SWIFTLY_PLATFORM_NAME")
+        let nameFull = try? getEnv("SWIFTLY_PLATFORM_NAME_FULL")
+        let namePretty = try? getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
+
+        let pd = if let name = name, let nameFull = nameFull, let namePretty = namePretty {
+            PlatformDefinition(name: name, nameFull: nameFull, namePretty: namePretty)
+        } else {
+            try? await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
+        }
+
+        guard let pd = pd else {
+            throw SwiftlyTestError(message: "unable to detect platform. please set SWIFTLY_PLATFORM_NAME, SWIFTLY_PLATFORM_NAME_FULL, and SWIFTLY_PLATFORM_NAME_PRETTY to run the tests")
+        }
+
         return Config(
             inUse: nil,
             installedToolchains: [],
-            platform: PlatformDefinition(
-                name: "xcode",
-                nameFull: "osx",
-                namePretty: "macOS"
-            )
+            platform: pd
         )
-#else
-        return Config(
-            inUse: nil,
-            installedToolchains: [],
-            platform: PlatformDefinition(
-                name: try getEnv("SWIFTLY_PLATFORM_NAME"),
-                nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
-                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
-            )
-        )
-#endif
     }
 
     func parseCommand<T: ParsableCommand>(_ commandType: T.Type, _ arguments: [String]) throws -> T {
@@ -167,7 +165,7 @@ class SwiftlyTests: XCTestCase {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
         }
 
-        let config = try self.baseTestConfig()
+        let config = try await self.baseTestConfig()
         try config.save()
 
         try await f()
@@ -282,7 +280,7 @@ class SwiftlyTests: XCTestCase {
         }
 
         // create an empty config file and toolchains directory for the test
-        let c = try self.baseTestConfig()
+        let c = try await self.baseTestConfig()
         try c.save()
 
         try await f()

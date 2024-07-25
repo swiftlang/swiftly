@@ -63,9 +63,15 @@ final class E2ETests: SwiftlyTests {
             try await validateInstalledToolchains([installedToolchain], description: "install latest")
 
             if let envScript = envScript {
+                let whichCmd = if shell.hasSuffix("bash") {
+                    "type -P swift"
+                } else {
+                    "which swift"
+                }
+
                 // Check that within a new shell, the swift version succeeds and is the version we expect
-                try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", ". \(envScript.path) ; which swift")
-                let whichSwift = (try? await Swiftly.currentPlatform.runProgramOutput(shell, "-l", "-c", ". \(envScript.path) ; which swift")) ?? ""
+                try Swiftly.currentPlatform.runProgram(shell, "-c", ". \(envScript.path) ; \(whichCmd)")
+                let whichSwift = (try? await Swiftly.currentPlatform.runProgramOutput(shell, "-c", ". \(envScript.path) ; \(whichCmd)")) ?? ""
                 print("SHELL IS \(shell)")
                 print("WHICH SWIFT IS \(whichSwift)")
                 XCTAssertTrue(whichSwift.hasPrefix(Swiftly.currentPlatform.swiftlyBinDir.path))

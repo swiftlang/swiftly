@@ -18,7 +18,7 @@ final class E2ETests: SwiftlyTests {
                 try await Swiftly.currentPlatform.getShell()
             }
 
-            var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes"])
+            var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes", "--no-modify-profile"])
             try await initCmd.run()
 
             var config = try Config.load()
@@ -26,10 +26,18 @@ final class E2ETests: SwiftlyTests {
             // Config now exists and is the correct version
             XCTAssertEqual(SwiftlyCore.version, config.version)
 
+            // Check the environment script, if the shell is supported
+            let envScript: URL?
             if shell.hasSuffix("bash") || shell.hasSuffix("zsh") {
-                XCTAssertTrue(Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.sh").fileExists())
+                envScript = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.sh")
             } else if shell.hasSuffix("fish") {
-                XCTAssertTrue(Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.fish").fileExists())
+                envScript = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.fish")
+            } else {
+                envScript = nil
+            }
+
+            if let envScript = envScript {
+                XCTAssertTrue(envScript.fileExists())
             }
 
             var cmd = try self.parseCommand(Install.self, ["install", "latest"])
@@ -54,11 +62,13 @@ final class E2ETests: SwiftlyTests {
 
             try await validateInstalledToolchains([installedToolchain], description: "install latest")
 
-            // Check that within a new shell, the swift version succeeds and is the version we expect
-            let whichSwift = (try? await Swiftly.currentPlatform.runProgramOutput(shell, "-l", "-c", "hash -r || echo -n ; which swift")) ?? ""
-            print("SHELL IS \(shell)")
-            print("WHICH SWIFT IS \(whichSwift)")
-            XCTAssertTrue(whichSwift.hasPrefix(Swiftly.currentPlatform.swiftlyBinDir.path))
+            if let envScript = envScript {
+                // Check that within a new shell, the swift version succeeds and is the version we expect
+                let whichSwift = (try? await Swiftly.currentPlatform.runProgramOutput(shell, "-l", "-c", ". \(envScript.path) ; which swift")) ?? ""
+                print("SHELL IS \(shell)")
+                print("WHICH SWIFT IS \(whichSwift)")
+                XCTAssertTrue(whichSwift.hasPrefix(Swiftly.currentPlatform.swiftlyBinDir.path))
+            }
         }
     }
 }

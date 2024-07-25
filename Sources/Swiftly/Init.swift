@@ -119,7 +119,7 @@ internal struct Init: SwiftlyCommand {
             try FileManager.default.moveItem(at: URL(fileURLWithPath: cmd), to: swiftlyBin)
         }
 
-        if !FileManager.default.fileExists(atPath: envFile.path) {
+        if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {
             SwiftlyCore.print("Creating shell environment file for the user...")
             var env = ""
             if shell.hasSuffix("fish") {
@@ -145,7 +145,7 @@ internal struct Init: SwiftlyCommand {
             try Data(env.utf8).write(to: envFile, options: .atomic)
         }
 
-        if !noModifyProfile && !ProcessInfo.processInfo.environment["PATH"]!.contains(Swiftly.currentPlatform.swiftlyBinDir.path) {
+        if !noModifyProfile {
             SwiftlyCore.print("Updating profile...")
 
             let userHome = FileManager.default.homeDirectoryForCurrentUser

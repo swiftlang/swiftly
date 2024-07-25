@@ -70,10 +70,7 @@ final class E2ETests: SwiftlyTests {
                 }
 
                 // Check that within a new shell, the swift version succeeds and is the version we expect
-                try Swiftly.currentPlatform.runProgram(shell, "-c", ". \(envScript.path) ; \(whichCmd)")
                 let whichSwift = (try? await Swiftly.currentPlatform.runProgramOutput(shell, "-c", ". \(envScript.path) ; \(whichCmd)")) ?? ""
-                print("SHELL IS \(shell)")
-                print("WHICH SWIFT IS \(whichSwift)")
                 XCTAssertTrue(whichSwift.hasPrefix(Swiftly.currentPlatform.swiftlyBinDir.path))
             }
         }

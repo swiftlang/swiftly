@@ -256,7 +256,7 @@ class SwiftlyTests: XCTestCase {
 #endif
 
         // Backup config, toolchain, and bin directory
-        let swiftlyFiles = [Swiftly.currentPlatform.swiftlyConfigFile, Swiftly.currentPlatform.swiftlyToolchainsDir, Swiftly.currentPlatform.swiftlyBinDir]
+        let swiftlyFiles = [Swiftly.currentPlatform.swiftlyHomeDir, Swiftly.currentPlatform.swiftlyToolchainsDir, Swiftly.currentPlatform.swiftlyBinDir]
         for file in swiftlyFiles {
             let backupFile = file.appendingPathExtension("swiftly-test-backup")
             _ = try? FileManager.default.moveItem(at: file, to: backupFile)

@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install <version> [--use] [--token=<token>] [--verify] [--version] [--help]
+swiftly install <version> [--use] [--token=<token>] [--verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **version:**
@@ -71,6 +71,14 @@ fails with an "unauthorized" status code, it likely means the rate limit has bee
 **--verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
+
+
+**--post-install-file=\<post-install-file\>:**
+
+*A file path to a location for a post installation script*
+
+If the toolchain that is installed has extra post installation steps they they will be
+written to this file as commands that can be run after the installation.
 
 
 **--version:**
@@ -241,7 +249,7 @@ The installed snapshots for a given devlopment branch can be listed by specifyin
 Update an installed toolchain to a newer version.
 
 ```
-swiftly update [<toolchain>] [--assume-yes] [--verify] [--version] [--help]
+swiftly update [<toolchain>] [--assume-yes] [--verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **toolchain:**
@@ -290,6 +298,14 @@ A specific snapshot toolchain can be updated by including the date:
 **--verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
+
+
+**--post-install-file=\<post-install-file\>:**
+
+*A file path to a location for a post installation script*
+
+If the toolchain that is installed has extra post installation steps they they will be
+written to this file as commands that can be run after the installation.
 
 
 **--version:**

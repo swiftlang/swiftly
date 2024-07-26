@@ -40,8 +40,9 @@ public struct MacOS: Platform {
         true
     }
 
-    public func verifySystemPrerequisitesForInstall(requireSignatureValidation _: Bool) throws {
+    public func verifySystemPrerequisitesForInstall(platformName _: String, version _: ToolchainVersion, requireSignatureValidation _: Bool) throws -> String? {
         // All system prerequisites should be there for macOS
+        nil
     }
 
     public func install(from tmpFile: URL, version: ToolchainVersion) throws {

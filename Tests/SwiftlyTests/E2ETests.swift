@@ -40,7 +40,7 @@ final class E2ETests: SwiftlyTests {
                 XCTAssertTrue(envScript.fileExists())
             }
 
-            var cmd = try self.parseCommand(Install.self, ["install", "latest"])
+            var cmd = try self.parseCommand(Install.self, ["install", "latest", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
             try await cmd.run()
 
             config = try Config.load()

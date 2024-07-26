@@ -73,11 +73,17 @@ public protocol Platform {
     /// This does not need to actually create the file.
     func getTempFilePath() -> URL
 
-    /// Verifies that the system meets the requirements needed to install a toolchain.
-    /// `requireSignatureValidation` specifies whether the system's support for toolchain signature validation should be verified.
+    /// Verifies that the system meets the requirements needed to install a swift toolchain of the provided version.
     ///
-    /// Throws if system does not meet the requirements.
-    func verifySystemPrerequisitesForInstall(requireSignatureValidation: Bool) throws
+    /// `platformName` is the platform name of the system
+    /// `version` specifies the version of the swift toolchain that will be installed
+    /// `requireSignatureValidation` specifies whether the system's support for toolchain signature validation should be checked.
+    ///
+    /// If the toolchain can be installed, but has unmet runtime dependencies, then a shell script is returned that the user
+    /// can run to install these dependencies, possibly with super user permissions.
+    ///
+    /// Throws if system does not meet the requirements to perform the install.
+    func verifySystemPrerequisitesForInstall(platformName: String, version: ToolchainVersion, requireSignatureValidation: Bool) throws -> String?
 
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.

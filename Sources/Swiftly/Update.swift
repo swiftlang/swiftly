@@ -1,4 +1,5 @@
 import ArgumentParser
+import Foundation
 import SwiftlyCore
 
 struct Update: SwiftlyCommand {
@@ -63,8 +64,17 @@ struct Update: SwiftlyCommand {
     @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
+    @Option(help: ArgumentHelp(
+        "A file path to a location for a post installation script",
+        discussion: """
+        If the toolchain that is installed has extra post installation steps they they will be
+        written to this file as commands that can be run after the installation.
+        """
+    ))
+    var postInstallFile: String?
+
     private enum CodingKeys: String, CodingKey {
-        case toolchain, root, verify
+        case toolchain, root, verify, postInstallFile
     }
 
     public mutating func run() async throws {
@@ -98,7 +108,7 @@ struct Update: SwiftlyCommand {
             }
         }
 
-        try await Install.execute(
+        let postInstallScript = try await Install.execute(
             version: newToolchain,
             &config,
             useInstalledToolchain: config.inUse == parameters.oldToolchain,
@@ -107,6 +117,21 @@ struct Update: SwiftlyCommand {
 
         try await Uninstall.execute(parameters.oldToolchain, &config)
         SwiftlyCore.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
+
+        if let postInstallScript = postInstallScript {
+            guard let postInstallFile = self.postInstallFile else {
+                throw Error(message: """
+
+                There are some system dependencies that should be installed before using this toolchain.
+                You can run the following script as the system administrator (e.g. root) to prepare
+                your system:
+
+                \(postInstallScript)
+                """)
+            }
+
+            try Data(postInstallScript.utf8).write(to: URL(fileURLWithPath: postInstallFile), options: .atomic)
+        }
     }
 
     /// Using the provided toolchain selector and the current config, returns a set of parameters that determines

@@ -41,48 +41,195 @@ public struct Linux: Platform {
 
     private static let skipVerificationMessage: String = "To skip signature verification, specify the --no-verify flag."
 
-    public func verifySystemPrerequisitesForInstall(requireSignatureValidation: Bool) throws {
-        // The only prerequisite at the moment is that gpg is installed and the Swift project's keys have been imported.
-        guard requireSignatureValidation else {
-            return
+    public func verifySystemPrerequisitesForInstall(platformName: String, version _: ToolchainVersion, requireSignatureValidation: Bool) throws -> String? {
+        // TODO: these are hard-coded until we have a place to query for these based on the toolchain version
+        // These lists were copied from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
+        let packages: [String] = switch platformName {
+        case "ubuntu1804":
+            [
+                "libatomic1",
+                "libcurl4-openssl-dev",
+                "libxml2-dev",
+                "libedit2",
+                "libsqlite3-0",
+                "libc6-dev",
+                "binutils",
+                "libgcc-5-dev",
+                "libstdc++-5-dev",
+                "zlib1g-dev",
+                "libpython3.6",
+                "tzdata",
+                "git",
+                "unzip",
+                "pkg-config",
+            ]
+        case "ubuntu2004":
+            [
+                "binutils",
+                "git",
+                "unzip",
+                "gnupg2",
+                "libc6-dev",
+                "libcurl4-openssl-dev",
+                "libedit2",
+                "libgcc-9-dev",
+                "libpython3.8",
+                "libsqlite3-0",
+                "libstdc++-9-dev",
+                "libxml2-dev",
+                "libz3-dev",
+                "pkg-config",
+                "tzdata",
+                "zlib1g-dev",
+            ]
+        case "ubuntu2204":
+            [
+                "binutils",
+                "git",
+                "unzip",
+                "gnupg2",
+                "libc6-dev",
+                "libcurl4-openssl-dev",
+                "libedit2",
+                "libgcc-11-dev",
+                "libpython3-dev",
+                "libsqlite3-0",
+                "libstdc++-11-dev",
+                "libxml2-dev",
+                "libz3-dev",
+                "pkg-config",
+                "python3-lldb-13",
+                "tzdata",
+                "zlib1g-dev",
+            ]
+        case "amazonlinux2":
+            [
+                "binutils",
+                "gcc",
+                "git",
+                "unzip",
+                "glibc-static",
+                "gzip",
+                "libcurl-devel",
+                "libedit",
+                "libicu",
+                "libuuid",
+                "libxml2-devel",
+                "sqlite-devel",
+                "tar",
+                "tzdata",
+                "zlib-devel",
+            ]
+        case "ubi9":
+            [
+                "git",
+                "gcc-c++",
+                "libcurl-devel",
+                "libedit-devel",
+                "libuuid-devel",
+                "libxml2-devel",
+                "ncurses-devel",
+                "python3-devel",
+                "rsync",
+                "sqlite-devel",
+                "unzip",
+                "zip",
+            ]
+        default:
+            []
         }
 
-        guard (try? self.runProgram("gpg", "--version", quiet: true)) != nil else {
-            throw Error(message: "gpg not installed, cannot perform signature verification. To set up gpg for " +
-                "toolchain signature validation, follow the instructions at " +
-                "https://www.swift.org/install/linux/#installation-via-tarball. " + Self.skipVerificationMessage)
+        let manager: String? = switch platformName {
+        case "ubuntu1804":
+            "apt"
+        case "ubuntu2004":
+            "apt"
+        case "ubuntu2204":
+            "apt"
+        case "amazonlinux2":
+            "yum"
+        case "ubi9":
+            "yum"
+        default:
+            nil
         }
 
-        let foundKeys = (try? self.runProgram(
-            "gpg",
-            "--list-keys",
-            "swift-infrastructure@forums.swift.org",
-            "swift-infrastructure@swift.org",
-            quiet: true
-        )) != nil
-        guard foundKeys else {
-            throw Error(message: "Swift PGP keys not imported, cannot perform signature verification. " +
-                "To enable verification, import the keys with the following command: " +
-                "'wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -' " +
-                Self.skipVerificationMessage)
-        }
+        if requireSignatureValidation {
+            guard (try? self.runProgram("gpg", "--version", quiet: true)) != nil else {
+                var msg = "gpg is not installed. "
+                if let manager = manager {
+                    msg += """
+                    you can install it by running this command as root:
+                        \(manager) -y install gpg
+                    """
+                } else {
+                    msg += "you can install gpg to get signature verifications of the toolchahins. "
+                }
+                msg += Self.skipVerificationMessage
 
-        // We only need to refresh the keys once per session, which will help with performance in tests
-        if !swiftGPGKeysRefreshed {
-            SwiftlyCore.print("Refreshing Swift PGP keys...")
-            do {
-                try self.runProgram(
-                    "gpg",
-                    "--quiet",
-                    "--keyserver",
-                    "hkp://keyserver.ubuntu.com",
-                    "--refresh-keys",
-                    "Swift"
-                )
-            } catch {
-                throw Error(message: "Failed to refresh PGP keys: \(error)")
+                throw Error(message: msg)
             }
-            swiftGPGKeysRefreshed = true
+
+            let foundKeys = (try? self.runProgram(
+                "gpg",
+                "--list-keys",
+                "swift-infrastructure@forums.swift.org",
+                "swift-infrastructure@swift.org",
+                quiet: true
+            )) != nil
+            guard foundKeys else {
+                throw Error(message: "Swift PGP keys not imported, cannot perform signature verification. " +
+                    "To enable verification, import the keys with the following command: " +
+                    "'wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -' " +
+                    Self.skipVerificationMessage)
+            }
+
+            // We only need to refresh the keys once per session, which will help with performance in tests
+            if !swiftGPGKeysRefreshed {
+                SwiftlyCore.print("Refreshing Swift PGP keys...")
+                do {
+                    try self.runProgram(
+                        "gpg",
+                        "--quiet",
+                        "--keyserver",
+                        "hkp://keyserver.ubuntu.com",
+                        "--refresh-keys",
+                        "Swift"
+                    )
+                } catch {
+                    throw Error(message: "Failed to refresh PGP keys: \(error)")
+                }
+                swiftGPGKeysRefreshed = true
+            }
+        }
+
+        guard let manager = manager else {
+            return nil
+        }
+
+        let missingPackages = packages.filter { !self.isSystemPackageInstalled(manager, $0) }.joined(separator: " ")
+
+        guard !missingPackages.isEmpty else {
+            return nil
+        }
+
+        return "\(manager) -y install \(missingPackages)"
+    }
+
+    public func isSystemPackageInstalled(_ manager: String?, _ package: String) -> Bool {
+        do {
+            switch manager {
+            case "apt":
+                try self.runProgram("dpkg", "-l", package, quiet: true)
+                return true
+            case "yum":
+                try self.runProgram("yum", "list", "installed", package, quiet: true)
+                return true
+            default:
+                return true
+            }
+        } catch {
+            return false
         }
     }
 

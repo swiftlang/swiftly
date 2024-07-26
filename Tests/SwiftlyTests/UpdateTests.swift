@@ -12,7 +12,7 @@ final class UpdateTests: SwiftlyTests {
 
                 let beforeUpdateConfig = try Config.load()
 
-                var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify"])
+                var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 XCTAssertEqual(try Config.load(), beforeUpdateConfig)
@@ -28,7 +28,7 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateLatestWithNoToolchains() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify"])
+                var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 try await validateInstalledToolchains(
@@ -44,7 +44,7 @@ final class UpdateTests: SwiftlyTests {
         try await self.withTestHome {
             try await self.withMockedToolchain {
                 try await self.installMockedToolchain(selector: .stable(major: 5, minor: 0, patch: 0))
-                var update = try self.parseCommand(Update.self, ["update", "-y", "latest", "--no-verify"])
+                var update = try self.parseCommand(Update.self, ["update", "-y", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
@@ -65,7 +65,7 @@ final class UpdateTests: SwiftlyTests {
         try await self.withTestHome {
             try await self.withMockedToolchain {
                 try await self.installMockedToolchain(selector: .stable(major: 5, minor: 0, patch: 0))
-                var update = try self.parseCommand(Update.self, ["update", "-y", "5", "--no-verify"])
+                var update = try self.parseCommand(Update.self, ["update", "-y", "5", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
@@ -88,7 +88,7 @@ final class UpdateTests: SwiftlyTests {
             try await self.withMockedToolchain {
                 try await self.installMockedToolchain(selector: "5.0.0")
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "5.0.0", "--no-verify"])
+                var update = try self.parseCommand(Update.self, ["update", "-y", "5.0.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
@@ -113,7 +113,7 @@ final class UpdateTests: SwiftlyTests {
             try await self.withMockedToolchain {
                 try await self.installMockedToolchain(selector: "5.0.0")
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "--no-verify"])
+                var update = try self.parseCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
@@ -147,7 +147,7 @@ final class UpdateTests: SwiftlyTests {
                     try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
                     var update = try self.parseCommand(
-                        Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify"]
+                        Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
                     )
                     try await update.run()
 
@@ -173,7 +173,7 @@ final class UpdateTests: SwiftlyTests {
                 try await self.installMockedToolchain(selector: "5.0.1")
                 try await self.installMockedToolchain(selector: "5.0.0")
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "5.0", "--no-verify"])
+                var update = try self.parseCommand(Update.self, ["update", "-y", "5.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
@@ -204,7 +204,7 @@ final class UpdateTests: SwiftlyTests {
                     try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2023-09-16"))
 
                     var update = try self.parseCommand(
-                        Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify"]
+                        Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
                     )
                     try await update.run()
 

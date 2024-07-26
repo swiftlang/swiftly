@@ -38,7 +38,7 @@ public struct Config: Codable, Equatable {
             let msg = """
             Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile.path) due to
             error: \"\(error)\".
-            To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
+            To begin using swiftly you can install it by running 'swiftly init'.
             """
             throw Error(message: msg)
         }

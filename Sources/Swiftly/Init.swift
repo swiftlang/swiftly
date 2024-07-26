@@ -118,7 +118,12 @@ internal struct Init: SwiftlyCommand {
             if swiftlyBin.fileExists() && !overwrite {
                 throw Error(message: "Swiftly binary already exists. You can try again with overwrite to replace it.")
             }
-            try FileManager.default.moveItem(at: URL(fileURLWithPath: cmd), to: swiftlyBin)
+            do {
+                try FileManager.default.moveItem(at: URL(fileURLWithPath: cmd), to: swiftlyBin)
+            } catch {
+                try FileManager.default.copyItem(at: URL(fileURLWithPath: cmd), to: swiftlyBin)
+                SwiftlyCore.print("Swiftly has been coopied into the installation directory. You can remove '\(cmd)'. It is no longer needed.")
+            }
         }
 
         if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {

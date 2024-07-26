@@ -73,6 +73,9 @@ public protocol Platform {
     /// This does not need to actually create the file.
     func getTempFilePath() -> URL
 
+    /// Verifies that the system meets the requirements for swiftly to be installed on the system.
+    func verifySwiftlySystemPrerequisites() throws
+
     /// Verifies that the system meets the requirements needed to install a swift toolchain of the provided version.
     ///
     /// `platformName` is the platform name of the system
@@ -83,7 +86,7 @@ public protocol Platform {
     /// can run to install these dependencies, possibly with super user permissions.
     ///
     /// Throws if system does not meet the requirements to perform the install.
-    func verifySystemPrerequisitesForInstall(platformName: String, version: ToolchainVersion, requireSignatureValidation: Bool) throws -> String?
+    func verifySystemPrerequisitesForInstall(httpClient: SwiftlyHTTPClient, platformName: String, version: ToolchainVersion, requireSignatureValidation: Bool) async throws -> String?
 
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.

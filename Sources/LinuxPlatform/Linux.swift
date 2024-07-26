@@ -41,7 +41,30 @@ public struct Linux: Platform {
 
     private static let skipVerificationMessage: String = "To skip signature verification, specify the --no-verify flag."
 
-    public func verifySystemPrerequisitesForInstall(platformName: String, version _: ToolchainVersion, requireSignatureValidation: Bool) throws -> String? {
+    public func verifySwiftlySystemPrerequisites() throws {
+        // Check if the root CA certificates are installed on this system for NIOSSL to use.
+        // This list comes from LinuxCABundle.swift in NIOSSL.
+        var foundTrustedCAs = false
+        for crtFile in ["/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt"] {
+            if URL(fileURLWithPath: crtFile).fileExists() {
+                foundTrustedCAs = true
+                break
+            }
+        }
+
+        if !foundTrustedCAs {
+            let msg = """
+            The ca-certificates package is not installed. Swiftly won't be able to trust the sites to
+            perform its downloads.
+
+            You can install the ca-certificates package on your system to fix this.
+            """
+
+            throw Error(message: msg)
+        }
+    }
+
+    public func verifySystemPrerequisitesForInstall(httpClient: SwiftlyHTTPClient, platformName: String, version _: ToolchainVersion, requireSignatureValidation: Bool) async throws -> String? {
         // TODO: these are hard-coded until we have a place to query for these based on the toolchain version
         // These lists were copied from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
         let packages: [String] = switch platformName {
@@ -159,13 +182,13 @@ public struct Linux: Platform {
                 var msg = "gpg is not installed. "
                 if let manager = manager {
                     msg += """
-                    you can install it by running this command as root:
+                    You can install it by running this command as root:
                         \(manager) -y install gpg
                     """
                 } else {
-                    msg += "you can install gpg to get signature verifications of the toolchahins. "
+                    msg += "you can install gpg to get signature verifications of the toolchahins."
                 }
-                msg += Self.skipVerificationMessage
+                msg += "\n" + Self.skipVerificationMessage
 
                 throw Error(message: msg)
             }
@@ -177,11 +200,20 @@ public struct Linux: Platform {
                 "swift-infrastructure@swift.org",
                 quiet: true
             )) != nil
-            guard foundKeys else {
-                throw Error(message: "Swift PGP keys not imported, cannot perform signature verification. " +
-                    "To enable verification, import the keys with the following command: " +
-                    "'wget -q -O - https://swift.org/keys/all-keys.asc | gpg --import -' " +
-                    Self.skipVerificationMessage)
+            if !foundKeys {
+                // Import the swift keys if they aren't here already
+                let tmpFile = self.getTempFilePath()
+                FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0600])
+                defer {
+                    try? FileManager.default.removeItem(at: tmpFile)
+                }
+
+                guard let url = URL(string: "https://swift.org/keys/all-keys.asc") else {
+                    throw Error(message: "malformed URL to the swift gpg keys")
+                }
+
+                try await httpClient.downloadFile(url: url, to: tmpFile)
+                try self.runProgram("gpg", "--import", tmpFile.path, quiet: true)
             }
 
             // We only need to refresh the keys once per session, which will help with performance in tests

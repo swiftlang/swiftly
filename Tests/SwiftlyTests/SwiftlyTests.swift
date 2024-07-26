@@ -198,7 +198,7 @@ class SwiftlyTests: XCTestCase {
 
     func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
         let prevExecutor = SwiftlyCore.httpRequestExecutor
-        let mockDownloader = MockToolchainDownloader(executables: executables)
+        let mockDownloader = MockToolchainDownloader(executables: executables, delegate: prevExecutor)
         SwiftlyCore.httpRequestExecutor = mockDownloader
         defer {
             SwiftlyCore.httpRequestExecutor = prevExecutor
@@ -542,15 +542,17 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 #if os(Linux)
     private var signatures: [String: URL]
 #endif
+    private let delegate: HTTPRequestExecutor
 
-    public init(executables: [String]? = nil) {
+    public init(executables: [String]? = nil, delegate: HTTPRequestExecutor) {
         self.executables = executables ?? ["swift"]
 #if os(Linux)
         self.signatures = [:]
 #endif
+        self.delegate = delegate
     }
 
-    public func execute(_ request: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse {
+    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
         guard let url = URL(string: request.url) else {
             throw SwiftlyTestError(message: "invalid request URL: \(request.url)")
         }
@@ -565,6 +567,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             } else {
                 throw SwiftlyTestError(message: "unxpected github API request URL: \(request.url)")
             }
+        } else if request.url == "https://swift.org/keys/all-keys.asc" {
+            return try await self.delegate.execute(request, timeout: timeout)
         } else {
             throw SwiftlyTestError(message: "unmocked URL: \(request.url)")
         }

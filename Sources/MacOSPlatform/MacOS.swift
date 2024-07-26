@@ -40,7 +40,11 @@ public struct MacOS: Platform {
         true
     }
 
-    public func verifySystemPrerequisitesForInstall(platformName _: String, version _: ToolchainVersion, requireSignatureValidation _: Bool) throws -> String? {
+    public func verifySwiftlySystemPrerequisites() throws {
+        // All system prerequisites are there for swiftly on macOS
+    }
+
+    public func verifySystemPrerequisitesForInstall(httpClient _: SwiftlyHTTPClient, platformName _: String, version _: ToolchainVersion, requireSignatureValidation _: Bool) async throws -> String? {
         // All system prerequisites should be there for macOS
         nil
     }

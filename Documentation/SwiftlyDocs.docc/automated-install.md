@@ -10,6 +10,8 @@ First, download a swiftly binary from a trusted source, such as your artifact re
 curl -L <trusted_location_of_swiftly> > swiftly
 ```
 
+> Tip: If you are using Linux you will need the "ca-certificates" package for the root certificate authorities that will establish the trust that swiftly needs to make API requests that it needs. This package is frequently pre-installed on end-user environments, but may not be present in more minimal installations.
+
 Once swiftly is downloaded you can run the init subcommand to finish the installation. This command will use the default initialization options and proceed without prompting.
 
 ```

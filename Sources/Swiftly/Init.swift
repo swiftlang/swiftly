@@ -27,6 +27,8 @@ internal struct Init: SwiftlyCommand {
 
     /// Initialize the installation of swiftly.
     internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?) async throws {
+        try Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
+
         let config = try? Config.load()
 
         if let config = config, !overwrite && config.version != SwiftlyCore.version {

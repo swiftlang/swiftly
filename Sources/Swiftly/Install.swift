@@ -116,7 +116,7 @@ struct Install: SwiftlyCommand {
         // Ensure the system is set up correctly before downloading it. Problems that prevent installation
         //  will throw, while problems that prevent use of the toolchain will be written out as a post install
         //  script for the user to run afterwards.
-        let postInstallScript = try Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(platformName: config.platform.name, version: version, requireSignatureValidation: verifySignature)
+        let postInstallScript = try await Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(httpClient: SwiftlyCore.httpClient, platformName: config.platform.name, version: version, requireSignatureValidation: verifySignature)
 
         SwiftlyCore.print("Installing \(version)")
 

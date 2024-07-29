@@ -186,7 +186,7 @@ extension Platform {
             }
         }
         guard let bin = bin else {
-            throw Error(message: "Could not locate source of swiftly binary to copy into the installation location: \(cmd)")
+            throw Error(message: "Could not locate source of \(cmd) binary in either the PATH, relative, or absolute path")
         }
 
         // If the binary is in the user's home directory, or is not in system locations ("/usr", "/opt", "/bin")

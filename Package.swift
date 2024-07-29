@@ -11,6 +11,8 @@ let swiftlyTarget: Target = .executableTarget(
     ]
 )
 
+let ghApiCacheResources = (1...16).map { Resource.embedInCode("gh-api-cache/swift-tags-page\($0).json") }
+
 let package = Package(
     name: "swiftly",
     platforms: [
@@ -27,6 +29,7 @@ let package = Package(
         .package(url: "https://github.com/swift-server/async-http-client", from: "1.21.2"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.64.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.6.1"),
+        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
     ],
     targets: [
         swiftlyTarget,
@@ -37,9 +40,37 @@ let package = Package(
                 .product(name: "NIOFoundationCompat", package: "swift-nio"),
             ]
         ),
+        .target(
+            name: "SwiftlyDocs",
+            path: "Documentation"
+        ),
+        .plugin(
+            name: "GenerateDocsReference",
+            capability: .command(
+                intent: .custom(
+                    verb: "generate-docs-reference",
+                    description: "Generate a documentation reference for swiftly."
+                ),
+                permissions: [
+                    .writeToPackageDirectory(reason: "This command generates documentation."),
+                ]
+            ),
+            dependencies: ["generate-docs-reference"]
+        ),
+        .executableTarget(
+            name: "generate-docs-reference",
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
+            path: "Tools/generate-docs-reference"
+        ),
         .testTarget(
             name: "SwiftlyTests",
-            dependencies: ["Swiftly"]
+            dependencies: ["Swiftly"],
+            resources: ghApiCacheResources + [
+                .embedInCode("gh-api-cache/swift-releases-page1.json"),
+                .embedInCode("mock-signing-key-private.pgp"),
+            ]
         ),
     ]
 )

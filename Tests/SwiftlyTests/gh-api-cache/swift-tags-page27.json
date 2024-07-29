@@ -1,0 +1,68 @@
+[
+  {
+    "name": "ran21",
+    "commit": {
+      "sha": "ac08696e487d1eb115132c24462a1b4a6ab2ea34",
+    },
+  },
+  {
+    "name": "ran19",
+    "commit": {
+      "sha": "88001cca695b54a1b865cf3257082abc26cd65b2",
+    },
+  },
+  {
+    "name": "ran18",
+    "commit": {
+      "sha": "fd6511832383294872b20e1263d579d47f52d9a2",
+    },
+  },
+  {
+    "name": "perMerge-10-16",
+    "commit": {
+      "sha": "a2b7e0e91d01a6bc97beddb356367a2c48a47807",
+    },
+  },
+  {
+    "name": "passes-tests-12-20",
+    "commit": {
+      "sha": "2e1100145dcea29c3e342dbd076cb2d495686a3c",
+    },
+  },
+  {
+    "name": "osx-passed",
+    "commit": {
+      "sha": "f3d534543d5f7a38090713a85fa357666cd1e81b",
+    },
+  },
+  {
+    "name": "oldMerge",
+    "commit": {
+      "sha": "72ad29a5fbe621e84b10d20de3d80b6f6e607edd",
+    },
+  },
+  {
+    "name": "nested-generic-dragon",
+    "commit": {
+      "sha": "c48f139cda803709d05b94076a0050f89b7265b8",
+    },
+  },
+  {
+    "name": "lastPreXmasRebase",
+    "commit": {
+      "sha": "d723ff656aaf169552eeb0ced65cf57f890daff4",
+    },
+  },
+  {
+    "name": "backup",
+    "commit": {
+      "sha": "28087880ed49ff3b3ad39623d07c83c396e5df32",
+    },
+  },
+  {
+    "name": "autoclosure-dragon",
+    "commit": {
+      "sha": "d7ec958b16332100622b628e65c4e6f0edc80898",
+    },
+  }
+]

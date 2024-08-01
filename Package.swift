@@ -84,7 +84,7 @@ package.targets.append(
         name: "LinuxPlatform",
         dependencies: [
             .target(name: "SwiftlyCore"),
-            .product(name: "libarchive", package: "libarchive"),
+            .product(name: "archive", package: "libarchive"),
         ]
     )
 )

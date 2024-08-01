@@ -20,7 +20,8 @@ let package = Package(
     name: "libarchive",
     products: [
         .library(
-            name: "libarchive",
+            name: "archive",
+            type: .static,
             targets: ["CLibArchive"]
         ),
         .executable(

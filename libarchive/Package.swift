@@ -16,6 +16,12 @@ var libTarget: Target = .target(
     ]
 )
 
+#if os(Linux)
+let gnuSource: [CSetting] = [.define("_GNU_SOURCE")]
+#else
+let gnuSource: [CSetting] = []
+#endif
+
 let package = Package(
     name: "libarchive",
     products: [
@@ -36,10 +42,10 @@ let package = Package(
             name: "bsdtar",
             targets: ["bsdtar"]
         ),
-        /*.executable(
+        .executable(
             name: "bsdunzip",
             targets: ["bsdunzip"]
-        ),*/
+        ),
     ],
     dependencies: [
     ],
@@ -79,13 +85,13 @@ let package = Package(
             exclude: ["test"],
             cSettings: [.define("PLATFORM_CONFIG_H", to: "\"config_swiftpm.h\"")]
         ),
-        /*.executableTarget(
+        .executableTarget(
             name: "bsdunzip",
             dependencies: ["CLibArchive", "CLibArchiveFE"],
             path: "unzip",
             exclude: ["test"],
-            cSettings: [.define("PLATFORM_CONFIG_H", to: "\"config_swiftpm.h\"")]
-        ),*/
+            cSettings: gnuSource + [.define("PLATFORM_CONFIG_H", to: "\"config_swiftpm.h\"")]
+        ),
     ]
 )
 

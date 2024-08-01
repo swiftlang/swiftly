@@ -1,0 +1,4 @@
+module CLibBSDXML [system] {
+    link "bsdxml"
+    export *
+}

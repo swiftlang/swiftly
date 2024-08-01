@@ -1,0 +1,4 @@
+module CLibPCRE2POSIX [system] {
+    link "pcre2posix"
+    export *
+}

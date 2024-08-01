@@ -1,0 +1,4 @@
+module CLibPCRE2 [system] {
+    link "pcre2"
+    export *
+}

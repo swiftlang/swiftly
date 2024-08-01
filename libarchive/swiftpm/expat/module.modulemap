@@ -1,0 +1,4 @@
+module CLibExpat [system] {
+    link "expat"
+    export *
+}

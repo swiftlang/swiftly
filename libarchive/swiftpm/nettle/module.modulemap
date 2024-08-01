@@ -1,0 +1,4 @@
+module CLibNettle [system] {
+    link "nettle"
+    export *
+}

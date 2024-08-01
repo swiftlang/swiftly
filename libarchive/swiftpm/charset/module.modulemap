@@ -1,0 +1,4 @@
+module CLibCharset [system] {
+    link "charset"
+    export *
+}

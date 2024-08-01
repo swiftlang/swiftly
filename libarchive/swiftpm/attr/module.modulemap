@@ -1,0 +1,4 @@
+module CLibAttr [system] {
+    link "attr"
+    export *
+}

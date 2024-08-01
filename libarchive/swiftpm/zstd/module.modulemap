@@ -1,0 +1,4 @@
+module CLibZStd [system] {
+    link "zstd"
+    export *
+}

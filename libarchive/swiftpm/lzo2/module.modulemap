@@ -1,0 +1,4 @@
+module CLibLZO2 [system] {
+    link "lzo2"
+    export *
+}

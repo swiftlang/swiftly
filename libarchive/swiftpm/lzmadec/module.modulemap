@@ -1,0 +1,4 @@
+module CLibLZMadeC [system] {
+    link "lzmadec"
+    export *
+}

@@ -1,0 +1,4 @@
+module CLibZ [system] {
+    link "z"
+    export *
+}

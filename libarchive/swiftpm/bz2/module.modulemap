@@ -1,0 +1,4 @@
+module CLibBZ2 [system] {
+    link "bz2"
+    export *
+}

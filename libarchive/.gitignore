@@ -94,3 +94,5 @@ test-suite.log
 .*.sw?
 
 *.pdb
+
+.build/

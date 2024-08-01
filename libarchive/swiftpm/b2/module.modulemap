@@ -1,0 +1,4 @@
+module CLibB2 [system] {
+    link "b2"
+    export *
+}

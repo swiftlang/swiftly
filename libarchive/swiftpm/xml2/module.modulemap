@@ -1,0 +1,4 @@
+module CLibXML2 [system] {
+    link "xml2"
+    export *
+}

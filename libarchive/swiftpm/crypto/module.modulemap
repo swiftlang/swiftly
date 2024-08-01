@@ -1,0 +1,4 @@
+module CLibCrypto [system] {
+    link "crypto"
+    export *
+}

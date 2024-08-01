@@ -1,0 +1,4 @@
+module CLibACL [system] {
+    link "acl"
+    export *
+}

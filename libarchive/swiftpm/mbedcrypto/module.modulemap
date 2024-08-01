@@ -1,0 +1,4 @@
+module CLibMbedCrypto [system] {
+    link "mbedcrypto"
+    export *
+}

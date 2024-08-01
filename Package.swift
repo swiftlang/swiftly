@@ -1,5 +1,6 @@
 // swift-tools-version:5.10
 
+import Foundation
 import PackageDescription
 
 let swiftlyTarget: Target = .executableTarget(
@@ -77,25 +78,13 @@ let package = Package(
 
 #if os(Linux)
 
+package.dependencies.append(.package(path: "libarchive"))
 package.targets.append(
     .target(
         name: "LinuxPlatform",
         dependencies: [
-            "SwiftlyCore",
-            "CLibArchive",
-        ],
-        linkerSettings: [
-            .linkedLibrary("z"),
-        ]
-    )
-)
-package.targets.append(
-    .target(
-        name: "CLibArchive",
-        path: "libarchive/libarchive",
-        exclude: ["test"],
-        cSettings: [
-            .define("HAVE_CONFIG_H", to: "1")
+            .target(name: "SwiftlyCore"),
+            .product(name: "libarchive", package: "libarchive"),
         ]
     )
 )

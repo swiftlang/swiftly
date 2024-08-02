@@ -75,8 +75,8 @@ final class InitTests: SwiftlyTests {
             config.version = try SwiftlyVersion(parsing: "100.0.0")
             try config.save()
 
-            try Data("".utf8).append(file: Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("foo.txt"))
-            try Data("".utf8).append(file: Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent("foo.txt"))
+            try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("foo.txt"))
+            try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent("foo.txt"))
 
             // WHEN: swiftly is initialized with overwrite enabled
             initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes", "--overwrite"])
@@ -103,8 +103,8 @@ final class InitTests: SwiftlyTests {
             config.version = try SwiftlyVersion(parsing: "100.0.0")
             try config.save()
 
-            try Data("".utf8).append(file: Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("foo.txt"))
-            try Data("".utf8).append(file: Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent("foo.txt"))
+            try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("foo.txt"))
+            try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent("foo.txt"))
 
             // WHEN: swiftly init is invoked a second time
             initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes"])

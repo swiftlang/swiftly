@@ -203,7 +203,7 @@ public struct Linux: Platform {
             if !foundKeys {
                 // Import the swift keys if they aren't here already
                 let tmpFile = self.getTempFilePath()
-                FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0600])
+                FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600])
                 defer {
                     try? FileManager.default.removeItem(at: tmpFile)
                 }
@@ -492,7 +492,7 @@ public struct Linux: Platform {
 
         let data = FileManager.default.contents(atPath: releaseFile)
         guard let data = data else {
-            let message = "Unable to read release information from file \(releaseFile)"
+            let message = "Unable to read OS release information from file \(releaseFile)"
             if disableConfirmation {
                 throw Error(message: message)
             } else {
@@ -502,7 +502,7 @@ public struct Linux: Platform {
         }
 
         guard let releaseInfo = String(data: data, encoding: .utf8) else {
-            let message = "Unable to read release information from file \(releaseFile)"
+            let message = "Unable to read OS release information from file \(releaseFile)"
             if disableConfirmation {
                 throw Error(message: message)
             } else {

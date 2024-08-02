@@ -54,7 +54,7 @@ public struct Swiftly: SwiftlyCommand {
 public protocol SwiftlyCommand: AsyncParsableCommand {}
 
 extension Data {
-    func append(file: URL) throws {
+    func append(to file: URL) throws {
         if let fileHandle = FileHandle(forWritingAtPath: file.path) {
             defer {
                 fileHandle.closeFile()

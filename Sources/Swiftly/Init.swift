@@ -33,7 +33,7 @@ internal struct Init: SwiftlyCommand {
 
         if let config = config, !overwrite && config.version != SwiftlyCore.version {
             // We don't support downgrades, and we don't yet support upgrades
-            throw Error(message: "An existing swiftly installation was detected. You can try overwriting it.")
+            throw Error(message: "An existing swiftly installation was detected. You can try again with '--overwrite' to overwrite it.")
         }
 
         // Give the user the prompt and the choice to abort at this point.
@@ -47,13 +47,9 @@ internal struct Init: SwiftlyCommand {
             Note that the locations can be changed with SWIFTLY_HOME and SWIFTLY_BIN environment variables and run
             this again.
 
-            Proceed with the installation?
-
-            0) Cancel
-            1) Install
             """)
 
-            if SwiftlyCore.readLine(prompt: "> ") == "0" {
+            if SwiftlyCore.readLine(prompt: "Proceed with the installation? [Y/n] ") == "n" {
                 throw Error(message: "Swiftly installation has been cancelled")
             }
         }
@@ -109,20 +105,26 @@ internal struct Init: SwiftlyCommand {
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
 
-        let cmd = CommandLine.arguments[0]
-        let systemManaged = try Swiftly.currentPlatform.isSystemManagedBinary(cmd)
+        let cmd = URL(fileURLWithPath: CommandLine.arguments[0])
+        let systemManaged = try Swiftly.currentPlatform.isSystemManagedBinary(cmd.path)
 
-        // Don't move the binary if this is being invoked inside an xctest or is a system managed binary
-        if !cmd.hasSuffix("xctest") && !systemManaged {
+        // Don't move the binary if it's already in the right place, this is being invoked inside an xctest, or it is a system managed binary
+        if cmd != swiftlyBin && !cmd.path.hasSuffix("xctest") && !systemManaged {
             SwiftlyCore.print("Moving swiftly into the installation directory...")
-            if swiftlyBin.fileExists() && !overwrite {
-                throw Error(message: "Swiftly binary already exists. You can try again with overwrite to replace it.")
+
+            if swiftlyBin.fileExists() {
+                if !overwrite {
+                    throw Error(message: "Swiftly binary already exists. You can try again with overwrite to replace it.")
+                } else {
+                    try FileManager.default.removeItem(at: swiftlyBin)
+                }
             }
+
             do {
-                try FileManager.default.moveItem(at: URL(fileURLWithPath: cmd), to: swiftlyBin)
+                try FileManager.default.moveItem(at: cmd, to: swiftlyBin)
             } catch {
-                try FileManager.default.copyItem(at: URL(fileURLWithPath: cmd), to: swiftlyBin)
-                SwiftlyCore.print("Swiftly has been coopied into the installation directory. You can remove '\(cmd)'. It is no longer needed.")
+                try FileManager.default.copyItem(at: cmd, to: swiftlyBin)
+                SwiftlyCore.print("Swiftly has been copied into the installation directory. You can remove '\(cmd.path)'. It is no longer needed.")
             }
         }
 
@@ -194,7 +196,7 @@ internal struct Init: SwiftlyCommand {
             }
 
             if addEnvToProfile {
-                try Data(sourceLine.utf8).append(file: profileHome)
+                try Data(sourceLine.utf8).append(to: profileHome)
 
                 SwiftlyCore.print("""
                 To begin using installed swiftly from your current shell, first run the following command:

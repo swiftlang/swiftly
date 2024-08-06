@@ -47,8 +47,6 @@ let package = Package(
             targets: ["bsdunzip"]
         ),
     ],
-    dependencies: [
-    ],
     targets: [
         libTarget,
         .target(

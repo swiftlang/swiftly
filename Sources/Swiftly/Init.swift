@@ -114,7 +114,7 @@ internal struct Init: SwiftlyCommand {
 
             if swiftlyBin.fileExists() {
                 if !overwrite {
-                    throw Error(message: "Swiftly binary already exists. You can try again with overwrite to replace it.")
+                    throw Error(message: "Swiftly binary already exists. You can try again with `--overwrite` to replace it.")
                 } else {
                     try FileManager.default.removeItem(at: swiftlyBin)
                 }

@@ -137,6 +137,11 @@ extension Platform {
         }
 
         try process.run()
+        // Attach this process to our process group so that Ctrl-C and other signals work
+        let pgid = tcgetpgrp(STDOUT_FILENO)
+        if pgid != -1 {
+            tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
+        }
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {

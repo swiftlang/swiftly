@@ -18,7 +18,7 @@ Once swiftly is downloaded you can run the init subcommand to finish the install
 ./swiftly init --assume-yes
 ```
 
-Swiftly is installed, but the current shell may not yet be updated with the new environment variables, such as the PATH. The init command prints instructions on how to update the current shell environment without opening a new shell. This is an example of the output taken from Linux, but the details might be different for other OSes (and users):
+Swiftly is installed, but the current shell may not yet be updated with the new environment variables, such as the PATH. The init command prints instructions on how to update the current shell environment without opening a new shell. This is an example of the output taken from Linux, but the details might be different for other OSes, username, or shell.
 
 ```
 To begin using installed swiftly from your current shell, first run the following command:

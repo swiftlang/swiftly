@@ -237,6 +237,30 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
+        // Fall back to using GitHub API's for snapshots on branches older than 6.0
+        switch branch {
+        case let .release(major, _) where major < 6:
+            let filter = { (gh: GitHubTag) -> ToolchainVersion.Snapshot? in
+                guard let snapshot = try gh.parseSnapshot() else {
+                    return nil
+                }
+
+                if let filter {
+                    guard filter(snapshot) else {
+                        return nil
+                    }
+                }
+
+                return snapshot
+            }
+
+            return try await self.mapGitHubTags(limit: limit, filterMap: filter) { page in
+                try await self.getTags(page: page)
+            }
+        default:
+            break
+        }
+
         let arch = if a == nil {
 #if arch(x86_64)
             "x86_64"

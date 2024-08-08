@@ -55,21 +55,27 @@ final class HTTPClientTests: SwiftlyTests {
             PlatformDefinition.amazonlinux2,
         ]
 
+        let branches = [
+            ToolchainVersion.Snapshot.Branch.main,
+            ToolchainVersion.Snapshot.Branch.release(major: 6, minor: 0), // This is available in swift.org API
+            ToolchainVersion.Snapshot.Branch.release(major: 5, minor: 9), // This is only available using GH API
+        ]
+
         for arch in ["x86_64", "aarch64"] {
-            // GIVEN: we have a swiftly http client with swift.org metadata capability
             for platform in supportedPlatforms {
+                // GIVEN: we have a swiftly http client with swift.org metadata capability
                 // WHEN: we ask for the first five releases of a supported platform in a supported arch
                 let releases = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: platform, arch: arch, limit: 5)
                 // THEN: we get five releases
                 XCTAssertEqual(5, releases.count)
-            }
 
-            // GIVEN: we have a swiftly http client with swift.org metadata capability
-            for platform in supportedPlatforms {
-                // WHEN: we ask for the first five 6.0 snapshots for a supported platform
-                let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: arch, branch: ToolchainVersion.Snapshot.Branch.release(major: 6, minor: 0), limit: 5)
-                // THEN: we get five snapshots
-                XCTAssertEqual(5, snapshots.count)
+                for branch in branches {
+                    // GIVEN: we have a swiftly http client with swift.org metadata capability
+                    // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch
+                    let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: arch, branch: branch, limit: 5)
+                    // THEN: we get five snapshots
+                    XCTAssertEqual(5, snapshots.count)
+                }
             }
         }
     }

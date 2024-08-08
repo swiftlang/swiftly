@@ -34,6 +34,7 @@ struct List: SwiftlyCommand {
     var toolchainSelector: String?
 
     internal mutating func run() async throws {
+        try validateSwiftly()
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }

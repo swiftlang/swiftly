@@ -12,7 +12,7 @@ final class InstallTests: SwiftlyTests {
     func testInstallLatest() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "latest"])
+                var cmd = try self.parseCommand(Install.self, ["install", "latest", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 let config = try Config.load()
@@ -39,14 +39,14 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that `swiftly install a.b` installs the latest patch version of Swift a.b.
     func testInstallLatestPatchVersion() async throws {
-        guard try self.baseTestConfig().platform.name != "ubi9" else {
+        guard try await self.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }
 
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "5.7"])
+                var cmd = try self.parseCommand(Install.self, ["install", "5.7", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 let config = try Config.load()
@@ -73,7 +73,7 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that swiftly can install different stable release versions by their full a.b.c versions.
     func testInstallReleases() async throws {
-        guard try self.baseTestConfig().platform.name != "ubi9" else {
+        guard try await self.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }
@@ -82,7 +82,7 @@ final class InstallTests: SwiftlyTests {
             try await self.withMockedToolchain {
                 var installedToolchains: Set<ToolchainVersion> = []
 
-                var cmd = try self.parseCommand(Install.self, ["install", "5.7.0"])
+                var cmd = try self.parseCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 installedToolchains.insert(ToolchainVersion(major: 5, minor: 7, patch: 0))
@@ -91,7 +91,7 @@ final class InstallTests: SwiftlyTests {
                     description: "install a stable release toolchain"
                 )
 
-                cmd = try self.parseCommand(Install.self, ["install", "5.7.2"])
+                cmd = try self.parseCommand(Install.self, ["install", "5.7.2", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 installedToolchains.insert(ToolchainVersion(major: 5, minor: 7, patch: 2))
@@ -109,7 +109,7 @@ final class InstallTests: SwiftlyTests {
             try await self.withMockedToolchain {
                 var installedToolchains: Set<ToolchainVersion> = []
 
-                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2023-04-01"])
+                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 installedToolchains.insert(ToolchainVersion(snapshotBranch: .main, date: "2023-04-01"))
@@ -118,7 +118,7 @@ final class InstallTests: SwiftlyTests {
                     description: "install a main snapshot toolchain"
                 )
 
-                cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot-2023-04-01"])
+                cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 installedToolchains.insert(
@@ -135,7 +135,7 @@ final class InstallTests: SwiftlyTests {
     func testInstallLatestMainSnapshot() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot"])
+                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 let config = try Config.load()
@@ -167,7 +167,7 @@ final class InstallTests: SwiftlyTests {
     func testInstallLatestReleaseSnapshot() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot"])
+                var cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 let config = try Config.load()
@@ -199,13 +199,13 @@ final class InstallTests: SwiftlyTests {
     func testInstallReleaseAndSnapshots() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2023-04-01"])
+                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
-                cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot-2023-03-28"])
+                cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot-2023-03-28", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
-                cmd = try self.parseCommand(Install.self, ["install", "5.8.0"])
+                cmd = try self.parseCommand(Install.self, ["install", "5.8.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 try await validateInstalledToolchains(
@@ -223,13 +223,13 @@ final class InstallTests: SwiftlyTests {
     func duplicateTest(_ version: String) async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", version])
+                var cmd = try self.parseCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 let before = try Config.load()
 
                 let startTime = Date()
-                cmd = try self.parseCommand(Install.self, ["install", version])
+                cmd = try self.parseCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 // Assert that swiftly didn't attempt to download a new toolchain.
@@ -261,7 +261,7 @@ final class InstallTests: SwiftlyTests {
 
     /// Verify that the installed toolchain will be used if no toolchains currently are installed.
     func testInstallUsesFirstToolchain() async throws {
-        guard try self.baseTestConfig().platform.name != "ubi9" else {
+        guard try await self.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }
@@ -272,12 +272,12 @@ final class InstallTests: SwiftlyTests {
                 XCTAssertTrue(config.inUse == nil)
                 try await validateInUse(expected: nil)
 
-                var cmd = try self.parseCommand(Install.self, ["install", "5.7.0"])
+                var cmd = try self.parseCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 try await validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
 
-                var installOther = try self.parseCommand(Install.self, ["install", "5.7.1"])
+                var installOther = try self.parseCommand(Install.self, ["install", "5.7.1", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await installOther.run()
 
                 // Verify that 5.7.0 is still in use.

@@ -98,7 +98,7 @@ class SwiftlyTests: XCTestCase {
         newReleaseSnapshot,
     ]
 
-    func baseTestConfig() throws -> Config {
+    func baseTestConfig() async throws -> Config {
         let getEnv = { varName in
             guard let v = ProcessInfo.processInfo.environment[varName] else {
                 throw SwiftlyTestError(message: "environment variable \(varName) must be set in order to run tests")
@@ -106,29 +106,25 @@ class SwiftlyTests: XCTestCase {
             return v
         }
 
-#if os(macOS)
+        let name = try? getEnv("SWIFTLY_PLATFORM_NAME")
+        let nameFull = try? getEnv("SWIFTLY_PLATFORM_NAME_FULL")
+        let namePretty = try? getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
+
+        let pd = if let name = name, let nameFull = nameFull, let namePretty = namePretty {
+            PlatformDefinition(name: name, nameFull: nameFull, namePretty: namePretty)
+        } else {
+            try? await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
+        }
+
+        guard let pd = pd else {
+            throw SwiftlyTestError(message: "unable to detect platform. please set SWIFTLY_PLATFORM_NAME, SWIFTLY_PLATFORM_NAME_FULL, and SWIFTLY_PLATFORM_NAME_PRETTY to run the tests")
+        }
+
         return Config(
             inUse: nil,
             installedToolchains: [],
-            platform: Config.PlatformDefinition(
-                name: "xcode",
-                nameFull: "osx",
-                namePretty: "macOS",
-                architecture: nil
-            )
+            platform: pd
         )
-#else
-        return Config(
-            inUse: nil,
-            installedToolchains: [],
-            platform: Config.PlatformDefinition(
-                name: try getEnv("SWIFTLY_PLATFORM_NAME"),
-                nameFull: try getEnv("SWIFTLY_PLATFORM_NAME_FULL"),
-                namePretty: try getEnv("SWIFTLY_PLATFORM_NAME_PRETTY"),
-                architecture: try? getEnv("SWIFTLY_PLATFORM_ARCH")
-            )
-        )
-#endif
     }
 
     func parseCommand<T: ParsableCommand>(_ commandType: T.Type, _ arguments: [String]) throws -> T {
@@ -169,7 +165,7 @@ class SwiftlyTests: XCTestCase {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
         }
 
-        let config = try self.baseTestConfig()
+        let config = try await self.baseTestConfig()
         try config.save()
 
         try await f()
@@ -202,7 +198,7 @@ class SwiftlyTests: XCTestCase {
 
     func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
         let prevExecutor = SwiftlyCore.httpRequestExecutor
-        let mockDownloader = MockToolchainDownloader(executables: executables)
+        let mockDownloader = MockToolchainDownloader(executables: executables, delegate: prevExecutor)
         SwiftlyCore.httpRequestExecutor = mockDownloader
         defer {
             SwiftlyCore.httpRequestExecutor = prevExecutor
@@ -227,49 +223,64 @@ class SwiftlyTests: XCTestCase {
     /// Backup the user's swiftly installation before running the provided
     /// function and roll it all back afterwards.
     func rollbackLocalChanges(_ f: () async throws -> Void) async throws {
+        let userHome = FileManager.default.homeDirectoryForCurrentUser
+
+        // Backup user profile changes in case of init tests
+        let profiles = [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"]
+        for profile in profiles {
+            let config = userHome.appendingPathComponent(profile)
+            let backupConfig = config.appendingPathExtension("swiftly-test-backup")
+            _ = try? FileManager.default.copyItem(at: config, to: backupConfig)
+        }
+        defer {
+            for profile in profiles.reversed() {
+                let config = userHome.appendingPathComponent(profile)
+                let backupConfig = config.appendingPathExtension("swiftly-test-backup")
+                if backupConfig.fileExists() {
+                    if config.fileExists() {
+                        try? FileManager.default.removeItem(at: config)
+                    }
+                    try? FileManager.default.moveItem(at: backupConfig, to: config)
+                } else if config.fileExists() {
+                    try? FileManager.default.removeItem(at: config)
+                }
+            }
+        }
+
 #if os(macOS)
         // In some environments, such as CI, we can't install directly to the user's home directory
         try await self.withTestHome(name: "e2eHome") { try await f() }
         return
 #endif
 
-        // Backup existing configuration and toolchains directories
-        let config = Swiftly.currentPlatform.swiftlyConfigFile
-        let backupConfig = config.appendingPathExtension("bak")
-        try? FileManager.default.moveItem(at: config, to: backupConfig)
-        defer {
-            try? FileManager.default.removeItem(at: config)
-            if FileManager.default.fileExists(atPath: config.path) {
-                try? FileManager.default.moveItem(at: backupConfig, to: config)
+        // Backup config, toolchain, and bin directory
+        let swiftlyFiles = [Swiftly.currentPlatform.swiftlyHomeDir, Swiftly.currentPlatform.swiftlyToolchainsDir, Swiftly.currentPlatform.swiftlyBinDir]
+        for file in swiftlyFiles {
+            let backupFile = file.appendingPathExtension("swiftly-test-backup")
+            _ = try? FileManager.default.moveItem(at: file, to: backupFile)
+
+            if file == Swiftly.currentPlatform.swiftlyConfigFile {
+                _ = try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            } else {
+                _ = try? FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
             }
         }
-
-        let toolchainsDir = Swiftly.currentPlatform.swiftlyToolchainsDir
-        let backupToolchainsDir = toolchainsDir.appendingPathExtension("bak")
-        try? FileManager.default.moveItem(at: toolchainsDir, to: backupToolchainsDir)
         defer {
-            try? FileManager.default.removeItem(at: toolchainsDir)
-            if FileManager.default.fileExists(atPath: backupToolchainsDir.path) {
-                try? FileManager.default.moveItem(at: backupToolchainsDir, to: toolchainsDir)
+            for file in swiftlyFiles.reversed() {
+                let backupFile = file.appendingPathExtension("swiftly-test-backup")
+                if backupFile.fileExists() {
+                    if file.fileExists() {
+                        try? FileManager.default.removeItem(at: file)
+                    }
+                    try? FileManager.default.moveItem(at: backupFile, to: file)
+                } else if file.fileExists() {
+                    try? FileManager.default.removeItem(at: file)
+                }
             }
         }
-
-        let binDir = Swiftly.currentPlatform.swiftlyBinDir
-        let backupBinDir = toolchainsDir.appendingPathExtension("bak")
-        try? FileManager.default.moveItem(at: binDir, to: backupBinDir)
-        defer {
-            try? FileManager.default.removeItem(at: binDir)
-            if FileManager.default.fileExists(atPath: backupBinDir.path) {
-                try? FileManager.default.moveItem(at: backupBinDir, to: binDir)
-            }
-        }
-
-        try? FileManager.default.createDirectory(at: config.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try? FileManager.default.createDirectory(at: toolchainsDir, withIntermediateDirectories: true)
-        try? FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
 
         // create an empty config file and toolchains directory for the test
-        let c = try self.baseTestConfig()
+        let c = try await self.baseTestConfig()
         try c.save()
 
         try await f()
@@ -330,7 +341,7 @@ class SwiftlyTests: XCTestCase {
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
     func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
-        var install = try self.parseCommand(Install.self, ["install", "\(selector)", "--no-verify"] + args)
+        var install = try self.parseCommand(Install.self, ["install", "\(selector)", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"] + args)
 
         try await self.withMockedToolchain(executables: executables) {
             try await install.run()
@@ -531,15 +542,17 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 #if os(Linux)
     private var signatures: [String: URL]
 #endif
+    private let delegate: HTTPRequestExecutor
 
-    public init(executables: [String]? = nil) {
+    public init(executables: [String]? = nil, delegate: HTTPRequestExecutor) {
         self.executables = executables ?? ["swift"]
 #if os(Linux)
         self.signatures = [:]
 #endif
+        self.delegate = delegate
     }
 
-    public func execute(_ request: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse {
+    public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
         guard let url = URL(string: request.url) else {
             throw SwiftlyTestError(message: "invalid request URL: \(request.url)")
         }
@@ -554,6 +567,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             } else {
                 throw SwiftlyTestError(message: "unxpected github API request URL: \(request.url)")
             }
+        } else if request.url == "https://swift.org/keys/all-keys.asc" {
+            return try await self.delegate.execute(request, timeout: timeout)
         } else {
             throw SwiftlyTestError(message: "unmocked URL: \(request.url)")
         }

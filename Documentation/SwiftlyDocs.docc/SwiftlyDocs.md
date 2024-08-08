@@ -15,6 +15,7 @@ Install and manage your Swift programming language toolchains.
 - <doc:install-toolchains>
 - <doc:uninstall-toolchains>
 - <doc:update-toolchain>
+- <doc:automated-install>
 
 ### Reference
 

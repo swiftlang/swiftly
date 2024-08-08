@@ -3,6 +3,7 @@
 import PackageDescription
 
 let ghApiCacheResources = (1...16).map { Resource.embedInCode("gh-api-cache/swift-tags-page\($0).json") }
+let ghApiCacheExcludedResources = (17...27).map { "gh-api-cache/swift-tags-page\($0).json" }
 
 let package = Package(
     name: "swiftly",
@@ -90,6 +91,7 @@ let package = Package(
         .testTarget(
             name: "SwiftlyTests",
             dependencies: ["Swiftly"],
+            exclude: ghApiCacheExcludedResources,
             resources: ghApiCacheResources + [
                 .embedInCode("gh-api-cache/swift-releases-page1.json"),
                 .embedInCode("mock-signing-key-private.pgp"),

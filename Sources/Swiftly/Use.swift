@@ -43,6 +43,7 @@ internal struct Use: SwiftlyCommand {
     var toolchain: String?
 
     internal mutating func run() async throws {
+        try validateSwiftly()
         var config = try Config.load()
 
         guard let toolchain = self.toolchain else {

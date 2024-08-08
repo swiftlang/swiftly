@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install <version> [--use] [--token=<token>] [--verify] [--version] [--help]
+swiftly install <version> [--use] [--token=<token>] [--verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **version:**
@@ -71,6 +71,14 @@ fails with an "unauthorized" status code, it likely means the rate limit has bee
 **--verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
+
+
+**--post-install-file=\<post-install-file\>:**
+
+*A file path to a location for a post installation script*
+
+If the toolchain that is installed has extra post installation steps they they will be
+written to this file as commands that can be run after the installation.
 
 
 **--version:**
@@ -178,7 +186,7 @@ Finally, all installed toolchains can be uninstalled by specifying 'all':
 
 **--assume-yes:**
 
-*Uninstall all selected toolchains without prompting for confirmation.*
+*Disable confirmation prompts by assuming 'yes'*
 
 
 **--version:**
@@ -241,7 +249,7 @@ The installed snapshots for a given devlopment branch can be listed by specifyin
 Update an installed toolchain to a newer version.
 
 ```
-swiftly update [<toolchain>] [--assume-yes] [--verify] [--version] [--help]
+swiftly update [<toolchain>] [--assume-yes] [--verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **toolchain:**
@@ -284,12 +292,60 @@ A specific snapshot toolchain can be updated by including the date:
 
 **--assume-yes:**
 
-*Update the selected toolchains without prompting for confirmation.*
+*Disable confirmation prompts by assuming 'yes'*
 
 
 **--verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
+
+
+**--post-install-file=\<post-install-file\>:**
+
+*A file path to a location for a post installation script*
+
+If the toolchain that is installed has extra post installation steps they they will be
+written to this file as commands that can be run after the installation.
+
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+
+## init
+
+Perform swiftly initialization into your user account.
+
+```
+swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--assume-yes] [--version] [--help]
+```
+
+**--no-modify-profile:**
+
+*Do not attempt to modify the profile file to set environment variables (e.g. PATH) on login.*
+
+
+**--overwrite:**
+
+*Overwrite the existing swiftly installation found at the configured SWIFTLY_HOME, if any. If this option is unspecified and an existing installation is found, the swiftly executable will be updated, but the rest of the installation will not be modified.*
+
+
+**--platform=\<platform\>:**
+
+*Specify the current Linux platform for swiftly.*
+
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
 
 
 **--version:**

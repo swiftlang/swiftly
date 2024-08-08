@@ -40,6 +40,7 @@ struct ListAvailable: SwiftlyCommand {
     }
 
     internal mutating func run() async throws {
+        try validateSwiftly()
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }

@@ -61,8 +61,7 @@ Likewise, the latest snapshot associated with a given development branch can be 
 
 **--token=\<token\>:**
 
-*A GitHub authentiation token to use for any GitHub API requests.*
-
+*A GitHub authentication token to use for any GitHub API requests.*
 
 This is useful to avoid GitHub's low rate limits. If an installation
 fails with an "unauthorized" status code, it likely means the rate limit has been hit.
@@ -79,6 +78,51 @@ fails with an "unauthorized" status code, it likely means the rate limit has bee
 
 If the toolchain that is installed has extra post installation steps they they will be
 written to this file as commands that can be run after the installation.
+
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+
+## list-available
+
+List toolchains available for install.
+
+```
+swiftly list-available [<toolchain-selector>] [--version] [--help]
+```
+
+**toolchain-selector:**
+
+*A filter to use when listing toolchains.*
+
+
+The toolchain selector determines which toolchains to list. If no selector is provided, all available toolchains will be listed:
+
+    $ swiftly list-available
+
+The available toolchains associated with a given major version can be listed by specifying the major version as the selector: 
+
+    $ swiftly list-available 5
+
+Likewise, the available toolchains associated with a given minor version can be listed by specifying the minor version as the selector:
+
+    $ swiftly list-available 5.2
+
+The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
+
+    $ swiftly list-available main-snapshot
+    $ swiftly list-available 6.0-snapshot
+
+Note that listing available snapshots before 6.0 is unsupported.
 
 
 **--version:**

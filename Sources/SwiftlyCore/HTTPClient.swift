@@ -22,6 +22,100 @@ private func makeRequest(url: String) -> HTTPClientRequest {
     return request
 }
 
+struct SwiftOrgSwiftlyRelease: Codable {
+    var name: String
+}
+
+struct SwiftOrgPlatform: Codable {
+    var name: String
+    var platform: String
+    var archs: [String]
+
+    var platformName: String {
+        switch self.name {
+        case "Ubuntu 14.04":
+            "ubuntu1404"
+        case "Ubuntu 15.10":
+            "ubuntu1510"
+        case "Ubuntu 16.04":
+            "ubuntu1604"
+        case "Ubuntu 16.10":
+            "ubuntu1610"
+        case "Ubuntu 18.04":
+            "ubuntu1804"
+        case "Ubuntu 20.04":
+            "ubuntu2004"
+        case "Amazon Linux 2":
+            "amazonlinux2"
+        case "CentOS 8":
+            "centos8"
+        case "CentOS 7":
+            "centos7"
+        case "Windows 10":
+            "win10"
+        case "Ubuntu 22.04":
+            "ubuntu2204"
+        case "Red Hat Universal Base Image 9":
+            "ubi9"
+        case "Ubuntu 23.10":
+            "ubuntu2310"
+        case "Ubuntu 24.04":
+            "ubuntu2404"
+        case "Debian 12":
+            "debian12"
+        case "Fedora 39":
+            "fedora39"
+        default:
+            ""
+        }
+    }
+}
+
+public struct SwiftOrgRelease: Codable {
+    var name: String
+    var platforms: [SwiftOrgPlatform]
+
+    var stableName: String {
+        let components = self.name.components(separatedBy: ".")
+        if components.count == 2 {
+            return self.name + ".0"
+        } else {
+            return self.name
+        }
+    }
+}
+
+public struct SwiftOrgSnapshotList: Codable {
+    var aarch64: [SwiftOrgSnapshot]?
+    var x86_64: [SwiftOrgSnapshot]?
+    var universal: [SwiftOrgSnapshot]?
+}
+
+public struct SwiftOrgSnapshot: Codable {
+    var dir: String
+
+    private static let snapshotRegex: Regex<(Substring, Substring?, Substring?, Substring)> =
+        try! Regex("swift(?:-(\\d+)\\.(\\d+))?-DEVELOPMENT-SNAPSHOT-(\\d{4}-\\d{2}-\\d{2})")
+
+    internal func parseSnapshot() throws -> ToolchainVersion.Snapshot? {
+        guard let match = try? Self.snapshotRegex.firstMatch(in: self.dir) else {
+            return nil
+        }
+
+        let branch: ToolchainVersion.Snapshot.Branch
+        if let majorString = match.output.1, let minorString = match.output.2 {
+            guard let major = Int(majorString), let minor = Int(minorString) else {
+                throw Error(message: "malformatted release branch: \"\(majorString).\(minorString)\"")
+            }
+            branch = .release(major: major, minor: minor)
+        } else {
+            branch = .main
+        }
+
+        return ToolchainVersion.Snapshot(branch: branch, date: String(match.output.3))
+    }
+}
+
 /// HTTPClient wrapper used for interfacing with various REST APIs and downloading things.
 public struct SwiftlyHTTPClient {
     private struct Response {
@@ -68,14 +162,39 @@ public struct SwiftlyHTTPClient {
 
     /// Return an array of released Swift versions that match the given filter, up to the provided
     /// limit (default unlimited).
-    ///
-    /// TODO: retrieve these directly from swift.org instead of through GitHub.
     public func getReleaseToolchains(
+        platform: PlatformDefinition,
+        arch a: String? = nil,
         limit: Int? = nil,
         filter: ((ToolchainVersion.StableRelease) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.StableRelease] {
-        let filterMap = { (gh: GitHubTag) -> ToolchainVersion.StableRelease? in
-            guard let release = try gh.parseStableRelease() else {
+        let arch = if a == nil {
+#if arch(x86_64)
+            "x86_64"
+#elseif arch(arm64)
+            "aarch64"
+#else
+            #error("Unsupported processor architecture")
+#endif
+        } else {
+            a!
+        }
+
+        let url = "https://swift.org/api/v1/install/releases.json"
+        let swiftOrgReleases: [SwiftOrgRelease] = try await self.getFromJSON(url: url, type: [SwiftOrgRelease].self)
+
+        var swiftOrgFiltered: [ToolchainVersion.StableRelease] = swiftOrgReleases.compactMap { swiftOrgRelease in
+            guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.platformName == platform.name || platform.name == "xcode" }) else {
+                return nil
+            }
+
+            guard swiftOrgPlatform.archs.contains(arch) || platform.name == "xcode" else {
+                return nil
+            }
+
+            guard let version = try? ToolchainVersion(parsing: swiftOrgRelease.stableName),
+                  case let .stable(release) = version
+            else {
                 return nil
             }
 
@@ -88,21 +207,91 @@ public struct SwiftlyHTTPClient {
             return release
         }
 
-        return try await self.mapGitHubTags(limit: limit, filterMap: filterMap) { page in
-            try await self.getReleases(page: page)
+        guard !swiftOrgFiltered.isEmpty else {
+            return []
+        }
+
+        swiftOrgFiltered.sort(by: >)
+
+        return if let limit = limit {
+            Array(swiftOrgFiltered[0..<limit])
+        } else {
+            swiftOrgFiltered
         }
     }
 
     /// Return an array of Swift snapshots that match the given filter, up to the provided
     /// limit (default unlimited).
-    ///
-    /// TODO: retrieve these directly from swift.org instead of through GitHub.
     public func getSnapshotToolchains(
+        platform: PlatformDefinition,
+        arch a: String? = nil,
+        branch: ToolchainVersion.Snapshot.Branch,
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
-        let filter = { (gh: GitHubTag) -> ToolchainVersion.Snapshot? in
-            guard let snapshot = try gh.parseSnapshot() else {
+        // Fall back to using GitHub API's for snapshots on branches older than 6.0
+        if case let .release(major, _) = branch, major < 6 {
+            let filter = { (gh: GitHubTag) -> ToolchainVersion.Snapshot? in
+                guard let snapshot = try gh.parseSnapshot() else {
+                    return nil
+                }
+
+                if let filter {
+                    guard filter(snapshot) else {
+                        return nil
+                    }
+                }
+
+                return snapshot
+            }
+
+            return try await self.mapGitHubTags(limit: limit, filterMap: filter) { page in
+                try await self.getTags(page: page)
+            }
+        }
+
+        let arch = if a == nil {
+#if arch(x86_64)
+            "x86_64"
+#elseif arch(arm64)
+            "aarch64"
+#else
+            #error("Unsupported processor architecture")
+#endif
+        } else {
+            a!
+        }
+
+        let branchLabel = switch branch {
+        case .main:
+            "main"
+        case let .release(major, minor):
+            "\(major).\(minor)"
+        }
+
+        var snapshotToolchains: Set<ToolchainVersion.Snapshot> = []
+
+        let platformName = if platform.name == "xcode" {
+            "macos"
+        } else {
+            platform.name
+        }
+
+        let url = "https://swift.org/api/v1/install/dev/\(branchLabel)/\(platformName).json"
+
+        let swiftOrgSnapshotList: SwiftOrgSnapshotList = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
+        let swiftOrgSnapshots = if platform.name == "xcode" {
+            swiftOrgSnapshotList.universal ?? [SwiftOrgSnapshot]()
+        } else if arch == "aarch64" {
+            swiftOrgSnapshotList.aarch64 ?? [SwiftOrgSnapshot]()
+        } else if arch == "x86_64" {
+            swiftOrgSnapshotList.x86_64 ?? [SwiftOrgSnapshot]()
+        } else {
+            [SwiftOrgSnapshot]()
+        }
+
+        let swiftOrgFiltered: [ToolchainVersion.Snapshot] = swiftOrgSnapshots.compactMap { swiftOrgSnapshot in
+            guard let snapshot = try? swiftOrgSnapshot.parseSnapshot() else {
                 return nil
             }
 
@@ -115,8 +304,19 @@ public struct SwiftlyHTTPClient {
             return snapshot
         }
 
-        return try await self.mapGitHubTags(limit: limit, filterMap: filter) { page in
-            try await self.getTags(page: page)
+        snapshotToolchains.formUnion(Set(swiftOrgFiltered))
+
+        guard !swiftOrgFiltered.isEmpty else {
+            return []
+        }
+
+        var finalSnapshotToolchains = Array(snapshotToolchains)
+        finalSnapshotToolchains.sort(by: >)
+
+        return if let limit = limit {
+            Array(finalSnapshotToolchains[0..<limit])
+        } else {
+            finalSnapshotToolchains
         }
     }
 

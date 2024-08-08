@@ -500,6 +500,19 @@ if [ "$IS_MACOS" == "false" ]; then
 }
 EOF
     )
+else
+    JSON_OUT=$(cat <<EOF
+{
+  "platform": {
+    "name": "xcode",
+    "nameFull": "osx",
+    "namePretty": "macOS"
+  },
+  "installedToolchains": [],
+  "inUse": null
+}
+EOF
+    )
 fi
 
 PROFILE_FILE="$HOME/.profile"
@@ -654,9 +667,7 @@ esac
 
 if [[ "$detected_existing_installation" != "true" || "$overwrite_existing_intallation" == "true" ]]; then
     mkdir -p "$HOME_DIR"
-    if [ "$IS_MACOS" == "false" ]; then
-        echo "$JSON_OUT" > "$HOME_DIR/config.json"
-    fi
+    echo "$JSON_OUT" > "$HOME_DIR/config.json"
 
     # Verify the downloaded executable works. The script will exit if this fails due to errexit.
     SWIFTLY_HOME_DIR="$HOME_DIR" SWIFTLY_BIN_DIR="$BIN_DIR" "$BIN_DIR/swiftly" --version > /dev/null

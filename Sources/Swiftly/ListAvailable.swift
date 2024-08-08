@@ -49,15 +49,15 @@ struct ListAvailable: SwiftlyCommand {
 
         let tc: [ToolchainVersion]
 
-        switch(selector) {
+        switch selector {
         case let .snapshot(branch, _):
             if case let .release(major, _) = branch, major < 6 {
                 throw Error(message: "Listing available snapshots previous to 6.0 is not supported.")
             }
 
-            tc = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map( { ToolchainVersion.snapshot($0) } )
+            tc = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map { ToolchainVersion.snapshot($0) }
         default:
-            tc = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform).map( { ToolchainVersion.stable($0) } )
+            tc = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform).map { ToolchainVersion.stable($0) }
         }
 
         let toolchains = tc.filter { selector?.matches(toolchain: $0) ?? true }

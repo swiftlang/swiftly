@@ -491,23 +491,23 @@ public struct SwiftExecutable {
 
             // Get the commit hash from swift --version, look up the corresponding tag via GitHub, and confirm
             // that it matches the expected version.
-            /*guard
-                let tag: GitHubTag = try await SwiftlyHTTPClient().mapGitHubTags(
-                    limit: 1,
-                    filterMap: { tag in
-                        guard tag.commit!.sha.starts(with: commitHash) else {
-                            return nil
-                        }
-                        return tag
-                    },
-                    fetch: SwiftlyHTTPClient().getTags
-                ).first,
-                let snapshot = try tag.parseSnapshot()
-            else {*/
-                throw SwiftlyTestError(message: "could not find tag matching hash \(commitHash)")
-            //}
+            /* guard
+                 let tag: GitHubTag = try await SwiftlyHTTPClient().mapGitHubTags(
+                     limit: 1,
+                     filterMap: { tag in
+                         guard tag.commit!.sha.starts(with: commitHash) else {
+                             return nil
+                         }
+                         return tag
+                     },
+                     fetch: SwiftlyHTTPClient().getTags
+                 ).first,
+                 let snapshot = try tag.parseSnapshot()
+             else { */
+            throw SwiftlyTestError(message: "could not find tag matching hash \(commitHash)")
+            // }
 
-            //return .snapshot(snapshot)
+            // return .snapshot(snapshot)
         } else if let version = try? ToolchainVersion(parsing: outputString) {
             // This branch is taken if the toolchain in question is mocked.
             return version

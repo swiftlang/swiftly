@@ -46,31 +46,31 @@ final class HTTPClientTests: SwiftlyTests {
     }
 
     func testGetMetdataFromSwiftOrg() async throws {
-        let macOS = PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS")
-        let ubuntu2204 = PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu 22.04", namePretty: "Ubuntu 22.04")
+        let supportedPlatforms = [
+            PlatformDefinition.macOS,
+            PlatformDefinition.ubuntu2204,
+            PlatformDefinition.ubuntu2004,
+            // PlatformDefinition.ubuntu1804,
+            PlatformDefinition.rhel9,
+            PlatformDefinition.amazonlinux2,
+        ]
 
-        // GIVEN: we have a swiftly http client with swift.org metadata capability
-        // WHEN: we ask for the first five macOS releases
-        var releases = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: macOS, limit: 5)
-        // THEN: we get five releases
-        XCTAssertEqual(5, releases.count)
+        for arch in ["x86_64", "aarch64"] {
+            // GIVEN: we have a swiftly http client with swift.org metadata capability
+            for platform in supportedPlatforms {
+                // WHEN: we ask for the first five releases of a supported platform in a supported arch
+                let releases = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: platform, arch: arch, limit: 5)
+                // THEN: we get five releases
+                XCTAssertEqual(5, releases.count)
+            }
 
-        // GIVEN: we have a swiftly http client with swift.org metadata capability
-        // WHEN: we ask for the first five 6.0 snapshots for macOS
-        var snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: macOS, branch: ToolchainVersion.Snapshot.Branch.release(major: 6, minor: 0), limit: 5)
-        // THEN: we get five snapshots
-        XCTAssertEqual(5, snapshots.count)
-
-        // GIVEN: we have a swiftly http client with swift.org metadata capability
-        // WHEN: we ask for the first five ubuntu 2204 releases
-        releases = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: ubuntu2204, limit: 5)
-        // THEN: we get five releases
-        XCTAssertEqual(5, releases.count)
-
-        // GIVEN: we have a swiftly http client with swift.org metadata capability
-        // WHEN: we ask for the first five 6.0 snapshots for ubuntu 22.04
-        snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: ubuntu2204, branch: ToolchainVersion.Snapshot.Branch.release(major: 6, minor: 0), limit: 5)
-        // THEN: we get five snapshots
-        XCTAssertEqual(5, snapshots.count)
+            // GIVEN: we have a swiftly http client with swift.org metadata capability
+            for platform in supportedPlatforms {
+                // WHEN: we ask for the first five 6.0 snapshots for a supported platform
+                let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: arch, branch: ToolchainVersion.Snapshot.Branch.release(major: 6, minor: 0), limit: 5)
+                // THEN: we get five snapshots
+                XCTAssertEqual(5, snapshots.count)
+            }
+        }
     }
 }

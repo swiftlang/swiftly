@@ -34,59 +34,55 @@ struct SwiftOrgPlatform: Codable {
     var archs: [String]
 
     var platformName: String {
-        get {
-            switch(name) {
-            case "Ubuntu 14.04":
-                "ubuntu1404"
-            case "Ubuntu 15.10":
-                "ubuntu1510"
-            case "Ubuntu 16.04":
-                "ubuntu1604"
-            case "Ubuntu 16.10":
-                "ubuntu1610"
-            case "Ubuntu 18.04":
-                "ubuntu1804"
-            case "Ubuntu 20.04":
-                "ubuntu2004"
-            case "Amazon Linux 2":
-                "amazonlinux2"
-            case "CentOS 8":
-                "centos8"
-            case "CentOS 7":
-                "centos7"
-            case "Windows 10":
-                "win10"
-            case "Ubuntu 22.04":
-                "ubuntu2204"
-            case "Red Hat Universal Base Image 9":
-                "ubi9"
-            case "Ubuntu 23.10":
-                "ubuntu2310"
-            case "Ubuntu 24.04":
-                "ubuntu2404"
-            case "Debian 12":
-                "debian12"
-            case "Fedora 39":
-                "fedora39"
-            default:
-                ""
-            }
+        switch self.name {
+        case "Ubuntu 14.04":
+            "ubuntu1404"
+        case "Ubuntu 15.10":
+            "ubuntu1510"
+        case "Ubuntu 16.04":
+            "ubuntu1604"
+        case "Ubuntu 16.10":
+            "ubuntu1610"
+        case "Ubuntu 18.04":
+            "ubuntu1804"
+        case "Ubuntu 20.04":
+            "ubuntu2004"
+        case "Amazon Linux 2":
+            "amazonlinux2"
+        case "CentOS 8":
+            "centos8"
+        case "CentOS 7":
+            "centos7"
+        case "Windows 10":
+            "win10"
+        case "Ubuntu 22.04":
+            "ubuntu2204"
+        case "Red Hat Universal Base Image 9":
+            "ubi9"
+        case "Ubuntu 23.10":
+            "ubuntu2310"
+        case "Ubuntu 24.04":
+            "ubuntu2404"
+        case "Debian 12":
+            "debian12"
+        case "Fedora 39":
+            "fedora39"
+        default:
+            ""
         }
     }
 }
 
-public struct SwiftOrgRelease : Codable {
+public struct SwiftOrgRelease: Codable {
     var name: String
     var platforms: [SwiftOrgPlatform]
 
     var stableName: String {
-        get {
-            let components = name.components(separatedBy: ".")
-            if components.count == 2 {
-                return name + ".0"
-            } else {
-                return name
-            }
+        let components = self.name.components(separatedBy: ".")
+        if components.count == 2 {
+            return self.name + ".0"
+        } else {
+            return self.name
         }
     }
 }
@@ -176,22 +172,27 @@ public struct SwiftlyHTTPClient {
     /// limit (default unlimited).
     public func getReleaseToolchains(
         platform: PlatformDefinition,
+        arch a: String? = nil,
         limit: Int? = nil,
         filter: ((ToolchainVersion.StableRelease) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.StableRelease] {
-        #if arch(x86_64)
-        let arch = "x86_64"
-        #elseif arch(arm64)
-        let arch = "aarch64"
-        #else
-        #error("Unsupported processor architecture")
-        #endif
+        let arch = if a == nil {
+#if arch(x86_64)
+            "x86_64"
+#elseif arch(arm64)
+            "aarch64"
+#else
+            #error("Unsupported processor architecture")
+#endif
+        } else {
+            a!
+        }
 
         let url = "https://swift.org/api/v1/install/releases.json"
         let swiftOrgReleases: [SwiftOrgRelease] = try await self.getFromJSON(url: url, type: [SwiftOrgRelease].self)
 
-        var swiftOrgFiltered: [ToolchainVersion.StableRelease] = swiftOrgReleases.compactMap( { swiftOrgRelease in
-            guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.platformName == platform.name || platform.name == "xcode"}) else {
+        var swiftOrgFiltered: [ToolchainVersion.StableRelease] = swiftOrgReleases.compactMap { swiftOrgRelease in
+            guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.platformName == platform.name || platform.name == "xcode" }) else {
                 return nil
             }
 
@@ -200,7 +201,8 @@ public struct SwiftlyHTTPClient {
             }
 
             guard let version = try? ToolchainVersion(parsing: swiftOrgRelease.stableName),
-                case let .stable(release) = version else {
+                  case let .stable(release) = version
+            else {
                 return nil
             }
 
@@ -211,7 +213,7 @@ public struct SwiftlyHTTPClient {
             }
 
             return release
-        })
+        }
 
         guard !swiftOrgFiltered.isEmpty else {
             return []
@@ -220,7 +222,7 @@ public struct SwiftlyHTTPClient {
         swiftOrgFiltered.sort(by: >)
 
         return if let limit = limit {
-            Array(swiftOrgFiltered[0 ..< limit])
+            Array(swiftOrgFiltered[0..<limit])
         } else {
             swiftOrgFiltered
         }
@@ -230,19 +232,24 @@ public struct SwiftlyHTTPClient {
     /// limit (default unlimited).
     public func getSnapshotToolchains(
         platform: PlatformDefinition,
+        arch a: String? = nil,
         branch: ToolchainVersion.Snapshot.Branch,
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
-        #if arch(x86_64)
-        let arch = "x86_64"
-        #elseif arch(arm64)
-        let arch = "aarch64"
-        #else
-        fatalError("Unsupported processor architecture")
-        #endif
+        let arch = if a == nil {
+#if arch(x86_64)
+            "x86_64"
+#elseif arch(arm64)
+            "aarch64"
+#else
+            #error("Unsupported processor architecture")
+#endif
+        } else {
+            a!
+        }
 
-        // TODO use the GitHub API's for older snapshot toolchains on older release branches than 6.0
+        // TODO: use the GitHub API's for older snapshot toolchains on older release branches than 6.0
         let branchLabel = switch branch {
         case .main:
             "main"
@@ -262,16 +269,16 @@ public struct SwiftlyHTTPClient {
 
         let swiftOrgSnapshotList: SwiftOrgSnapshotList = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
         let swiftOrgSnapshots = if platform.name == "xcode" {
-            swiftOrgSnapshotList.universal ?? Array<SwiftOrgSnapshot>()
+            swiftOrgSnapshotList.universal ?? [SwiftOrgSnapshot]()
         } else if arch == "aarch64" {
-            swiftOrgSnapshotList.aarch64 ?? Array<SwiftOrgSnapshot>()
+            swiftOrgSnapshotList.aarch64 ?? [SwiftOrgSnapshot]()
         } else if arch == "x86_64" {
-            swiftOrgSnapshotList.x86_64 ?? Array<SwiftOrgSnapshot>()
+            swiftOrgSnapshotList.x86_64 ?? [SwiftOrgSnapshot]()
         } else {
-            Array<SwiftOrgSnapshot>()
+            [SwiftOrgSnapshot]()
         }
 
-        let swiftOrgFiltered: [ToolchainVersion.Snapshot] = swiftOrgSnapshots.compactMap( { swiftOrgSnapshot in
+        let swiftOrgFiltered: [ToolchainVersion.Snapshot] = swiftOrgSnapshots.compactMap { swiftOrgSnapshot in
             guard let snapshot = try? swiftOrgSnapshot.parseSnapshot() else {
                 return nil
             }
@@ -283,7 +290,7 @@ public struct SwiftlyHTTPClient {
             }
 
             return snapshot
-        })
+        }
 
         snapshotToolchains.formUnion(Set(swiftOrgFiltered))
 
@@ -295,7 +302,7 @@ public struct SwiftlyHTTPClient {
         finalSnapshotToolchains.sort(by: >)
 
         return if let limit = limit {
-            Array(finalSnapshotToolchains[0 ..< limit])
+            Array(finalSnapshotToolchains[0..<limit])
         } else {
             finalSnapshotToolchains
         }

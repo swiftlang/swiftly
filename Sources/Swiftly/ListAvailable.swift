@@ -28,9 +28,9 @@ struct ListAvailable: SwiftlyCommand {
         The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
 
             $ swiftly list-available main-snapshot
-            $ swiftly list-available 5.7-snapshot
+            $ swiftly list-available 6.0-snapshot
 
-        Note that listing available snapshots is currently unsupported. It will be introduced in a future release.
+        Note that listing available snapshots before 6.0 is unsupported.
         """
     ))
     var toolchainSelector: String?
@@ -45,18 +45,22 @@ struct ListAvailable: SwiftlyCommand {
             try ToolchainSelector(parsing: input)
         }
 
-        if let selector {
-            guard !selector.isSnapshotSelector() else {
-                SwiftlyCore.print("Listing available snapshots is not currently supported.")
-                return
-            }
-        }
-
         let config = try Config.load()
 
-        let toolchains = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform)
-            .map(ToolchainVersion.stable)
-            .filter { selector?.matches(toolchain: $0) ?? true }
+        let tc: [ToolchainVersion]
+
+        switch(selector) {
+        case let .snapshot(branch, _):
+            if case let .release(major, _) = branch, major < 6 {
+                throw Error(message: "Listing available snapshots previous to 6.0 is not supported.")
+            }
+
+            tc = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map( { ToolchainVersion.snapshot($0) } )
+        default:
+            tc = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform).map( { ToolchainVersion.stable($0) } )
+        }
+
+        let toolchains = tc.filter { selector?.matches(toolchain: $0) ?? true }
 
         let installedToolchains = Set(config.listInstalledToolchains(selector: selector))
         let activeToolchain = config.inUse
@@ -95,18 +99,11 @@ struct ListAvailable: SwiftlyCommand {
                 printToolchain(toolchain)
             }
         } else {
-            print("Available release toolchains")
+            print("Available toolchains")
             print("----------------------------")
-            for toolchain in toolchains where toolchain.isStableRelease() {
+            for toolchain in toolchains {
                 printToolchain(toolchain)
             }
-
-            // print("")
-            // print("Available snapshot toolchains")
-            // print("-----------------------------")
-            // for toolchain in toolchains where toolchain.isSnapshot() {
-            //     printToolchain(toolchain)
-            // }
         }
     }
 }

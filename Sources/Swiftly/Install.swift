@@ -46,16 +46,6 @@ struct Install: SwiftlyCommand {
     @Flag(name: .shortAndLong, help: "Mark the newly installed toolchain as in-use.")
     var use: Bool = false
 
-    @Option(help: ArgumentHelp(
-        "A GitHub authentiation token to use for any GitHub API requests.",
-        discussion: """
-
-        This is useful to avoid GitHub's low rate limits. If an installation
-        fails with an \"unauthorized\" status code, it likely means the rate limit has been hit.
-        """
-    ))
-    var token: String?
-
     @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
@@ -69,16 +59,15 @@ struct Install: SwiftlyCommand {
     var postInstallFile: String?
 
     private enum CodingKeys: String, CodingKey {
-        case version, token, use, verify, postInstallFile
+        case version, use, verify, postInstallFile
     }
 
     mutating func run() async throws {
         try validateSwiftly()
 
         let selector = try ToolchainSelector(parsing: self.version)
-        SwiftlyCore.httpClient.githubToken = self.token
-        let toolchainVersion = try await self.resolve(selector: selector)
         var config = try Config.load()
+        let toolchainVersion = try await self.resolve(config: config, selector: selector)
         let postInstallScript = try await Self.execute(
             version: toolchainVersion,
             &config,
@@ -227,12 +216,12 @@ struct Install: SwiftlyCommand {
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
     /// TODO: update this to use an official swift.org API
-    func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {
+    func resolve(config: Config, selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:
             SwiftlyCore.print("Fetching the latest stable Swift release...")
 
-            guard let release = try await SwiftlyCore.httpClient.getReleaseToolchains(limit: 1).first else {
+            guard let release = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform, limit: 1).first else {
                 throw Error(message: "couldn't get latest releases")
             }
             return .stable(release)
@@ -251,7 +240,7 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest stable Swift \(major).\(minor) release...")
             // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
-            let toolchain = try await SwiftlyCore.httpClient.getReleaseToolchains(limit: 1) { release in
+            let toolchain = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform, limit: 1) { release in
                 release.major == major && release.minor == minor
             }.first
 
@@ -269,7 +258,7 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest \(branch) branch snapshot...")
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.
-            let snapshot = try await SwiftlyCore.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
+            let snapshot = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch, limit: 1) { snapshot in
                 snapshot.branch == branch
             }.first
 

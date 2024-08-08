@@ -90,7 +90,7 @@ struct Update: SwiftlyCommand {
             return
         }
 
-        guard let newToolchain = try await self.lookupNewToolchain(parameters) else {
+        guard let newToolchain = try await self.lookupNewToolchain(config, parameters) else {
             SwiftlyCore.print("\(parameters.oldToolchain) is already up to date")
             return
         }
@@ -181,10 +181,10 @@ struct Update: SwiftlyCommand {
 
     /// Tries to find a toolchain version that meets the provided parameters, if one exists.
     /// This does not download the toolchain, but it does query the GitHub API to find the suitable toolchain.
-    private func lookupNewToolchain(_ bounds: UpdateParameters) async throws -> ToolchainVersion? {
+    private func lookupNewToolchain(_ config: Config, _ bounds: UpdateParameters) async throws -> ToolchainVersion? {
         switch bounds {
         case let .stable(old, range):
-            return try await SwiftlyCore.httpClient.getReleaseToolchains(limit: 1) { release in
+            return try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform, limit: 1) { release in
                 switch range {
                 case .latest:
                     return release > old
@@ -195,7 +195,7 @@ struct Update: SwiftlyCommand {
                 }
             }.first.map(ToolchainVersion.stable)
         case let .snapshot(old):
-            return try await SwiftlyCore.httpClient.getSnapshotToolchains(limit: 1) { snapshot in
+            return try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: old.branch, limit: 1) { snapshot in
                 snapshot.branch == old.branch && snapshot.date > old.date
             }.first.map(ToolchainVersion.snapshot)
         }

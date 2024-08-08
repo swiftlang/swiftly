@@ -52,11 +52,11 @@ struct ListAvailable: SwiftlyCommand {
             }
         }
 
-        let toolchains = try await SwiftlyCore.httpClient.getReleaseToolchains()
+        let config = try Config.load()
+
+        let toolchains = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform)
             .map(ToolchainVersion.stable)
             .filter { selector?.matches(toolchain: $0) ?? true }
-
-        let config = try Config.load()
 
         let installedToolchains = Set(config.listInstalledToolchains(selector: selector))
         let activeToolchain = config.inUse

@@ -46,6 +46,15 @@ struct Install: SwiftlyCommand {
     @Flag(name: .shortAndLong, help: "Mark the newly installed toolchain as in-use.")
     var use: Bool = false
 
+    @Option(help: ArgumentHelp(
+        "A GitHub authentication token to use for any GitHub API requests.",
+        discussion: """
+        This is useful to avoid GitHub's low rate limits. If an installation
+        fails with an \"unauthorized\" status code, it likely means the rate limit has been hit.
+        """
+    ))
+    var token: String?
+
     @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
@@ -59,7 +68,7 @@ struct Install: SwiftlyCommand {
     var postInstallFile: String?
 
     private enum CodingKeys: String, CodingKey {
-        case version, use, verify, postInstallFile
+        case version, token, use, verify, postInstallFile
     }
 
     mutating func run() async throws {
@@ -67,6 +76,7 @@ struct Install: SwiftlyCommand {
 
         let selector = try ToolchainSelector(parsing: self.version)
         var config = try Config.load()
+        SwiftlyCore.httpClient.githubToken = self.token
         let toolchainVersion = try await self.resolve(config: config, selector: selector)
         let postInstallScript = try await Self.execute(
             version: toolchainVersion,

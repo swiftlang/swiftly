@@ -572,7 +572,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         }
     }
 
-   private func makeGitHubTagsAPIResponse(from url: URL) throws -> HTTPClientResponse {
+    private func makeGitHubTagsAPIResponse(from url: URL) throws -> HTTPClientResponse {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             throw SwiftlyTestError(message: "unexpected github url: \(url)")
         }

@@ -6,7 +6,7 @@ import PackageDescription
 // TODO: we have to hard-code the default requirement of swiftly on libz here until we have package traits to control this
 var libTarget: Target = .target(
     name: "CLibArchive",
-    dependencies: ["CLibZ"],
+    dependencies: ["zlib"],
     path: "libarchive",
     exclude: ["test"],
     publicHeadersPath: ".",

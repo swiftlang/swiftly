@@ -1,0 +1,5 @@
+module pcre2posix [system] {
+    link "pcre2posix"
+    header "pcre2posix.h"
+    export *
+}

@@ -1,0 +1,167 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  MacOS:
+    runs-on: macos-13
+    strategy:
+      matrix:
+        bs: [autotools, cmake]
+    steps:
+    - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+    - name: Install dependencies
+      run: ./build/ci/github_actions/macos.sh prepare
+    - name: Autogen
+      run: ./build/ci/build.sh -a autogen
+      env:
+        BS: ${{ matrix.bs }}
+    - name: Configure
+      run: ./build/ci/build.sh -a configure
+      env:
+        BS: ${{ matrix.bs }}
+    - name: Build
+      run: ./build/ci/build.sh -a build
+      env:
+        BS: ${{ matrix.bs }}
+        MAKE_ARGS: -j
+    - name: Test
+      run: ./build/ci/build.sh -a test
+      env:
+        BS: ${{ matrix.bs }}
+        SKIP_OPEN_FD_ERR_TEST: 1
+        IGNORE_TRAVERSALS_TEST4: 1
+        MAKE_ARGS: -j
+        CTEST_OUTPUT_ON_FAILURE: ON
+    - name: Install
+      run: ./build/ci/build.sh -a install
+      env:
+        BS: ${{ matrix.bs }}
+        MAKE_ARGS: -j
+    - name: Artifact
+      run: ./build/ci/build.sh -a artifact
+      env:
+        BS: ${{ matrix.bs }}
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      with:
+        name: libarchive-macos-${{ matrix.bs }}-${{ github.sha }}
+        path: libarchive.tar.xz
+
+  Ubuntu:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        bs: [autotools, cmake]
+        crypto: [mbedtls, nettle, openssl]
+    steps:
+    - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+    - name: Update apt cache
+      run: sudo apt-get update
+    - name: Install dependencies
+      run: sudo apt-get install -y autoconf automake build-essential cmake git libssl-dev nettle-dev libmbedtls-dev libacl1-dev libbz2-dev liblzma-dev liblz4-dev libzstd-dev lzop pkg-config zlib1g-dev
+    - name: Autogen
+      run: ./build/ci/build.sh -a autogen
+      env:
+        BS: ${{ matrix.bs }}
+    - name: Configure
+      run: ./build/ci/build.sh -a configure
+      env:
+        BS: ${{ matrix.bs }}
+        CRYPTO: ${{ matrix.crypto }}
+    - name: Build
+      run: ./build/ci/build.sh -a build
+      env:
+        BS: ${{ matrix.bs }}
+        MAKE_ARGS: -j
+    - name: Test
+      run: ./build/ci/build.sh -a test
+      env:
+        BS: ${{ matrix.bs }}
+        SKIP_OPEN_FD_ERR_TEST: 1
+        MAKE_ARGS: -j
+        CTEST_OUTPUT_ON_FAILURE: ON
+    - name: Install
+      run: ./build/ci/build.sh -a install
+      env:
+        BS: ${{ matrix.bs }}
+    - name: Artifact
+      run: ./build/ci/build.sh -a artifact
+      env:
+        BS: ${{ matrix.bs }}
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      with:
+        name: libarchive-ubuntu-${{ matrix.bs }}-${{ matrix.crypto }}-${{ github.sha }}
+        path: libarchive.tar.xz
+  Ubuntu-distcheck:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+    - name: Update package definitions
+      run: sudo apt-get update
+    - name: Install dependencies
+      run: sudo apt-get install -y autoconf automake bsdmainutils build-essential cmake ghostscript git groff libssl-dev libacl1-dev libbz2-dev liblzma-dev liblz4-dev libzstd-dev lzop pkg-config zip zlib1g-dev
+    - name: Autogen
+      run: ./build/ci/build.sh -a autogen
+    - name: Configure
+      run: ./build/ci/build.sh -a configure
+    - name: Distcheck
+      run: ./build/ci/build.sh -a distcheck
+      env:
+        SKIP_OPEN_FD_ERR_TEST: 1
+    - name: Dist-Artifact
+      run: ./build/ci/build.sh -a dist-artifact
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      with:
+        name: libarchive-${{ github.sha }}
+        path: libarchive-dist.tar
+
+  Windows:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        be: [mingw-gcc, msvc]
+    steps:
+    - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+    - name: Install mingw
+      if:  ${{ matrix.be=='mingw-gcc' }}
+      run: choco install mingw
+      shell: cmd
+    - name: Install library dependencies
+      run: ./build/ci/github_actions/ci.cmd deplibs
+      shell: cmd
+      env:
+        BE: ${{ matrix.be }}
+    - name: Configure
+      run: ./build/ci/github_actions/ci.cmd configure
+      shell: cmd
+      env:
+        BE: ${{ matrix.be }}
+    - name: Build
+      run: ./build/ci/github_actions/ci.cmd build
+      shell: cmd
+      env:
+        BE: ${{ matrix.be }}
+    - name: Test
+      run: ./build/ci/github_actions/ci.cmd test
+      shell: cmd
+      env:
+        BE: ${{ matrix.be }}
+        CTEST_OUTPUT_ON_FAILURE: ON
+    - name: Install
+      run: ./build/ci/github_actions/ci.cmd install
+      shell: cmd
+      env:
+        BE: ${{ matrix.be }}
+    - name: Artifact
+      run: ./build/ci/github_actions/ci.cmd artifact
+      shell: cmd
+      env:
+        BE: ${{ matrix.be }}
+    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      with:
+        name: libarchive-windows-${{ matrix.be }}-${{ github.sha }}
+        path: libarchive.zip

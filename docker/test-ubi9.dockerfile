@@ -7,12 +7,7 @@ ARG ubuntu_version
 # dependencies
 RUN yum install -y --allowerasing \
     curl \
-    gcc \
-    gcc-c++ \
-    make \
     gpg
-COPY ./scripts/install-libarchive.sh /
-RUN /install-libarchive.sh
 
 RUN curl -L https://swift.org/keys/all-keys.asc | gpg --import
 

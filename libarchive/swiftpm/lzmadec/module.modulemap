@@ -1,0 +1,4 @@
+module lzmadec [system] {
+    link "lzmadec"
+    export *
+}

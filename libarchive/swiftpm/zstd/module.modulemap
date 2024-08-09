@@ -1,4 +1,5 @@
-module CLibZStd [system] {
+module zstd [system] {
     link "zstd"
+    header "zstd.h"
     export *
 }

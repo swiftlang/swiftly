@@ -1,4 +1,6 @@
-module CLibZ [system] {
-    link "z"
+module zlib [system] {
+    header "zconf.h"
+    header "zlib.h"
     export *
+    link "z"
 }

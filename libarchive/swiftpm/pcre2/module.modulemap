@@ -1,4 +1,5 @@
-module CLibPCRE2 [system] {
+module pcre2 [system] {
     link "pcre2"
+    header "pcre2.h"
     export *
 }

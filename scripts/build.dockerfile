@@ -5,9 +5,7 @@ FROM swift:5.10-amazonlinux2
 
 # swiftly build depdenencies
 RUN yum install -y \
-    curl \
-    gcc \
-    make
+    curl
 
 COPY . /tmp/swiftly
 WORKDIR /tmp/swiftly

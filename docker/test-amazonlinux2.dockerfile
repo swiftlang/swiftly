@@ -6,6 +6,7 @@ ARG ubuntu_version
 
 # dependencies
 RUN yum install -y \
+    curl \
     gpg
 
 RUN curl -L https://swift.org/keys/all-keys.asc | gpg --import

@@ -12,8 +12,6 @@ RUN yum install -y \
 COPY . /tmp/swiftly
 WORKDIR /tmp/swiftly
 
-RUN ./scripts/install-libarchive.sh
-
 RUN swift build \
       --static-swift-stdlib \
       --configuration release

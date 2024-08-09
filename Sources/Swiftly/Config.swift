@@ -6,32 +6,10 @@ import SwiftlyCore
 ///
 /// TODO: implement cache
 public struct Config: Codable, Equatable {
-    public struct PlatformDefinition: Codable, Equatable {
-        /// The name of the platform as it is used in the Swift download URLs.
-        /// For instance, for Ubuntu 16.04 this would return “ubuntu1604”.
-        /// For macOS / Xcode, this would return “xcode”.
-        public let name: String
-
-        /// The full name of the platform as it is used in the Swift download URLs.
-        /// For instance, for Ubuntu 16.04 this would return “ubuntu16.04”.
-        public let nameFull: String
-
-        /// A human-readable / pretty-printed version of the platform’s name, used for terminal
-        /// output and logging.
-        /// For example, “Ubuntu 18.04” would be returned on Ubuntu 18.04.
-        public let namePretty: String
-
-        /// The CPU architecture of the platform. If omitted, assumed to be x86_64.
-        public let architecture: String?
-
-        public func getArchitecture() -> String {
-            self.architecture ?? "x86_64"
-        }
-    }
-
     public var inUse: ToolchainVersion?
     public var installedToolchains: Set<ToolchainVersion>
     public var platform: PlatformDefinition
+    public var version: SwiftlyVersion?
 
     internal init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition) {
         self.inUse = inUse
@@ -49,12 +27,18 @@ public struct Config: Codable, Equatable {
     public static func load() throws -> Config {
         do {
             let data = try Data(contentsOf: Swiftly.currentPlatform.swiftlyConfigFile)
-            return try JSONDecoder().decode(Config.self, from: data)
+            var config = try JSONDecoder().decode(Config.self, from: data)
+            if config.version == nil {
+                // Assume that the version of swiftly is 0.3.0 because that is the last
+                // unversioned release.
+                config.version = try? SwiftlyVersion(parsing: "0.3.0")
+            }
+            return config
         } catch {
             let msg = """
-            Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile.path) due to
-            error: \"\(error)\".
-            To use swiftly, modify the configuration file to fix the issue or perform a clean installation.
+            Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile.path).
+
+            To begin using swiftly you can install it: '\(CommandLine.arguments[0]) init'.
             """
             throw Error(message: msg)
         }

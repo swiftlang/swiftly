@@ -11,6 +11,11 @@ To download swiftly and install Swift, run the following in your terminal, then 
 curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
 ```
 
+Alternatively, you can download the swiftly binary and it can install itself:
+```
+swiftly init
+```
+
 ### Basic usage
 
 ```

@@ -59,21 +59,47 @@ struct Install: SwiftlyCommand {
     @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
+    @Option(help: ArgumentHelp(
+        "A file path to a location for a post installation script",
+        discussion: """
+        If the toolchain that is installed has extra post installation steps they they will be
+        written to this file as commands that can be run after the installation.
+        """
+    ))
+    var postInstallFile: String?
+
     private enum CodingKeys: String, CodingKey {
-        case version, token, use, verify
+        case version, token, use, verify, postInstallFile
     }
 
     mutating func run() async throws {
+        try validateSwiftly()
+
         let selector = try ToolchainSelector(parsing: self.version)
         SwiftlyCore.httpClient.githubToken = self.token
         let toolchainVersion = try await self.resolve(selector: selector)
         var config = try Config.load()
-        try await Self.execute(
+        let postInstallScript = try await Self.execute(
             version: toolchainVersion,
             &config,
             useInstalledToolchain: self.use,
             verifySignature: self.verify
         )
+
+        if let postInstallScript = postInstallScript {
+            guard let postInstallFile = self.postInstallFile else {
+                throw Error(message: """
+
+                There are some system dependencies that should be installed before using this toolchain.
+                You can run the following script as the system administrator (e.g. root) to prepare
+                your system:
+
+                \(postInstallScript)
+                """)
+            }
+
+            try Data(postInstallScript.utf8).write(to: URL(fileURLWithPath: postInstallFile), options: .atomic)
+        }
     }
 
     internal static func execute(
@@ -81,14 +107,16 @@ struct Install: SwiftlyCommand {
         _ config: inout Config,
         useInstalledToolchain: Bool,
         verifySignature: Bool
-    ) async throws {
+    ) async throws -> String? {
         guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed, exiting.")
-            return
+            return nil
         }
 
-        // Ensure the system is set up correctly to install a toolchain before downloading it.
-        try Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(requireSignatureValidation: verifySignature)
+        // Ensure the system is set up correctly before downloading it. Problems that prevent installation
+        //  will throw, while problems that prevent use of the toolchain will be written out as a post install
+        //  script for the user to run afterwards.
+        let postInstallScript = try await Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(httpClient: SwiftlyCore.httpClient, platformName: config.platform.name, version: version, requireSignatureValidation: verifySignature)
 
         SwiftlyCore.print("Installing \(version)")
 
@@ -102,10 +130,11 @@ struct Install: SwiftlyCommand {
 
         var platformString = config.platform.name
         var platformFullString = config.platform.nameFull
-        if let arch = config.platform.architecture {
-            platformString += "-\(arch)"
-            platformFullString += "-\(arch)"
-        }
+
+#if !os(macOS) && arch(arm64)
+        platformString += "-aarch64"
+        platformFullString += "-aarch64"
+#endif
 
         switch version {
         case let .stable(stableVersion):
@@ -164,9 +193,8 @@ struct Install: SwiftlyCommand {
                     )
                 }
             )
-        } catch _ as SwiftlyHTTPClient.DownloadNotFoundError {
-            SwiftlyCore.print("\(version) does not exist, exiting")
-            return
+        } catch let notFound as SwiftlyHTTPClient.DownloadNotFoundError {
+            throw Error(message: "\(version) does not exist at URL \(notFound.url), exiting")
         } catch {
             animation.complete(success: false)
             throw error
@@ -194,6 +222,7 @@ struct Install: SwiftlyCommand {
         }
 
         SwiftlyCore.print("\(version) installed successfully!")
+        return postInstallScript
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.

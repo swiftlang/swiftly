@@ -5,7 +5,7 @@ import XCTest
 
 final class PlatformTests: SwiftlyTests {
     func mockToolchainDownload(version: String) async throws -> (URL, ToolchainVersion) {
-        let mockDownloader = MockToolchainDownloader(executables: ["swift"])
+        let mockDownloader = MockToolchainDownloader(executables: ["swift"], delegate: SwiftlyCore.httpRequestExecutor)
         let version = try! ToolchainVersion(parsing: version)
         let ext = Swiftly.currentPlatform.toolchainFileExtension
         let tmpDir = Swiftly.currentPlatform.getTempFilePath()

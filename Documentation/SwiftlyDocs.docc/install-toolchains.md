@@ -10,6 +10,8 @@ The easiest way to install a swift toolchain is to select the latest stable rele
 $ swiftly install latest
 ```
 
+> Note: After you install a toolchain there may be certain system dependencies that are needed. Swiftly will provide instructions.
+
 If this is the only toolchain that is installed then swiftly will automatically "use" it so that when you run swift (or any other toolchain command) it will be this version.
 
 ```

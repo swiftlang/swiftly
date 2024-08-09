@@ -34,10 +34,10 @@ let package = Package(
             name: "bsdcat",
             targets: ["bsdcat"]
         ),
-        /*.executable(
-            name: "bsdcpio",
-            targets: ["bsdcpio"]
-        ),*/
+        /* .executable(
+                name: "bsdcpio",
+                targets: ["bsdcpio"]
+            ), */
         .executable(
             name: "bsdtar",
             targets: ["bsdtar"]
@@ -69,13 +69,13 @@ let package = Package(
             exclude: ["test"],
             cSettings: [.define("PLATFORM_CONFIG_H", to: "\"config_swiftpm.h\"")]
         ),
-        /*.executableTarget(
-            name: "bsdcpio",
-            dependencies: ["CLibArchive", "CLibArchiveFE"],
-            path: "cpio",
-            exclude: ["test"],
-            cSettings: [.define("PLATFORM_CONFIG_H", to: "\"config_swiftpm.h\"")]
-        ),*/
+        /* .executableTarget(
+                name: "bsdcpio",
+                dependencies: ["CLibArchive", "CLibArchiveFE"],
+                path: "cpio",
+                exclude: ["test"],
+                cSettings: [.define("PLATFORM_CONFIG_H", to: "\"config_swiftpm.h\"")]
+            ), */
         .executableTarget(
             name: "bsdtar",
             dependencies: ["CLibArchive", "CLibArchiveFE"],
@@ -95,7 +95,7 @@ let package = Package(
 
 // This is a list of system libraries that can be enabled in libarchive to add extra functionality using the specified environment variable in swift build
 let libs = [
-    //(envVar: "LIBARCHIVE_ENABLE_Z", define: "HAVE_LIBZ", libName: "zlib", moduleLoc: "swiftpm/zlib", pkgConfig: "zlib", aptProvider: "zlib1g-dev")
+    // (envVar: "LIBARCHIVE_ENABLE_Z", define: "HAVE_LIBZ", libName: "zlib", moduleLoc: "swiftpm/zlib", pkgConfig: "zlib", aptProvider: "zlib1g-dev")
     (envVar: "LIBARCHIVE_ENABLE_LIBLZMA", define: "HAVE_LIBLZMA", libName: "lzma", moduleLoc: "swiftpm/lzma", pkgConfig: "liblzma", aptProvider: "liblzma-dev"),
     (envVar: "LIBARCHIVE_ENABLE_LIBZSTD", define: "HAVE_LIBZSTD", libName: "zstd", moduleLoc: "swiftpm/zstd", pkgConfig: "libzstd", aptProvider: "libzstd-dev"),
     (envVar: "LIBARCHIVE_ENABLE_LIBACL", define: "HAVE_LIBACL", libName: "acl", moduleLoc: "swiftpm/acl", pkgConfig: "libacl", aptProvider: "libacl1-dev"),
@@ -111,8 +111,8 @@ let libs = [
     (envVar: "LIBARCHIVE_ENABLE_LIBLZO2", define: "HAVE_LIBLZO2", libName: "lzo2", moduleLoc: "swiftpm/lzo2", pkgConfig: "liblzo2", aptProvider: "liblzo2-dev"),
     (envVar: "LIBARCHIVE_ENABLE_LIBMBEDCRYPTO", define: "HAVE_LIBMBEDCRYPTO", libName: "mbedcrypto", moduleLoc: "swiftpm/mbedcrypto", pkgConfig: "libmbedcrypto", aptProvider: "libmbedcrypto7"),
     (envVar: "LIBARCHIVE_ENABLE_LIBNETTLE", define: "HAVE_LIBNETTLE", libName: "nettle", moduleLoc: "swiftpm/nettle", pkgConfig: "nettle", aptProvider: "nettle-dev"),
-    //(envVar: "LIBARCHIVE_ENABLE_LIBPCRE", define: "HAVE_LIBPCRE", libName: "pcre", moduleLoc: "swiftpm/pcre", pkgConfig: "libpcre", aptProvider: "libpcre-dev"),
-    //(envVar: "LIBARCHIVE_ENABLE_LIBPCREPOSIX", define: "HAVE_LIBPCREPOSIX", libName: "pcreposix", moduleLoc: "swiftpm/pcreposix", pkgConfig: "libpcre-posix", aptProvider: "libpcre-dev"),
+    // (envVar: "LIBARCHIVE_ENABLE_LIBPCRE", define: "HAVE_LIBPCRE", libName: "pcre", moduleLoc: "swiftpm/pcre", pkgConfig: "libpcre", aptProvider: "libpcre-dev"),
+    // (envVar: "LIBARCHIVE_ENABLE_LIBPCREPOSIX", define: "HAVE_LIBPCREPOSIX", libName: "pcreposix", moduleLoc: "swiftpm/pcreposix", pkgConfig: "libpcre-posix", aptProvider: "libpcre-dev"),
     (envVar: "LIBARCHIVE_ENABLE_LIBPCRE2", define: "HAVE_LIBPCRE2", libName: "pcre2", moduleLoc: "swiftpm/pcre2", pkgConfig: "libpcre2-8", aptProvider: "libpcre2-dev"),
     (envVar: "LIBARCHIVE_ENABLE_LIBPCRE2POSIX", define: "HAVE_LIBPCRE2POSIX", libName: "pcre2posix", moduleLoc: "swiftpm/pcre2posix", pkgConfig: "libpcre2-posix", aptProvider: "libpcre2-dev"),
     (envVar: "LIBARCHIVE_ENABLE_LIBXML2", define: "HAVE_LIBXML2", libName: "xml2", moduleLoc: "swiftpm/xml2", pkgConfig: "libxml-2.0", aptProvider: "libxml2-dev"),

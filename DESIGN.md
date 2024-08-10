@@ -138,6 +138,14 @@ Installing a specific snapshot from a swift version development branch
 
 `swiftly install 5.5-snapshot-2022-1-28`
 
+##### Installing the version from the `.swift-version` file
+
+A package could have a swift version file that specifies the recommended toolchain version. A swiftly install with no version will search for a version file and install that version.
+
+`swiftly install`
+
+If no swift version file can be found then the installation fails indicating that it couldn't fine the file.
+
 #### uninstall
 
 Uninstalling versions of Swift should be in a similar form to install. Uninstalling a toolchain that is currently “in use” (see the “use” command section below) will cause swiftly to use the latest Swift release toolchain that is installed. If none are, the latest snapshot will be used. If no snapshots are installed either, then a message will be printed indicating that all Swift versions are uninstalled.

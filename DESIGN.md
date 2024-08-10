@@ -60,7 +60,7 @@ A simple setup for managing the toolchains could look like this:
 
 The toolchains (i.e. the contents of a given Swift download tarball) would be contained in the toolchains directory, each named according to the major/minor/patch version. `config.json` would contain any required metadata (e.g. the latest Swift version, which toolchain is selected, etc.). If pulling in Foundation to use `JSONEncoder`/`JSONDecoder` (or some other JSON tool) would be a problem, we could also use something simpler.
 
-The `~/.local/bin` directory would include symlinks pointing to the `bin` directory of the "active" toolchain, if any.
+The `~/.local/bin` directory would include symlinks pointing to swiftly itself. When these binaries are run swiftly proxies them to the requested toolchain, or a default.
 
 This is all very similar to how rustup does things, but I figure there's no need to reinvent the wheel here.
 
@@ -78,7 +78,7 @@ The contents of `~/Library/Application Support/swiftly` would look like this:
    – env
 ```
 
-Instead of downloading tarballs containing the toolchains and storing them directly in `~/.local/share/swiftly/toolchains`, we instead install Swift toolchains to `~/Library/Developer/Toolchains` via the `.pkg` files provided for download at swift.org. To select a toolchain for use, we update the symlinks at `~/Library/Application Support/swiftly/bin` to point to the desired toolchain in `~/Library/Developer/Toolchains`. In the env file, we’ll contain a line that looks like `export PATH="$HOME/Library/Application Support/swiftly:$PATH"`, so the version of swift being used will automatically always be from the active toolchain. `config.json` will contain version information about the selected toolchain as well as its actual location on disk.
+Instead of downloading tarballs containing the toolchains and storing them directly in `~/.local/share/swiftly/toolchains`, we instead install Swift toolchains to `~/Library/Developer/Toolchains` via the `.pkg` files provided for download at swift.org. In the env file, we’ll add a line that looks like `export PATH="$HOME/Library/Application Support/swiftly:$PATH"`, so that swiftly can proxy toolchain commands to the requested toolchain, or default. `config.json` will contain version information about the selected toolchain as well as its actual location on disk.
 
 This scheme works for ensuring the version of Swift used on the command line can be controlled, but it doesn’t affect the active toolchain used by Xcode, which uses its own mechanisms for that. Xcode, if it is installed, can find the toolchains installed by swiftly.
 
@@ -178,7 +178,7 @@ To list all the versions of swift installed on your system
 
 #### use
 
-“Using” a toolchain sets it as the active toolchain, meaning it will be the one found via $PATH and invoked via `swift` commands executed in the shell. Only a single toolchain can be used at a given time. Using a toolchain doesn’t uninstall anything; it only updates symlinks so that the requested toolchain can be found by the shell. 
+“Using” a toolchain sets it as the default toolchain, meaning it will be the default one that is used when running toolchain commands from the shell. Only a single toolchain can be the default at a given time and location. Using a toolchain doesn’t uninstall anything; it only updates the configuration.
 
 To use the toolchain associated with the most up-to-date Swift version, the “latest” version can be specified:
 
@@ -207,6 +207,10 @@ To use a specific main snapshot, specify the full snapshot version name:
 To use the latest installed main snapshot, leave off the date:
 
 `swiftly use main-snapshot`
+
+The use subcommand also supports `.swift-version` files. If version file is present in the current working directory, or an ancestory directory, then swiftly will update that file with the new version to use. This can be a useful feature for a team to share and align on toolchain versions with git. As a special case, if swiftly could not find a version file, but it could find a Package.swift file it will create a new version file for you in the package and set that to the requested toolchain version.
+
+Note: The `.swift-version` file mechanisms can be overridden using the `--global-default` flag so that your swiftly installation's default toolchain can be set explicitly.
 
 #### update
 
@@ -265,6 +269,18 @@ To get a list of snapshots for a swift version development branch use
 This command checks to see if there are new versions of `swiftly` itself and upgrades to them if so.
 
 `swiftly self-update`
+
+### Proxy command invocations to a requested toolchain
+
+Swiftly will create a set of symbolic links in its SWIFTLY_BIN_DIR during installation that point to the swiftly binary itself for each of the common toolchain commands, such as swift, swiftc, clang, etc. This mechanism will allows swiftly to proxy those command invocations to a requested toolchain. A toolchain can be requested in these ways in order of precedence:
+
+* Special toolchain selectors among the regular tool command-line arguments (e.g. `swift build +5.10.1`) with the special '+' prefix
+* The presence of a .swift-version file in the current working directory, or ancestor directory, with the required toolchain version
+* The swiftly default (in-use) toolchain set in the config.json by `swiftly install` or `swiftly use` commands
+
+In the first two cases, if there is no matching toolchain installed, swiftly will attempt to automatically install the requested toolchain and use it if the installation succeeeds.
+
+Note: If swiftly automatically installs a toolchain during proxying and that toolchain requires post installation steps then the proxy will abort with those post installation instructions.
 
 ## Detailed Design
 
@@ -457,15 +473,7 @@ https://download.swift.org/swift-5.5.1-release/ubuntu1604/swift-5.5.1-RELEASE/sw
 $ tar -xf <URL> --directory ~/.local/share/swiftly/toolchains
 ```
 
-It also updates `config.json` to include this toolchain as the latest for the provided version. If installing a new patch release toolchain, the now-outdated one can be deleted (e.g. `5.5.0` can be deleted when `5.5.1` is installed).
-
-Finally, the use implementation executes the following to update the link:
-
-```
-$ ln -s ~/.local/share/swiftly/toolchains/<toolchain>/usr/bin/swift ~/.local/bin/swift
-```
-
-It also updates `config.json` to include this version as the currently selected one.
+It also updates `config.json` to include this toolchain as the latest for the provided version. If installing a new patch release toolchain, the now-outdated one can be deleted (e.g. `5.5.0` can be deleted when `5.5.1` is installed). The `config.json` is updated to include this version as the currently selected (default) one.
 
 ### Implementation Sketch - macOS
 
@@ -481,18 +489,13 @@ https://download.swift.org/swift-<version>-RELEASE/xcode/swift-<version>-RELEASE
 
 `config.json` is then updated to include this toolchain as the latest for the provided version.
 
-Finally, the use implementation executes the following to update the link:
-
-```
-$ ln -s ~/Library/Developer/Toolchains/<toolchain name> ~/.swiftly/active-toolchain
-```
-
-It also updates `config.json` to include this version as the currently selected one.
+It also updates `config.json` to include this version as the currently selected (default) one.
 
 ### `config.json` Schema
 
 ```
 {
+  "version": "<version of swiftly that created/updated this config.json file>",
   "platform": {
     "namePretty": <OS name pretty printed>,
     "fullName": <OS name used in toolchain file name>,

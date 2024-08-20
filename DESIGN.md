@@ -4,20 +4,27 @@ This document contains the high level design of swiftly. Not all features have b
 
 ## Index
 
+- [Swiftly's purpose](#swiftlys-purpose)
+- [Installation of swiftly](#installation-of-switly)
 - [Linux](#linux)
-  - [Installation of swiftly](#installation-of-swiftly)
   - [Installation of a Swift toolchain](#installation-of-a-swift-toolchain)
 - [macOS](#macos)
-  - [Installation of swiftly](#installation-of-swiftly-1)
   - [Installation of a Swift toolchain](#installation-of-a-swift-toolchain-1)
 - [Interface](#interface)
   - [Toolchain names and versions](#toolchain-names-and-versions)
   - [Commands](#commands)
+  - [Toolchain selection](#toolchain-selection)
 - [Detailed design](#detailed-design)
   - [Implementation sketch - Core](#implementation-sketch---core)
   - [Implementation sketch - Ubuntu 20.04](#implementation-sketch---ubuntu-2004)
   - [Implementation sketch - macOS](#implementation-sketch---macos)
   - [`config.json` schema](#configjson-schema)
+
+## Swiftly's purpose
+
+Swiftly helps you to easily install different Swift toolchains locally on your account. It also provides a single path where you can run the tools in the currently selected toolchain. Toolchain selection is [configurable](#toolchain-selection) using different mechanisms.
+
+Note that swiftly is *not* a virtual toolchain in itself since there are cases where it cannot behave as a self-contained Swift toolchain. For example, there can be external dependencies on specific files, such as headers or libraries, far too many and variable between toolchain versions to be managed by swiftly. Also, for long-lived processes, there is no way to gracefully restart them without help from the client.
 
 ## Installation of swiftly
 
@@ -278,15 +285,25 @@ This command checks to see if there are new versions of `swiftly` itself and upg
 
 `swiftly self-update`
 
-### Proxy command invocations to a requested toolchain
+### Toolchain selection
 
-Swiftly will create a set of symbolic links in its SWIFTLY_BIN_DIR during installation that point to the swiftly binary itself for each of the common toolchain commands, such as swift, swiftc, clang, etc. This mechanism will allows swiftly to proxy those command invocations to a requested toolchain. A toolchain can be requested in these ways in order of precedence:
+Swiftly will create a set of symbolic links in its SWIFTLY_BIN_DIR during installation that point to the swiftly binary itself for each of the common toolchain commands, such as swift, swiftc, clang, etc. This mechanism will allows swiftly to proxy those command invocations to a selected toolchain at the time of invocation. A toolchain can be selected in these ways in order of precedence:
 
 * Special toolchain selectors among the regular tool command-line arguments (e.g. `swift build +5.10.1`) with the special '+' prefix
 * The presence of a .swift-version file in the current working directory, or ancestor directory, with the required toolchain version
-* The swiftly default (in-use) toolchain set in the config.json by `swiftly install` or `swiftly use` commands
+* The swiftly default (in-use) toolchain set in the swftly config.json by `swiftly install` or `swiftly use` commands
 
-If swiftly cannot find an installed toolchain that matches the request then it fails with an error and instructions how to use `swiftly install` to fulfill the request.
+If swiftly cannot find an installed toolchain that matches the selection then it fails with an error and instructions how to use `swiftly install` to satisfy the selection next time.
+
+#### Resolve selected toolchain
+
+For cases where the physical toolchain must be located, such as references specific header files, or shared libraries that are not proxied by swiftly there is a method to resolve the currently selected toolchain to its physical location using `swiftly use`.
+
+```
+swiftly use --location
+```
+
+This command will provide the full path to the directory where the selected toolchain is installed to standard output if such a toolchain exists. An external tool can directly navigate to the resources that it requires. For external tools that manage long-lived processes from the toolchain, such as the language server, and lldb, this command can be used in a poll to detect cases where the processes should be restarted.
 
 ## Detailed Design
 

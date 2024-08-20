@@ -99,9 +99,9 @@ struct ListAvailable: SwiftlyCommand {
                 printToolchain(toolchain)
             }
         } else {
-            print("Available toolchains")
+            print("Available release toolchains")
             print("----------------------------")
-            for toolchain in toolchains {
+            for toolchain in toolchains where toolchain.isStableRelease() {
                 printToolchain(toolchain)
             }
         }

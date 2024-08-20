@@ -28,9 +28,10 @@ struct SwiftOrgSwiftlyRelease: Codable {
 
 struct SwiftOrgPlatform: Codable {
     var name: String
-    var platform: String
     var archs: [String]
 
+    /// platformName is a mapping from the 'name' field of the swift.org platform object
+    /// to swiftly's PlatformDefinition name.
     var platformName: String {
         switch self.name {
         case "Ubuntu 14.04":
@@ -184,12 +185,15 @@ public struct SwiftlyHTTPClient {
         let swiftOrgReleases: [SwiftOrgRelease] = try await self.getFromJSON(url: url, type: [SwiftOrgRelease].self)
 
         var swiftOrgFiltered: [ToolchainVersion.StableRelease] = swiftOrgReleases.compactMap { swiftOrgRelease in
-            guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.platformName == platform.name || platform.name == "xcode" }) else {
-                return nil
-            }
+            if platform.name != "xcode" {
+                // If the platform isn't xcode then verify that there is an offering for this platform name and arch
+                guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.platformName == platform.name }) else {
+                    return nil
+                }
 
-            guard swiftOrgPlatform.archs.contains(arch) || platform.name == "xcode" else {
-                return nil
+                guard swiftOrgPlatform.archs.contains(arch) else {
+                    return nil
+                }
             }
 
             guard let version = try? ToolchainVersion(parsing: swiftOrgRelease.stableName),
@@ -207,14 +211,10 @@ public struct SwiftlyHTTPClient {
             return release
         }
 
-        guard !swiftOrgFiltered.isEmpty else {
-            return []
-        }
-
         swiftOrgFiltered.sort(by: >)
 
         return if let limit = limit {
-            Array(swiftOrgFiltered[0..<limit])
+            Array(swiftOrgFiltered.prefix(limit))
         } else {
             swiftOrgFiltered
         }
@@ -269,8 +269,6 @@ public struct SwiftlyHTTPClient {
             "\(major).\(minor)"
         }
 
-        var snapshotToolchains: Set<ToolchainVersion.Snapshot> = []
-
         let platformName = if platform.name == "xcode" {
             "macos"
         } else {
@@ -279,44 +277,37 @@ public struct SwiftlyHTTPClient {
 
         let url = "https://swift.org/api/v1/install/dev/\(branchLabel)/\(platformName).json"
 
-        let swiftOrgSnapshotList: SwiftOrgSnapshotList = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
+        // For a particular branch and platform the snapshots are listed underneath their architecture
+        let swiftOrgSnapshotArchs: SwiftOrgSnapshotList = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
+
+        // These are the available snapshots for the branch, platform, and architecture
         let swiftOrgSnapshots = if platform.name == "xcode" {
-            swiftOrgSnapshotList.universal ?? [SwiftOrgSnapshot]()
+            swiftOrgSnapshotArchs.universal ?? [SwiftOrgSnapshot]()
         } else if arch == "aarch64" {
-            swiftOrgSnapshotList.aarch64 ?? [SwiftOrgSnapshot]()
+            swiftOrgSnapshotArchs.aarch64 ?? [SwiftOrgSnapshot]()
         } else if arch == "x86_64" {
-            swiftOrgSnapshotList.x86_64 ?? [SwiftOrgSnapshot]()
+            swiftOrgSnapshotArchs.x86_64 ?? [SwiftOrgSnapshot]()
         } else {
             [SwiftOrgSnapshot]()
         }
 
-        let swiftOrgFiltered: [ToolchainVersion.Snapshot] = swiftOrgSnapshots.compactMap { swiftOrgSnapshot in
-            guard let snapshot = try? swiftOrgSnapshot.parseSnapshot() else {
-                return nil
-            }
-
+        // Convert these into toolchain snapshot versions that match the filter
+        var matchingSnapshots = try swiftOrgSnapshots.map { try $0.parseSnapshot() }.compactMap { $0 }.filter { toolchainVersion in
             if let filter {
-                guard filter(snapshot) else {
-                    return nil
+                guard filter(toolchainVersion) else {
+                    return false
                 }
             }
 
-            return snapshot
+            return true
         }
 
-        snapshotToolchains.formUnion(Set(swiftOrgFiltered))
-
-        guard !swiftOrgFiltered.isEmpty else {
-            return []
-        }
-
-        var finalSnapshotToolchains = Array(snapshotToolchains)
-        finalSnapshotToolchains.sort(by: >)
+        matchingSnapshots.sort(by: >)
 
         return if let limit = limit {
-            Array(finalSnapshotToolchains[0..<limit])
+            Array(matchingSnapshots.prefix(limit))
         } else {
-            finalSnapshotToolchains
+            matchingSnapshots
         }
     }
 

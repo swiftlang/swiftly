@@ -286,9 +286,7 @@ Swiftly will create a set of symbolic links in its SWIFTLY_BIN_DIR during instal
 * The presence of a .swift-version file in the current working directory, or ancestor directory, with the required toolchain version
 * The swiftly default (in-use) toolchain set in the config.json by `swiftly install` or `swiftly use` commands
 
-In the first two cases, if there is no matching toolchain installed, swiftly will attempt to automatically install the requested toolchain and use it if the installation succeeeds.
-
-Note: If swiftly automatically installs a toolchain during proxying and that toolchain requires post installation steps then the proxy will abort with those post installation instructions.
+If swiftly cannot find an installed toolchain that matches the request then it fails with an error and instructions how to use `swiftly install` to fulfill the request.
 
 ## Detailed Design
 

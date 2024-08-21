@@ -295,6 +295,8 @@ Swiftly will create a set of symbolic links in its SWIFTLY_BIN_DIR during instal
 
 If swiftly cannot find an installed toolchain that matches the selection then it fails with an error and instructions how to use `swiftly install` to satisfy the selection next time.
 
+A few notes about the '+' prefix. First, if a literal '+' prefix should be sent directly to the tool as an argument then it is escaped by doubling it with '++'. An argument with only '++++' is ignored entirely, but any additional arguments are sent directly to the tool without any further inspection of their prefixes. This is analogous to the special '--' token that certain argument parsers accept so that they don't interpret anything following that token as command flags or options.
+
 #### Resolve selected toolchain
 
 For cases where the physical toolchain must be located, such as references specific header files, or shared libraries that are not proxied by swiftly there is a method to resolve the currently selected toolchain to its physical location using `swiftly use`.

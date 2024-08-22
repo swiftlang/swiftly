@@ -1,0 +1,4 @@
+module crypto [system] {
+    link "crypto"
+    export *
+}

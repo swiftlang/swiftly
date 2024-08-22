@@ -1,0 +1,4 @@
+module mbedcrypto [system] {
+    link "mbedcrypto"
+    export *
+}

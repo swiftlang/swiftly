@@ -1,0 +1,17 @@
+module lz02 [system] {
+    link "lzo2"
+    header "lzo/lzo1.h"
+    header "lzo/lzo1a.h"
+    header "lzo/lzo1b.h"
+    header "lzo/lzo1c.h"
+    header "lzo/lzo1f.h"
+    header "lzo/lzo1x.h"
+    header "lzo/lzo1y.h"
+    header "lzo/lzo1z.h"
+    header "lzo/lzo2a.h"
+    header "lzo/lzo_asm.h"
+    header "lzo/lzoconf.h"
+    header "lzo/lzodefs.h"
+    header "lzo/lzoutil.h"
+    export *
+}

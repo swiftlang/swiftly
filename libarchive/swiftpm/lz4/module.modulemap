@@ -1,0 +1,8 @@
+module lz4 [system] {
+    link "lz4"
+    header "lz4.h"
+    header "lz4frame.h"
+    header "lz4frame_static.h"
+    header "lz4hc.h"
+    export *
+}

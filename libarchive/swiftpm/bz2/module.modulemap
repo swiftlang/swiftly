@@ -1,0 +1,5 @@
+module bz2 [system] {
+    link "bz2"
+    header "bzlib.h"
+    export *
+}

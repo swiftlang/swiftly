@@ -47,6 +47,8 @@
 #include <unistd.h>
 #endif
 
+#include <stdio.h>
+
 #include "archive.h"
 
 struct read_FILE_data {

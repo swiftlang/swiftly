@@ -44,6 +44,8 @@
 #include <unistd.h>
 #endif
 
+#include <stdio.h>
+
 #include "archive.h"
 
 struct write_FILE_data {

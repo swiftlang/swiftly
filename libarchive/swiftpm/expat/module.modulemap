@@ -1,0 +1,6 @@
+module CLibExpat [system] {
+    link "expat"
+    header "expat.h"
+    header "expat_external.h"
+    export *
+}

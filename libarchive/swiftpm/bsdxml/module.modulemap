@@ -1,0 +1,4 @@
+module bsdxml [system] {
+    link "bsdxml"
+    export *
+}

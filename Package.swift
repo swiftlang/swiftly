@@ -1,6 +1,16 @@
 // swift-tools-version:5.10
 
+import Foundation
 import PackageDescription
+
+let swiftlyTarget: Target = .executableTarget(
+    name: "Swiftly",
+    dependencies: [
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        .target(name: "SwiftlyCore"),
+        .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
+    ]
+)
 
 let ghApiCacheResources = (1...16).map { Resource.embedInCode("gh-api-cache/swift-tags-page\($0).json") }
 let ghApiCacheExcludedResources = (17...27).map { "gh-api-cache/swift-tags-page\($0).json" }
@@ -26,16 +36,7 @@ let package = Package(
         .package(url: "https://github.com/nicklockwood/SwiftFormat", exact: "0.49.18"),
     ],
     targets: [
-        .executableTarget(
-            name: "Swiftly",
-            dependencies: [
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .target(name: "SwiftlyCore"),
-                .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
-                .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
-                .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
-            ]
-        ),
+        swiftlyTarget,
         .target(
             name: "SwiftlyCore",
             dependencies: [
@@ -67,29 +68,6 @@ let package = Package(
             ],
             path: "Tools/generate-docs-reference"
         ),
-        .target(
-            name: "LinuxPlatform",
-            dependencies: [
-                "SwiftlyCore",
-                "CLibArchive",
-            ],
-            linkerSettings: [
-                .linkedLibrary("z"),
-            ]
-        ),
-        .target(
-            name: "MacOSPlatform",
-            dependencies: [
-                "SwiftlyCore",
-            ]
-        ),
-        .systemLibrary(
-            name: "CLibArchive",
-            pkgConfig: "libarchive",
-            providers: [
-                .apt(["libarchive-dev"]),
-            ]
-        ),
         .testTarget(
             name: "SwiftlyTests",
             dependencies: ["Swiftly"],
@@ -100,3 +78,31 @@ let package = Package(
         ),
     ]
 )
+
+#if os(Linux)
+
+package.dependencies.append(.package(path: "libarchive"))
+package.targets.append(
+    .target(
+        name: "LinuxPlatform",
+        dependencies: [
+            .target(name: "SwiftlyCore"),
+            .product(name: "archive-devel", package: "libarchive"),
+        ]
+    )
+)
+swiftlyTarget.dependencies.append(.target(name: "LinuxPlatform"))
+
+#elseif os(macOS)
+
+package.targets.append(
+    .target(
+        name: "MacOSPlatform",
+        dependencies: [
+            "SwiftlyCore",
+        ]
+    )
+)
+swiftlyTarget.dependencies.append(.target(name: "MacOSPlatform"))
+
+#endif

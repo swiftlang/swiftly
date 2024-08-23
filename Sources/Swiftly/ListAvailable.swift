@@ -11,7 +11,7 @@ struct ListAvailable: SwiftlyCommand {
         discussion: """
 
         The toolchain selector determines which toolchains to list. If no selector \
-        is provided, all available toolchains will be listed:
+        is provided, all available release toolchains will be listed:
 
             $ swiftly list-available
 
@@ -56,6 +56,8 @@ struct ListAvailable: SwiftlyCommand {
             }
 
             tc = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map { ToolchainVersion.snapshot($0) }
+        case .stable, .latest:
+            tc = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform).map { ToolchainVersion.stable($0) }
         default:
             tc = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform).map { ToolchainVersion.stable($0) }
         }

@@ -30,45 +30,54 @@ struct SwiftOrgPlatform: Codable {
     var name: String
     var archs: [String]
 
-    /// platformName is a mapping from the 'name' field of the swift.org platform object
-    /// to swiftly's PlatformDefinition name.
-    var platformName: String {
+    /// platform is a mapping from the 'name' field of the swift.org platform object
+    /// to swiftly's PlatformDefinition, if possible.
+    var platform: PlatformDefinition? {
+        // NOTE: some of these platforms are represented on swift.org metadata, but not supported by swiftly and so they don't have constants in PlatformDefinition
         switch self.name {
         case "Ubuntu 14.04":
-            "ubuntu1404"
+            PlatformDefinition(name: "ubuntu1404", nameFull: "ubuntu14.04", namePretty: "Ubuntu 14.04")
         case "Ubuntu 15.10":
-            "ubuntu1510"
+            PlatformDefinition(name: "ubuntu1510", nameFull: "ubuntu15.10", namePretty: "Ubuntu 15.10")
         case "Ubuntu 16.04":
-            "ubuntu1604"
+            PlatformDefinition(name: "ubuntu1604", nameFull: "ubuntu16.04", namePretty: "Ubuntu 16.04")
         case "Ubuntu 16.10":
-            "ubuntu1610"
+            PlatformDefinition(name: "ubuntu1610", nameFull: "ubuntu16.10", namePretty: "Ubuntu 16.10")
         case "Ubuntu 18.04":
-            "ubuntu1804"
+            PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
         case "Ubuntu 20.04":
-            "ubuntu2004"
+            PlatformDefinition.ubuntu2004
         case "Amazon Linux 2":
-            "amazonlinux2"
+            PlatformDefinition.amazonlinux2
         case "CentOS 8":
-            "centos8"
+            PlatformDefinition(name: "centos8", nameFull: "centos8", namePretty: "CentOS 8")
         case "CentOS 7":
-            "centos7"
+            PlatformDefinition(name: "centos7", nameFull: "centos7", namePretty: "CentOS 7")
         case "Windows 10":
-            "win10"
+            PlatformDefinition(name: "win10", nameFull: "windows10", namePretty: "Windows 10")
         case "Ubuntu 22.04":
-            "ubuntu2204"
+            PlatformDefinition.ubuntu2204
         case "Red Hat Universal Base Image 9":
-            "ubi9"
+            PlatformDefinition.rhel9
         case "Ubuntu 23.10":
-            "ubuntu2310"
+            PlatformDefinition(name: "ubuntu2310", nameFull: "ubuntu23.10", namePretty: "Ubuntu 23.10")
         case "Ubuntu 24.04":
-            "ubuntu2404"
+            PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04")
         case "Debian 12":
-            "debian12"
+            PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian 12")
         case "Fedora 39":
-            "fedora39"
+            PlatformDefinition(name: "fedora39", nameFull: "fedora39", namePretty: "Fedora 39")
         default:
-            ""
+            nil
         }
+    }
+
+    func matches(_ platform: PlatformDefinition) -> Bool {
+        guard let myPlatform = self.platform else {
+            return false
+        }
+
+        return myPlatform.name == platform.name
     }
 }
 
@@ -184,10 +193,10 @@ public struct SwiftlyHTTPClient {
         let url = "https://swift.org/api/v1/install/releases.json"
         let swiftOrgReleases: [SwiftOrgRelease] = try await self.getFromJSON(url: url, type: [SwiftOrgRelease].self)
 
-        var swiftOrgFiltered: [ToolchainVersion.StableRelease] = swiftOrgReleases.compactMap { swiftOrgRelease in
-            if platform.name != "xcode" {
+        var swiftOrgFiltered: [ToolchainVersion.StableRelease] = try swiftOrgReleases.compactMap { swiftOrgRelease in
+            if platform.name != PlatformDefinition.macOS.name {
                 // If the platform isn't xcode then verify that there is an offering for this platform name and arch
-                guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.platformName == platform.name }) else {
+                guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.matches(platform) }) else {
                     return nil
                 }
 
@@ -199,7 +208,7 @@ public struct SwiftlyHTTPClient {
             guard let version = try? ToolchainVersion(parsing: swiftOrgRelease.stableName),
                   case let .stable(release) = version
             else {
-                return nil
+                throw Error(message: "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
             }
 
             if let filter {
@@ -262,26 +271,19 @@ public struct SwiftlyHTTPClient {
             a!
         }
 
-        let branchLabel = switch branch {
-        case .main:
-            "main"
-        case let .release(major, minor):
-            "\(major).\(minor)"
-        }
-
-        let platformName = if platform.name == "xcode" {
+        let platformName = if platform.name == PlatformDefinition.macOS.name {
             "macos"
         } else {
             platform.name
         }
 
-        let url = "https://swift.org/api/v1/install/dev/\(branchLabel)/\(platformName).json"
+        let url = "https://swift.org/api/v1/install/dev/\(branch.name)/\(platformName).json"
 
         // For a particular branch and platform the snapshots are listed underneath their architecture
         let swiftOrgSnapshotArchs: SwiftOrgSnapshotList = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
 
         // These are the available snapshots for the branch, platform, and architecture
-        let swiftOrgSnapshots = if platform.name == "xcode" {
+        let swiftOrgSnapshots = if platform.name == PlatformDefinition.macOS.name {
             swiftOrgSnapshotArchs.universal ?? [SwiftOrgSnapshot]()
         } else if arch == "aarch64" {
             swiftOrgSnapshotArchs.aarch64 ?? [SwiftOrgSnapshot]()

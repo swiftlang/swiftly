@@ -50,7 +50,7 @@ final class HTTPClientTests: SwiftlyTests {
             PlatformDefinition.macOS,
             PlatformDefinition.ubuntu2204,
             PlatformDefinition.ubuntu2004,
-            // PlatformDefinition.ubuntu1804,
+            // PlatformDefinition.ubuntu1804, // There are no releases for Ubuntu 18.04 in the branches being tested below
             PlatformDefinition.rhel9,
             PlatformDefinition.amazonlinux2,
         ]

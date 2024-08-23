@@ -105,7 +105,7 @@ swiftly list-available [<toolchain-selector>] [--version] [--help]
 *A filter to use when listing toolchains.*
 
 
-The toolchain selector determines which toolchains to list. If no selector is provided, all available toolchains will be listed:
+The toolchain selector determines which toolchains to list. If no selector is provided, all available release toolchains will be listed:
 
     $ swiftly list-available
 

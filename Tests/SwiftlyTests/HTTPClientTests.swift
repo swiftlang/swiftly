@@ -6,9 +6,9 @@ final class HTTPClientTests: SwiftlyTests {
     func testGet() async throws {
         // GIVEN: we have a swiftly http client
         // WHEN: we make get request for a particular type of JSON
-        var releases: [GitHubRelease] = try await SwiftlyCore.httpClient.getFromJSON(
-            url: "https://api.github.com/repos/apple/swift/releases?per_page=100&page=1",
-            type: [GitHubRelease].self,
+        var releases: [SwiftOrgRelease] = try await SwiftlyCore.httpClient.getFromJSON(
+            url: "https://swift.org/api/v1/install/releases.json",
+            type: [SwiftOrgRelease].self,
             headers: [:]
         )
         // THEN: we get a decoded JSON response
@@ -19,8 +19,8 @@ final class HTTPClientTests: SwiftlyTests {
         var exceptionThrown = false
         do {
             releases = try await SwiftlyCore.httpClient.getFromJSON(
-                url: "https://api.github.com/repos/apple/swift/releases2",
-                type: [GitHubRelease].self,
+                url: "https://swift.org/api/v1/install/releases-invalid.json",
+                type: [SwiftOrgRelease].self,
                 headers: [:]
             )
         } catch {
@@ -34,8 +34,8 @@ final class HTTPClientTests: SwiftlyTests {
         exceptionThrown = false
         do {
             releases = try await SwiftlyCore.httpClient.getFromJSON(
-                url: "https://inavlid.github.com/repos/apple/swift/releases",
-                type: [GitHubRelease].self,
+                url: "https://invalid.swift.org/api/v1/install/releases.json",
+                type: [SwiftOrgRelease].self,
                 headers: [:]
             )
         } catch {
@@ -45,35 +45,38 @@ final class HTTPClientTests: SwiftlyTests {
         XCTAssertTrue(exceptionThrown)
     }
 
-    func testGetFromGitHub() async throws {
-        // GIVEN: we have a swiftly http client with github capability
-        // WHEN: we ask for the first page of releases with page size 5
-        var releases = try await SwiftlyCore.httpClient.getReleases(page: 1, perPage: 5)
-        // THEN: we get five releases
-        XCTAssertEqual(5, releases.count)
+    func testGetMetdataFromSwiftOrg() async throws {
+        let supportedPlatforms = [
+            PlatformDefinition.macOS,
+            PlatformDefinition.ubuntu2204,
+            PlatformDefinition.ubuntu2004,
+            // PlatformDefinition.ubuntu1804, // There are no releases for Ubuntu 18.04 in the branches being tested below
+            PlatformDefinition.rhel9,
+            PlatformDefinition.amazonlinux2,
+        ]
 
-        let firstRelease = releases[0]
+        let branches = [
+            ToolchainVersion.Snapshot.Branch.main,
+            ToolchainVersion.Snapshot.Branch.release(major: 6, minor: 0), // This is available in swift.org API
+            ToolchainVersion.Snapshot.Branch.release(major: 5, minor: 9), // This is only available using GH API
+        ]
 
-        // GIVEN: we have a swiftly http client with github capability
-        // WHEN: we ask for the second page of releases with page size 5
-        releases = try await SwiftlyCore.httpClient.getReleases(page: 2, perPage: 5)
-        // THEN: we get five different releases
-        XCTAssertEqual(5, releases.count)
-        XCTAssertTrue(releases[0].name != firstRelease.name)
+        for arch in ["x86_64", "aarch64"] {
+            for platform in supportedPlatforms {
+                // GIVEN: we have a swiftly http client with swift.org metadata capability
+                // WHEN: we ask for the first five releases of a supported platform in a supported arch
+                let releases = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: platform, arch: arch, limit: 5)
+                // THEN: we get five releases
+                XCTAssertEqual(5, releases.count)
 
-        // GIVEN: we have a swiftly http client with github capability
-        // WHEN: we ask for the first page of tags
-        var tags = try await SwiftlyCore.httpClient.getTags(page: 1)
-        // THEN: we get a collection of tags
-        XCTAssertTrue(tags.count > 0)
-
-        let firstTag = tags[0]
-
-        // GIVEN: we have a swiftly http client with github capability
-        // WHEN: we ask for the second page of tags
-        tags = try await SwiftlyCore.httpClient.getTags(page: 2)
-        // THEN: we get a different collection of tags
-        XCTAssertTrue(tags.count > 0)
-        XCTAssertTrue(tags[0].name != firstTag.name)
+                for branch in branches {
+                    // GIVEN: we have a swiftly http client with swift.org metadata capability
+                    // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch
+                    let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: arch, branch: branch, limit: 5)
+                    // THEN: we get five snapshots
+                    XCTAssertEqual(5, snapshots.count)
+                }
+            }
+        }
     }
 }

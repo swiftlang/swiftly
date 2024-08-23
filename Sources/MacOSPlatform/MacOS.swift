@@ -208,7 +208,7 @@ public struct MacOS: Platform {
 
     public func detectPlatform(disableConfirmation _: Bool, platform _: String?) async -> PlatformDefinition {
         // No special detection required on macOS platform
-        PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS")
+        PlatformDefinition.macOS
     }
 
     public func getShell() async throws -> String {

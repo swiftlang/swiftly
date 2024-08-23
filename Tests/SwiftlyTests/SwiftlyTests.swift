@@ -560,38 +560,16 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         if url.host == "download.swift.org" {
             return try self.makeToolchainDownloadResponse(from: url)
         } else if url.host == "api.github.com" {
-            if url.path == "/repos/apple/swift/releases" {
-                return try self.makeGitHubReleasesAPIResponse(from: url)
-            } else if url.path == "/repos/apple/swift/tags" {
+            if url.path == "/repos/apple/swift/tags" {
                 return try self.makeGitHubTagsAPIResponse(from: url)
             } else {
                 throw SwiftlyTestError(message: "unxpected github API request URL: \(request.url)")
             }
-        } else if request.url == "https://swift.org/keys/all-keys.asc" {
+        } else if url.host == "swift.org" {
             return try await self.delegate.execute(request, timeout: timeout)
         } else {
-            throw SwiftlyTestError(message: "unmocked URL: \(request.url)")
+            throw SwiftlyTestError(message: "unmocked URL: \(request)")
         }
-    }
-
-    private func makeGitHubReleasesAPIResponse(from url: URL) throws -> HTTPClientResponse {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            throw SwiftlyTestError(message: "unexpected github url: \(url)")
-        }
-
-        guard let queryItems = components.queryItems else {
-            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_releases_page1_json))))
-        }
-
-        guard let page = queryItems.first(where: { $0.name == "page" }) else {
-            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_releases_page1_json))))
-        }
-
-        if page.value != "1" {
-            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(Array("[]".utf8)))))
-        }
-
-        return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_releases_page1_json))))
     }
 
     private func makeGitHubTagsAPIResponse(from url: URL) throws -> HTTPClientResponse {

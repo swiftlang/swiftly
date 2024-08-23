@@ -436,15 +436,15 @@ public struct Linux: Platform {
 
         switch choice {
         case "1":
-            return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04")
+            return PlatformDefinition.ubuntu2204
         case "2":
-            return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04")
+            return PlatformDefinition.ubuntu2004
         case "3":
-            return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
+            return PlatformDefinition.ubuntu1804
         case "4":
-            return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9")
+            return PlatformDefinition.rhel9
         case "5":
-            return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2")
+            return PlatformDefinition.amazonlinux2
         default:
             fatalError("Installation canceled")
         }
@@ -455,15 +455,15 @@ public struct Linux: Platform {
         if let platform = platform {
             switch platform {
             case "ubuntu22.04":
-                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04")
+                return PlatformDefinition.ubuntu2204
             case "ubuntu20.04":
-                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04")
+                return PlatformDefinition.ubuntu2004
             case "ubuntu18.04":
-                return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
+                return PlatformDefinition.ubuntu1804
             case "amazonlinux2":
-                return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2")
+                return PlatformDefinition.amazonlinux2
             case "rhel9":
-                return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9")
+                return PlatformDefinition.rhel9
             default:
                 fatalError("Unrecognized platform \(platform)")
             }

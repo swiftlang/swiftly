@@ -43,14 +43,14 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateLatestToLatest() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: .stable(major: 5, minor: 0, patch: 0))
+                try await self.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
                 var update = try self.parseCommand(Update.self, ["update", "-y", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
 
-                XCTAssertGreaterThan(inUse, .init(major: 5, minor: 0, patch: 0))
+                XCTAssertGreaterThan(inUse, .init(major: 5, minor: 9, patch: 0))
                 try await validateInstalledToolchains(
                     [config.inUse!],
                     description: "Updating toolchain should properly install new toolchain and uninstall old"
@@ -64,7 +64,7 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateToLatestMinor() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: .stable(major: 5, minor: 0, patch: 0))
+                try await self.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
                 var update = try self.parseCommand(Update.self, ["update", "-y", "5", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
@@ -86,16 +86,16 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateToLatestPatch() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: "5.0.0")
+                try await self.installMockedToolchain(selector: "5.9.0")
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "5.0.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+                var update = try self.parseCommand(Update.self, ["update", "-y", "5.9.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
 
                 XCTAssertEqual(inUse.major, 5)
-                XCTAssertEqual(inUse.minor, 0)
+                XCTAssertEqual(inUse.minor, 9)
                 XCTAssertGreaterThan(inUse.patch, 0)
 
                 try await validateInstalledToolchains(
@@ -111,16 +111,16 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateInUse() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: "5.0.0")
+                try await self.installMockedToolchain(selector: "5.9.0")
 
                 var update = try self.parseCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
-                XCTAssertGreaterThan(inUse, .init(major: 5, minor: 0, patch: 0))
+                XCTAssertGreaterThan(inUse, .init(major: 5, minor: 9, patch: 0))
                 XCTAssertEqual(inUse.major, 5)
-                XCTAssertEqual(inUse.minor, 0)
+                XCTAssertEqual(inUse.minor, 9)
                 XCTAssertGreaterThan(inUse.patch, 0)
 
                 try await self.validateInstalledToolchains(
@@ -170,20 +170,20 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateSelectsLatestMatchingStableRelease() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: "5.0.1")
-                try await self.installMockedToolchain(selector: "5.0.0")
+                try await self.installMockedToolchain(selector: "5.9.1")
+                try await self.installMockedToolchain(selector: "5.9.0")
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "5.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+                var update = try self.parseCommand(Update.self, ["update", "-y", "5.9", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await update.run()
 
                 let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
                 XCTAssertEqual(inUse.major, 5)
-                XCTAssertEqual(inUse.minor, 0)
+                XCTAssertEqual(inUse.minor, 9)
                 XCTAssertGreaterThan(inUse.patch, 1)
 
                 try await self.validateInstalledToolchains(
-                    [config.inUse!, .init(major: 5, minor: 0, patch: 0)],
+                    [config.inUse!, .init(major: 5, minor: 9, patch: 0)],
                     description: "update with ambiguous selector should update the latest matching toolchain"
                 )
             }

@@ -128,6 +128,18 @@ install_system_deps () {
         return
     fi
 
+    if [[ "$docker_platform_name" == "debian" ]]; then
+        echo "Detected Debian platform."
+        set +o errexit
+        if [[ "$(id --user)" == "0" ]]; then
+            apt-get install --quiet -y build-essential git gnupg2  libcurl4 libedit2 libncurses-dev libpython3-dev  libxml2  libz3-dev pkg-config python3 python3-lldb tzdata unzip zlib1g-dev
+        else
+            sudo apt-get install --quiet -y build-essential git gnupg2  libcurl4 libedit2 libncurses-dev libpython3-dev  libxml2  libz3-dev pkg-config python3 python3-lldb tzdata unzip zlib1g-dev
+        fi
+        return
+    fi
+
+
     dockerfile_url="https://raw.githubusercontent.com/apple/swift-docker/main/nightly-main/$docker_platform_name/$docker_platform_version/Dockerfile"
     dockerfile="$(curl --silent --retry 3 --location --fail $dockerfile_url)"
     if [[ "$?" -ne 0 ]]; then
@@ -176,13 +188,27 @@ set_platform_ubuntu () {
     docker_platform_name="ubuntu"
     package_manager="apt-get"
     export DEBIAN_FRONTEND=noninteractive
-    
+
     PLATFORM_NAME="ubuntu$1$2"
     PLATFORM_NAME_FULL="ubuntu$1.$2"
     docker_platform_version="$1.$2"
 
     if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
         PLATFORM_NAME_PRETTY="Ubuntu $1.$2"
+    fi
+}
+
+set_platform_debian () {
+    docker_platform_name="debian"
+    package_manager="apt-get"
+    export DEBIAN_FRONTEND=noninteractive
+
+    PLATFORM_NAME="debian$1$2"
+    PLATFORM_NAME_FULL="debian$1$2"
+    docker_platform_version="$1$2"
+
+    if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
+        PLATFORM_NAME_PRETTY="Debian $1$2"
     fi
 }
 
@@ -243,6 +269,18 @@ detect_platform () {
 
                 "bionic")
                     set_platform_ubuntu "18" "04"
+                    ;;
+
+                *)
+                    manually_select_platform
+                    ;;
+            esac
+            ;;
+
+        *"debian"*)
+            case "$VERSION_CODENAME" in
+                "bookworm")
+                    set_platform_debian "12"
                     ;;
 
                 *)
@@ -415,6 +453,10 @@ EOF
 
         "--platform" | "-p")
             case "$2" in
+                "debian12")
+                    set_platform_debian "12"
+                    ;;
+
                 "ubuntu22.04")
                     set_platform_ubuntu "22" "04"
                     ;;

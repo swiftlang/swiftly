@@ -1,4 +1,4 @@
-module CLibArchive {
+module CArchive {
   header "archive.h"
   header "archive_entry.h"
 }

@@ -1,4 +1,4 @@
-import CLibArchive
+import CArchive
 import Foundation
 
 // The code in this file consists mainly of a Swift port of the "Complete Extractor" example included in the libarchive

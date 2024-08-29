@@ -24,7 +24,7 @@ This document contains the high level design of swiftly. Not all features have b
 
 Swiftly helps you to easily install different Swift toolchains locally on your account. It also provides a single path where you can run the tools in the currently selected toolchain. Toolchain selection is [configurable](#toolchain-selection) using different mechanisms.
 
-Note that swiftly is *not* a virtual toolchain in itself since there are cases where it cannot behave as a self-contained Swift toolchain. For example, there can be external dependencies on specific files, such as headers or libraries, far too many and variable between toolchain versions to be managed by swiftly. Also, for long-lived processes, there is no way to gracefully restart them without help from the client.
+Note that swiftly is *not* a virtual toolchain in itself since there are cases where it cannot behave as a self-contained Swift toolchain. For example, there can be external dependencies on specific files, such as headers or libraries. There are far too many files that change between toolchain versions to be managed by swiftly. Also, for long-lived processes, there is no way to gracefully restart them without help from the client.
 
 ## Installation of swiftly
 
@@ -67,7 +67,7 @@ A simple setup for managing the toolchains could look like this:
 
 The toolchains (i.e. the contents of a given Swift download tarball) would be contained in the toolchains directory, each named according to the major/minor/patch version. `config.json` would contain any required metadata (e.g. the latest Swift version, which toolchain is selected, etc.). If pulling in Foundation to use `JSONEncoder`/`JSONDecoder` (or some other JSON tool) would be a problem, we could also use something simpler.
 
-The `~/.local/bin` directory would include symlinks pointing to swiftly itself. When these binaries are run swiftly proxies them to the requested toolchain, or a default.
+The `~/.local/bin` directory would include symlinks pointing to swiftly itself. When the proxies binaries are executed swiftly proxies them to the requested toolchain, or the default.
 
 This is all very similar to how rustup does things, but I figure there's no need to reinvent the wheel here.
 
@@ -289,23 +289,53 @@ This command checks to see if there are new versions of `swiftly` itself and upg
 
 Swiftly will create a set of symbolic links in its SWIFTLY_BIN_DIR during installation that point to the swiftly binary itself for each of the common toolchain commands, such as swift, swiftc, clang, etc. This mechanism will allows swiftly to proxy those command invocations to a selected toolchain at the time of invocation. A toolchain can be selected in these ways in order of precedence:
 
-* Special toolchain selectors among the regular tool command-line arguments (e.g. `swift build +5.10.1`) with the special '+' prefix
 * The presence of a .swift-version file in the current working directory, or ancestor directory, with the required toolchain version
 * The swiftly default (in-use) toolchain set in the swftly config.json by `swiftly install` or `swiftly use` commands
 
 If swiftly cannot find an installed toolchain that matches the selection then it fails with an error and instructions how to use `swiftly install` to satisfy the selection next time.
-
-A few notes about the '+' prefix. First, if a literal '+' prefix should be sent directly to the tool as an argument then it is escaped by doubling it with '++'. An argument with only '++++' is ignored entirely, but any additional arguments are sent directly to the tool without any further inspection of their prefixes. This is analogous to the special '--' token that certain argument parsers accept so that they don't interpret anything following that token as command flags or options.
 
 #### Resolve selected toolchain
 
 For cases where the physical toolchain must be located, such as references specific header files, or shared libraries that are not proxied by swiftly there is a method to resolve the currently selected toolchain to its physical location using `swiftly use`.
 
 ```
-swiftly use --location
+swiftly use --print-location
 ```
 
 This command will provide the full path to the directory where the selected toolchain is installed to standard output if such a toolchain exists. An external tool can directly navigate to the resources that it requires. For external tools that manage long-lived processes from the toolchain, such as the language server, and lldb, this command can be used in a poll to detect cases where the processes should be restarted.
+
+#### Run with a selected toolchain
+
+There are cases where you might want to run an arbitrary command using a selected toolchain. An example could be that you want to build something with CMake.
+
+```
+# CMake
+swiftly run cmake -G ninja
+swiftly run ninja build
+
+# Autoconf
+swiftly run ./configure
+swiftly run make
+```
+
+Swiftly adjusts certain environment variables, such as prefixing the PATH to the selected toolchain directory, and setting the CC and CXX variables to the locations of clang and clang++ in those toolchains so that the build tools use them. If you want to explicitly specify a toolchain for the command you can do that with a selector notation like this:
+
+```
+swiftly run swift build +5.10.1 # Runs swift build with the 5.10.1 toolchain
+```
+
+A few notes about the '+' prefix. First, if a literal '+' prefix should be sent directly to the tool as an argument then it is escaped by doubling it with '++'. An argument with only '++++' is ignored entirely, but any additional arguments are sent directly to the command without any further inspection of their prefixes. This is analogous to the special '--' token that certain argument parsers accept so that they don't interpret anything following that token as command flags or options.
+
+If the selected toolchain is not installed then swiftly will exit with a message indicating that you need to run `swiftly install x.y.z` to install it. However, if you enter a special `+install` token then swiftly will automatically download and install the toolchain if it isn't already present.
+
+```
+# Download and install the latest main snapshot toolchain and run 'swift build' to build the package with it.
+swiftly run swift build +main-snapshot +install
+
+# Generate makefiles with the latest released Swift toolchain, download and install it if necessary
+swiftly run +latest +install cmake -G "Unix Makefile"
+swiftly run +latest make
+```
 
 ## Detailed Design
 

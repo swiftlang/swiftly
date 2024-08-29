@@ -1,0 +1,5 @@
+module acl [system] {
+    link "acl"
+    header "acl/libacl.h"
+    export *
+}

@@ -1,0 +1,5 @@
+module b2 [system] {
+    link "b2"
+    header "blake.h"
+    export *
+}

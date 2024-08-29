@@ -1,0 +1,8 @@
+module attr [system] {
+    link "attr"
+    header "attr/attributes.h"
+    header "attr/error_context.h"
+    header "attr/libattr.h"
+    header "attr/xattr.h"
+    export *
+}

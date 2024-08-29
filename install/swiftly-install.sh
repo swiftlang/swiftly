@@ -684,7 +684,7 @@ if [ "$IS_MACOS" == "false" ]; then
         if has_command gpg ; then
             echo ""
             echo "Importing Swift's PGP keys..."
-            curl --compressed --silent --retry 3 --location --fail https://swift.org/keys/all-keys.asc | gpg --import -
+            curl --compressed --silent --retry 3 --location --fail https://www.swift.org/keys/all-keys.asc | gpg --import -
         else
             echo "gpg not installed, skipping import of Swift's PGP keys."
         fi

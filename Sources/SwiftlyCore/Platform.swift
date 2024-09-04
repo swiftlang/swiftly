@@ -54,18 +54,6 @@ public protocol Platform {
     /// If this version is in use, the next latest version will be used afterwards.
     func uninstall(_ version: ToolchainVersion) throws
 
-    /// Select the toolchain associated with the given version.
-    /// Returns whether the selection was successful.
-    func use(_ version: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool
-
-    /// Clear the current active toolchain.
-    func unUse(currentToolchain: ToolchainVersion) throws
-
-    /// Get a list of snapshot builds for the platform. If a version is specified, only
-    /// return snapshots associated with the version.
-    /// This will likely have a default implementation.
-    func listAvailableSnapshots(version: String?) async -> [Snapshot]
-
     /// Get the name of the swiftly release binary.
     func getExecutableName() -> String
 
@@ -98,6 +86,9 @@ public protocol Platform {
 
     /// Get the user's current login shell
     func getShell() async throws -> String
+
+    /// Find the location where the toolchain should be installed.
+    func findToolchainLocation(_ toolchain: ToolchainVersion) -> URL
 }
 
 extension Platform {
@@ -126,7 +117,16 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
+    public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws {
+        let cmd = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin/\(command)")
+        try self.runProgram([cmd.path] + arguments)
+    }
+
     public func runProgram(_ args: String..., quiet: Bool = false) throws {
+        try self.runProgram([String](args), quiet: quiet)
+    }
+
+    public func runProgram(_ args: [String], quiet: Bool = false) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = args
@@ -150,6 +150,10 @@ extension Platform {
     }
 
     public func runProgramOutput(_ program: String, _ args: String...) async throws -> String? {
+        try await self.runProgramOutput(program, [String](args))
+    }
+
+    public func runProgramOutput(_ program: String, _ args: [String]) async throws -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = [program] + args
@@ -202,6 +206,7 @@ extension Platform {
 
         return true
     }
+
 #endif
 }
 

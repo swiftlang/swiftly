@@ -77,7 +77,7 @@ struct Install: SwiftlyCommand {
 
         let selector = try ToolchainSelector(parsing: self.version)
         SwiftlyCore.httpClient.githubToken = self.token
-        let toolchainVersion = try await self.resolve(selector: selector)
+        let toolchainVersion = try await Self.resolve(selector: selector)
         var config = try Config.load()
         let postInstallScript = try await Self.execute(
             version: toolchainVersion,
@@ -218,7 +218,8 @@ struct Install: SwiftlyCommand {
         // If this is the first installed toolchain, mark it as in-use regardless of whether the
         // --use argument was provided.
         if useInstalledToolchain || config.inUse == nil {
-            try await Use.execute(version, &config)
+            // TODO: consider adding the global default option to this commands flags
+            try await Use.execute(version, false, &config)
         }
 
         SwiftlyCore.print("\(version) installed successfully!")
@@ -227,7 +228,7 @@ struct Install: SwiftlyCommand {
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
     /// TODO: update this to use an official swift.org API
-    func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {
+    static func resolve(selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:
             SwiftlyCore.print("Fetching the latest stable Swift release...")

@@ -54,6 +54,24 @@ internal struct Init: SwiftlyCommand {
             }
         }
 
+        // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
+        let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
+        let swiftlyBinDirContents = try FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)
+        let willBeOverwritten = Set(proxyList + ["swiftly"]).intersection(swiftlyBinDirContents)
+        if !willBeOverwritten.isEmpty && !overwrite {
+            SwiftlyCore.print("The following existing executables will be overwritten:")
+
+            for executable in willBeOverwritten {
+                SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
+            }
+
+            let proceed = SwiftlyCore.readLine(prompt: "Proceed? [y/N]") ?? "n"
+
+            guard proceed == "y" else {
+                throw Error(message: "Swiftly installation has been cancelled")
+            }
+        }
+
         let shell = if let s = ProcessInfo.processInfo.environment["SHELL"] {
             s
         } else {
@@ -113,11 +131,7 @@ internal struct Init: SwiftlyCommand {
             SwiftlyCore.print("Moving swiftly into the installation directory...")
 
             if swiftlyBin.fileExists() {
-                if !overwrite {
-                    throw Error(message: "Swiftly binary already exists. You can try again with `--overwrite` to replace it.")
-                } else {
-                    try FileManager.default.removeItem(at: swiftlyBin)
-                }
+                try FileManager.default.removeItem(at: swiftlyBin)
             }
 
             do {
@@ -125,6 +139,30 @@ internal struct Init: SwiftlyCommand {
             } catch {
                 try FileManager.default.copyItem(at: cmd, to: swiftlyBin)
                 SwiftlyCore.print("Swiftly has been copied into the installation directory. You can remove '\(cmd.path)'. It is no longer needed.")
+            }
+        }
+
+        // Don't create the proxies in the tests
+        if !cmd.path.hasSuffix("xctest") {
+            SwiftlyCore.print("Setting up toolchain proxies...")
+
+            let proxyTo = if systemManaged {
+                cmd.path
+            } else {
+                swiftlyBin.path
+            }
+
+            for p in proxyList {
+                let proxy = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(p)
+
+                if proxy.fileExists() {
+                    try FileManager.default.removeItem(at: proxy)
+                }
+
+                try FileManager.default.createSymbolicLink(
+                    atPath: proxy.path,
+                    withDestinationPath: proxyTo
+                )
             }
         }
 
@@ -201,7 +239,19 @@ internal struct Init: SwiftlyCommand {
                 SwiftlyCore.print("""
                 To begin using installed swiftly from your current shell, first run the following command:
                     \(sourceLine)
+
                 """)
+
+#if os(macOS)
+                SwiftlyCore.print("""
+                NOTE: On macOS it is possible that the shell will pick up the system Swift on the path
+                instead of the one that swiftly has installed for you. You can run the 'hash -r'
+                command to update the shell with the latest PATHs.
+
+                    hash -r
+
+                """)
+#endif
             }
         }
     }

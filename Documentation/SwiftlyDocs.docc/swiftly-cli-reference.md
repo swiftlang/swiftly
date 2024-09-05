@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install <version> [--use] [--token=<token>] [--verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly install <version> [--use] [--token=<token>] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **version:**
@@ -67,7 +67,7 @@ This is useful to avoid GitHub's low rate limits. If an installation
 fails with an "unauthorized" status code, it likely means the rate limit has been hit.
 
 
-**--verify:**
+**--verify|no-verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
 
@@ -142,8 +142,18 @@ Note that listing available snapshots before 6.0 is unsupported.
 Set the active toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
 
 ```
-swiftly use [<toolchain>] [--version] [--help]
+swiftly use [--print-location] [--global-default] [<toolchain>] [--version] [--help]
 ```
+
+**--print-location:**
+
+*Print the location of the in-use toolchain. This is valid only when there is no toolchain argument.*
+
+
+**--global-default:**
+
+*Use the global default, ignoring any .swift-version files.*
+
 
 **toolchain:**
 
@@ -293,7 +303,7 @@ The installed snapshots for a given devlopment branch can be listed by specifyin
 Update an installed toolchain to a newer version.
 
 ```
-swiftly update [<toolchain>] [--assume-yes] [--verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly update [<toolchain>] [--assume-yes] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **toolchain:**
@@ -339,7 +349,7 @@ A specific snapshot toolchain can be updated by including the date:
 *Disable confirmation prompts by assuming 'yes'*
 
 
-**--verify:**
+**--verify|no-verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
 

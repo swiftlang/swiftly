@@ -36,23 +36,16 @@ public enum Proxy {
             }
 
             let config = try Config.load()
-            let toolchain: ToolchainVersion
 
-            if let (selectedToolchain, versionFile, selector) = try swiftToolchainSelection(config: config) {
-                guard let selectedToolchain = selectedToolchain else {
-                    if let versionFile = versionFile {
-                        throw if let selector = selector {
-                            Error(message: "No installed swift toolchain matches the version \(selector) from \(versionFile). You can try installing one with `swiftly install \(selector)`.")
-                        } else {
-                            Error(message: "Swift version file is malformed and cannot be used to select a swift toolchain: \(versionFile)")
-                        }
-                    }
-                    fatalError("error in toolchain selection logic")
-                }
+            let (toolchain, result) = selectToolchain(config: config)
 
-                toolchain = selectedToolchain
-            } else {
-                throw Error(message: "No swift toolchain could be determined either from a .swift-version file, or the default. You can try using `swiftly use <toolchain version>` to set it.")
+            // Abort on any errors relating to swift version files
+            if case let .swiftVersionFile(_, error) = result, let error = error {
+                throw error
+            }
+
+            guard let toolchain = toolchain else {
+                throw Error(message: "No swift toolchain could be selected from either from a .swift-version file, or the default. You can try using `swiftly install <toolchain version>` to install one.")
             }
 
             try await Swiftly.currentPlatform.proxy(toolchain, binName, Array(CommandLine.arguments[1...]))

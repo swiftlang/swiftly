@@ -55,21 +55,16 @@ internal struct Use: SwiftlyCommand {
 
         // This is the bare use command where we print the selected toolchain version (or the path to it)
         guard let toolchain = self.toolchain else {
-            let selected = try swiftToolchainSelection(config: config, globalDefault: self.globalDefault)
+            let (selectedVersion, result) = selectToolchain(config: config, globalDefault: self.globalDefault)
 
-            guard let selected = selected else {
-                // No toolchain selected, so we just output nothing
-                return
-            }
-
-            let (selectedVersion, versionFile, selector) = selected
-
-            if let versionFile = versionFile, selector == nil {
-                throw Error(message: "Swift version file is malformed and cannot be used to select a swift toolchain: \(versionFile)")
+            // Abort on any errors with the swift version files
+            if case let .swiftVersionFile(_, error) = result, let error = error {
+                throw error
             }
 
             guard let selectedVersion = selectedVersion else {
-                fatalError("error in toolchain selection logic")
+                // Return with nothing if there's no toolchain that is selected
+                return
             }
 
             if self.printLocation {
@@ -78,11 +73,16 @@ internal struct Use: SwiftlyCommand {
                 return
             }
 
-            if let versionFile = versionFile {
-                SwiftlyCore.print("\(selectedVersion) (\(versionFile.path))")
-            } else {
-                SwiftlyCore.print("\(selectedVersion) (default)")
+            var message = "\(selectedVersion)"
+
+            switch result {
+            case let .swiftVersionFile(versionFile, _):
+                message += " (\(versionFile.path))"
+            case .globalDefault:
+                message += " (default)"
             }
+
+            SwiftlyCore.print(message)
 
             return
         }
@@ -103,16 +103,17 @@ internal struct Use: SwiftlyCommand {
 
     /// Use a toolchain. This method can modify and save the input config.
     internal static func execute(_ toolchain: ToolchainVersion, _ globalDefault: Bool, _ config: inout Config) async throws {
-        let previousToolchain = try swiftToolchainSelection(config: config, globalDefault: globalDefault)
+        let (selectedVersion, result) = selectToolchain(config: config, globalDefault: globalDefault)
 
-        if let (selectedVersion, _, _) = previousToolchain {
+        if let selectedVersion = selectedVersion {
             guard selectedVersion != toolchain else {
                 SwiftlyCore.print("\(toolchain) is already in use")
                 return
             }
         }
 
-        if let (_, versionFile, _) = previousToolchain, let versionFile = versionFile {
+        if case let .swiftVersionFile(versionFile, _) = result {
+            // We don't care in this case if there were any problems with the swift version files, just overwrite it with the new value
             try toolchain.name.write(to: versionFile, atomically: true, encoding: .utf8)
         } else if let newVersionFile = findNewVersionFile(), !globalDefault {
             try toolchain.name.write(to: newVersionFile, atomically: true, encoding: .utf8)
@@ -122,9 +123,7 @@ internal struct Use: SwiftlyCommand {
         }
 
         var message = "Set the used toolchain to \(toolchain)"
-        if let (selectedVersion, _, _) = previousToolchain,
-           let selectedVersion = selectedVersion
-        {
+        if let selectedVersion = selectedVersion {
             message += " (was \(selectedVersion.name))"
         }
 
@@ -152,24 +151,31 @@ internal struct Use: SwiftlyCommand {
     }
 }
 
-/// Returns the currently selected swift toolchain with optional details.
+public enum ToolchainSelectionResult {
+    case globalDefault
+    case swiftVersionFile(URL, Error?)
+}
+
+/// Returns the currently selected swift toolchain, if any, with details of the selection.
+///
+/// The first portion of the returned tuple is the version that was selected, which
+/// can be nil if none can be selected.
 ///
 /// Selection of a toolchain can be accomplished in a number of ways. There is the
 /// the configuration's global default 'inUse' setting. This is the fallback selector
-/// if there are no other selections. In this case the returned tuple will contain
-/// only the selected toolchain version. None of the other values are provided.
+/// if there are no other selections. The returned tuple will contain the default toolchain
+/// version and the result will be .default.
 ///
 /// A toolchain can also be selected from a `.swift-version` file in the current
-/// working directory, or an ancestor directory. The nearest version file is
-/// returned as a URL if it is present, even if the file is malformed or it
-/// doesn't select any of the installed toolchains. A well-formed version file
-/// will additionally return the toolchain selector that it represents. Finally,
-/// if that selector selects one of the installed toolchains then all three
-/// values are returned.
+/// working directory, or an ancestor directory. If it successfully selects a toolchain
+/// then the result will be .swiftVersionFile with the URL of the file that made the
+/// selection and the first item of the tuple is the selected toolchain version.
 ///
-/// Note: if no swift version files are found at all then the return will be nil
-///
-public func swiftToolchainSelection(config: Config, globalDefault: Bool = false) throws -> (ToolchainVersion?, URL?, ToolchainSelector?)? {
+/// However, there are cases where the swift version file fails to select a toolchain.
+/// If such a case happens then the toolchain version in the tuple will be nil, but the
+/// result will be .swiftVersionFile and a detailed error about the problem. This error
+/// can be thrown by the client, or ignored.
+public func selectToolchain(config: Config, globalDefault: Bool = false) -> (ToolchainVersion?, ToolchainSelectionResult) {
     if !globalDefault {
         var cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
@@ -184,11 +190,11 @@ public func swiftToolchainSelection(config: Config, globalDefault: Bool = false)
                 let contents = try? String(contentsOf: svFile, encoding: .utf8)
 
                 guard let contents = contents else {
-                    return (nil, svFile, nil)
+                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file could not be read: \(svFile)")))
                 }
 
                 guard !contents.isEmpty else {
-                    return (nil, svFile, nil)
+                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file is empty: \(svFile)")))
                 }
 
                 let selectorString = contents.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: "\r", with: "")
@@ -196,27 +202,23 @@ public func swiftToolchainSelection(config: Config, globalDefault: Bool = false)
                 do {
                     selector = try ToolchainSelector(parsing: selectorString)
                 } catch {
-                    return (nil, svFile, nil)
+                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file is malformed: \(svFile) \(error)")))
                 }
 
                 guard let selector = selector else {
-                    return (nil, svFile, nil)
+                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file is malformed: \(svFile)")))
                 }
 
                 guard let selectedToolchain = config.listInstalledToolchains(selector: selector).max() else {
-                    return (nil, svFile, selector)
+                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file didn't select any of the installed toolchains. You can install one with `swiftly install \(selector.description)`.")))
                 }
 
-                return (selectedToolchain, svFile, selector)
+                return (selectedToolchain, .swiftVersionFile(svFile, nil))
             }
 
             cwd = cwd.deletingLastPathComponent()
         }
     }
 
-    if let inUse = config.inUse {
-        return (inUse, nil, nil)
-    }
-
-    return nil
+    return (config.inUse, .globalDefault)
 }

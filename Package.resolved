@@ -1,4 +1,5 @@
 {
+  "originHash" : "942a1612e8d4b18479d16ed7518859be9ac852972e43afb2a08c65d1037a641f",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -152,7 +153,16 @@
         "revision" : "3b13e439a341bbbfe0f710c7d1be37221745ef1a",
         "version" : "0.6.1"
       }
+    },
+    {
+      "identity" : "swiftformat",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nicklockwood/SwiftFormat",
+      "state" : {
+        "revision" : "c7ddb09c3381cff833106345721fc314dba49e20",
+        "version" : "0.49.18"
+      }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

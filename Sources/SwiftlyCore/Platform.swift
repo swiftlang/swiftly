@@ -20,6 +20,13 @@ public struct PlatformDefinition: Codable, Equatable {
         self.nameFull = nameFull
         self.namePretty = namePretty
     }
+
+    public static let macOS = PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS")
+    public static let ubuntu2204 = PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04")
+    public static let ubuntu2004 = PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04")
+    public static let ubuntu1804 = PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
+    public static let rhel9 = PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9")
+    public static let amazonlinux2 = PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2")
 }
 
 public protocol Platform {

@@ -2,4 +2,4 @@
 
 set -o errexit
 
-swiftformat --lint --dryrun .
+swift run swiftformat --lint --dryrun .

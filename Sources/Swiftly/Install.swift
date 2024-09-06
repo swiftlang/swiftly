@@ -101,7 +101,7 @@ struct Install: SwiftlyCommand {
         }
     }
 
-    internal static func execute(
+    public static func execute(
         version: ToolchainVersion,
         _ config: inout Config,
         useInstalledToolchain: Bool,
@@ -227,7 +227,7 @@ struct Install: SwiftlyCommand {
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
     /// TODO: update this to use an official swift.org API
-    static func resolve(config: Config, selector: ToolchainSelector) async throws -> ToolchainVersion {
+    public static func resolve(config: Config, selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:
             SwiftlyCore.print("Fetching the latest stable Swift release...")

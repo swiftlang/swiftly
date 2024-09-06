@@ -35,9 +35,9 @@ public enum Proxy {
                 return
             }
 
-            let config = try Config.load()
+            var config = try Config.load()
 
-            let (toolchain, result) = selectToolchain(config: config)
+            let (toolchain, result) = try await selectToolchain(config: &config)
 
             // Abort on any errors relating to swift version files
             if case let .swiftVersionFile(_, error) = result, let error = error {
@@ -49,6 +49,8 @@ public enum Proxy {
             }
 
             try await Swiftly.currentPlatform.proxy(toolchain, binName, Array(CommandLine.arguments[1...]))
+        } catch let terminated as RunProgramError {
+            exit(terminated.exitCode)
         } catch {
             SwiftlyCore.print("\(error)")
             exit(1)

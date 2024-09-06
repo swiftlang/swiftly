@@ -434,3 +434,61 @@ swiftly self-update [--version] [--help]
 
 
 
+## run
+
+Run a command while proxying to the selected toolchain commands.
+
+```
+swiftly run <command>... [--version] [--help]
+```
+
+**command:**
+
+*Run a command while proxying to the selected toolchain commands.*
+
+
+Run a command with a selected toolchain, so that all toolchain commands are become the default added to the system path and other common environment variables.
+
+You can run one of the usual toolchain commands directly:
+
+    $ swiftly run swift build
+
+Or you can run another program (or script) that runs one or more toolchain commands:
+
+    $ swiftly run make  # Builds targets using clang/swiftc
+    $ swiftly run ./build-things.sh  # Script invokes 'swift build' to create certain product binaries
+
+Toolchain selection is determined by swift version files `.swift-version`, with a default global as the fallback. See the `swiftly use` command for more details.
+
+You can also override the selection mechanisms temporarily for the duration of the command using a special syntax. An argument prefixed with a '+' will be treated as the selector.
+
+    $ swiftly run swift build +latest
+    $ swiftly run swift build +5.10.1
+
+The first command builds the swift package with the latest toolchain and the second selects the 5.10.1 toolchain. Note that if these aren't installed then run will fail with an error message. You can pre-install the toolchain using `swiftly install <toolchain>` to ensure success. There is also a `+install` argument that will automatically download and install the toolchain if necessary.
+
+    $ swiftly run swift build +latest +install
+
+If the command that you are running needs the arguments with the '+' prefixes then you can escape it by doubling the '++'.
+
+    $ swiftly run ./myscript.sh ++abcde
+
+The script will receive the argument as '+abcde'. If there are multiple arguments with the '+' prefix that should be escaped you can disable the selection using a '++++' argument, which turns off any selector argument processing for subsequent arguments. This is anologous to the '--' that turns off flag and option processing for subsequent arguments in many argument parsers.
+
+    $ swiftly run ./myscript.sh ++++ +abcde +xyz
+
+The script will receive the argument '+abcde' followed by '+xyz'.
+
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+

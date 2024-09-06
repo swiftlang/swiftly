@@ -55,7 +55,7 @@ internal struct Use: SwiftlyCommand {
 
         // This is the bare use command where we print the selected toolchain version (or the path to it)
         guard let toolchain = self.toolchain else {
-            let (selectedVersion, result) = selectToolchain(config: config, globalDefault: self.globalDefault)
+            let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: self.globalDefault)
 
             // Abort on any errors with the swift version files
             if case let .swiftVersionFile(_, error) = result, let error = error {
@@ -103,7 +103,7 @@ internal struct Use: SwiftlyCommand {
 
     /// Use a toolchain. This method can modify and save the input config.
     internal static func execute(_ toolchain: ToolchainVersion, _ globalDefault: Bool, _ config: inout Config) async throws {
-        let (selectedVersion, result) = selectToolchain(config: config, globalDefault: globalDefault)
+        let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: globalDefault)
 
         if let selectedVersion = selectedVersion {
             guard selectedVersion != toolchain else {
@@ -175,7 +175,7 @@ public enum ToolchainSelectionResult {
 /// If such a case happens then the toolchain version in the tuple will be nil, but the
 /// result will be .swiftVersionFile and a detailed error about the problem. This error
 /// can be thrown by the client, or ignored.
-public func selectToolchain(config: Config, globalDefault: Bool = false) -> (ToolchainVersion?, ToolchainSelectionResult) {
+public func selectToolchain(config: inout Config, globalDefault: Bool = false, install: Bool = false) async throws -> (ToolchainVersion?, ToolchainSelectionResult) {
     if !globalDefault {
         var cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
@@ -207,6 +207,21 @@ public func selectToolchain(config: Config, globalDefault: Bool = false) -> (Too
 
                 guard let selector = selector else {
                     return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file is malformed: \(svFile)")))
+                }
+
+                if install {
+                    let version = try await Install.resolve(config: config, selector: selector)
+                    let postInstallScript = try await Install.execute(version: version, &config, useInstalledToolchain: false, verifySignature: true)
+                    if let postInstallScript = postInstallScript {
+                        throw Error(message: """
+
+                        There are some system dependencies that should be installed before using this toolchain.
+                        You can run the following script as the system administrator (e.g. root) to prepare
+                        your system:
+
+                        \(postInstallScript)
+                        """)
+                    }
                 }
 
                 guard let selectedToolchain = config.listInstalledToolchains(selector: selector).max() else {

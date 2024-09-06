@@ -29,6 +29,11 @@ public struct PlatformDefinition: Codable, Equatable {
     public static let amazonlinux2 = PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2")
 }
 
+public struct RunProgramError: Swift.Error {
+    public let exitCode: Int32
+    public let program: String
+}
+
 public protocol Platform {
     /// The platform-specific location on disk where applications are
     /// supposed to store their custom data.
@@ -124,19 +129,61 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
+    /// Proxy the invocation of the provided command to the chosen toolchain.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
     public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws {
-        let cmd = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin/\(command)")
-        try self.runProgram([cmd.path] + arguments)
+        // The toolchain goes to the beginning of the path, and the SWIFTLY_BIN_DIR is removed from it
+        let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
+        var newEnv = ProcessInfo.processInfo.environment
+
+        // Prevent circularities with a memento environment variable
+        guard newEnv["SWIFTLY_PROXY_IN_PROGRESS"] == nil else {
+            throw Error(message: "Circular swiftly proxy invocation")
+        }
+        newEnv["SWIFTLY_PROXY_IN_PROGRESS"] = "1"
+
+        var newPath = newEnv["PATH"] ?? ""
+        if !newPath.hasPrefix(tcPath.path + ":") {
+            newPath = ([tcPath.path] + newPath.split(separator: ":").map { String($0) }.filter { $0 != swiftlyBinDir.path }).joined(separator: ":")
+        }
+        newEnv["PATH"] = newPath
+
+        // Remove traces of swiftly environment variables
+        newEnv.removeValue(forKey: "SWIFTLY_BIN_DIR")
+        newEnv.removeValue(forKey: "SWIFTLY_HOME_DIR")
+
+        // Add certain common environment variables that can be used to proxy to the toolchain
+        newEnv["CC"] = tcPath.appendingPathComponent("clang").path
+        newEnv["CXX"] = tcPath.appendingPathComponent("clang++").path
+
+        try self.runProgram([command] + arguments, env: newEnv)
     }
 
-    public func runProgram(_ args: String..., quiet: Bool = false) throws {
-        try self.runProgram([String](args), quiet: quiet)
+    /// Run a program.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func runProgram(_ args: String..., quiet: Bool = false, env: [String: String]? = nil) throws {
+        try self.runProgram([String](args), quiet: quiet, env: env)
     }
 
-    public func runProgram(_ args: [String], quiet: Bool = false) throws {
+    /// Run a program.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func runProgram(_ args: [String], quiet: Bool = false, env: [String: String]? = nil) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = args
+
+        if let env = env {
+            process.environment = env
+        }
 
         if quiet {
             process.standardOutput = nil
@@ -152,14 +199,24 @@ extension Platform {
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
+            throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)
         }
     }
 
+    /// Run a program and capture its output.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
     public func runProgramOutput(_ program: String, _ args: String...) async throws -> String? {
         try await self.runProgramOutput(program, [String](args))
     }
 
+    /// Run a program and capture its output.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
     public func runProgramOutput(_ program: String, _ args: [String]) async throws -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -181,7 +238,7 @@ extension Platform {
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
+            throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)
         }
 
         if let outData = outData {

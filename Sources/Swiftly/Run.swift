@@ -60,10 +60,6 @@ internal struct Run: SwiftlyCommand {
     internal mutating func run() async throws {
         try validateSwiftly()
 
-        guard self.command.count > 0 else {
-            throw Error(message: "Provide at least one command to run")
-        }
-
         var escapedCommand: [String] = []
         var selector: ToolchainSelector?
         var install = false
@@ -90,6 +86,10 @@ internal struct Run: SwiftlyCommand {
             }
 
             escapedCommand.append(c)
+        }
+
+        guard escapedCommand.count > 0 else {
+            throw Error(message: "Provide at least one command to run")
         }
 
         var config = try Config.load()

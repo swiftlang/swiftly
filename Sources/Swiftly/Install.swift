@@ -108,7 +108,7 @@ struct Install: SwiftlyCommand {
         verifySignature: Bool
     ) async throws -> String? {
         guard !config.installedToolchains.contains(version) else {
-            SwiftlyCore.print("\(version) is already installed, exiting.")
+            SwiftlyCore.print("\(version) is already installed.")
             return nil
         }
 

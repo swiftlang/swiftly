@@ -129,13 +129,7 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
-    /// Proxy the invocation of the provided command to the chosen toolchain.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws {
-        // The toolchain goes to the beginning of the path, and the SWIFTLY_BIN_DIR is removed from it
+    internal func proxyEnv(_ toolchain: ToolchainVersion) throws -> [String: String] {
         let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
         var newEnv = ProcessInfo.processInfo.environment
 
@@ -145,21 +139,36 @@ extension Platform {
         }
         newEnv["SWIFTLY_PROXY_IN_PROGRESS"] = "1"
 
+        // The toolchain goes to the beginning of the PATH
         var newPath = newEnv["PATH"] ?? ""
         if !newPath.hasPrefix(tcPath.path + ":") {
-            newPath = ([tcPath.path] + newPath.split(separator: ":").map { String($0) }.filter { $0 != swiftlyBinDir.path }).joined(separator: ":")
+            newPath = ([tcPath.path] + newPath.split(separator: ":").map { String($0) }).joined(separator: ":")
         }
         newEnv["PATH"] = newPath
-
-        // Remove traces of swiftly environment variables
-        newEnv.removeValue(forKey: "SWIFTLY_BIN_DIR")
-        newEnv.removeValue(forKey: "SWIFTLY_HOME_DIR")
 
         // Add certain common environment variables that can be used to proxy to the toolchain
         newEnv["CC"] = tcPath.appendingPathComponent("clang").path
         newEnv["CXX"] = tcPath.appendingPathComponent("clang++").path
 
-        try self.runProgram([command] + arguments, env: newEnv)
+        return newEnv
+    }
+
+    /// Proxy the invocation of the provided command to the chosen toolchain.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws {
+        try self.runProgram([command] + arguments, env: self.proxyEnv(toolchain))
+    }
+
+    /// Proxy the invocation of the provided command to the chosen toolchain and capture the output.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func proxyOutput(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws -> String? {
+        try await self.runProgramOutput(command, arguments, env: self.proxyEnv(toolchain))
     }
 
     /// Run a program.
@@ -208,8 +217,8 @@ extension Platform {
     /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
     /// the exit code and program information.
     ///
-    public func runProgramOutput(_ program: String, _ args: String...) async throws -> String? {
-        try await self.runProgramOutput(program, [String](args))
+    public func runProgramOutput(_ program: String, _ args: String..., env: [String: String]? = nil) async throws -> String? {
+        try await self.runProgramOutput(program, [String](args), env: env)
     }
 
     /// Run a program and capture its output.
@@ -217,10 +226,14 @@ extension Platform {
     /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
     /// the exit code and program information.
     ///
-    public func runProgramOutput(_ program: String, _ args: [String]) async throws -> String? {
+    public func runProgramOutput(_ program: String, _ args: [String], env: [String: String]? = nil) async throws -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = [program] + args
+
+        if let env = env {
+            process.environment = env
+        }
 
         let outPipe = Pipe()
         process.standardInput = FileHandle.nullDevice

@@ -46,11 +46,11 @@ internal struct Run: SwiftlyCommand {
             $ swiftly run ./myscript.sh ++abcde
 
         The script will receive the argument as '+abcde'. If there are multiple arguments with the '+' prefix \
-        that should be escaped you can disable the selection using a '++++' argument, which turns off any \
+        that should be escaped you can disable the selection using a '++' argument, which turns off any \
         selector argument processing for subsequent arguments. This is anologous to the '--' that turns off \
         flag and option processing for subsequent arguments in many argument parsers.
 
-            $ swiftly run ./myscript.sh ++++ +abcde +xyz
+            $ swiftly run ./myscript.sh ++ +abcde +xyz
 
         The script will receive the argument '+abcde' followed by '+xyz'.
         """
@@ -60,39 +60,9 @@ internal struct Run: SwiftlyCommand {
     internal mutating func run() async throws {
         try validateSwiftly()
 
-        var escapedCommand: [String] = []
-        var selector: ToolchainSelector?
-        var install = false
-        var disableEscaping = false
-        for c in self.command {
-            if !disableEscaping && c == "++++" {
-                disableEscaping = true
-                continue
-            }
-
-            if !disableEscaping && c.hasPrefix("++") {
-                escapedCommand.append("+\(String(c.dropFirst(2)))")
-                continue
-            }
-
-            if !disableEscaping && c == "+install" {
-                install = true
-                continue
-            }
-
-            if !disableEscaping && c.hasPrefix("+") {
-                selector = try ToolchainSelector(parsing: String(c.dropFirst()))
-                continue
-            }
-
-            escapedCommand.append(c)
-        }
-
-        guard escapedCommand.count > 0 else {
-            throw Error(message: "Provide at least one command to run")
-        }
-
         var config = try Config.load()
+
+        let (command, selector, install) = try extractProxyArguments(command: self.command)
 
         let toolchain: ToolchainVersion?
 
@@ -115,7 +85,7 @@ internal struct Run: SwiftlyCommand {
             } else {
                 let matchedToolchain = config.listInstalledToolchains(selector: selector).max()
                 guard let matchedToolchain = matchedToolchain else {
-                    throw Error(message: "The selected toolchain \(selector.description) didn't matched any of the installed toolchains. You can install it by adding '+install' to your command, or `swiftly install \(selector.description)`")
+                    throw Error(message: "The selected toolchain \(selector.description) didn't match any of the installed toolchains. You can install it by adding '+install' to your command, or `swiftly install \(selector.description)`")
                 }
 
                 toolchain = matchedToolchain
@@ -136,11 +106,56 @@ internal struct Run: SwiftlyCommand {
         }
 
         do {
-            try await Swiftly.currentPlatform.proxy(toolchain, escapedCommand[0], [String](escapedCommand[1...]))
+            if let outputHandler = SwiftlyCore.outputHandler {
+                if let output = try await Swiftly.currentPlatform.proxyOutput(toolchain, command[0], [String](command[1...])) {
+                    for line in output.split(separator: "\n") {
+                        outputHandler.handleOutputLine(String(line))
+                    }
+                }
+                return
+            }
+
+            try await Swiftly.currentPlatform.proxy(toolchain, command[0], [String](command[1...]))
         } catch let terminated as RunProgramError {
             Foundation.exit(terminated.exitCode)
         } catch {
             throw error
         }
     }
+}
+
+public func extractProxyArguments(command: [String]) throws -> (command: [String], selector: ToolchainSelector?, install: Bool) {
+    var args: (command: [String], selector: ToolchainSelector?, install: Bool) = (command: [], nil, false)
+
+    var disableEscaping = false
+
+    for c in command {
+        if !disableEscaping && c == "++" {
+            disableEscaping = true
+            continue
+        }
+
+        if !disableEscaping && c.hasPrefix("++") {
+            args.command.append("+\(String(c.dropFirst(2)))")
+            continue
+        }
+
+        if !disableEscaping && c == "+install" {
+            args.install = true
+            continue
+        }
+
+        if !disableEscaping && c.hasPrefix("+") {
+            args.selector = try ToolchainSelector(parsing: String(c.dropFirst()))
+            continue
+        }
+
+        args.command.append(c)
+    }
+
+    guard args.command.count > 0 else {
+        throw Error(message: "Provide at least one command to run.")
+    }
+
+    return args
 }

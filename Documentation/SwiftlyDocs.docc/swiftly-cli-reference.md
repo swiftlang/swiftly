@@ -473,9 +473,9 @@ If the command that you are running needs the arguments with the '+' prefixes th
 
     $ swiftly run ./myscript.sh ++abcde
 
-The script will receive the argument as '+abcde'. If there are multiple arguments with the '+' prefix that should be escaped you can disable the selection using a '++++' argument, which turns off any selector argument processing for subsequent arguments. This is anologous to the '--' that turns off flag and option processing for subsequent arguments in many argument parsers.
+The script will receive the argument as '+abcde'. If there are multiple arguments with the '+' prefix that should be escaped you can disable the selection using a '++' argument, which turns off any selector argument processing for subsequent arguments. This is anologous to the '--' that turns off flag and option processing for subsequent arguments in many argument parsers.
 
-    $ swiftly run ./myscript.sh ++++ +abcde +xyz
+    $ swiftly run ./myscript.sh ++ +abcde +xyz
 
 The script will receive the argument '+abcde' followed by '+xyz'.
 

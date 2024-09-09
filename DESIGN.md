@@ -324,7 +324,7 @@ Swiftly adjusts certain environment variables, such as prefixing the PATH to the
 swiftly run swift build +5.10.1 # Runs swift build with the 5.10.1 toolchain
 ```
 
-A few notes about the '+' prefix. First, if a literal '+' prefix should be sent directly to the tool as an argument then it is escaped by doubling it with '++'. An argument with only '++++' is ignored entirely, but any additional arguments are sent directly to the command without any further inspection of their prefixes. This is analogous to the special '--' token that certain argument parsers accept so that they don't interpret anything following that token as command flags or options.
+A few notes about the '+' prefix. First, if a literal '+' prefix should be sent directly to the tool as an argument then it is escaped by doubling it with '++'. An argument with only '++' is ignored entirely, and any additional arguments are sent directly to the command without any further inspection of their prefixes. This is analogous to the special '--' token that certain argument parsers accept so that they don't interpret anything following that token as command flags or options.
 
 If the selected toolchain is not installed then swiftly will exit with a message indicating that you need to run `swiftly install x.y.z` to install it. However, if you enter a special `+install` token then swiftly will automatically download and install the toolchain if it isn't already present.
 

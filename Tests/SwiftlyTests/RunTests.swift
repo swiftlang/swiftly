@@ -97,5 +97,15 @@ final class RunTests: SwiftlyTests {
             let _ = try extractProxyArguments(command: [])
             XCTAssert(false)
         } catch {}
+
+        (command, selector, install) = try extractProxyArguments(command: ["swift", "+1.2.3", "+install", "build"])
+        XCTAssertEqual(["swift", "build"], command)
+        XCTAssertEqual(true, install)
+        XCTAssertEqual(try! ToolchainSelector(parsing: "1.2.3"), selector)
+
+        (command, selector, install) = try extractProxyArguments(command: ["swift", "+install", "build"])
+        XCTAssertEqual(["swift", "build"], command)
+        XCTAssertEqual(true, install)
+        XCTAssertEqual(nil, selector)
     }
 }

@@ -94,7 +94,7 @@ internal struct Run: SwiftlyCommand {
             let (version, result) = try await selectToolchain(config: &config, install: install)
 
             // Abort on any errors relating to swift version files
-            if case let .swiftVersionFile(_, error) = result, let error = error {
+            if case let .swiftVersionFile(_, _, error) = result, let error = error {
                 throw error
             }
 

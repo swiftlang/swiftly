@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install <version> [--use] [--token=<token>] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly install [<version>] [--use] [--token=<token>] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **version:**
@@ -52,6 +52,10 @@ Likewise, the latest snapshot associated with a given development branch can be 
 
     $ swiftly install 5.7-snapshot
     $ swiftly install main-snapshot
+
+ Install whatever toolchain is current selected, such as a .swift-version file:
+
+    $ swiftly install
 
 
 **--use:**

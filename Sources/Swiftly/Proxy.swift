@@ -40,7 +40,7 @@ public enum Proxy {
             let (toolchain, result) = try await selectToolchain(config: &config)
 
             // Abort on any errors relating to swift version files
-            if case let .swiftVersionFile(_, error) = result, let error = error {
+            if case let .swiftVersionFile(_, _, error) = result, let error = error {
                 throw error
             }
 

@@ -58,7 +58,7 @@ internal struct Use: SwiftlyCommand {
             let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: self.globalDefault)
 
             // Abort on any errors with the swift version files
-            if case let .swiftVersionFile(_, error) = result, let error = error {
+            if case let .swiftVersionFile(_, _, error) = result, let error = error {
                 throw error
             }
 
@@ -76,7 +76,7 @@ internal struct Use: SwiftlyCommand {
             var message = "\(selectedVersion)"
 
             switch result {
-            case let .swiftVersionFile(versionFile, _):
+            case let .swiftVersionFile(versionFile, _, _):
                 message += " (\(versionFile.path))"
             case .globalDefault:
                 message += " (default)"
@@ -112,7 +112,7 @@ internal struct Use: SwiftlyCommand {
             }
         }
 
-        if case let .swiftVersionFile(versionFile, _) = result {
+        if case let .swiftVersionFile(versionFile, _, _) = result {
             // We don't care in this case if there were any problems with the swift version files, just overwrite it with the new value
             try toolchain.name.write(to: versionFile, atomically: true, encoding: .utf8)
         } else if let newVersionFile = findNewVersionFile(), !globalDefault {
@@ -153,7 +153,7 @@ internal struct Use: SwiftlyCommand {
 
 public enum ToolchainSelectionResult {
     case globalDefault
-    case swiftVersionFile(URL, Error?)
+    case swiftVersionFile(URL, ToolchainSelector?, Error?)
 }
 
 /// Returns the currently selected swift toolchain, if any, with details of the selection.
@@ -190,11 +190,11 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false, i
                 let contents = try? String(contentsOf: svFile, encoding: .utf8)
 
                 guard let contents = contents else {
-                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file could not be read: \(svFile)")))
+                    return (nil, .swiftVersionFile(svFile, nil, Error(message: "The swift version file could not be read: \(svFile)")))
                 }
 
                 guard !contents.isEmpty else {
-                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file is empty: \(svFile)")))
+                    return (nil, .swiftVersionFile(svFile, nil, Error(message: "The swift version file is empty: \(svFile)")))
                 }
 
                 let selectorString = contents.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: "\r", with: "")
@@ -202,11 +202,11 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false, i
                 do {
                     selector = try ToolchainSelector(parsing: selectorString)
                 } catch {
-                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file is malformed: \(svFile) \(error)")))
+                    return (nil, .swiftVersionFile(svFile, nil, Error(message: "The swift version file is malformed: \(svFile) \(error)")))
                 }
 
                 guard let selector = selector else {
-                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file is malformed: \(svFile)")))
+                    return (nil, .swiftVersionFile(svFile, nil, Error(message: "The swift version file is malformed: \(svFile)")))
                 }
 
                 if install {
@@ -225,10 +225,10 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false, i
                 }
 
                 guard let selectedToolchain = config.listInstalledToolchains(selector: selector).max() else {
-                    return (nil, .swiftVersionFile(svFile, Error(message: "The swift version file didn't select any of the installed toolchains. You can install one with `swiftly install \(selector.description)`.")))
+                    return (nil, .swiftVersionFile(svFile, selector, Error(message: "The swift version file didn't select any of the installed toolchains. You can install one with `swiftly install \(selector.description)`.")))
                 }
 
-                return (selectedToolchain, .swiftVersionFile(svFile, nil))
+                return (selectedToolchain, .swiftVersionFile(svFile, selector, nil))
             }
 
             cwd = cwd.deletingLastPathComponent()

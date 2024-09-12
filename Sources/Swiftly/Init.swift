@@ -56,7 +56,7 @@ internal struct Init: SwiftlyCommand {
 
         // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
         let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
-        let swiftlyBinDirContents = try FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)
+        let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
         let willBeOverwritten = Set(proxyList + ["swiftly"]).intersection(swiftlyBinDirContents)
         if !willBeOverwritten.isEmpty && !overwrite {
             SwiftlyCore.print("The following existing executables will be overwritten:")

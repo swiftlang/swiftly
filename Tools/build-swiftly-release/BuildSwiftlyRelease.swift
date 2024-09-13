@@ -330,10 +330,37 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         // Statically link standard libraries for maximum portability of the swiftly binary
         try runProgram(swift, "build", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
 
-        // Strip the symbols from the binary to decrease its size
-        try runProgram(strip, ".build/release/swiftly")
-
         let releaseDir = cwd + "/.build/release"
+
+        // Strip the symbols from the binary to decrease its size
+        try runProgram(strip, releaseDir + "/swiftly")
+
+        let licensesDir = releaseDir + "/swiftly-license"
+
+        try FileManager.default.createDirectory(atPath: licensesDir, withIntermediateDirectories: true)
+
+        // Copy the swiftly license to the bundle
+        try FileManager.default.copyItem(atPath: cwd + "/LICENSE.txt", toPath: licensesDir + "/LICENSE.txt")
+
+        // Copy all of the dependent library licenses to the bundle
+        for lib in (try? FileManager.default.contentsOfDirectory(atPath: cwd + "/.build/checkouts")) ?? [] {
+            if lib == "SwiftFormat" || lib.hasSuffix(".tar.gz") {
+                continue
+            }
+
+            let libLicenseDir = licensesDir + "/\(lib)"
+
+            try FileManager.default.createDirectory(atPath: libLicenseDir, withIntermediateDirectories: true)
+
+            for fileName in ["LICENSE.txt", "LICENSE.md", "COPYING"] {
+                let licenseFile = cwd + "/.build/checkouts/\(lib)/\(fileName)"
+                try? FileManager.default.copyItem(atPath: licenseFile, toPath: licensesDir + "/\(lib)/\(fileName)")
+            }
+
+            if ((try? FileManager.default.contentsOfDirectory(atPath: libLicenseDir)) ?? []).count == 0 {
+                throw Error(message: "Failed to copy license from library \(lib)")
+            }
+        }
 
 #if arch(arm64)
         let releaseArchive = "\(releaseDir)/swiftly-\(version)-aarch64.tar.gz"
@@ -341,7 +368,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let releaseArchive = "\(releaseDir)/swiftly-\(version).tar.gz"
 #endif
 
-        try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly")
+        try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly", "swiftly-license")
 
         print(releaseArchive)
     }

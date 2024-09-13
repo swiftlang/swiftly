@@ -260,6 +260,35 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         }
     }
 
+    func collectLicenses(_ licenseDir: String) async throws {
+        try FileManager.default.createDirectory(atPath: licenseDir, withIntermediateDirectories: true)
+
+        let cwd = FileManager.default.currentDirectoryPath
+
+        // Copy the swiftly license to the bundle
+        try FileManager.default.copyItem(atPath: cwd + "/LICENSE.txt", toPath: licenseDir + "/LICENSE.txt")
+
+        // Copy all of the dependent library licenses to the bundle
+        for lib in (try? FileManager.default.contentsOfDirectory(atPath: cwd + "/.build/checkouts")) ?? [] {
+            if lib == "SwiftFormat" || lib.hasSuffix(".tar.gz") {
+                continue
+            }
+
+            let libLicenseDir = licenseDir + "/\(lib)"
+
+            try FileManager.default.createDirectory(atPath: libLicenseDir, withIntermediateDirectories: true)
+
+            for fileName in ["LICENSE.txt", "LICENSE.md", "COPYING"] {
+                let licenseFile = cwd + "/.build/checkouts/\(lib)/\(fileName)"
+                try? FileManager.default.copyItem(atPath: licenseFile, toPath: licenseDir + "/\(lib)/\(fileName)")
+            }
+
+            if ((try? FileManager.default.contentsOfDirectory(atPath: libLicenseDir)) ?? []).count == 0 {
+                throw Error(message: "Failed to copy any license files from library \(lib)")
+            }
+        }
+    }
+
     func buildLinuxRelease() async throws {
         // Check system requirements
         guard isAmazonLinux2() else {
@@ -335,32 +364,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         // Strip the symbols from the binary to decrease its size
         try runProgram(strip, releaseDir + "/swiftly")
 
-        let licensesDir = releaseDir + "/swiftly-license"
-
-        try FileManager.default.createDirectory(atPath: licensesDir, withIntermediateDirectories: true)
-
-        // Copy the swiftly license to the bundle
-        try FileManager.default.copyItem(atPath: cwd + "/LICENSE.txt", toPath: licensesDir + "/LICENSE.txt")
-
-        // Copy all of the dependent library licenses to the bundle
-        for lib in (try? FileManager.default.contentsOfDirectory(atPath: cwd + "/.build/checkouts")) ?? [] {
-            if lib == "SwiftFormat" || lib.hasSuffix(".tar.gz") {
-                continue
-            }
-
-            let libLicenseDir = licensesDir + "/\(lib)"
-
-            try FileManager.default.createDirectory(atPath: libLicenseDir, withIntermediateDirectories: true)
-
-            for fileName in ["LICENSE.txt", "LICENSE.md", "COPYING"] {
-                let licenseFile = cwd + "/.build/checkouts/\(lib)/\(fileName)"
-                try? FileManager.default.copyItem(atPath: licenseFile, toPath: licensesDir + "/\(lib)/\(fileName)")
-            }
-
-            if ((try? FileManager.default.contentsOfDirectory(atPath: libLicenseDir)) ?? []).count == 0 {
-                throw Error(message: "Failed to copy license from library \(lib)")
-            }
-        }
+        let licenseDir = releaseDir + "/swiftly-license"
+        try await self.collectLicenses(licenseDir)
 
 #if arch(arm64)
         let releaseArchive = "\(releaseDir)/swiftly-\(version)-aarch64.tar.gz"
@@ -402,17 +407,21 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             try runProgram(strip, ".build/\(arch)-apple-macosx/release/swiftly")
         }
 
-        let swiftlyBinDir = FileManager.default.currentDirectoryPath + ".build/release/usr/local/bin"
+        let swiftlyBinDir = FileManager.default.currentDirectoryPath + "/.build/release/usr/local/bin"
         try? FileManager.default.createDirectory(atPath: swiftlyBinDir, withIntermediateDirectories: true)
 
         try runProgram(lipo, ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly", "-create", "-o", "\(swiftlyBinDir)/swiftly")
 
+        let swiftlyLicenseDir = FileManager.default.currentDirectoryPath + "/.build/release/usr/local/share/doc/swiftly/license"
+        try? FileManager.default.createDirectory(atPath: swiftlyLicenseDir, withIntermediateDirectories: true)
+        try await self.collectLicenses(swiftlyLicenseDir)
+
         try runProgram(
             pkgbuild,
             "--root",
-            swiftlyBinDir,
+            swiftlyBinDir + "/..",
             "--install-location",
-            "usr/local/bin",
+            "usr/local",
             "--version",
             self.version,
             "--identifier",

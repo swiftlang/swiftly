@@ -196,6 +196,17 @@ class SwiftlyTests: XCTestCase {
         }
     }
 
+    func withMockedSwiftlyVersion(latestSwiftlyVersion: SwiftlyVersion = SwiftlyCore.version, _ f: () async throws -> Void) async throws {
+        let prevExecutor = SwiftlyCore.httpRequestExecutor
+        let mockDownloader = MockToolchainDownloader(executables: ["swift"], latestSwiftlyVersion: latestSwiftlyVersion, delegate: prevExecutor)
+        SwiftlyCore.httpRequestExecutor = mockDownloader
+        defer {
+            SwiftlyCore.httpRequestExecutor = prevExecutor
+        }
+
+        try await f()
+    }
+
     func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
         let prevExecutor = SwiftlyCore.httpRequestExecutor
         let mockDownloader = MockToolchainDownloader(executables: executables, delegate: prevExecutor)
@@ -544,12 +555,15 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 #endif
     private let delegate: HTTPRequestExecutor
 
-    public init(executables: [String]? = nil, delegate: HTTPRequestExecutor) {
+    private let latestSwiftlyVersion: SwiftlyVersion
+
+    public init(executables: [String]? = nil, latestSwiftlyVersion: SwiftlyVersion = SwiftlyCore.version, delegate: HTTPRequestExecutor) {
         self.executables = executables ?? ["swift"]
 #if os(Linux)
         self.signatures = [:]
 #endif
         self.delegate = delegate
+        self.latestSwiftlyVersion = latestSwiftlyVersion
     }
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
@@ -557,15 +571,45 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             throw SwiftlyTestError(message: "invalid request URL: \(request.url)")
         }
 
-        if url.host == "download.swift.org" {
+        if url.host == "download.swift.org" && url.path.hasPrefix("/swift-") {
+            // Download a toolchain
             return try self.makeToolchainDownloadResponse(from: url)
+        } else if url.host == "download.swift.org" && url.path.hasPrefix("/swiftly-") {
+            // Download a swiftly bundle
+            return try self.makeSwiftlyDownloadResponse(from: url)
         } else if url.host == "api.github.com" {
             if url.path == "/repos/apple/swift/tags" {
                 return try self.makeGitHubTagsAPIResponse(from: url)
             } else {
                 throw SwiftlyTestError(message: "unxpected github API request URL: \(request.url)")
             }
-        } else if url.host == "swift.org" {
+        } else if url.host == "www.swift.org" && url.path == "/api/v1/swiftly.json" {
+            // Mock a response that would represent the swiftly offerings using the latest version
+            let decoder = JSONDecoder()
+            let json = """
+            {
+                "version": "\(self.latestSwiftlyVersion)",
+                "platforms": [
+                    {
+                        "platform": "Darwin",
+                        "x86_64": "https://download.swift.org/swiftly-darwin.pkg",
+                        "arm64": "https://download.swift.org/swiftly-darwin.pkg"
+                    },
+                    {
+                        "platform": "Linux",
+                        "x86_64": "https://download.swift.org/swiftly-linux.tar.gz",
+                        "arm64": "https://download.swift.org/swiftly-linux.tar.gz"
+                    }
+                ]
+            }
+            """.data(using: .utf8)!
+
+            let swiftlyRelease = try decoder.decode(SwiftOrgSwiftlyRelease.self, from: json)
+            var buffer = ByteBuffer()
+            try buffer.writeJSONEncodable(swiftlyRelease)
+            return HTTPClientResponse(body: .bytes(buffer))
+        } else if url.host == "www.swift.org" {
+            // Delegate any API requests to swift.org
             return try await self.delegate.execute(request, timeout: timeout)
         } else {
             throw SwiftlyTestError(message: "unmocked URL: \(request)")
@@ -649,7 +693,96 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         return HTTPClientResponse(body: .bytes(ByteBuffer(data: mockedToolchain)))
     }
 
+    private func makeSwiftlyDownloadResponse(from url: URL) throws -> HTTPClientResponse {
+        let mockedSwiftly = try self.makeMockedSwiftly(from: url)
+        return HTTPClientResponse(body: .bytes(ByteBuffer(data: mockedSwiftly)))
+    }
+
 #if os(Linux)
+    public func makeMockedSwiftly(from url: URL) throws -> Data {
+        // Check our cache if this is a signature request
+        if url.path.hasSuffix(".sig") {
+            // Signatures will either be in the cache or this don't exist
+            guard let signature = self.signatures["swiftly"] else {
+                throw SwiftlyTestError(message: "swiftly signature wasn't found in the cache")
+            }
+
+            return try Data(contentsOf: signature)
+        }
+
+        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        let swiftlyDir = tmp.appendingPathComponent("swiftly", isDirectory: true)
+
+        try FileManager.default.createDirectory(
+            at: swiftlyDir,
+            withIntermediateDirectories: true
+        )
+
+        for executable in ["swiftly"] {
+            let executablePath = swiftlyDir.appendingPathComponent(executable)
+
+            let script = """
+            #!/usr/bin/env sh
+
+            echo 'Installed'
+            """
+
+            let data = Data(script.utf8)
+            try data.write(to: executablePath)
+
+            // make the file executable
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+        }
+
+        let archive = tmp.appendingPathComponent("swiftly.tar.gz")
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        task.arguments = ["bash", "-c", "tar -C \(swiftlyDir.path) -czf \(archive.path) swiftly"]
+
+        try task.run()
+        task.waitUntilExit()
+
+        // Extra step involves generating a gpg signature and putting that in a cache for a later request. We will
+        // use a local key for this to avoid running into entropy problems in CI.
+        let gpgKeyFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        try Data(PackageResources.mock_signing_key_private_pgp).write(to: gpgKeyFile)
+        let importKey = Process()
+        importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        importKey.arguments = ["bash", "-c", """
+        mkdir -p $HOME/.gnupg
+        touch $HOME/.gnupg/gpg.conf
+        gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
+        """]
+        try importKey.run()
+        importKey.waitUntilExit()
+        if importKey.terminationStatus != 0 {
+            throw SwiftlyTestError(message: "unable to import test gpg signing key")
+        }
+
+        let detachSign = Process()
+        detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        detachSign.arguments = ["bash", "-c", """
+        export GPG_TTY=$(tty)
+        gpg --version | grep '2.0.' > /dev/null
+        if [ "$?" == "0" ]; then
+            gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+        else
+            gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+        fi
+        """]
+        try detachSign.run()
+        detachSign.waitUntilExit()
+
+        if detachSign.terminationStatus != 0 {
+            throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
+        }
+
+        self.signatures["swiftly"] = archive.appendingPathExtension("sig")
+
+        return try Data(contentsOf: archive)
+    }
+
     public func makeMockedToolchain(toolchain: ToolchainVersion, name: String) throws -> Data {
         // Check our cache if this is a signature request
         if name.hasSuffix(".sig") {
@@ -738,6 +871,57 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
     }
 
 #elseif os(macOS)
+    public func makeMockedSwiftly(from _: URL) throws -> Data {
+        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        let swiftlyDir = tmp.appendingPathComponent("swiftly", isDirectory: true)
+        let swiftlyBinDir = swiftlyDir.appendingPathComponent("bin")
+
+        try FileManager.default.createDirectory(
+            at: swiftlyBinDir,
+            withIntermediateDirectories: true
+        )
+
+        defer {
+            try? FileManager.default.removeItem(at: tmp)
+        }
+
+        for executable in ["swiftly"] {
+            let executablePath = swiftlyBinDir.appendingPathComponent(executable)
+
+            let script = """
+            #!/usr/bin/env sh
+
+            echo 'Installed.'
+            """
+
+            let data = Data(script.utf8)
+            try data.write(to: executablePath)
+
+            // make the file executable
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+        }
+
+        let pkg = tmp.appendingPathComponent("swiftly.pkg")
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        task.arguments = [
+            "pkgbuild",
+            "--root",
+            swiftlyDir.path,
+            "--install-location",
+            "usr/local",
+            "--version",
+            "\(self.latestSwiftlyVersion)",
+            "--identifier",
+            "org.swift.swiftly",
+            pkg.path,
+        ]
+        try task.run()
+        task.waitUntilExit()
+
+        return try Data(contentsOf: pkg)
+    }
 
     public func makeMockedToolchain(toolchain: ToolchainVersion, name _: String) throws -> Data {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")

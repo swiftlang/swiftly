@@ -290,6 +290,23 @@ public struct Linux: Platform {
         }
     }
 
+    public func extractSwiftlyAndInstall(from archive: URL) throws {
+        guard archive.fileExists() else {
+            throw Error(message: "\(archive) doesn't exist")
+        }
+
+        let tmpDir = self.getTempFilePath()
+        try FileManager.default.createDirectory(atPath: tmpDir.path, withIntermediateDirectories: true)
+
+        SwiftlyCore.print("Extracting new swiftly...")
+        try extractArchive(atPath: archive) { name in
+            // Extract to the temporary directory
+            tmpDir.appendingPathComponent(String(name))
+        }
+
+        try self.runProgram(tmpDir.appendingPathComponent("swiftly").path, "init")
+    }
+
     public func uninstall(_ toolchain: ToolchainVersion) throws {
         let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent(toolchain.name)
         try FileManager.default.removeItem(at: toolchainDir)
@@ -410,7 +427,7 @@ public struct Linux: Platform {
         do {
             try self.runProgram("gpg", "--verify", sigFile.path, archive.path)
         } catch {
-            throw Error(message: "Toolchain signature verification failed: \(error).")
+            throw Error(message: "Signature verification failed: \(error).")
         }
     }
 

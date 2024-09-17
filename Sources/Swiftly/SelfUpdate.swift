@@ -14,26 +14,51 @@ internal struct SelfUpdate: SwiftlyCommand {
 
     internal mutating func run() async throws {
         try validateSwiftly()
+
+        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly")
+        guard FileManager.default.fileExists(atPath: swiftlyBin.path) else {
+            throw Error(message: "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place.")
+        }
+
+        let _ = try await Self.execute()
+    }
+
+    public static func execute() async throws -> SwiftlyVersion {
         SwiftlyCore.print("Checking for swiftly updates...")
 
-        let release: SwiftlyGitHubRelease = try await SwiftlyCore.httpClient.getFromGitHub(
-            url: "https://api.github.com/repos/swift-server/swiftly/releases/latest"
-        )
+        let swiftlyRelease = try await SwiftlyCore.httpClient.getSwiftlyRelease()
 
-        let version = try SwiftlyVersion(parsing: release.tag)
-
-        guard version > SwiftlyCore.version else {
+        guard swiftlyRelease.version > SwiftlyCore.version else {
             SwiftlyCore.print("Already up to date.")
-            return
+            return SwiftlyCore.version
         }
+
+        var downloadURL: Foundation.URL?
+        for platform in swiftlyRelease.platforms {
+#if os(macOS)
+            guard platform.platform == .Darwin else {
+                continue
+            }
+#elseif os(Linux)
+            guard platform.platform == .Linux else {
+                continue
+            }
+#endif
+
+#if arch(x86_64)
+            downloadURL = platform.x86_64
+#elseif arch(arm64)
+            downloadURL = platform.arm64
+#endif
+        }
+
+        guard let downloadURL = downloadURL else {
+            throw Error(message: "The newest release of swiftly is incompatible with your current OS and/or processor architecture.")
+        }
+
+        let version = swiftlyRelease.version
 
         SwiftlyCore.print("A new version is available: \(version)")
-
-        let executableName = Swiftly.currentPlatform.getExecutableName()
-        let urlString = "https://github.com/swift-server/swiftly/versions/latest/download/\(executableName)"
-        guard let downloadURL = URL(string: urlString) else {
-            throw Error(message: "Invalid download url: \(urlString)")
-        }
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
@@ -66,11 +91,10 @@ internal struct SelfUpdate: SwiftlyCommand {
         }
         animation.complete(success: true)
 
-        let swiftlyExecutable = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
-        try FileManager.default.removeItem(at: swiftlyExecutable)
-        try FileManager.default.moveItem(at: tmpFile, to: swiftlyExecutable)
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: swiftlyExecutable.path)
+        try await Swiftly.currentPlatform.verifySignature(httpClient: SwiftlyCore.httpClient, archiveDownloadURL: downloadURL, archive: tmpFile)
+        try Swiftly.currentPlatform.extractSwiftlyAndInstall(from: tmpFile)
 
         SwiftlyCore.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
+        return version
     }
 }

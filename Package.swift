@@ -67,6 +67,13 @@ let package = Package(
             ],
             path: "Tools/generate-docs-reference"
         ),
+        .executableTarget(
+            name: "build-swiftly-release",
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
+            path: "Tools/build-swiftly-release"
+        ),
         .target(
             name: "LinuxPlatform",
             dependencies: [

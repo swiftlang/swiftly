@@ -1,8 +1,6 @@
 # Releasing
 
-Swiftly and the swiftly-install release script have different release schedules and their version numbers do not correspond. Below is instructions for releasing each.
-
-## Releasing swiftly
+Swift has a tool for producing final product packages, suitable for distribution. Follow these steps to complete a release and test the packaging.
 
 1. Check out the commit you wish to create a release for. Ensure no other local modifications or changes are present.
 
@@ -14,20 +12,9 @@ Swiftly and the swiftly-install release script have different release schedules 
 
 5. Create a tag on that commit with the format "x.y.z". Do not omit "z", even if its value is 0.
 
-6. Build the executables for the release by running ./scripts/build_release.sh from the root of the swiftly repository (do this once on an x86_64 machine and once on an aarch64 one)
+6. Build the executables for the release by running `swift run build-swiftly-release <version>` from the root of the swiftly repository
+  * Build on a Apple silicon macOS machine to produce a universal package for x86_64 and arm64
+  * Build on an Amazon Linux 2 image for x86_64
+  * Build on an Amazon Linux 2 image for arm64
 
 7. Push the tag to `origin`. `git push origin <tag_name>`
-
-8. Go to the GitHub page for the new tag, click edit tag, add an appropriate description, attach the prebuilt executables, and click "Publish Release".
-
-## Releasing swiftly-install
-
-1. Check out the commit you wish to create a release for. Ensure no other local modifications or changes are present.
-
-2. Ensure the version string `SWIFTLY_INSTALL_VERSION` in `install/swiftly-install.sh` is accurate. If it is not, push another commit updating it to the proper value.
-
-3. Create a tag on that commit with the format "swiftly-install-x.y.z". Do not omit "z", even if its value is 0.
-
-4. Push the tag to `origin`. `git push origin <tag_name>`
-
-5. Copy `install/swiftly-install.sh` to website branch of repository

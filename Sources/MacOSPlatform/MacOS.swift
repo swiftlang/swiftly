@@ -80,6 +80,43 @@ public struct MacOS: Platform {
         }
     }
 
+    public func extractSwiftlyAndInstall(from archive: URL) throws {
+        guard archive.fileExists() else {
+            throw Error(message: "\(archive) doesn't exist")
+        }
+
+        let homeDir: URL
+
+        if SwiftlyCore.mockedHomeDir == nil {
+            homeDir = FileManager.default.homeDirectoryForCurrentUser
+
+            SwiftlyCore.print("Extracting the swiftly package...")
+            try runProgram("installer", "-pkg", archive.path, "-target", "CurrentUserHomeDirectory")
+            try? runProgram("pkgutil", "--volume", homeDir.path, "--forget", "org.swift.swiftly")
+        } else {
+            homeDir = SwiftlyCore.mockedHomeDir ?? FileManager.default.homeDirectoryForCurrentUser
+
+            let installDir = homeDir.appendingPathComponent("usr/local")
+            try FileManager.default.createDirectory(atPath: installDir.path, withIntermediateDirectories: true)
+
+            // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
+            //  the installer will not install to an arbitrary path, only a volume or user home directory.
+            let tmpDir = self.getTempFilePath()
+            try runProgram("pkgutil", "--expand", archive.path, tmpDir.path)
+
+            // There's a slight difference in the location of the special Payload file between official swift packages
+            // and the ones that are mocked here in the test framework.
+            let payload = tmpDir.appendingPathComponent("Payload")
+            guard payload.fileExists() else {
+                throw Error(message: "Payload file could not be found at \(tmpDir).")
+            }
+
+            try runProgram("tar", "-C", installDir.path, "-xf", payload.path)
+        }
+
+        try self.runProgram(homeDir.appendingPathComponent("usr/local/bin/swiftly").path, "init")
+    }
+
     public func uninstall(_ toolchain: ToolchainVersion) throws {
         SwiftlyCore.print("Uninstalling package in user home directory...")
 

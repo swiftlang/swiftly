@@ -41,7 +41,7 @@ public struct SwiftOrgSwiftlyRelease: Codable {
 
 struct SwiftOrgPlatform: Codable {
     var name: String
-    var archs: [String]
+    var archs: [String]?
 
     /// platform is a mapping from the 'name' field of the swift.org platform object
     /// to swiftly's PlatformDefinition, if possible.
@@ -220,7 +220,7 @@ public struct SwiftlyHTTPClient {
                     return nil
                 }
 
-                guard swiftOrgPlatform.archs.contains(arch) else {
+                guard let archs = swiftOrgPlatform.archs, archs.contains(arch) else {
                     return nil
                 }
             }

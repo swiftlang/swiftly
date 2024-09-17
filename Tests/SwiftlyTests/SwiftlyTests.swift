@@ -571,12 +571,12 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             throw SwiftlyTestError(message: "invalid request URL: \(request.url)")
         }
 
-        if url.host == "download.swift.org" && url.path.hasPrefix("/swift-") {
-            // Download a toolchain
-            return try self.makeToolchainDownloadResponse(from: url)
-        } else if url.host == "download.swift.org" && url.path.hasPrefix("/swiftly-") {
+        if url.host == "download.swift.org" && url.path.hasPrefix("/swiftly-") {
             // Download a swiftly bundle
             return try self.makeSwiftlyDownloadResponse(from: url)
+        } else if url.host == "download.swift.org" && (url.path.hasPrefix("/swift-") || url.path.hasPrefix("/development")) {
+            // Download a toolchain
+            return try self.makeToolchainDownloadResponse(from: url)
         } else if url.host == "api.github.com" {
             if url.path == "/repos/apple/swift/tags" {
                 return try self.makeGitHubTagsAPIResponse(from: url)

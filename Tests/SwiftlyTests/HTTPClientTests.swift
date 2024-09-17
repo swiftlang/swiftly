@@ -7,7 +7,7 @@ final class HTTPClientTests: SwiftlyTests {
         // GIVEN: we have a swiftly http client
         // WHEN: we make get request for a particular type of JSON
         var releases: [SwiftOrgRelease] = try await SwiftlyCore.httpClient.getFromJSON(
-            url: "https://swift.org/api/v1/install/releases.json",
+            url: "https://www.swift.org/api/v1/install/releases.json",
             type: [SwiftOrgRelease].self,
             headers: [:]
         )
@@ -19,7 +19,7 @@ final class HTTPClientTests: SwiftlyTests {
         var exceptionThrown = false
         do {
             releases = try await SwiftlyCore.httpClient.getFromJSON(
-                url: "https://swift.org/api/v1/install/releases-invalid.json",
+                url: "https://www.swift.org/api/v1/install/releases-invalid.json",
                 type: [SwiftOrgRelease].self,
                 headers: [:]
             )

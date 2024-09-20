@@ -143,10 +143,10 @@ Note that listing available snapshots before 6.0 is unsupported.
 
 ## use
 
-Set the active toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
+Set the in-use toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
 
 ```
-swiftly use [--print-location] [--global-default] [<toolchain>] [--version] [--help]
+swiftly use [--print-location] [--global-default] [--assume-yes] [<toolchain>] [--version] [--help]
 ```
 
 **--print-location:**
@@ -157,6 +157,11 @@ swiftly use [--print-location] [--global-default] [<toolchain>] [--version] [--h
 **--global-default:**
 
 *Use the global default, ignoring any .swift-version files.*
+
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
 
 
 **toolchain:**
@@ -469,9 +474,7 @@ You can also override the selection mechanisms temporarily for the duration of t
     $ swiftly run swift build +latest
     $ swiftly run swift build +5.10.1
 
-The first command builds the swift package with the latest toolchain and the second selects the 5.10.1 toolchain. Note that if these aren't installed then run will fail with an error message. You can pre-install the toolchain using `swiftly install <toolchain>` to ensure success. There is also a `+install` argument that will automatically download and install the toolchain if necessary.
-
-    $ swiftly run swift build +latest +install
+The first command builds the swift package with the latest toolchain and the second selects the 5.10.1 toolchain. Note that if these aren't installed then run will fail with an error message. You can pre-install the toolchain using `swiftly install <toolchain>` to ensure success.
 
 If the command that you are running needs the arguments with the '+' prefixes then you can escape it by doubling the '++'.
 

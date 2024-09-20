@@ -242,7 +242,7 @@ struct Install: SwiftlyCommand {
         // --use argument was provided.
         if useInstalledToolchain || config.inUse == nil {
             // TODO: consider adding the global default option to this commands flags
-            try await Use.execute(version, false, &config)
+            try await Use.execute(version, globalDefault: false, &config)
         }
 
         SwiftlyCore.print("\(version) installed successfully!")

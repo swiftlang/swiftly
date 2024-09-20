@@ -142,7 +142,7 @@ extension Platform {
         // The toolchain goes to the beginning of the PATH
         var newPath = newEnv["PATH"] ?? ""
         if !newPath.hasPrefix(tcPath.path + ":") {
-            newPath = ([tcPath.path] + newPath.split(separator: ":").map { String($0) }).joined(separator: ":")
+            newPath = "\(tcPath.path):\(newPath)"
         }
         newEnv["PATH"] = newPath
 

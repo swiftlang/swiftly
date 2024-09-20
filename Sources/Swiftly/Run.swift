@@ -35,10 +35,7 @@ internal struct Run: SwiftlyCommand {
 
         The first command builds the swift package with the latest toolchain and the second selects the \
         5.10.1 toolchain. Note that if these aren't installed then run will fail with an error message. \
-        You can pre-install the toolchain using `swiftly install <toolchain>` to ensure success. There is \
-        also a `+install` argument that will automatically download and install the toolchain if necessary.
-
-            $ swiftly run swift build +latest +install
+        You can pre-install the toolchain using `swiftly install <toolchain>` to ensure success.
 
         If the command that you are running needs the arguments with the '+' prefixes then you can escape \
         it by doubling the '++'.
@@ -62,36 +59,19 @@ internal struct Run: SwiftlyCommand {
 
         var config = try Config.load()
 
-        let (command, selector, install) = try extractProxyArguments(command: self.command)
+        let (command, selector) = try extractProxyArguments(command: self.command)
 
         let toolchain: ToolchainVersion?
 
         if let selector = selector {
-            if install {
-                let version = try await Install.resolve(config: config, selector: selector)
-                let postInstallScript = try await Install.execute(version: version, &config, useInstalledToolchain: false, verifySignature: true)
-                if let postInstallScript = postInstallScript {
-                    throw Error(message: """
-
-                    There are some system dependencies that should be installed before using this toolchain.
-                    You can run the following script as the system administrator (e.g. root) to prepare
-                    your system:
-
-                    \(postInstallScript)
-                    """)
-                }
-
-                toolchain = version
-            } else {
-                let matchedToolchain = config.listInstalledToolchains(selector: selector).max()
-                guard let matchedToolchain = matchedToolchain else {
-                    throw Error(message: "The selected toolchain \(selector.description) didn't match any of the installed toolchains. You can install it by adding '+install' to your command, or `swiftly install \(selector.description)`")
-                }
-
-                toolchain = matchedToolchain
+            let matchedToolchain = config.listInstalledToolchains(selector: selector).max()
+            guard let matchedToolchain = matchedToolchain else {
+                throw Error(message: "The selected toolchain \(selector.description) didn't match any of the installed toolchains. You can install it with `swiftly install \(selector.description)`")
             }
+
+            toolchain = matchedToolchain
         } else {
-            let (version, result) = try await selectToolchain(config: &config, install: install)
+            let (version, result) = try await selectToolchain(config: &config)
 
             // Abort on any errors relating to swift version files
             if case let .swiftVersionFile(_, _, error) = result, let error = error {
@@ -124,8 +104,8 @@ internal struct Run: SwiftlyCommand {
     }
 }
 
-public func extractProxyArguments(command: [String]) throws -> (command: [String], selector: ToolchainSelector?, install: Bool) {
-    var args: (command: [String], selector: ToolchainSelector?, install: Bool) = (command: [], nil, false)
+public func extractProxyArguments(command: [String]) throws -> (command: [String], selector: ToolchainSelector?) {
+    var args: (command: [String], selector: ToolchainSelector?) = (command: [], nil)
 
     var disableEscaping = false
 
@@ -137,11 +117,6 @@ public func extractProxyArguments(command: [String]) throws -> (command: [String
 
         if !disableEscaping && c.hasPrefix("++") {
             args.command.append("+\(String(c.dropFirst(2)))")
-            continue
-        }
-
-        if !disableEscaping && c == "+install" {
-            args.install = true
             continue
         }
 

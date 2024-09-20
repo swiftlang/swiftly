@@ -39,9 +39,13 @@ struct Install: SwiftlyCommand {
 
             $ swiftly install 5.7-snapshot
             $ swiftly install main-snapshot
+
+         Install whatever toolchain is current selected, such as a .swift-version file:
+
+            $ swiftly install
         """
     ))
-    var version: String
+    var version: String?
 
     @Flag(name: .shortAndLong, help: "Mark the newly installed toolchain as in-use.")
     var use: Bool = false
@@ -74,10 +78,30 @@ struct Install: SwiftlyCommand {
     mutating func run() async throws {
         try validateSwiftly()
 
-        let selector = try ToolchainSelector(parsing: self.version)
         var config = try Config.load()
+
+        var selector: ToolchainSelector
+
+        if let version = self.version {
+            selector = try ToolchainSelector(parsing: version)
+        } else {
+            if case let (_, result) = try await selectToolchain(config: &config),
+               case let .swiftVersionFile(_, sel, error) = result
+            {
+                if let sel = sel {
+                    selector = sel
+                } else if let error = error {
+                    throw error
+                } else {
+                    throw Error(message: "Internal error selecting toolchain to install.")
+                }
+            } else {
+                throw Error(message: "There is no toolchain selected from a .swift-version file to install.")
+            }
+        }
+
         SwiftlyCore.httpClient.githubToken = self.token
-        let toolchainVersion = try await self.resolve(config: config, selector: selector)
+        let toolchainVersion = try await Self.resolve(config: config, selector: selector)
         let postInstallScript = try await Self.execute(
             version: toolchainVersion,
             &config,
@@ -101,14 +125,14 @@ struct Install: SwiftlyCommand {
         }
     }
 
-    internal static func execute(
+    public static func execute(
         version: ToolchainVersion,
         _ config: inout Config,
         useInstalledToolchain: Bool,
         verifySignature: Bool
     ) async throws -> String? {
         guard !config.installedToolchains.contains(version) else {
-            SwiftlyCore.print("\(version) is already installed, exiting.")
+            SwiftlyCore.print("\(version) is already installed.")
             return nil
         }
 
@@ -217,7 +241,8 @@ struct Install: SwiftlyCommand {
         // If this is the first installed toolchain, mark it as in-use regardless of whether the
         // --use argument was provided.
         if useInstalledToolchain || config.inUse == nil {
-            try await Use.execute(version, &config)
+            // TODO: consider adding the global default option to this commands flags
+            try await Use.execute(version, globalDefault: false, &config)
         }
 
         SwiftlyCore.print("\(version) installed successfully!")
@@ -226,7 +251,7 @@ struct Install: SwiftlyCommand {
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
     /// TODO: update this to use an official swift.org API
-    func resolve(config: Config, selector: ToolchainSelector) async throws -> ToolchainVersion {
+    public static func resolve(config: Config, selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:
             SwiftlyCore.print("Fetching the latest stable Swift release...")

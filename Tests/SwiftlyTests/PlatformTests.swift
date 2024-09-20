@@ -73,45 +73,4 @@ final class PlatformTests: SwiftlyTests {
             XCTAssertEqual(0, toolchains.count)
         }
     }
-
-    func testUse() async throws {
-        try await self.rollbackLocalChanges {
-            // GIVEN: toolchains have been downloaded, and installed
-            var (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.8.0")
-            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version)
-            (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.6.3")
-            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version)
-            // WHEN: one of the toolchains is used
-            var result = try Swiftly.currentPlatform.use(ToolchainVersion(parsing: "5.8.0"), currentToolchain: nil)
-            // THEN: there are symbolic links for the toolchain binaries in the bin dir that point to the toolchain
-            XCTAssertTrue(result)
-            var swiftLinkTarget = try? FileManager.default.destinationOfSymbolicLink(atPath: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift").path)
-            guard let target = swiftLinkTarget else {
-                throw Error(message: "swift symlink was not found")
-            }
-            XCTAssertTrue(target.contains("5.8"))
-
-            // GIVEN: toolchains have been downloaded, installed, and a toolchain is in use
-            // WHEN: another toolchain is used
-            result = try Swiftly.currentPlatform.use(ToolchainVersion(parsing: "5.6.3"), currentToolchain: ToolchainVersion(parsing: "5.8.0"))
-            // THEN: there are symbolic links for the toolchain binaries in the bin dir that point to the toolchain
-            XCTAssertTrue(result)
-            swiftLinkTarget = try? FileManager.default.destinationOfSymbolicLink(atPath: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift").path)
-            guard let target2 = swiftLinkTarget else {
-                throw Error(message: "swift symlink was not found")
-            }
-            XCTAssertTrue(target2.contains("5.6.3"))
-
-            // GIVEN: toolchains have been downloaded, installed, and a toolchain is in use
-            // WHEN: a toolchain is used that has not been installed
-            result = try Swiftly.currentPlatform.use(ToolchainVersion(parsing: "5.2.1"), currentToolchain: ToolchainVersion(parsing: "5.6.3"))
-            // THEN: the symbolic links remain the same
-            XCTAssertFalse(result)
-            swiftLinkTarget = try? FileManager.default.destinationOfSymbolicLink(atPath: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift").path)
-            guard let target3 = swiftLinkTarget else {
-                throw Error(message: "swift symlink was not found")
-            }
-            XCTAssertTrue(target3.contains("5.6.3"))
-        }
-    }
 }

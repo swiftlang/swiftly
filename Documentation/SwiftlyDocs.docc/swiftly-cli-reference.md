@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install <version> [--use] [--token=<token>] [--verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly install [<version>] [--use] [--token=<token>] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **version:**
@@ -53,6 +53,10 @@ Likewise, the latest snapshot associated with a given development branch can be 
     $ swiftly install 5.7-snapshot
     $ swiftly install main-snapshot
 
+ Install whatever toolchain is current selected, such as a .swift-version file:
+
+    $ swiftly install
+
 
 **--use:**
 
@@ -67,7 +71,7 @@ This is useful to avoid GitHub's low rate limits. If an installation
 fails with an "unauthorized" status code, it likely means the rate limit has been hit.
 
 
-**--verify:**
+**--verify|no-verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
 
@@ -139,11 +143,26 @@ Note that listing available snapshots before 6.0 is unsupported.
 
 ## use
 
-Set the active toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
+Set the in-use toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
 
 ```
-swiftly use [<toolchain>] [--version] [--help]
+swiftly use [--print-location] [--global-default] [--assume-yes] [<toolchain>] [--version] [--help]
 ```
+
+**--print-location:**
+
+*Print the location of the in-use toolchain. This is valid only when there is no toolchain argument.*
+
+
+**--global-default:**
+
+*Use the global default, ignoring any .swift-version files.*
+
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
 
 **toolchain:**
 
@@ -293,7 +312,7 @@ The installed snapshots for a given devlopment branch can be listed by specifyin
 Update an installed toolchain to a newer version.
 
 ```
-swiftly update [<toolchain>] [--assume-yes] [--verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly update [<toolchain>] [--assume-yes] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **toolchain:**
@@ -339,7 +358,7 @@ A specific snapshot toolchain can be updated by including the date:
 *Disable confirmation prompts by assuming 'yes'*
 
 
-**--verify:**
+**--verify|no-verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
 
@@ -411,6 +430,62 @@ Update the version of swiftly itself.
 ```
 swiftly self-update [--version] [--help]
 ```
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+
+## run
+
+Run a command while proxying to the selected toolchain commands.
+
+```
+swiftly run <command>... [--version] [--help]
+```
+
+**command:**
+
+*Run a command while proxying to the selected toolchain commands.*
+
+
+Run a command with a selected toolchain, so that all toolchain commands are become the default added to the system path and other common environment variables.
+
+You can run one of the usual toolchain commands directly:
+
+    $ swiftly run swift build
+
+Or you can run another program (or script) that runs one or more toolchain commands:
+
+    $ swiftly run make  # Builds targets using clang/swiftc
+    $ swiftly run ./build-things.sh  # Script invokes 'swift build' to create certain product binaries
+
+Toolchain selection is determined by swift version files `.swift-version`, with a default global as the fallback. See the `swiftly use` command for more details.
+
+You can also override the selection mechanisms temporarily for the duration of the command using a special syntax. An argument prefixed with a '+' will be treated as the selector.
+
+    $ swiftly run swift build +latest
+    $ swiftly run swift build +5.10.1
+
+The first command builds the swift package with the latest toolchain and the second selects the 5.10.1 toolchain. Note that if these aren't installed then run will fail with an error message. You can pre-install the toolchain using `swiftly install <toolchain>` to ensure success.
+
+If the command that you are running needs the arguments with the '+' prefixes then you can escape it by doubling the '++'.
+
+    $ swiftly run ./myscript.sh ++abcde
+
+The script will receive the argument as '+abcde'. If there are multiple arguments with the '+' prefix that should be escaped you can disable the selection using a '++' argument, which turns off any selector argument processing for subsequent arguments. This is anologous to the '--' that turns off flag and option processing for subsequent arguments in many argument parsers.
+
+    $ swiftly run ./myscript.sh ++ +abcde +xyz
+
+The script will receive the argument '+abcde' followed by '+xyz'.
+
 
 **--version:**
 

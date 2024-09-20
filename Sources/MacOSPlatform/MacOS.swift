@@ -101,101 +101,9 @@ public struct MacOS: Platform {
         try? runProgram("pkgutil", "--volume", homedir, "--forget", pkgInfo.CFBundleIdentifier)
     }
 
-    public func use(_ toolchain: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool {
-        let toolchainBinURL = self.swiftlyToolchainsDir
-            .appendingPathComponent(toolchain.identifier + ".xctoolchain", isDirectory: true)
-            .appendingPathComponent("usr", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
-
-        if !FileManager.default.fileExists(atPath: toolchainBinURL.path) {
-            return false
-        }
-
-        // Delete existing symlinks from previously in-use toolchain.
-        if let currentToolchain {
-            try self.unUse(currentToolchain: currentToolchain)
-        }
-
-        // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-        let swiftlyBinDirContents = try FileManager.default.contentsOfDirectory(atPath: self.swiftlyBinDir.path)
-        let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path)
-        let willBeOverwritten = Set(toolchainBinDirContents).intersection(swiftlyBinDirContents)
-        if !willBeOverwritten.isEmpty {
-            SwiftlyCore.print("The following existing executables will be overwritten:")
-
-            for executable in willBeOverwritten {
-                SwiftlyCore.print("  \(self.swiftlyBinDir.appendingPathComponent(executable).path)")
-            }
-
-            let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
-
-            guard proceed == "y" else {
-                SwiftlyCore.print("Aborting use")
-                return false
-            }
-        }
-
-        for executable in toolchainBinDirContents {
-            let linkURL = self.swiftlyBinDir.appendingPathComponent(executable)
-            let executableURL = toolchainBinURL.appendingPathComponent(executable)
-
-            // Deletion confirmed with user above.
-            try linkURL.deleteIfExists()
-
-            try FileManager.default.createSymbolicLink(
-                atPath: linkURL.path,
-                withDestinationPath: executableURL.path
-            )
-        }
-
-        SwiftlyCore.print("""
-            NOTE: On macOS it is possible that the shell will pick up the system Swift on the path
-            instead of the one that swiftly has installed for you. You can run the 'hash -r'
-            command to update the shell with the latest PATHs.
-
-                hash -r
-
-            """
-        )
-
-        return true
-    }
-
-    public func unUse(currentToolchain: ToolchainVersion) throws {
-        let currentToolchainBinURL = self.swiftlyToolchainsDir
-            .appendingPathComponent(currentToolchain.identifier + ".xctoolchain", isDirectory: true)
-            .appendingPathComponent("usr", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
-
-        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: currentToolchainBinURL.path) {
-            guard existingExecutable != "swiftly" else {
-                continue
-            }
-
-            let url = self.swiftlyBinDir.appendingPathComponent(existingExecutable)
-            let vals = try url.resourceValues(forKeys: [URLResourceKey.isSymbolicLinkKey])
-
-            guard let islink = vals.isSymbolicLink, islink else {
-                throw Error(message: "Found executable not managed by swiftly in SWIFTLY_BIN_DIR: \(url.path)")
-            }
-            let symlinkDest = url.resolvingSymlinksInPath()
-            guard symlinkDest.deletingLastPathComponent() == currentToolchainBinURL else {
-                throw Error(message: "Found symlink that points to non-swiftly managed executable: \(symlinkDest.path)")
-            }
-
-            try self.swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
-        }
-    }
-
-    public func listAvailableSnapshots(version _: String?) async -> [Snapshot] {
-        []
-    }
-
     public func getExecutableName() -> String {
         "swiftly-macos-osx"
     }
-
-    public func currentToolchain() throws -> ToolchainVersion? { nil }
 
     public func getTempFilePath() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID()).pkg")
@@ -224,6 +132,10 @@ public struct MacOS: Platform {
 
         // Fall back to zsh on macOS
         return "/bin/zsh"
+    }
+
+    public func findToolchainLocation(_ toolchain: ToolchainVersion) -> URL {
+        self.swiftlyToolchainsDir.appendingPathComponent("\(toolchain.identifier).xctoolchain")
     }
 
     public static let currentPlatform: any Platform = MacOS()

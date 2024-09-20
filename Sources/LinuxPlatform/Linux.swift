@@ -193,44 +193,21 @@ public struct Linux: Platform {
                 throw Error(message: msg)
             }
 
-            let foundKeys = (try? self.runProgram(
-                "gpg",
-                "--list-keys",
-                "swift-infrastructure@forums.swift.org",
-                "swift-infrastructure@swift.org",
-                quiet: true
-            )) != nil
-            if !foundKeys {
-                // Import the swift keys if they aren't here already
+            // Import the latest swift keys, but only once per session, which will help with the performance in tests
+            if !swiftGPGKeysRefreshed {
                 let tmpFile = self.getTempFilePath()
                 FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600])
                 defer {
                     try? FileManager.default.removeItem(at: tmpFile)
                 }
 
-                guard let url = URL(string: "https://swift.org/keys/all-keys.asc") else {
+                guard let url = URL(string: "https://www.swift.org/keys/all-keys.asc") else {
                     throw Error(message: "malformed URL to the swift gpg keys")
                 }
 
                 try await httpClient.downloadFile(url: url, to: tmpFile)
                 try self.runProgram("gpg", "--import", tmpFile.path, quiet: true)
-            }
 
-            // We only need to refresh the keys once per session, which will help with performance in tests
-            if !swiftGPGKeysRefreshed {
-                SwiftlyCore.print("Refreshing Swift PGP keys...")
-                do {
-                    try self.runProgram(
-                        "gpg",
-                        "--quiet",
-                        "--keyserver",
-                        "hkp://keyserver.ubuntu.com",
-                        "--refresh-keys",
-                        "Swift"
-                    )
-                } catch {
-                    throw Error(message: "Failed to refresh PGP keys: \(error)")
-                }
                 swiftGPGKeysRefreshed = true
             }
         }
@@ -295,86 +272,6 @@ public struct Linux: Platform {
         try FileManager.default.removeItem(at: toolchainDir)
     }
 
-    public func use(_ toolchain: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool {
-        let toolchainBinURL = self.swiftlyToolchainsDir
-            .appendingPathComponent(toolchain.name, isDirectory: true)
-            .appendingPathComponent("usr", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
-
-        if !FileManager.default.fileExists(atPath: toolchainBinURL.path) {
-            return false
-        }
-
-        // Delete existing symlinks from previously in-use toolchain.
-        if let currentToolchain {
-            try self.unUse(currentToolchain: currentToolchain)
-        }
-
-        // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-        let swiftlyBinDirContents = try FileManager.default.contentsOfDirectory(atPath: self.swiftlyBinDir.path)
-        let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinURL.path)
-        let willBeOverwritten = Set(toolchainBinDirContents).intersection(swiftlyBinDirContents)
-        if !willBeOverwritten.isEmpty {
-            SwiftlyCore.print("The following existing executables will be overwritten:")
-
-            for executable in willBeOverwritten {
-                SwiftlyCore.print("  \(self.swiftlyBinDir.appendingPathComponent(executable).path)")
-            }
-
-            let proceed = SwiftlyCore.readLine(prompt: "Proceed? (y/n)") ?? "n"
-
-            guard proceed == "y" else {
-                SwiftlyCore.print("Aborting use")
-                return false
-            }
-        }
-
-        for executable in toolchainBinDirContents {
-            let linkURL = self.swiftlyBinDir.appendingPathComponent(executable)
-            let executableURL = toolchainBinURL.appendingPathComponent(executable)
-
-            // Deletion confirmed with user above.
-            try linkURL.deleteIfExists()
-
-            try FileManager.default.createSymbolicLink(
-                atPath: linkURL.path,
-                withDestinationPath: executableURL.path
-            )
-        }
-
-        return true
-    }
-
-    public func unUse(currentToolchain: ToolchainVersion) throws {
-        let currentToolchainBinURL = self.swiftlyToolchainsDir
-            .appendingPathComponent(currentToolchain.name, isDirectory: true)
-            .appendingPathComponent("usr", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
-
-        for existingExecutable in try FileManager.default.contentsOfDirectory(atPath: currentToolchainBinURL.path) {
-            guard existingExecutable != "swiftly" else {
-                continue
-            }
-
-            let url = self.swiftlyBinDir.appendingPathComponent(existingExecutable)
-            let vals = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
-
-            guard let islink = vals.isSymbolicLink, islink else {
-                throw Error(message: "Found executable not managed by swiftly in SWIFTLY_BIN_DIR: \(url.path)")
-            }
-            let symlinkDest = url.resolvingSymlinksInPath()
-            guard symlinkDest.deletingLastPathComponent() == currentToolchainBinURL else {
-                throw Error(message: "Found symlink that points to non-swiftly managed executable: \(symlinkDest.path)")
-            }
-
-            try self.swiftlyBinDir.appendingPathComponent(existingExecutable).deleteIfExists()
-        }
-    }
-
-    public func listAvailableSnapshots(version _: String?) async -> [Snapshot] {
-        []
-    }
-
     public func getExecutableName() -> String {
 #if arch(x86_64)
         let arch = "x86_64"
@@ -386,8 +283,6 @@ public struct Linux: Platform {
 
         return "swiftly-\(arch)-unknown-linux-gnu"
     }
-
-    public func currentToolchain() throws -> ToolchainVersion? { nil }
 
     public func getTempFilePath() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
@@ -603,6 +498,10 @@ public struct Linux: Platform {
 
         // Fall back on bash on Linux and other Unixes
         return "/bin/bash"
+    }
+
+    public func findToolchainLocation(_ toolchain: ToolchainVersion) -> URL {
+        self.swiftlyToolchainsDir.appendingPathComponent("\(toolchain.name)")
     }
 
     public static let currentPlatform: any Platform = Linux()

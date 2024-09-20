@@ -9,15 +9,10 @@ final class UseTests: SwiftlyTests {
     /// Execute a `use` command with the provided argument. Then validate that the configuration is updated properly and
     /// the in-use swift executable prints the the provided expectedVersion.
     func useAndValidate(argument: String, expectedVersion: ToolchainVersion) async throws {
-        var use = try self.parseCommand(Use.self, ["use", argument])
+        var use = try self.parseCommand(Use.self, ["use", "-g", argument])
         try await use.run()
 
         XCTAssertEqual(try Config.load().inUse, expectedVersion)
-
-        let toolchainVersion = try self.getMockedToolchainVersion(
-            at: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift")
-        )
-        XCTAssertEqual(toolchainVersion, expectedVersion)
     }
 
     /// Tests that the `use` command can switch between installed stable release toolchains.
@@ -171,13 +166,13 @@ final class UseTests: SwiftlyTests {
     /// Tests that the `use` command gracefully exits when executed before any toolchains have been installed.
     func testUseNoInstalledToolchains() async throws {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: []) {
-            var use = try self.parseCommand(Use.self, ["use", "latest"])
+            var use = try self.parseCommand(Use.self, ["use", "-g", "latest"])
             try await use.run()
 
             var config = try Config.load()
             XCTAssertEqual(config.inUse, nil)
 
-            use = try self.parseCommand(Use.self, ["use", "5.6.0"])
+            use = try self.parseCommand(Use.self, ["use", "-g", "5.6.0"])
             try await use.run()
 
             config = try Config.load()
@@ -213,100 +208,6 @@ final class UseTests: SwiftlyTests {
         }
     }
 
-    /// Tests that the `use` command symlinks all of the executables provided in a toolchain and removes any existing
-    /// symlinks from the previously active toolchain.
-    func testOldSymlinksRemoved() async throws {
-        try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
-            let spec = [
-                ToolchainVersion(major: 1, minor: 2, patch: 3): ["a", "b"],
-                ToolchainVersion(major: 2, minor: 3, patch: 4): ["b", "c", "d"],
-                ToolchainVersion(major: 3, minor: 4, patch: 5): ["a", "c", "d", "e"],
-            ]
-
-            for (toolchain, files) in spec {
-                try await self.installMockedToolchain(toolchain: toolchain, executables: files)
-            }
-
-            // Add an unrelated executable to the binary directory.
-            let existingFileName = "existing"
-            let existingExecutableURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(existingFileName)
-            let data = Data("hello world\n".utf8)
-            try data.write(to: existingExecutableURL)
-
-            for (toolchain, files) in spec {
-                var use = try self.parseCommand(Use.self, ["use", toolchain.name])
-                try await use.run()
-
-                // Verify that only the symlinks for the active toolchain remain.
-                let symlinks = try FileManager.default.contentsOfDirectory(
-                    atPath: Swiftly.currentPlatform.swiftlyBinDir.path
-                )
-                XCTAssertEqual(symlinks.sorted(), (files + [existingFileName]).sorted())
-
-                // Verify that any all the symlinks point to the right toolchain.
-                for file in files {
-                    guard file != existingFileName else {
-                        continue
-                    }
-                    let observedVersion = try self.getMockedToolchainVersion(
-                        at: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(file)
-                    )
-                    XCTAssertEqual(observedVersion, toolchain)
-                }
-            }
-        }
-    }
-
-    /// Tests that any executables that already exist in SWIFTLY_BIN_DIR.
-    func testExistingExecutablesNotOverwritten() async throws {
-        try await self.withMockedHome(homeName: Self.homeName, toolchains: []) {
-            let existingExecutables = ["a", "b", "c"]
-            let existingText = "existing"
-            for fileName in existingExecutables {
-                let existingExecutableURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(fileName)
-                let data = Data(existingText.utf8)
-                try data.write(to: existingExecutableURL)
-            }
-
-            let toolchain = ToolchainVersion(major: 7, minor: 2, patch: 3)
-            try await self.installMockedToolchain(
-                toolchain: toolchain,
-                executables: ["a", "b", "c", "d", "e"]
-            )
-
-            var use = try self.parseCommand(Use.self, ["use", toolchain.name])
-            let nOutput = try await use.runWithMockedIO(input: ["n"])
-
-            for exec in existingExecutables {
-                // Ensure we were prompted for each existing executable.
-                XCTAssert(nOutput.contains(where: { $0.contains(exec) }))
-
-                // Ensure files were not overwritten.
-                let existingExecutableURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(exec)
-                let contents = try String(contentsOf: existingExecutableURL, encoding: .utf8)
-                XCTAssertEqual(contents, existingText)
-            }
-
-            let nConfig = try Config.load()
-            XCTAssertEqual(nConfig.inUse, nil)
-
-            let yOutput = try await use.runWithMockedIO(input: ["y"])
-
-            // Ensure we were prompted for each existing executable.
-            for exec in existingExecutables {
-                XCTAssert(yOutput.contains(where: { $0.contains(exec) }))
-
-                // Ensure files were overwritten.
-                let existingExecutableURL = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(exec)
-                let contents = try String(contentsOf: existingExecutableURL, encoding: .utf8)
-                XCTAssertNotEqual(contents, existingText)
-            }
-
-            let yConfig = try Config.load()
-            XCTAssertEqual(yConfig.inUse, toolchain)
-        }
-    }
-
     /// Tests that running a use command without an argument prints the currently in-use toolchain.
     func testPrintInUse() async throws {
         let toolchains = [
@@ -316,14 +217,72 @@ final class UseTests: SwiftlyTests {
         ]
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Set(toolchains)) {
             for toolchain in toolchains {
-                var use = try self.parseCommand(Use.self, ["use", toolchain.name])
+                var use = try self.parseCommand(Use.self, ["use", "-g", toolchain.name])
                 try await use.run()
 
-                var useEmpty = try self.parseCommand(Use.self, ["use"])
-                let output = try await useEmpty.runWithMockedIO()
+                var useEmpty = try self.parseCommand(Use.self, ["use", "-g"])
+                var output = try await useEmpty.runWithMockedIO()
 
                 XCTAssert(output.contains(where: { $0.contains(String(describing: toolchain)) }))
+
+                useEmpty = try self.parseCommand(Use.self, ["use", "-g", "--print-location"])
+                output = try await useEmpty.runWithMockedIO()
+
+                XCTAssert(output.contains(where: { $0.contains(Swiftly.currentPlatform.findToolchainLocation(toolchain).path) }))
             }
+        }
+    }
+
+    /// Tests in-use toolchain selected by the .swift-version file.
+    func testSwiftVersionFile() async throws {
+        let toolchains = [
+            Self.newStable,
+            Self.newMainSnapshot,
+            Self.newReleaseSnapshot,
+        ]
+        try await self.withMockedHome(homeName: Self.homeName, toolchains: Set(toolchains)) {
+            let versionFile = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(".swift-version")
+
+            // GIVEN: a directory with a swift version file that selects a particular toolchain
+            try Self.newStable.name.write(to: versionFile, atomically: true, encoding: .utf8)
+            // WHEN: checking which toolchain is selected with the use command
+            var useCmd = try self.parseCommand(Use.self, ["use"])
+            var output = try await useCmd.runWithMockedIO()
+            // THEN: the output shows this toolchain is in use with this working directory
+            XCTAssert(output.contains(where: { $0.contains(Self.newStable.name) }))
+
+            // GIVEN: a directory with a swift version file that selects a particular toolchain
+            // WHEN: using another toolchain version
+            useCmd = try self.parseCommand(Use.self, ["use", Self.newMainSnapshot.name])
+            output = try await useCmd.runWithMockedIO()
+            // THEN: the swift version file is updated to this toolchain version
+            var versionFileContents = try String(contentsOf: versionFile, encoding: .utf8)
+            XCTAssertEqual(Self.newMainSnapshot.name, versionFileContents)
+            // THEN: the use command reports this toolchain to be in use
+            XCTAssert(output.contains(where: { $0.contains(Self.newMainSnapshot.name) }))
+
+            // GIVEN: a directory with no swift version file at the top of a git repository
+            try FileManager.default.removeItem(atPath: versionFile.path)
+            let gitDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(".git")
+            try FileManager.default.createDirectory(atPath: gitDir.path, withIntermediateDirectories: false)
+            // WHEN: using a toolchain version
+            useCmd = try self.parseCommand(Use.self, ["use", Self.newReleaseSnapshot.name])
+            try await useCmd.run()
+            // THEN: a swift version file is created
+            XCTAssert(FileManager.default.fileExists(atPath: versionFile.path))
+            // THEN: the version file contains the specified version
+            versionFileContents = try String(contentsOf: versionFile, encoding: .utf8)
+            XCTAssertEqual(Self.newReleaseSnapshot.name, versionFileContents)
+
+            // GIVEN: a directory with a swift version file at the top of a git repository
+            try "1.2.3".write(to: versionFile, atomically: true, encoding: .utf8)
+            // WHEN: using with a toolchain selector that can select more than one version, but matches one of the installed toolchains
+            let broadSelector = ToolchainSelector.stable(major: Self.newStable.asStableRelease!.major, minor: nil, patch: nil)
+            useCmd = try self.parseCommand(Use.self, ["use", broadSelector.description])
+            try await useCmd.run()
+            // THEN: the swift version file is set to the specific toolchain version that was installed including major, minor, and patch
+            versionFileContents = try String(contentsOf: versionFile, encoding: .utf8)
+            XCTAssertEqual(Self.newStable.name, versionFileContents)
         }
     }
 }

@@ -198,6 +198,10 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     }
 
     func assertTool(_ name: String, message: String) async throws -> String {
+        guard let _ = try? await runProgramOutput(getShell(), "-c", "which which") else {
+            throw Error(message: "The which command could not be found. Please install it with your package manager.")
+        }
+
         guard let location = try? await runProgramOutput(getShell(), "-c", "which \(name)") else {
             throw Error(message: message)
         }
@@ -267,26 +271,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         // Copy the swiftly license to the bundle
         try FileManager.default.copyItem(atPath: cwd + "/LICENSE.txt", toPath: licenseDir + "/LICENSE.txt")
-
-        // Copy all of the dependent library licenses to the bundle
-        for lib in (try? FileManager.default.contentsOfDirectory(atPath: cwd + "/.build/checkouts")) ?? [] {
-            if lib == "SwiftFormat" || lib.hasSuffix(".tar.gz") {
-                continue
-            }
-
-            let libLicenseDir = licenseDir + "/\(lib)"
-
-            try FileManager.default.createDirectory(atPath: libLicenseDir, withIntermediateDirectories: true)
-
-            for fileName in ["LICENSE.txt", "LICENSE.md", "COPYING"] {
-                let licenseFile = cwd + "/.build/checkouts/\(lib)/\(fileName)"
-                try? FileManager.default.copyItem(atPath: licenseFile, toPath: licenseDir + "/\(lib)/\(fileName)")
-            }
-
-            if ((try? FileManager.default.contentsOfDirectory(atPath: libLicenseDir)) ?? []).count == 0 {
-                throw Error(message: "Failed to copy any license files from library \(lib)")
-            }
-        }
     }
 
     func buildLinuxRelease() async throws {
@@ -364,8 +348,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         // Strip the symbols from the binary to decrease its size
         try runProgram(strip, releaseDir + "/swiftly")
 
-        let licenseDir = releaseDir + "/swiftly-license"
-        try await self.collectLicenses(licenseDir)
+        try await self.collectLicenses(releaseDir)
 
 #if arch(arm64)
         let releaseArchive = "\(releaseDir)/swiftly-\(version)-aarch64.tar.gz"
@@ -373,23 +356,13 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let releaseArchive = "\(releaseDir)/swiftly-\(version).tar.gz"
 #endif
 
-        try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly", "swiftly-license")
+        try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly", "LICENSE.txt")
 
         print(releaseArchive)
     }
 
-    func checkUniversal() throws {
-#if arch(arm64)
-        return
-#else
-        throw Error(message: "Releases must be made from an Apple Silicon macOS system to make universal binaries.")
-#endif
-    }
-
     func buildMacOSRelease() async throws {
         // Check system requirements
-        try self.checkUniversal()
-
         let git = try await self.assertTool("git", message: "Please install git with either `xcode-select --install` or `brew install git`")
 
         let swift = try await checkSwiftRequirement()

@@ -53,7 +53,7 @@ Likewise, the latest snapshot associated with a given development branch can be 
     $ swiftly install 5.7-snapshot
     $ swiftly install main-snapshot
 
- Install whatever toolchain is current selected, such as a .swift-version file:
+ Install whatever toolchain is currently selected, such as the the one in the .swift-version file:
 
     $ swiftly install
 
@@ -456,7 +456,7 @@ swiftly run <command>... [--version] [--help]
 *Run a command while proxying to the selected toolchain commands.*
 
 
-Run a command with a selected toolchain, so that all toolchain commands are become the default added to the system path and other common environment variables.
+Run a command with a selected toolchain. The toolchain commands become the default in the system path.
 
 You can run one of the usual toolchain commands directly:
 

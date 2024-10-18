@@ -124,10 +124,10 @@ internal struct Init: SwiftlyCommand {
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
 
         let cmd = URL(fileURLWithPath: CommandLine.arguments[0])
-        let systemManaged = try Swiftly.currentPlatform.isSystemManagedBinary(cmd.path)
+        let systemManagedSwiftlyBin = try Swiftly.currentPlatform.systemManagedBinary(CommandLine.arguments[0])
 
         // Don't move the binary if it's already in the right place, this is being invoked inside an xctest, or it is a system managed binary
-        if cmd != swiftlyBin && !cmd.path.hasSuffix("xctest") && !systemManaged {
+        if cmd != swiftlyBin && !cmd.path.hasSuffix("xctest") && systemManagedSwiftlyBin == nil {
             SwiftlyCore.print("Moving swiftly into the installation directory...")
 
             if swiftlyBin.fileExists() {
@@ -146,8 +146,8 @@ internal struct Init: SwiftlyCommand {
         if !cmd.path.hasSuffix("xctest") {
             SwiftlyCore.print("Setting up toolchain proxies...")
 
-            let proxyTo = if systemManaged {
-                cmd.path
+            let proxyTo = if let systemManagedSwiftlyBin = systemManagedSwiftlyBin {
+                systemManagedSwiftlyBin
             } else {
                 swiftlyBin.path
             }

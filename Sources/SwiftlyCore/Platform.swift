@@ -261,7 +261,7 @@ extension Platform {
         }
     }
 
-    public func isSystemManagedBinary(_ cmd: String) throws -> Bool {
+    public func systemManagedBinary(_ cmd: String) throws -> String? {
         let userHome = FileManager.default.homeDirectoryForCurrentUser
         let binLocs = [cmd] + ProcessInfo.processInfo.environment["PATH"]!.components(separatedBy: ":").map { $0 + "/" + cmd }
         var bin: String?
@@ -278,10 +278,10 @@ extension Platform {
         // If the binary is in the user's home directory, or is not in system locations ("/usr", "/opt", "/bin")
         //  then it is expected to be outside of a system package location and we manage the binary ourselves.
         if bin.hasPrefix(userHome.path + "/") || (!bin.hasPrefix("/usr") && !bin.hasPrefix("/opt") && !bin.hasPrefix("/bin")) {
-            return false
+            return nil
         }
 
-        return true
+        return bin
     }
 
 #endif

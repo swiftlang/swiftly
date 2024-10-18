@@ -147,11 +147,11 @@ Installing a specific snapshot from a swift version development branch
 
 ##### Installing the version from the `.swift-version` file
 
-A package could have a swift version file that specifies the recommended toolchain version. A swiftly install with no version will search for a version file and install that version.
+A package could have a ".swift-version" file that specifies the recommended toolchain version. A swiftly install with no version will search for a version file and install that version.
 
 `swiftly install`
 
-If no swift version file can be found then the installation fails indicating that it couldn't fine the file.
+If no ".swift-version" file can be found then the installation fails indicating that it couldn't fine the file.
 
 #### uninstall
 
@@ -223,7 +223,7 @@ To use the latest installed main snapshot, leave off the date:
 
 `swiftly use main-snapshot`
 
-The use subcommand also supports `.swift-version` files. If version file is present in the current working directory, or an ancestory directory, then swiftly will update that file with the new version to use. This can be a useful feature for a team to share and align on toolchain versions with git. As a special case, if swiftly could not find a version file, but it could find a Package.swift file it will create a new version file for you in the package and set that to the requested toolchain version.
+The use subcommand also supports `.swift-version` files. If a ".swift-version" file is present in the current working directory, or an ancestory directory, then swiftly will update that file with the new version to use. This can be a useful feature for a team to share and align on toolchain versions with git. As a special case, if swiftly could not find a version file, but it could find a Package.swift file it will create a new version file for you in the package and set that to the requested toolchain version.
 
 Note: The `.swift-version` file mechanisms can be overridden using the `--global-default` flag so that your swiftly installation's default toolchain can be set explicitly.
 

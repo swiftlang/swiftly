@@ -11,9 +11,8 @@ internal struct Run: SwiftlyCommand {
         "Run a command while proxying to the selected toolchain commands.",
         discussion: """
 
-        Run a command with a selected toolchain, so that all toolchain commands \
-        are become the default added to the system path and other common environment \
-        variables.
+        Run a command with a selected toolchain. The toolchain commands \
+        become the default in the system path.
 
         You can run one of the usual toolchain commands directly:
 

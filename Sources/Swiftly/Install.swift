@@ -40,7 +40,7 @@ struct Install: SwiftlyCommand {
             $ swiftly install 5.7-snapshot
             $ swiftly install main-snapshot
 
-         Install whatever toolchain is current selected, such as a .swift-version file:
+         Install whatever toolchain is currently selected, such as the the one in the .swift-version file:
 
             $ swiftly install
         """

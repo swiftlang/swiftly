@@ -62,6 +62,10 @@ public protocol Platform {
     /// After this completes, a user can “use” the toolchain.
     func install(from: URL, version: ToolchainVersion) throws
 
+    /// Extract swiftly from the provided downloaded archive and install
+    /// ourselves from that.
+    func extractSwiftlyAndInstall(from archive: URL) throws
+
     /// Uninstalls a toolchain associated with the given version.
     /// If this version is in use, the next latest version will be used afterwards.
     func uninstall(_ version: ToolchainVersion) throws

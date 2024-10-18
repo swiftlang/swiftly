@@ -3,7 +3,7 @@ import ArgumentParserToolInfo
 import Foundation
 
 @main
-struct GenerateDocsReferencel: ParsableCommand {
+struct GenerateDocsReference: ParsableCommand {
     enum Error: Swift.Error {
         case failedToRunSubprocess(error: Swift.Error)
         case unableToParseToolOutput(error: Swift.Error)

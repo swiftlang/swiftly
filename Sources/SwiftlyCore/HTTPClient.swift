@@ -22,13 +22,26 @@ private func makeRequest(url: String) -> HTTPClientRequest {
     return request
 }
 
-struct SwiftOrgSwiftlyRelease: Codable {
-    var name: String
+public enum SwiftOrgSwiftlyPlatformType: String, Codable {
+    case Darwin
+    case Linux
+    case Windows
+}
+
+public struct SwiftOrgSwiftlyPlatform: Codable {
+    public var platform: SwiftOrgSwiftlyPlatformType
+    public var x86_64: URL
+    public var arm64: URL
+}
+
+public struct SwiftOrgSwiftlyRelease: Codable {
+    public var version: SwiftlyVersion
+    public var platforms: [SwiftOrgSwiftlyPlatform]
 }
 
 struct SwiftOrgPlatform: Codable {
     var name: String
-    var archs: [String]
+    var archs: [String]?
 
     /// platform is a mapping from the 'name' field of the swift.org platform object
     /// to swiftly's PlatformDefinition, if possible.
@@ -170,6 +183,13 @@ public struct SwiftlyHTTPClient {
         return try JSONDecoder().decode(type.self, from: response.buffer)
     }
 
+    /// Return the current Swiftly release using the swift.org API.
+    public func getSwiftlyRelease() async throws -> SwiftOrgSwiftlyRelease {
+        let url = "https://www.swift.org/api/v1/swiftly.json"
+        let swiftlyRelease: SwiftOrgSwiftlyRelease = try await self.getFromJSON(url: url, type: SwiftOrgSwiftlyRelease.self)
+        return swiftlyRelease
+    }
+
     /// Return an array of released Swift versions that match the given filter, up to the provided
     /// limit (default unlimited).
     public func getReleaseToolchains(
@@ -190,7 +210,7 @@ public struct SwiftlyHTTPClient {
             a!
         }
 
-        let url = "https://swift.org/api/v1/install/releases.json"
+        let url = "https://www.swift.org/api/v1/install/releases.json"
         let swiftOrgReleases: [SwiftOrgRelease] = try await self.getFromJSON(url: url, type: [SwiftOrgRelease].self)
 
         var swiftOrgFiltered: [ToolchainVersion.StableRelease] = try swiftOrgReleases.compactMap { swiftOrgRelease in
@@ -200,7 +220,7 @@ public struct SwiftlyHTTPClient {
                     return nil
                 }
 
-                guard swiftOrgPlatform.archs.contains(arch) else {
+                guard let archs = swiftOrgPlatform.archs, archs.contains(arch) else {
                     return nil
                 }
             }
@@ -277,7 +297,7 @@ public struct SwiftlyHTTPClient {
             platform.name
         }
 
-        let url = "https://swift.org/api/v1/install/dev/\(branch.name)/\(platformName).json"
+        let url = "https://www.swift.org/api/v1/install/dev/\(branch.name)/\(platformName).json"
 
         // For a particular branch and platform the snapshots are listed underneath their architecture
         let swiftOrgSnapshotArchs: SwiftOrgSnapshotList = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)

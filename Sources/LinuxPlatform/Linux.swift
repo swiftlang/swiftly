@@ -193,44 +193,21 @@ public struct Linux: Platform {
                 throw Error(message: msg)
             }
 
-            let foundKeys = (try? self.runProgram(
-                "gpg",
-                "--list-keys",
-                "swift-infrastructure@forums.swift.org",
-                "swift-infrastructure@swift.org",
-                quiet: true
-            )) != nil
-            if !foundKeys {
-                // Import the swift keys if they aren't here already
+            // Import the latest swift keys, but only once per session, which will help with the performance in tests
+            if !swiftGPGKeysRefreshed {
                 let tmpFile = self.getTempFilePath()
                 FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600])
                 defer {
                     try? FileManager.default.removeItem(at: tmpFile)
                 }
 
-                guard let url = URL(string: "https://swift.org/keys/all-keys.asc") else {
+                guard let url = URL(string: "https://www.swift.org/keys/all-keys.asc") else {
                     throw Error(message: "malformed URL to the swift gpg keys")
                 }
 
                 try await httpClient.downloadFile(url: url, to: tmpFile)
                 try self.runProgram("gpg", "--import", tmpFile.path, quiet: true)
-            }
 
-            // We only need to refresh the keys once per session, which will help with performance in tests
-            if !swiftGPGKeysRefreshed {
-                SwiftlyCore.print("Refreshing Swift PGP keys...")
-                do {
-                    try self.runProgram(
-                        "gpg",
-                        "--quiet",
-                        "--keyserver",
-                        "hkp://keyserver.ubuntu.com",
-                        "--refresh-keys",
-                        "Swift"
-                    )
-                } catch {
-                    throw Error(message: "Failed to refresh PGP keys: \(error)")
-                }
                 swiftGPGKeysRefreshed = true
             }
         }
@@ -288,6 +265,23 @@ public struct Linux: Platform {
             // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
             return toolchainDir.appendingPathComponent(String(relativePath))
         }
+    }
+
+    public func extractSwiftlyAndInstall(from archive: URL) throws {
+        guard archive.fileExists() else {
+            throw Error(message: "\(archive) doesn't exist")
+        }
+
+        let tmpDir = self.getTempFilePath()
+        try FileManager.default.createDirectory(atPath: tmpDir.path, withIntermediateDirectories: true)
+
+        SwiftlyCore.print("Extracting new swiftly...")
+        try extractArchive(atPath: archive) { name in
+            // Extract to the temporary directory
+            tmpDir.appendingPathComponent(String(name))
+        }
+
+        try self.runProgram(tmpDir.appendingPathComponent("swiftly").path, "init")
     }
 
     public func uninstall(_ toolchain: ToolchainVersion) throws {
@@ -410,7 +404,7 @@ public struct Linux: Platform {
         do {
             try self.runProgram("gpg", "--verify", sigFile.path, archive.path)
         } catch {
-            throw Error(message: "Toolchain signature verification failed: \(error).")
+            throw Error(message: "Signature verification failed: \(error).")
         }
     }
 

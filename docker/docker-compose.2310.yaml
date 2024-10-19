@@ -10,10 +10,6 @@ services:
 
   test:
     image: swiftly:23.10-test
-    environment:
-      - SWIFTLY_PLATFORM_NAME=ubuntu2310
-      - SWIFTLY_PLATFORM_NAME_FULL=ubuntu23.10
-      - SWIFTLY_PLATFORM_NAME_PRETTY="Ubuntu 23.10"
 
   install-test-setup:
     image: swiftly:23.10-install-test

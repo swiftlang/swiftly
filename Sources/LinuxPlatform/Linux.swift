@@ -7,6 +7,18 @@ var swiftGPGKeysRefreshed = false
 /// This implementation can be reused for any supported Linux platform.
 /// TODO: replace dummy implementations
 public struct Linux: Platform {
+    let linuxPlatforms = [
+        PlatformDefinition.ubuntu2404,
+        PlatformDefinition.ubuntu2310,
+        PlatformDefinition.ubuntu2204,
+        PlatformDefinition.ubuntu2004,
+        PlatformDefinition.ubuntu1804,
+        PlatformDefinition.fedora39,
+        PlatformDefinition.rhel9,
+        PlatformDefinition.amazonlinux2,
+        PlatformDefinition.debian12,
+    ]
+
     public init() {}
 
     public var appDataDirectory: URL {
@@ -473,19 +485,7 @@ public struct Linux: Platform {
             print("This platform could not be detected, but a toolchain for one of the supported platforms may work on it.")
         }
 
-        let linuxPlatforms = [
-            PlatformDefinition.ubuntu2404,
-            PlatformDefinition.ubuntu2310,
-            PlatformDefinition.ubuntu2204,
-            PlatformDefinition.ubuntu2004,
-            PlatformDefinition.ubuntu1804,
-            PlatformDefinition.fedora39,
-            PlatformDefinition.rhel9,
-            PlatformDefinition.amazonlinux2,
-            PlatformDefinition.debian12,
-        ]
-
-        let selections = linuxPlatforms.enumerated().map { "\($0 + 1)) \($1.namePretty)" }.joined(separator: "\n")
+        let selections = self.linuxPlatforms.enumerated().map { "\($0 + 1)) \($1.namePretty)" }.joined(separator: "\n")
 
         print("""
         Please select the platform to use for toolchain downloads:
@@ -494,26 +494,24 @@ public struct Linux: Platform {
         \(selections)
         """)
 
-        let choice = SwiftlyCore.readLine(prompt: "Pick one of the available selections [0-\(linuxPlatforms.count)] ") ?? "0"
+        let choice = SwiftlyCore.readLine(prompt: "Pick one of the available selections [0-\(self.linuxPlatforms.count)] ") ?? "0"
 
         guard let choiceNum = Int(choice) else {
             fatalError("Installation canceled")
         }
 
-        guard choiceNum > 0 && choiceNum <= linuxPlatforms.count else {
+        guard choiceNum > 0 && choiceNum <= self.linuxPlatforms.count else {
             fatalError("Installation canceled")
         }
 
-        return linuxPlatforms[choiceNum - 1]
+        return self.linuxPlatforms[choiceNum - 1]
     }
 
     public func detectPlatform(disableConfirmation: Bool, platform: String?) async throws -> PlatformDefinition {
         // We've been given a hint to use
         if let platform {
-            let linuxPlatforms = [PlatformDefinition.ubuntu2404, .ubuntu2310, .ubuntu2204, .ubuntu2004, .ubuntu1804, .amazonlinux2, .rhel9, .fedora39, .debian12]
-
             guard let pd = linuxPlatforms.first(where: { $0.nameFull == platform }) else {
-                fatalError("Unrecognized platform \(platform). Recognized values: \(linuxPlatforms.map(\.nameFull).joined(separator: ", ")).")
+                fatalError("Unrecognized platform \(platform). Recognized values: \(self.linuxPlatforms.map(\.nameFull).joined(separator: ", ")).")
             }
 
             return pd

@@ -51,6 +51,9 @@ public enum Proxy {
             try await Swiftly.currentPlatform.proxy(toolchain, binName, Array(CommandLine.arguments[1...]))
         } catch let terminated as RunProgramError {
             exit(terminated.exitCode)
+        } catch let error as Error {
+            SwiftlyCore.print(error.message)
+            exit(1)
         } catch {
             SwiftlyCore.print("\(error)")
             exit(1)

@@ -96,7 +96,7 @@ struct Install: SwiftlyCommand {
                     throw Error(message: "Internal error selecting toolchain to install.")
                 }
             } else {
-                throw Error(message: "There is no toolchain selected from a .swift-version file to install.")
+                throw Error(message: "Swiftly couldn't determine the toolchain version to install. Please set a version like this and try again: `swiftly install latest`")
             }
         }
 

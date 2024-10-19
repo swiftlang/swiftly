@@ -466,7 +466,7 @@ public struct Linux: Platform {
         }
     }
 
-    private func manualSelectPlatform(_ platformPretty: String?) -> PlatformDefinition {
+    private func manualSelectPlatform(_ platformPretty: String?) async -> PlatformDefinition {
         if let platformPretty = platformPretty {
             print("\(platformPretty) is not an officially supported platform, but the toolchains for another platform may still work on it.")
         } else {
@@ -485,7 +485,7 @@ public struct Linux: Platform {
             PlatformDefinition.debian12,
         ]
 
-        let selections = linuxPlatforms.enumerated().map { "\($0)) \($1.namePretty)" }.joined(separator: "\n")
+        let selections = linuxPlatforms.enumerated().map { "\($0 + 1)) \($1.namePretty)" }.joined(separator: "\n")
 
         print("""
         Please select the platform to use for toolchain downloads:
@@ -494,36 +494,29 @@ public struct Linux: Platform {
         \(selections)
         """)
 
-        let choice = SwiftlyCore.readLine(prompt: "> ") ?? "0"
+        let choice = SwiftlyCore.readLine(prompt: "Pick one of the available selections [0-\(linuxPlatforms.count)] ") ?? "0"
 
         guard let choiceNum = Int(choice) else {
             fatalError("Installation canceled")
         }
 
-        guard choiceNum >= 0 && choiceNum <= linuxPlatforms.count else {
+        guard choiceNum > 0 && choiceNum <= linuxPlatforms.count else {
             fatalError("Installation canceled")
         }
 
-        return linuxPlatforms[choiceNum]
+        return linuxPlatforms[choiceNum - 1]
     }
 
     public func detectPlatform(disableConfirmation: Bool, platform: String?) async throws -> PlatformDefinition {
         // We've been given a hint to use
-        if let platform = platform {
-            switch platform {
-            case "ubuntu22.04":
-                return PlatformDefinition.ubuntu2204
-            case "ubuntu20.04":
-                return PlatformDefinition.ubuntu2004
-            case "ubuntu18.04":
-                return PlatformDefinition.ubuntu1804
-            case "amazonlinux2":
-                return PlatformDefinition.amazonlinux2
-            case "rhel9":
-                return PlatformDefinition.rhel9
-            default:
-                fatalError("Unrecognized platform \(platform)")
+        if let platform {
+            let linuxPlatforms = [PlatformDefinition.ubuntu2404, .ubuntu2310, .ubuntu2204, .ubuntu2004, .ubuntu1804, .amazonlinux2, .rhel9, .fedora39, .debian12]
+
+            guard let pd = linuxPlatforms.first(where: { $0.nameFull == platform }) else {
+                fatalError("Unrecognized platform \(platform). Recognized values: \(linuxPlatforms.map(\.nameFull).joined(separator: ", ")).")
             }
+
+            return pd
         }
 
         let osReleaseFiles = ["/etc/os-release", "/usr/lib/os-release"]
@@ -544,29 +537,10 @@ public struct Linux: Platform {
             } else {
                 print(message)
             }
-            return self.manualSelectPlatform(platformPretty)
+            return await self.manualSelectPlatform(platformPretty)
         }
 
-        let data = FileManager.default.contents(atPath: releaseFile)
-        guard let data = data else {
-            let message = "Unable to read OS release information from file \(releaseFile)"
-            if disableConfirmation {
-                throw Error(message: message)
-            } else {
-                print(message)
-            }
-            return self.manualSelectPlatform(platformPretty)
-        }
-
-        guard let releaseInfo = String(data: data, encoding: .utf8) else {
-            let message = "Unable to read OS release information from file \(releaseFile)"
-            if disableConfirmation {
-                throw Error(message: message)
-            } else {
-                print(message)
-            }
-            return self.manualSelectPlatform(platformPretty)
-        }
+        let releaseInfo = try String(contentsOfFile: releaseFile, encoding: .utf8)
 
         var id: String?
         var idlike: String?
@@ -583,17 +557,17 @@ public struct Linux: Platform {
             }
         }
 
-        guard let id = id, let idlike = idlike, let versionID else {
+        guard let id, let versionID else {
             let message = "Unable to find release information from file \(releaseFile)"
             if disableConfirmation {
                 throw Error(message: message)
             } else {
                 print(message)
             }
-            return self.manualSelectPlatform(platformPretty)
+            return await self.manualSelectPlatform(platformPretty)
         }
 
-        if (id + idlike).contains("amzn") {
+        if (id + (idlike ?? "")).contains("amzn") {
             guard versionID == "2" else {
                 let message = "Unsupported version of Amazon Linux"
                 if disableConfirmation {
@@ -601,11 +575,11 @@ public struct Linux: Platform {
                 } else {
                     print(message)
                 }
-                return self.manualSelectPlatform(platformPretty)
+                return await self.manualSelectPlatform(platformPretty)
             }
 
             return PlatformDefinition.amazonlinux2
-        } else if (id + idlike).contains("rhel") {
+        } else if (id + (idlike ?? "")).contains("rhel") {
             guard versionID.hasPrefix("9") else {
                 let message = "Unsupported version of RHEL"
                 if disableConfirmation {
@@ -613,7 +587,7 @@ public struct Linux: Platform {
                 } else {
                     print(message)
                 }
-                return self.manualSelectPlatform(platformPretty)
+                return await self.manualSelectPlatform(platformPretty)
             }
 
             return PlatformDefinition.rhel9
@@ -627,7 +601,7 @@ public struct Linux: Platform {
         } else {
             print(message)
         }
-        return self.manualSelectPlatform(platformPretty)
+        return await self.manualSelectPlatform(platformPretty)
     }
 
     public func getShell() async throws -> String {

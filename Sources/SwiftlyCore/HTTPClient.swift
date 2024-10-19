@@ -160,6 +160,10 @@ public struct SwiftlyHTTPClient {
         return Response(status: response.status, buffer: try await response.body.collect(upTo: maxBytes))
     }
 
+    public struct JSONNotFoundError: LocalizedError {
+        public var url: String
+    }
+
     /// Decode the provided type `T` from the JSON body of the response from a GET request
     /// to the given URL.
     public func getFromJSON<T: Decodable>(
@@ -170,11 +174,14 @@ public struct SwiftlyHTTPClient {
         // Maximum expected size for a JSON payload for an API is 1MB
         let response = try await self.get(url: url, headers: headers, maxBytes: 1024 * 1024)
 
-        guard case .ok = response.status else {
-            var message = "received status \"\(response.status)\" when reaching \(url)"
+        switch response.status {
+        case .ok:
+            break
+        case .notFound:
+            throw SwiftlyHTTPClient.JSONNotFoundError(url: url)
+        default:
             let json = String(buffer: response.buffer)
-            message += ": \(json)"
-            throw Error(message: message)
+            throw Error(message: "Received \(response.status) when reaching \(url) for JSON: \(json)")
         }
 
         return try JSONDecoder().decode(type.self, from: response.buffer)
@@ -246,6 +253,10 @@ public struct SwiftlyHTTPClient {
         }
     }
 
+    public struct SnapshotBranchNotFoundError: LocalizedError {
+        public var branch: ToolchainVersion.Snapshot.Branch
+    }
+
     /// Return an array of Swift snapshots that match the given filter, up to the provided
     /// limit (default unlimited).
     public func getSnapshotToolchains(
@@ -276,7 +287,14 @@ public struct SwiftlyHTTPClient {
         let url = "https://www.swift.org/api/v1/install/dev/\(branch.name)/\(platformName).json"
 
         // For a particular branch and platform the snapshots are listed underneath their architecture
-        let swiftOrgSnapshotArchs: SwiftOrgSnapshotList = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
+        let swiftOrgSnapshotArchs: SwiftOrgSnapshotList
+        do {
+            swiftOrgSnapshotArchs = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
+        } catch is JSONNotFoundError {
+            throw SnapshotBranchNotFoundError(branch: branch)
+        } catch {
+            throw error
+        }
 
         // These are the available snapshots for the branch, platform, and architecture
         let swiftOrgSnapshots = if platform.name == PlatformDefinition.macOS.name {

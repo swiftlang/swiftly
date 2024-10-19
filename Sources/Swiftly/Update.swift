@@ -195,9 +195,18 @@ struct Update: SwiftlyCommand {
                 }
             }.first.map(ToolchainVersion.stable)
         case let .snapshot(old):
-            return try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: old.branch, limit: 1) { snapshot in
-                snapshot.branch == old.branch && snapshot.date > old.date
-            }.first.map(ToolchainVersion.snapshot)
+            let newerSnapshotToolchains: [ToolchainVersion.Snapshot]
+            do {
+                newerSnapshotToolchains = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: old.branch, limit: 1) { snapshot in
+                    snapshot.branch == old.branch && snapshot.date > old.date
+                }
+            } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
+                throw Error(message: "The branch \(branchNotFoundErr.branch) doesn't have any snapshots available on swift.org so this snapshot build cannot be updated. It is possible that there has been a new release on swift.org and the previous release snapshot are no longer available. Install a fresh snapshot toolchain from the either the latest release x.y (major.minor) or from the main branch.")
+            } catch {
+                throw error
+            }
+
+            return newerSnapshotToolchains.first.map(ToolchainVersion.snapshot)
         }
     }
 }

@@ -125,6 +125,26 @@ public struct Linux: Platform {
                 "tzdata",
                 "zlib1g-dev",
             ]
+        case "ubuntu2404":
+            [
+                "binutils",
+                "git",
+                "unzip",
+                "gnupg2",
+                "libc6-dev",
+                "libcurl4-openssl-dev",
+                "libedit2",
+                "libgcc-13-dev",
+                "libpython3-dev",
+                "libsqlite3-0",
+                "libstdc++-13-dev",
+                "libxml2-dev",
+                "libncurses-dev",
+                "libz3-dev",
+                "pkg-config",
+                "tzdata",
+                "zlib1g-dev",
+            ]
         case "amazonlinux2":
             [
                 "binutils",
@@ -158,6 +178,36 @@ public struct Linux: Platform {
                 "unzip",
                 "zip",
             ]
+        case "fedora39":
+            [
+                "binutils",
+                "gcc",
+                "git",
+                "unzip",
+                "libcurl-devel",
+                "libedit-devel",
+                "libicu-devel",
+                "sqlite-devel",
+                "libuuid-devel",
+                "libxml2-devel",
+                "python3-devel",
+            ]
+        case "debian12":
+            [
+                "binutils-gold",
+                "libicu-dev",
+                "libcurl4-openssl-dev",
+                "libedit-dev",
+                "libsqlite3-dev",
+                "libncurses-dev",
+                "libpython3-dev",
+                "libxml2-dev",
+                "pkg-config",
+                "uuid-dev",
+                "tzdata",
+                "git",
+                "gcc",
+            ]
         default:
             []
         }
@@ -169,10 +219,18 @@ public struct Linux: Platform {
             "apt"
         case "ubuntu2204":
             "apt"
+        case "ubuntu2310":
+            "apt"
+        case "ubuntu2404":
+            "apt"
         case "amazonlinux2":
             "yum"
         case "ubi9":
             "yum"
+        case "fedora39":
+            "yum"
+        case "debian12":
+            "apt"
         default:
             nil
         }
@@ -196,7 +254,7 @@ public struct Linux: Platform {
             // Import the latest swift keys, but only once per session, which will help with the performance in tests
             if !swiftGPGKeysRefreshed {
                 let tmpFile = self.getTempFilePath()
-                FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600])
+                let _ = FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600])
                 defer {
                     try? FileManager.default.removeItem(at: tmpFile)
                 }
@@ -390,7 +448,7 @@ public struct Linux: Platform {
     public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws {
         SwiftlyCore.print("Downloading toolchain signature...")
         let sigFile = self.getTempFilePath()
-        FileManager.default.createFile(atPath: sigFile.path, contents: nil)
+        let _ = FileManager.default.createFile(atPath: sigFile.path, contents: nil)
         defer {
             try? FileManager.default.removeItem(at: sigFile)
         }
@@ -415,33 +473,38 @@ public struct Linux: Platform {
             print("This platform could not be detected, but a toolchain for one of the supported platforms may work on it.")
         }
 
+        let linuxPlatforms = [
+            PlatformDefinition.ubuntu2404,
+            PlatformDefinition.ubuntu2310,
+            PlatformDefinition.ubuntu2204,
+            PlatformDefinition.ubuntu2004,
+            PlatformDefinition.ubuntu1804,
+            PlatformDefinition.fedora39,
+            PlatformDefinition.rhel9,
+            PlatformDefinition.amazonlinux2,
+            PlatformDefinition.debian12,
+        ]
+
+        let selections = linuxPlatforms.enumerated().map { "\($0)) \($1.namePretty)" }.joined(separator: "\n")
+
         print("""
         Please select the platform to use for toolchain downloads:
 
         0) Cancel
-        1) Ubuntu 22.04
-        2) Ubuntu 20.04
-        3) Ubuntu 18.04
-        4) RHEL 9
-        5) Amazon Linux 2
+        \(selections)
         """)
 
         let choice = SwiftlyCore.readLine(prompt: "> ") ?? "0"
 
-        switch choice {
-        case "1":
-            return PlatformDefinition.ubuntu2204
-        case "2":
-            return PlatformDefinition.ubuntu2004
-        case "3":
-            return PlatformDefinition.ubuntu1804
-        case "4":
-            return PlatformDefinition.rhel9
-        case "5":
-            return PlatformDefinition.amazonlinux2
-        default:
+        guard let choiceNum = Int(choice) else {
             fatalError("Installation canceled")
         }
+
+        guard choiceNum >= 0 && choiceNum <= linuxPlatforms.count else {
+            fatalError("Installation canceled")
+        }
+
+        return linuxPlatforms[choiceNum]
     }
 
     public func detectPlatform(disableConfirmation: Bool, platform: String?) async throws -> PlatformDefinition {
@@ -508,22 +571,19 @@ public struct Linux: Platform {
         var id: String?
         var idlike: String?
         var versionID: String?
-        var ubuntuCodeName: String?
         for info in releaseInfo.split(separator: "\n").map(String.init) {
             if info.hasPrefix("ID=") {
                 id = String(info.dropFirst("ID=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("ID_LIKE=") {
                 idlike = String(info.dropFirst("ID_LIKE=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("VERSION_ID=") {
-                versionID = String(info.dropFirst("VERSION_ID=".count)).replacingOccurrences(of: "\"", with: "")
-            } else if info.hasPrefix("UBUNTU_CODENAME=") {
-                ubuntuCodeName = String(info.dropFirst("UBUNTU_CODENAME=".count)).replacingOccurrences(of: "\"", with: "")
+                versionID = String(info.dropFirst("VERSION_ID=".count)).replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: ".", with: "")
             } else if info.hasPrefix("PRETTY_NAME=") {
                 platformPretty = String(info.dropFirst("PRETTY_NAME=".count)).replacingOccurrences(of: "\"", with: "")
             }
         }
 
-        guard let id = id, let idlike = idlike else {
+        guard let id = id, let idlike = idlike, let versionID else {
             let message = "Unable to find release information from file \(releaseFile)"
             if disableConfirmation {
                 throw Error(message: message)
@@ -534,7 +594,7 @@ public struct Linux: Platform {
         }
 
         if (id + idlike).contains("amzn") {
-            guard let versionID = versionID, versionID == "2" else {
+            guard versionID == "2" else {
                 let message = "Unsupported version of Amazon Linux"
                 if disableConfirmation {
                     throw Error(message: message)
@@ -544,25 +604,9 @@ public struct Linux: Platform {
                 return self.manualSelectPlatform(platformPretty)
             }
 
-            return PlatformDefinition(name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2")
-        } else if (id + idlike).contains("ubuntu") {
-            if ubuntuCodeName == "jammy" {
-                return PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04")
-            } else if ubuntuCodeName == "focal" {
-                return PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04")
-            } else if ubuntuCodeName == "bionic" {
-                return PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
-            } else {
-                let message = "Unsupported version of Ubuntu Linux"
-                if disableConfirmation {
-                    throw Error(message: message)
-                } else {
-                    print(message)
-                }
-                return self.manualSelectPlatform(platformPretty)
-            }
+            return PlatformDefinition.amazonlinux2
         } else if (id + idlike).contains("rhel") {
-            guard let versionID = versionID, versionID.hasPrefix("9") else {
+            guard versionID.hasPrefix("9") else {
                 let message = "Unsupported version of RHEL"
                 if disableConfirmation {
                     throw Error(message: message)
@@ -572,7 +616,9 @@ public struct Linux: Platform {
                 return self.manualSelectPlatform(platformPretty)
             }
 
-            return PlatformDefinition(name: "ubi9", nameFull: "ubi9", namePretty: "RHEL 9")
+            return PlatformDefinition.rhel9
+        } else if let pd = [PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2310, .ubuntu2404, .debian12, .fedora39].first(where: { $0.name == id + versionID }) {
+            return pd
         }
 
         let message = "Unsupported Linux platform"

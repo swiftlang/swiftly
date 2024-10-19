@@ -1,5 +1,7 @@
 # swiftly
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftlang%2Fswiftly%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/swiftlang/swiftly) [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fswiftlang%2Fswiftly%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/swiftlang/swiftly)
+
 swiftly is a CLI tool for installing, managing, and switching between [Swift](https://www.swift.org/) toolchains, written in Swift. swiftly itself is designed to be extremely easy to install and get running, and its command interface is intended to be flexible while also being simple to use. The overall experience is inspired by and meant to feel reminiscent of the Rust toolchain manager [rustup](https://rustup.rs/).
 
 Ongoing maintenance and stewardship of this project is led by the [SSWG](https://www.swift.org/sswg/).

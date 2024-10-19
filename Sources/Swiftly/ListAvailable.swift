@@ -28,9 +28,9 @@ struct ListAvailable: SwiftlyCommand {
         The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
 
             $ swiftly list-available main-snapshot
-            $ swiftly list-available 6.0-snapshot
+            $ swiftly list-available x.y-snapshot
 
-        Note that listing available snapshots before 6.0 is unsupported.
+        Note that listing available snapshots before the latest release (major and minor number) is unsupported.
         """
     ))
     var toolchainSelector: String?

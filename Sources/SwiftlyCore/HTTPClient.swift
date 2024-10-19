@@ -148,9 +148,6 @@ public struct SwiftlyHTTPClient {
 
     public init() {}
 
-    /// The GitHub authentication token to use for any requests made to the GitHub API.
-    public var githubToken: String?
-
     private func get(url: String, headers: [String: String], maxBytes: Int) async throws -> Response {
         var request = makeRequest(url: url)
 
@@ -258,27 +255,6 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
-        // Fall back to using GitHub API's for snapshots on branches older than 6.0
-        if case let .release(major, _) = branch, major < 6 {
-            let filter = { (gh: GitHubTag) -> ToolchainVersion.Snapshot? in
-                guard let snapshot = try gh.parseSnapshot() else {
-                    return nil
-                }
-
-                if let filter {
-                    guard filter(snapshot) else {
-                        return nil
-                    }
-                }
-
-                return snapshot
-            }
-
-            return try await self.mapGitHubTags(limit: limit, filterMap: filter) { page in
-                try await self.getTags(page: page)
-            }
-        }
-
         let arch = if a == nil {
 #if arch(x86_64)
             "x86_64"

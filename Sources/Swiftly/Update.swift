@@ -180,7 +180,7 @@ struct Update: SwiftlyCommand {
     }
 
     /// Tries to find a toolchain version that meets the provided parameters, if one exists.
-    /// This does not download the toolchain, but it does query the GitHub API to find the suitable toolchain.
+    /// This does not download the toolchain, but it does query the swift.org API to find the suitable toolchain.
     private func lookupNewToolchain(_ config: Config, _ bounds: UpdateParameters) async throws -> ToolchainVersion? {
         switch bounds {
         case let .stable(old, range):

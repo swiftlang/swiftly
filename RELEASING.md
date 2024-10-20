@@ -13,7 +13,7 @@ Swift has a tool for producing final product packages, suitable for distribution
 5. Create a tag on that commit with the format "x.y.z". Do not omit "z", even if its value is 0.
 
 6. Build the executables for the release by running `swift run build-swiftly-release <version>` from the root of the swiftly repository
-  * Build on a Apple silicon macOS machine to produce a universal package for x86_64 and arm64
+  * Build on an Apple macOS machine to produce a universal package for x86_64 and arm64 (add the --cert option to provide a signing certificate file for the .pkg)
   * Build on an Amazon Linux 2 image for x86_64
   * Build on an Amazon Linux 2 image for arm64
 

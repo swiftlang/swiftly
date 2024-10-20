@@ -31,6 +31,12 @@ public enum Proxy {
 
             guard proxyList.contains(binName) else {
                 // Treat this as a swiftly invocation
+
+                if CommandLine.arguments.count == 1 || CommandLine.arguments[1] != "init" {
+                    // Check if we've been invoked outside the "init" subcommand and we're not yet configured
+                    _ = try Config.load()
+                }
+
                 await Swiftly.main()
                 return
             }

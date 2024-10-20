@@ -71,8 +71,10 @@ struct Install: SwiftlyCommand {
     ))
     var postInstallFile: String?
 
+    @OptionGroup var root: GlobalOptions
+
     private enum CodingKeys: String, CodingKey {
-        case version, token, use, verify, postInstallFile
+        case version, token, use, verify, postInstallFile, root
     }
 
     mutating func run() async throws {
@@ -106,7 +108,8 @@ struct Install: SwiftlyCommand {
             version: toolchainVersion,
             &config,
             useInstalledToolchain: self.use,
-            verifySignature: self.verify
+            verifySignature: self.verify,
+            verbose: self.root.verbose
         )
 
         if let postInstallScript = postInstallScript {
@@ -129,7 +132,8 @@ struct Install: SwiftlyCommand {
         version: ToolchainVersion,
         _ config: inout Config,
         useInstalledToolchain: Bool,
-        verifySignature: Bool
+        verifySignature: Bool,
+        verbose: Bool
     ) async throws -> String? {
         guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed.")
@@ -228,7 +232,8 @@ struct Install: SwiftlyCommand {
             try await Swiftly.currentPlatform.verifySignature(
                 httpClient: SwiftlyCore.httpClient,
                 archiveDownloadURL: url,
-                archive: tmpFile
+                archive: tmpFile,
+                verbose: verbose
             )
         }
 

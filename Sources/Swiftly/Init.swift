@@ -14,39 +14,53 @@ internal struct Init: SwiftlyCommand {
     installation is found, the swiftly executable will be updated, but the rest of the installation will not be modified.
     """)
     var overwrite: Bool = false
-    @Option(name: .long, help: "Specify the current Linux platform for swiftly.")
+    @Option(name: .long, help: "Specify the current Linux platform for swiftly")
     var platform: String?
+    @Flag(help: "Skip installing the latest toolchain")
+    var skipInstall: Bool = false
 
     @OptionGroup var root: GlobalOptions
+
+    private enum CodingKeys: String, CodingKey {
+        case noModifyProfile, overwrite, platform, skipInstall, root
+    }
 
     public mutating func validate() throws {}
 
     internal mutating func run() async throws {
-        try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform)
+        try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, verbose: self.root.verbose)
     }
 
     /// Initialize the installation of swiftly.
-    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?) async throws {
+    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose _: Bool, skipInstall: Bool, verbose: Bool) async throws {
         try Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
 
-        let config = try? Config.load()
+        var config = try? Config.load()
 
-        if let config = config, !overwrite && config.version != SwiftlyCore.version {
+        if let config, !overwrite && config.version != SwiftlyCore.version {
             // We don't support downgrades, and we don't yet support upgrades
             throw Error(message: "An existing swiftly installation was detected. You can try again with '--overwrite' to overwrite it.")
         }
 
         // Give the user the prompt and the choice to abort at this point.
         if !assumeYes {
+#if os(Linux)
+            let sigMsg = " In the process of installing the new toolchain swiftly will add swift.org GnuPG keys into your keychain to verify the integrity of the downloads."
+#else
+            let sigMsg = ""
+#endif
+            let installMsg = if !skipInstall {
+                "\nOnce swiftly is installed it will install the latest available swift toolchain.\(sigMsg)\n"
+            } else { "" }
+
             SwiftlyCore.print("""
             Swiftly will be installed into the following locations:
 
             \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Data and configuration files directory including toolchains
             \(Swiftly.currentPlatform.swiftlyBinDir.path) - Executables installation directory
 
-            Note that the locations can be changed with SWIFTLY_HOME and SWIFTLY_BIN environment variables and run
-            this again.
-
+            These locations can be changed with SWIFTLY_HOME and SWIFTLY_BIN environment variables and run this again.
+            \(installMsg)
             """)
 
             if SwiftlyCore.readLine(prompt: "Proceed with the installation? [Y/n] ") == "n" {
@@ -115,11 +129,14 @@ internal struct Init: SwiftlyCommand {
         // Force the configuration to be present. Generate it if it doesn't already exist or overwrite is set
         if overwrite || config == nil {
             let pd = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: assumeYes, platform: platform)
-            var config = Config(inUse: nil, installedToolchains: [], platform: pd)
+            var c = Config(inUse: nil, installedToolchains: [], platform: pd)
             // Stamp the current version of swiftly on this config
-            config.version = SwiftlyCore.version
-            try config.save()
+            c.version = SwiftlyCore.version
+            try c.save()
+            config = c
         }
+
+        guard var config else { throw Error(message: "Configuration could not be set") }
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
 
@@ -233,6 +250,13 @@ internal struct Init: SwiftlyCommand {
                 addEnvToProfile = true
             }
 
+            var postInstall: String?
+
+            if !skipInstall {
+                let latestVersion = try await Install.resolve(config: config, selector: ToolchainSelector.latest)
+                postInstall = try await Install.execute(version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose)
+            }
+
             if addEnvToProfile {
                 try Data(sourceLine.utf8).append(to: profileHome)
 
@@ -245,13 +269,24 @@ internal struct Init: SwiftlyCommand {
 #if os(macOS)
                 SwiftlyCore.print("""
                 NOTE: On macOS it is possible that the shell will pick up the system Swift on the path
-                instead of the one that swiftly has installed for you. You can run the 'hash -r'
-                command to update the shell with the latest PATHs.
+                instead of the one that swiftly has installed for you. You can run this command to update
+                the shell with the latest PATHs.
 
-                    hash -r
+                hash -r
 
                 """)
 #endif
+            }
+
+            if let postInstall {
+                SwiftlyCore.print("""
+                There are some system dependencies that should be installed before using this toolchain.
+                You can run the following script as the system administrator (e.g. root) to prepare
+                your system:
+
+                \(postInstall)
+
+                """)
             }
         }
     }

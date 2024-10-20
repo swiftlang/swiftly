@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install [<version>] [--use] [--token=<token>] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly install [<version>] [--use] [--token=<token>] [--verify|no-verify] [--post-install-file=<post-install-file>] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **version:**
@@ -82,6 +82,16 @@ fails with an "unauthorized" status code, it likely means the rate limit has bee
 
 If the toolchain that is installed has extra post installation steps they they will be
 written to this file as commands that can be run after the installation.
+
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
 
 
 **--version:**
@@ -146,7 +156,7 @@ Note that listing available snapshots before 6.0 is unsupported.
 Set the in-use toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
 
 ```
-swiftly use [--print-location] [--global-default] [--assume-yes] [<toolchain>] [--version] [--help]
+swiftly use [--print-location] [--global-default] [--assume-yes] [--verbose] [<toolchain>] [--version] [--help]
 ```
 
 **--print-location:**
@@ -162,6 +172,11 @@ swiftly use [--print-location] [--global-default] [--assume-yes] [<toolchain>] [
 **--assume-yes:**
 
 *Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
 
 
 **toolchain:**
@@ -213,7 +228,7 @@ Likewise, the latest snapshot associated with a given development branch can be 
 Remove an installed toolchain.
 
 ```
-swiftly uninstall <toolchain> [--assume-yes] [--version] [--help]
+swiftly uninstall <toolchain> [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **toolchain:**
@@ -250,6 +265,11 @@ Finally, all installed toolchains can be uninstalled by specifying 'all':
 **--assume-yes:**
 
 *Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
 
 
 **--version:**
@@ -312,7 +332,7 @@ The installed snapshots for a given devlopment branch can be listed by specifyin
 Update an installed toolchain to a newer version.
 
 ```
-swiftly update [<toolchain>] [--assume-yes] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly update [<toolchain>] [--assume-yes] [--verbose] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **toolchain:**
@@ -358,6 +378,11 @@ A specific snapshot toolchain can be updated by including the date:
 *Disable confirmation prompts by assuming 'yes'*
 
 
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
+
 **--verify|no-verify:**
 
 *Verify the toolchain's PGP signature before proceeding with installation.*
@@ -388,7 +413,7 @@ written to this file as commands that can be run after the installation.
 Perform swiftly initialization into your user account.
 
 ```
-swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--assume-yes] [--version] [--help]
+swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip-install] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **--no-modify-profile:**
@@ -403,12 +428,22 @@ swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--assu
 
 **--platform=\<platform\>:**
 
-*Specify the current Linux platform for swiftly.*
+*Specify the current Linux platform for swiftly*
+
+
+**--skip-install:**
+
+*Skip installing the latest toolchain*
 
 
 **--assume-yes:**
 
 *Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
 
 
 **--version:**
@@ -428,8 +463,18 @@ swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--assu
 Update the version of swiftly itself.
 
 ```
-swiftly self-update [--version] [--help]
+swiftly self-update [--assume-yes] [--verbose] [--version] [--help]
 ```
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
 
 **--version:**
 

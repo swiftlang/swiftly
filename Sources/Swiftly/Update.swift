@@ -112,7 +112,8 @@ struct Update: SwiftlyCommand {
             version: newToolchain,
             &config,
             useInstalledToolchain: config.inUse == parameters.oldToolchain,
-            verifySignature: self.verify
+            verifySignature: self.verify,
+            verbose: self.root.verbose
         )
 
         try await Uninstall.execute(parameters.oldToolchain, &config)

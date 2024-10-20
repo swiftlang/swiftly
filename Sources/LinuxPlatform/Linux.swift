@@ -305,7 +305,7 @@ public struct Linux: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
-    public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws {
+    public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL, verbose: Bool) async throws {
         SwiftlyCore.print("Downloading toolchain signature...")
         let sigFile = self.getTempFilePath()
         FileManager.default.createFile(atPath: sigFile.path, contents: nil)
@@ -320,7 +320,7 @@ public struct Linux: Platform {
 
         SwiftlyCore.print("Verifying toolchain signature...")
         do {
-            try self.runProgram("gpg", "--verify", sigFile.path, archive.path)
+            try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
         } catch {
             throw Error(message: "Signature verification failed: \(error).")
         }

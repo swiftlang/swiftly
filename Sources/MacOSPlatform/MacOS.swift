@@ -146,7 +146,7 @@ public struct MacOS: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID()).pkg")
     }
 
-    public func verifySignature(httpClient _: SwiftlyHTTPClient, archiveDownloadURL _: URL, archive _: URL) async throws {
+    public func verifySignature(httpClient _: SwiftlyHTTPClient, archiveDownloadURL _: URL, archive _: URL, verbose _: Bool) async throws {
         // No signature verification is required on macOS since the pkg files have their own signing
         //  mechanism and the swift.org downloadables are trusted by stock macOS installations.
     }

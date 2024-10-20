@@ -10,7 +10,11 @@ internal struct SelfUpdate: SwiftlyCommand {
         abstract: "Update the version of swiftly itself."
     )
 
-    private enum CodingKeys: CodingKey {}
+    @OptionGroup var root: GlobalOptions
+
+    private enum CodingKeys: String, CodingKey {
+        case root
+    }
 
     internal mutating func run() async throws {
         try validateSwiftly()
@@ -20,10 +24,10 @@ internal struct SelfUpdate: SwiftlyCommand {
             throw Error(message: "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place.")
         }
 
-        let _ = try await Self.execute()
+        let _ = try await Self.execute(verbose: self.root.verbose)
     }
 
-    public static func execute() async throws -> SwiftlyVersion {
+    public static func execute(verbose: Bool) async throws -> SwiftlyVersion {
         SwiftlyCore.print("Checking for swiftly updates...")
 
         let swiftlyRelease = try await SwiftlyCore.httpClient.getSwiftlyRelease()
@@ -91,7 +95,7 @@ internal struct SelfUpdate: SwiftlyCommand {
         }
         animation.complete(success: true)
 
-        try await Swiftly.currentPlatform.verifySignature(httpClient: SwiftlyCore.httpClient, archiveDownloadURL: downloadURL, archive: tmpFile)
+        try await Swiftly.currentPlatform.verifySignature(httpClient: SwiftlyCore.httpClient, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
         try Swiftly.currentPlatform.extractSwiftlyAndInstall(from: tmpFile)
 
         SwiftlyCore.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")

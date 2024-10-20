@@ -39,15 +39,18 @@ struct List: SwiftlyCommand {
             try ToolchainSelector(parsing: input)
         }
 
-        let config = try Config.load()
+        var config = try Config.load()
 
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
-        let activeToolchain = config.inUse
+        let (inUse, _) = try await selectToolchain(config: &config)
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"
-            if toolchain == activeToolchain {
+            if let inUse = inUse, toolchain == inUse {
                 message += " (in use)"
+            }
+            if toolchain == config.inUse {
+                message += " (default)"
             }
             SwiftlyCore.print(message)
         }

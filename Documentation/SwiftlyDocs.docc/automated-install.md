@@ -4,18 +4,26 @@ Swiftly can be installed automatically in places like build/CI systems.
 
 This guide will help you to script to the installation of swiftly and toolchains so that it can be unattended. We assume that you have working understanding of your build system. The examples are based on a typical Unix environment.
 
-First, download a swiftly binary from a trusted source, such as your artifact repository, or a well-known website for the operating system (e.g. Linux) and processor architecture (e.g. arm64, or x86_64). Here's an example using the popular curl command.
+First, download the swiftly binary from swift.org for your operating system (e.g. Linux) and processor architecture (e.g. arm64, or x86_64). Here's an example using the popular curl command.
 
 ```
-curl -L <trusted_location_of_swiftly> > swiftly
+curl -L <location_of_swiftly_swift_org> > swiftly.tar.gz
+tar zxf swiftly.tar.gz
+```
+
+On macOS you can download the pkg file and extract it like this from the command-line:
+
+```
+curl -L <location_of_swiftly_swift_org> > swiftly.pkg
+installer -pkg swiftly.pkg -target CurrentUserHomeDirectory
 ```
 
 > Tip: If you are using Linux you will need the "ca-certificates" package for the root certificate authorities that will establish the trust that swiftly needs to make API requests that it needs. This package is frequently pre-installed on end-user environments, but may not be present in more minimal installations.
 
-Once swiftly is downloaded you can run the init subcommand to finish the installation. This command will use the default initialization options and proceed without prompting.
+Once swiftly is downloaded you can run the init subcommand to finish the installation. This command will print verbose outputs, assume yes for all prompts, and skip the automatic installation of the latest swift toolchain:
 
 ```
-./swiftly init --assume-yes
+./swiftly init --verbose --assume-yes --skip-install    # the swiftly binary is extracted to ~/local/bin/swiftly on macOS
 ```
 
 Swiftly is installed, but the current shell may not yet be updated with the new environment variables, such as the PATH. The init command prints instructions on how to update the current shell environment without opening a new shell. This is an example of the output taken from Linux, but the details might be different for other OSes, username, or shell.

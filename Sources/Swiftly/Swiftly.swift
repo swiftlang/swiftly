@@ -11,10 +11,12 @@ public struct GlobalOptions: ParsableArguments {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
     var assumeYes: Bool = false
 
+    @Flag(help: "Enable verbose reporting from swiftly")
+    var verbose: Bool = false
+
     public init() {}
 }
 
-@main
 public struct Swiftly: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "A utility for installing and managing Swift toolchains.",
@@ -30,6 +32,7 @@ public struct Swiftly: SwiftlyCommand {
             Update.self,
             Init.self,
             SelfUpdate.self,
+            Run.self,
         ]
     )
 

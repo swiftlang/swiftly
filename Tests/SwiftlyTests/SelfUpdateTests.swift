@@ -21,7 +21,7 @@ final class SelfUpdateTests: SwiftlyTests {
     func runSelfUpdateTest(latestVersion: SwiftlyVersion) async throws {
         try await self.withTestHome {
             try await self.withMockedSwiftlyVersion(latestSwiftlyVersion: latestVersion) {
-                let updatedVersion = try await SelfUpdate.execute()
+                let updatedVersion = try await SelfUpdate.execute(verbose: true)
                 XCTAssertEqual(latestVersion, updatedVersion)
             }
         }

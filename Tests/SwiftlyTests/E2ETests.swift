@@ -61,18 +61,6 @@ final class E2ETests: SwiftlyTests {
             XCTAssertTrue(release >= ToolchainVersion.StableRelease(major: 5, minor: 8, patch: 0))
 
             try await validateInstalledToolchains([installedToolchain], description: "install latest")
-
-            if let envScript = envScript {
-                let whichCmd = if shell.hasSuffix("bash") {
-                    "type -P swift"
-                } else {
-                    "which swift"
-                }
-
-                // Check that within a new shell, the swift version succeeds and is the version we expect
-                let whichSwift = (try? await Swiftly.currentPlatform.runProgramOutput(shell, "-c", ". \(envScript.path) ; \(whichCmd)")) ?? ""
-                XCTAssertTrue(whichSwift.hasPrefix(Swiftly.currentPlatform.swiftlyBinDir.path))
-            }
         }
     }
 }

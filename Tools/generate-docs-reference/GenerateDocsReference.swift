@@ -142,11 +142,14 @@ extension ArgumentInfoV0 {
             return ""
         }
 
-        let name: String
-        if let preferred = self.preferredName {
-            name = preferred.name
+        let names: [String]
+
+        if let myNames = self.names {
+            names = myNames.filter { $0.kind == .long }.map(\.name)
+        } else if let preferred = self.preferredName {
+            names = [preferred.name]
         } else if let value = self.valueName {
-            name = value
+            names = [value]
         } else {
             return ""
         }
@@ -157,11 +160,11 @@ extension ArgumentInfoV0 {
             switch self.kind
         {
         case .positional:
-            "<\(name)>"
+            "<\(names.joined(separator: "|"))>"
         case .option:
-            "--\(name)=<\(self.valueName ?? "")>"
+            "--\(names.joined(separator: "|"))=<\(self.valueName ?? "")>"
         case .flag:
-            "--\(name)"
+            "--\(names.joined(separator: "|"))"
         }
 
         if self.isRepeating {
@@ -176,11 +179,13 @@ extension ArgumentInfoV0 {
     }
 
     public func identity() -> String {
-        let name: String
-        if let preferred = self.preferredName {
-            name = preferred.name
+        let names: [String]
+        if let myNames = self.names {
+            names = myNames.filter { $0.kind == .long }.map(\.name)
+        } else if let preferred = self.preferredName {
+            names = [preferred.name]
         } else if let value = self.valueName {
-            name = value
+            names = [value]
         } else {
             return ""
         }
@@ -191,11 +196,11 @@ extension ArgumentInfoV0 {
             switch self.kind
         {
         case .positional:
-            "\(name)"
+            "\(names.joined(separator: "|"))"
         case .option:
-            "--\(name)=\\<\(self.valueName ?? "")\\>"
+            "--\(names.joined(separator: "|"))=\\<\(self.valueName ?? "")\\>"
         case .flag:
-            "--\(name)"
+            "--\(names.joined(separator: "|"))"
         }
 
         return inner

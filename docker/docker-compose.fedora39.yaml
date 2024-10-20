@@ -1,0 +1,28 @@
+version: "3"
+
+services:
+
+  test-setup:
+    image: swiftly:fedora39-test
+    build:
+      context: ..
+      dockerfile: docker/test-fedora39.dockerfile
+      args:
+        base_image: "swift:5.10-fedora39"
+
+  test:
+    image: swiftly:fedora39-test
+
+  install-test-setup:
+    image: swiftly:fedora39-install-test
+    build:
+      context: ..
+      dockerfile: docker/install-test-fedora39.dockerfile
+      args:
+        base_image: "fedora:39"
+
+  install-test:
+    image: swiftly:fedora39-install-test
+
+  shell:
+    image: swiftly:fedora39-test

@@ -137,13 +137,13 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateSnapshot() async throws {
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
-            .release(major: 5, minor: 9),
+            .release(major: 6, minor: 0),
         ]
 
         for branch in branches {
             try await self.withTestHome {
                 try await self.withMockedToolchain {
-                    let date = "2023-09-19"
+                    let date = "2024-06-18"
                     try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
                     var update = try self.parseCommand(
@@ -194,14 +194,14 @@ final class UpdateTests: SwiftlyTests {
     func testUpdateSelectsLatestMatchingSnapshotRelease() async throws {
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
-            .release(major: 5, minor: 9),
+            .release(major: 6, minor: 0),
         ]
 
         for branch in branches {
             try await self.withTestHome {
                 try await self.withMockedToolchain {
-                    try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2023-09-19"))
-                    try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2023-09-16"))
+                    try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-19"))
+                    try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-18"))
 
                     var update = try self.parseCommand(
                         Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
@@ -212,10 +212,10 @@ final class UpdateTests: SwiftlyTests {
                     let inUse = config.inUse!.asSnapshot!
 
                     XCTAssertEqual(inUse.branch, branch)
-                    XCTAssertGreaterThan(inUse.date, "2023-09-16")
+                    XCTAssertGreaterThan(inUse.date, "2024-06-18")
 
                     try await self.validateInstalledToolchains(
-                        [config.inUse!, .init(snapshotBranch: branch, date: "2023-09-16")],
+                        [config.inUse!, .init(snapshotBranch: branch, date: "2024-06-18")],
                         description: "update with ambiguous selector should update the latest matching toolchain"
                     )
                 }

@@ -167,7 +167,7 @@ final class InstallTests: SwiftlyTests {
     func testInstallLatestReleaseSnapshot() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+                var cmd = try self.parseCommand(Install.self, ["install", "6.0-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
                 try await cmd.run()
 
                 let config = try Config.load()
@@ -179,17 +179,17 @@ final class InstallTests: SwiftlyTests {
 
                 let installedToolchain = config.installedToolchains.first!
 
-                guard case let .snapshot(snapshot) = installedToolchain, snapshot.branch == .release(major: 5, minor: 9) else {
-                    XCTFail("expected swiftly install 5.9-snapshot to install snapshot toolchain but got \(installedToolchain)")
+                guard case let .snapshot(snapshot) = installedToolchain, snapshot.branch == .release(major: 6, minor: 0) else {
+                    XCTFail("expected swiftly install 6.0-snapshot to install snapshot toolchain but got \(installedToolchain)")
                     return
                 }
 
                 // As of writing this, this is the date of the latest 5.7 snapshot. Assert it is at least that new.
-                XCTAssertTrue(snapshot.date >= "2023-04-01")
+                XCTAssertTrue(snapshot.date >= "2024-06-18")
 
                 try await validateInstalledToolchains(
                     [installedToolchain],
-                    description: "install the latest 5.9 snapshot toolchain"
+                    description: "install the latest 6.0 snapshot toolchain"
                 )
             }
         }
@@ -255,8 +255,8 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that attempting to install release snapshots that are already installed doesn't result in an error.
     func testInstallDuplicateReleaseSnapshots() async throws {
-        try await self.duplicateTest("5.9-snapshot-2023-04-01")
-        try await self.duplicateTest("5.9-snapshot")
+        try await self.duplicateTest("6.0-snapshot-2024-06-18")
+        try await self.duplicateTest("6.0-snapshot")
     }
 
     /// Verify that the installed toolchain will be used if no toolchains currently are installed.

@@ -182,6 +182,14 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     @Flag(name: .long, help: "Skip the git repo checks and proceed.")
     var skip: Bool = false
 
+#if os(macOS)
+    @Option(help: "Installation certificate to use when building the macOS package")
+    var cert: String?
+
+    @Option(help: "Package identifier of macOS package")
+    var identifier: String = "org.swift.swiftly"
+#endif
+
     @Argument(help: "Version of swiftly to build the release.")
     var version: String
 
@@ -191,7 +199,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 #if os(Linux)
         try await self.buildLinuxRelease()
 #elseif os(macOS)
-        try await self.buildMacOSRelease()
+        try await self.buildMacOSRelease(cert: self.cert, identifier: self.identifier)
 #else
         #error("Unsupported OS")
 #endif
@@ -234,6 +242,10 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     }
 
     func checkSwiftRequirement() async throws -> String {
+        guard !self.skip else {
+            return try await self.assertTool("swift", message: "Please install swift and make sure that it is added to your path.")
+        }
+
         guard let requiredSwiftVersion = try? self.findSwiftVersion() else {
             throw Error(message: "Unable to determine the required swift version for this version of swiftly. Please make sure that you `cd <swiftly_git_dir>` and there is a .swift-version file there.")
         }
@@ -361,7 +373,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         print(releaseArchive)
     }
 
-    func buildMacOSRelease() async throws {
+    func buildMacOSRelease(cert: String?, identifier: String) async throws {
         // Check system requirements
         let git = try await self.assertTool("git", message: "Please install git with either `xcode-select --install` or `brew install git`")
 
@@ -389,17 +401,34 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? FileManager.default.createDirectory(atPath: swiftlyLicenseDir, withIntermediateDirectories: true)
         try await self.collectLicenses(swiftlyLicenseDir)
 
-        try runProgram(
-            pkgbuild,
-            "--root",
-            swiftlyBinDir + "/..",
-            "--install-location",
-            "usr/local",
-            "--version",
-            self.version,
-            "--identifier",
-            "org.swift.swiftly",
-            ".build/release/swiftly-\(self.version).pkg"
-        )
+        if let cert {
+            try runProgram(
+                pkgbuild,
+                "--root",
+                swiftlyBinDir + "/..",
+                "--install-location",
+                "usr/local",
+                "--version",
+                self.version,
+                "--identifier",
+                identifier,
+                "--sign",
+                cert,
+                ".build/release/swiftly-\(self.version).pkg"
+            )
+        } else {
+            try runProgram(
+                pkgbuild,
+                "--root",
+                swiftlyBinDir + "/..",
+                "--install-location",
+                "usr/local",
+                "--version",
+                self.version,
+                "--identifier",
+                identifier,
+                ".build/release/swiftly-\(self.version).pkg"
+            )
+        }
     }
 }

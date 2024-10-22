@@ -201,7 +201,7 @@ struct Update: SwiftlyCommand {
                     snapshot.branch == old.branch && snapshot.date > old.date
                 }
             } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
-                throw Error(message: "The branch \(branchNotFoundErr.branch) doesn't have any snapshots available on swift.org so this snapshot build cannot be updated. It is possible that there has been a new release on swift.org and the previous release snapshot are no longer available. Install a fresh snapshot toolchain from the either the latest release x.y (major.minor) or from the main branch.")
+                throw Error(message: "Snapshot branch \(branchNotFoundErr.branch) cannot be updated. One possible reason for this is that there has been a new release published to swift.org and this snapshot is for an older release. Snapshots are only available for the newest release and the main branch. You can install a fresh snapshot toolchain from the either the latest release x.y (major.minor) with `swiftly install x.y-snapshot` or from the main branch with `swiftly install main-snapshot`.")
             } catch {
                 throw error
             }

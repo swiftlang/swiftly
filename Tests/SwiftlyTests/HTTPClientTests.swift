@@ -58,7 +58,6 @@ final class HTTPClientTests: SwiftlyTests {
         let branches = [
             ToolchainVersion.Snapshot.Branch.main,
             ToolchainVersion.Snapshot.Branch.release(major: 6, minor: 0), // This is available in swift.org API
-            ToolchainVersion.Snapshot.Branch.release(major: 5, minor: 9), // This is only available using GH API
         ]
 
         for arch in ["x86_64", "aarch64"] {

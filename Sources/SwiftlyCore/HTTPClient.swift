@@ -148,9 +148,6 @@ public struct SwiftlyHTTPClient {
 
     public init() {}
 
-    /// The GitHub authentication token to use for any requests made to the GitHub API.
-    public var githubToken: String?
-
     private func get(url: String, headers: [String: String], maxBytes: Int) async throws -> Response {
         var request = makeRequest(url: url)
 
@@ -163,6 +160,10 @@ public struct SwiftlyHTTPClient {
         return Response(status: response.status, buffer: try await response.body.collect(upTo: maxBytes))
     }
 
+    public struct JSONNotFoundError: LocalizedError {
+        public var url: String
+    }
+
     /// Decode the provided type `T` from the JSON body of the response from a GET request
     /// to the given URL.
     public func getFromJSON<T: Decodable>(
@@ -173,11 +174,14 @@ public struct SwiftlyHTTPClient {
         // Maximum expected size for a JSON payload for an API is 1MB
         let response = try await self.get(url: url, headers: headers, maxBytes: 1024 * 1024)
 
-        guard case .ok = response.status else {
-            var message = "received status \"\(response.status)\" when reaching \(url)"
+        switch response.status {
+        case .ok:
+            break
+        case .notFound:
+            throw SwiftlyHTTPClient.JSONNotFoundError(url: url)
+        default:
             let json = String(buffer: response.buffer)
-            message += ": \(json)"
-            throw Error(message: message)
+            throw Error(message: "Received \(response.status) when reaching \(url) for JSON: \(json)")
         }
 
         return try JSONDecoder().decode(type.self, from: response.buffer)
@@ -249,6 +253,10 @@ public struct SwiftlyHTTPClient {
         }
     }
 
+    public struct SnapshotBranchNotFoundError: LocalizedError {
+        public var branch: ToolchainVersion.Snapshot.Branch
+    }
+
     /// Return an array of Swift snapshots that match the given filter, up to the provided
     /// limit (default unlimited).
     public func getSnapshotToolchains(
@@ -258,27 +266,6 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
-        // Fall back to using GitHub API's for snapshots on branches older than 6.0
-        if case let .release(major, _) = branch, major < 6 {
-            let filter = { (gh: GitHubTag) -> ToolchainVersion.Snapshot? in
-                guard let snapshot = try gh.parseSnapshot() else {
-                    return nil
-                }
-
-                if let filter {
-                    guard filter(snapshot) else {
-                        return nil
-                    }
-                }
-
-                return snapshot
-            }
-
-            return try await self.mapGitHubTags(limit: limit, filterMap: filter) { page in
-                try await self.getTags(page: page)
-            }
-        }
-
         let arch = if a == nil {
 #if arch(x86_64)
             "x86_64"
@@ -300,7 +287,14 @@ public struct SwiftlyHTTPClient {
         let url = "https://www.swift.org/api/v1/install/dev/\(branch.name)/\(platformName).json"
 
         // For a particular branch and platform the snapshots are listed underneath their architecture
-        let swiftOrgSnapshotArchs: SwiftOrgSnapshotList = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
+        let swiftOrgSnapshotArchs: SwiftOrgSnapshotList
+        do {
+            swiftOrgSnapshotArchs = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
+        } catch is JSONNotFoundError {
+            throw SnapshotBranchNotFoundError(branch: branch)
+        } catch {
+            throw error
+        }
 
         // These are the available snapshots for the branch, platform, and architecture
         let swiftOrgSnapshots = if platform.name == PlatformDefinition.macOS.name {

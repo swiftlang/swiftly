@@ -497,28 +497,6 @@ public struct SwiftExecutable {
             }
 
             return ToolchainVersion(major: major, minor: minor, patch: patch)
-        } else if let match = try Self.snapshotRegex.firstMatch(in: outputString) {
-            let commitHash = match.output.1
-
-            // Get the commit hash from swift --version, look up the corresponding tag via GitHub, and confirm
-            // that it matches the expected version.
-            guard
-                let tag: GitHubTag = try await SwiftlyHTTPClient().mapGitHubTags(
-                    limit: 1,
-                    filterMap: { tag in
-                        guard tag.commit!.sha.starts(with: commitHash) else {
-                            return nil
-                        }
-                        return tag
-                    },
-                    fetch: SwiftlyHTTPClient().getTags
-                ).first,
-                let snapshot = try tag.parseSnapshot()
-            else {
-                throw SwiftlyTestError(message: "could not find tag matching hash \(commitHash)")
-            }
-
-            return .snapshot(snapshot)
         } else if let version = try? ToolchainVersion(parsing: outputString) {
             // This branch is taken if the toolchain in question is mocked.
             return version
@@ -577,12 +555,6 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         } else if url.host == "download.swift.org" && (url.path.hasPrefix("/swift-") || url.path.hasPrefix("/development")) {
             // Download a toolchain
             return try self.makeToolchainDownloadResponse(from: url)
-        } else if url.host == "api.github.com" {
-            if url.path == "/repos/apple/swift/tags" {
-                return try self.makeGitHubTagsAPIResponse(from: url)
-            } else {
-                throw SwiftlyTestError(message: "unxpected github API request URL: \(request.url)")
-            }
         } else if url.host == "www.swift.org" && url.path == "/api/v1/swiftly.json" {
             // Mock a response that would represent the swiftly offerings using the latest version
             let decoder = JSONDecoder()
@@ -614,59 +586,6 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         } else {
             throw SwiftlyTestError(message: "unmocked URL: \(request)")
         }
-    }
-
-    private func makeGitHubTagsAPIResponse(from url: URL) throws -> HTTPClientResponse {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            throw SwiftlyTestError(message: "unexpected github url: \(url)")
-        }
-
-        guard let queryItems = components.queryItems else {
-            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_tags_page1_json))))
-        }
-
-        guard let page = queryItems.first(where: { $0.name == "page" }) else {
-            return HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.swift_tags_page1_json))))
-        }
-
-        let payload = switch page.value {
-        case "1":
-            PackageResources.swift_tags_page1_json
-        case "2":
-            PackageResources.swift_tags_page2_json
-        case "3":
-            PackageResources.swift_tags_page3_json
-        case "4":
-            PackageResources.swift_tags_page4_json
-        case "5":
-            PackageResources.swift_tags_page5_json
-        case "6":
-            PackageResources.swift_tags_page6_json
-        case "7":
-            PackageResources.swift_tags_page7_json
-        case "8":
-            PackageResources.swift_tags_page8_json
-        case "9":
-            PackageResources.swift_tags_page9_json
-        case "10":
-            PackageResources.swift_tags_page10_json
-        case "11":
-            PackageResources.swift_tags_page11_json
-        case "12":
-            PackageResources.swift_tags_page12_json
-        case "13":
-            PackageResources.swift_tags_page13_json
-        case "14":
-            PackageResources.swift_tags_page14_json
-        case "15":
-            PackageResources.swift_tags_page15_json
-        case "16":
-            PackageResources.swift_tags_page16_json
-        default:
-            Array("[]".utf8)
-        }
-
-        return HTTPClientResponse(body: .bytes(ByteBuffer(bytes: payload)))
     }
 
     private func makeToolchainDownloadResponse(from url: URL) throws -> HTTPClientResponse {

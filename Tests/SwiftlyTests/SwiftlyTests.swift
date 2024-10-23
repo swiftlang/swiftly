@@ -99,25 +99,8 @@ class SwiftlyTests: XCTestCase {
     ]
 
     func baseTestConfig() async throws -> Config {
-        let getEnv = { varName in
-            guard let v = ProcessInfo.processInfo.environment[varName] else {
-                throw SwiftlyTestError(message: "environment variable \(varName) must be set in order to run tests")
-            }
-            return v
-        }
-
-        let name = try? getEnv("SWIFTLY_PLATFORM_NAME")
-        let nameFull = try? getEnv("SWIFTLY_PLATFORM_NAME_FULL")
-        let namePretty = try? getEnv("SWIFTLY_PLATFORM_NAME_PRETTY")
-
-        let pd = if let name = name, let nameFull = nameFull, let namePretty = namePretty {
-            PlatformDefinition(name: name, nameFull: nameFull, namePretty: namePretty)
-        } else {
-            try? await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
-        }
-
-        guard let pd = pd else {
-            throw SwiftlyTestError(message: "unable to detect platform. please set SWIFTLY_PLATFORM_NAME, SWIFTLY_PLATFORM_NAME_FULL, and SWIFTLY_PLATFORM_NAME_PRETTY to run the tests")
+        guard let pd = try? await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil) else {
+            throw SwiftlyTestError(message: "Unable to detect the current platform.")
         }
 
         return Config(
@@ -145,9 +128,6 @@ class SwiftlyTests: XCTestCase {
 
     /// Create a fresh swiftly home directory, populate it with a base config, and run the provided closure.
     /// Any swiftly commands executed in the closure will use this new home directory.
-    ///
-    /// This method requires the SWIFTLY_PLATFORM_NAME, SWIFTLY_PLATFORM_NAME_FULL, and SWIFTLY_PLATFORM_NAME_PRETTY
-    /// environment variables to be set.
     ///
     /// The home directory will be deleted after the provided closure has been executed.
     func withTestHome(

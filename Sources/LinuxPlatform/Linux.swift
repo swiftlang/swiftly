@@ -137,6 +137,27 @@ public struct Linux: Platform {
                 "tzdata",
                 "zlib1g-dev",
             ]
+        case "ubuntu2310":
+            [
+                "binutils",
+                "git",
+                "unzip",
+                "gnupg2",
+                "libc6-dev",
+                "libcurl4-openssl-dev",
+                "libedit2",
+                "libgcc-12-dev",
+                "libpython3-dev",
+                "libsqlite3-0",
+                "libstdc++-12-dev",
+                "libxml2-dev",
+                "libncurses-dev",
+                "libz3-dev",
+                "pkg-config",
+                "python3-lldb-13",
+                "tzdata",
+                "zlib1g-dev",
+            ]
         case "ubuntu2404":
             [
                 "binutils",

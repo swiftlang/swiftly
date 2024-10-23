@@ -28,9 +28,9 @@ struct ListAvailable: SwiftlyCommand {
         The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
 
             $ swiftly list-available main-snapshot
-            $ swiftly list-available 6.0-snapshot
+            $ swiftly list-available x.y-snapshot
 
-        Note that listing available snapshots before 6.0 is unsupported.
+        Note that listing available snapshots before the latest release (major and minor number) is unsupported.
         """
     ))
     var toolchainSelector: String?
@@ -51,11 +51,13 @@ struct ListAvailable: SwiftlyCommand {
 
         switch selector {
         case let .snapshot(branch, _):
-            if case let .release(major, _) = branch, major < 6 {
-                throw Error(message: "Listing available snapshots previous to 6.0 is not supported.")
+            do {
+                tc = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map { ToolchainVersion.snapshot($0) }
+            } catch let branchNotFoundError as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
+                throw Error(message: "The snapshot branch \(branchNotFoundError.branch) was not found on swift.org. Note that snapshot toolchains are only available for the current `main` release and the previous x.y (major.minor) release.")
+            } catch {
+                throw error
             }
-
-            tc = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map { ToolchainVersion.snapshot($0) }
         case .stable, .latest:
             tc = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform).map { ToolchainVersion.stable($0) }
         default:

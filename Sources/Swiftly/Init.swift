@@ -280,7 +280,7 @@ internal struct Init: SwiftlyCommand {
 
             if let postInstall {
                 SwiftlyCore.print("""
-                There are some system dependencies that should be installed before using this toolchain.
+                There are some dependencies that should be installed before using this toolchain.
                 You can run the following script as the system administrator (e.g. root) to prepare
                 your system:
 

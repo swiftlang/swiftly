@@ -116,7 +116,7 @@ struct Install: SwiftlyCommand {
             guard let postInstallFile = self.postInstallFile else {
                 throw Error(message: """
 
-                There are some system dependencies that should be installed before using this toolchain.
+                There are some dependencies that should be installed before using this toolchain.
                 You can run the following script as the system administrator (e.g. root) to prepare
                 your system:
 

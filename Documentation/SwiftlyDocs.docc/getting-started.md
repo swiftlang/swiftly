@@ -4,25 +4,37 @@ Start using swiftly and swift.
 
 To get started with swiftly you can download it from [swift.org](https://swift.org/download), and extract the package.
 
-If you are using Linux then you can verify and extract the archive like this:
+@TabNavigator {
+    @Tab("Linux") {
+        If you are using Linux then you can verify and extract the archive like this:
 
-```
-curl https://www.swift.org/keys/all-keys.asc | gpg --import
-gpg --verify swift-x.y.z.tar.gz.sig swift-x.y.z.tar.gz
-tar zxf swift-x.y.z.tar.gz
-```
+        ```
+        curl https://www.swift.org/keys/all-keys.asc | gpg --import
+        gpg --verify swift-x.y.z.tar.gz.sig swift-x.y.z.tar.gz
+        tar zxf swift-x.y.z.tar.gz
+        ```
 
-On macOS you can either run the pkg installer from the command-line like this or just run the package by double-clicking on it (not recommended):
+        Now run swiftly init to finish the installation:
 
-```
-installer -pkg swift-x.y.z.pkg -target CurrentUserHomeDirectory
-```
+        ```
+        ./swiftly init
+        ```
+    }
 
-Now run swiftly init to finish the installation.
+    @Tab("macOS") {
+        On macOS you can either run the pkg installer from the command-line like this or just run the package by double-clicking on it (not recommended):
 
-```
-path/to/swiftly init    # macOS pkg puts swiftly in either /usr/local/bin or $HOME/usr/local/bin
-```
+        ```
+        installer -pkg swift-x.y.z.pkg -target CurrentUserHomeDirectory
+        ```
+
+        Now run swiftly init to finish the installation:
+
+        ```
+        usr/local/bin/swiftly init
+        ```
+    }
+}
 
 Swiftly will install itself and download the latest available Swift toolchain. Follow the prompts for any additional steps. Once everything is done you can begin using swift.
 

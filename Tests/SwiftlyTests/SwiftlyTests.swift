@@ -8,10 +8,16 @@ import XCTest
 
 #if os(macOS)
 import MacOSPlatform
+import Testing
 #endif
 
 import AsyncHTTPClient
 import NIO
+
+#if os(macOS)
+@Test("help ci builds to pass on macOS")
+func ci_pass() {}
+#endif
 
 struct SwiftlyTestError: LocalizedError {
     let message: String

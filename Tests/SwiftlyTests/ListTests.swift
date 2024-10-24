@@ -128,7 +128,7 @@ final class ListTests: SwiftlyTests {
             let output = try await list.runWithMockedIO()
 
             let inUse = output.filter { $0.contains("in use") }
-            XCTAssertEqual(inUse, ["\(toolchain) (in use)"])
+            XCTAssertEqual(inUse, ["\(toolchain) (in use) (default)"])
         }
 
         try await self.runListTest {

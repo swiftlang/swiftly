@@ -272,13 +272,6 @@ swift-5.7-DEVELOPMENT-SNAPSHOT-2022-08-30-a
 
 The canonical name format was chosen to reduce the keystrokes needed to refer to a snapshot toolchain, but the longer form is also useful when copy/pasting a toolchain name provided from somewhere else.
 
-### Specifying a GitHub access token
-
-swiftly currently uses the GitHub API to look up the available Swift toolchains. To avoid running up against rate limits, you can provide a [GitHub access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) via the `--token` option (the token doesn't need any permissions):
-
-```
-$ swiftly install latest --token <GitHub authentication token>
-```
 ## Contributing 
 Welcome to the Swift community!
 
@@ -298,7 +291,7 @@ Swift.org currently provides experimental [`.rpm` and `.deb`](https://forums.swi
 
 swiftenv is an existing Swift version manager which already has much of the functionality that swiftly will eventually have. It's an awesome tool, and if it's part of your workflow then we encourage you to keep using it! That said, swiftly is/will be different a few ways:
 
-- swiftly is being built as a community driven effort led by the Swift server workgroup, and through this collaboration, swiftly will eventually become an official installation tool for Swift toolchains. As first step towards that, swiftly will help inform the creation of API endpoints maintained by the Swift project that it will use to retrieve information about what toolchains are available to install and to verify their expected signatures. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations. Note that this is planned for the future--swiftly currently uses the GitHub API for this purpose. 
+- swiftly is being built as a community driven effort led by the Swift server workgroup, and through this collaboration, swiftly will eventually become an official installation tool for Swift toolchains. As first step towards that, swiftly will help inform the creation of API endpoints maintained by the Swift project that it will use to retrieve information about what toolchains are available to install and to verify their expected signatures. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations.
 
 - swiftly will be written in Swift, which we think is important for maintainability and encouraging community contributions. 
 

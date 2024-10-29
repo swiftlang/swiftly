@@ -32,17 +32,25 @@ public enum Proxy {
             guard proxyList.contains(binName) else {
                 // Treat this as a swiftly invocation
 
-                let config = try? Config.load()
+                let configResult = Result { try Config.load() }
 
-                if config == nil && CommandLine.arguments.count == 1 {
-                    // User ran swiftly with no extra arguments in an uninstalled environment, so we skip directly into
-                    //  an init.
-                    try await Init.execute(assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false)
+                switch configResult {
+                case .success:
+                    await Swiftly.main()
                     return
-                } else if config == nil && CommandLine.arguments.count > 1 && CommandLine.arguments[1] != "init" {
-                    // Check if we've been invoked outside the "init" subcommand and we're not yet configured.
-                    // This will throw if the configuration couldn't be loaded and give the user an actionable message.
-                    _ = try Config.load()
+                case let .failure(err):
+                    guard CommandLine.arguments.count > 0 else { fatalError("argv is not set") }
+
+                    if CommandLine.arguments.count == 1 {
+                        // User ran swiftly with no extra arguments in an uninstalled environment, so we skip directly into
+                        //  an init.
+                        try await Init.execute(assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false)
+                        return
+                    } else if CommandLine.arguments[1] != "init" {
+                        // Check if we've been invoked outside the "init" subcommand and we're not yet configured.
+                        // This will throw if the configuration couldn't be loaded and give the user an actionable message.
+                        throw err
+                    }
                 }
 
                 await Swiftly.main()

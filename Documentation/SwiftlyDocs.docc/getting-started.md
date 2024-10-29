@@ -9,9 +9,8 @@ To get started with swiftly you can download it from [swift.org](https://swift.o
         If you are using Linux then you can verify and extract the archive like this:
 
         ```
-        curl https://www.swift.org/keys/all-keys.asc | gpg --import
-        gpg --verify swift-x.y.z.tar.gz.sig swift-x.y.z.tar.gz
-        tar zxf swift-x.y.z.tar.gz
+        sha256sum swiftly-x.y.z.tar.gz # Check that the hash matches what's reported on swift.org
+        tar zxf swiftly-x.y.z.tar.gz
         ```
 
         Now run swiftly init to finish the installation:
@@ -31,7 +30,7 @@ To get started with swiftly you can download it from [swift.org](https://swift.o
         Now run swiftly init to finish the installation:
 
         ```
-        usr/local/bin/swiftly init
+        $HOME/usr/local/bin/swiftly init
         ```
     }
 }

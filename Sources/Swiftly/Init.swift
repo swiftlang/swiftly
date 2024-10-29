@@ -28,11 +28,11 @@ internal struct Init: SwiftlyCommand {
     public mutating func validate() throws {}
 
     internal mutating func run() async throws {
-        try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, verbose: self.root.verbose)
+        try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall)
     }
 
     /// Initialize the installation of swiftly.
-    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose _: Bool, skipInstall: Bool, verbose: Bool) async throws {
+    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool) async throws {
         try Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
 
         var config = try? Config.load()

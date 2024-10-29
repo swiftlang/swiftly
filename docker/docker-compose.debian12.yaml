@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+
+  test-setup:
+    image: swiftly:debian12-test
+    build:
+      args:
+        base_image: "swift:5.10-debian12"
+
+  test:
+    image: swiftly:debian12-test
+
+  install-test-setup:
+    image: swiftly:debian12-install-test
+    build:
+      args:
+        base_image: "debian:12"
+
+  install-test:
+    image: swiftly:debian12-install-test
+
+  shell:
+    image: swiftly:debian12-test

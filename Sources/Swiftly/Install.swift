@@ -50,15 +50,6 @@ struct Install: SwiftlyCommand {
     @Flag(name: .shortAndLong, help: "Mark the newly installed toolchain as in-use.")
     var use: Bool = false
 
-    @Option(help: ArgumentHelp(
-        "A GitHub authentication token to use for any GitHub API requests.",
-        discussion: """
-        This is useful to avoid GitHub's low rate limits. If an installation
-        fails with an \"unauthorized\" status code, it likely means the rate limit has been hit.
-        """
-    ))
-    var token: String?
-
     @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
@@ -74,7 +65,7 @@ struct Install: SwiftlyCommand {
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case version, token, use, verify, postInstallFile, root
+        case version, use, verify, postInstallFile, root
     }
 
     mutating func run() async throws {
@@ -102,7 +93,6 @@ struct Install: SwiftlyCommand {
             }
         }
 
-        SwiftlyCore.httpClient.githubToken = self.token
         let toolchainVersion = try await Self.resolve(config: config, selector: selector)
         let postInstallScript = try await Self.execute(
             version: toolchainVersion,
@@ -255,7 +245,6 @@ struct Install: SwiftlyCommand {
     }
 
     /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
-    /// TODO: update this to use an official swift.org API
     public static func resolve(config: Config, selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:
@@ -296,17 +285,27 @@ struct Install: SwiftlyCommand {
             }
 
             SwiftlyCore.print("Fetching the latest \(branch) branch snapshot...")
+
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.
-            let snapshot = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch, limit: 1) { snapshot in
-                snapshot.branch == branch
-            }.first
+            let snapshots: [ToolchainVersion.Snapshot]
+            do {
+                snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch, limit: 1) { snapshot in
+                    snapshot.branch == branch
+                }
+            } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
+                throw Error(message: "You have requested to install a snapshot toolchain from branch \(branchNotFoundErr.branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try again with a different branch.")
+            } catch {
+                throw error
+            }
 
-            guard let snapshot else {
+            let firstSnapshot = snapshots.first
+
+            guard let firstSnapshot else {
                 throw Error(message: "No snapshot toolchain found for branch \(branch)")
             }
 
-            return .snapshot(snapshot)
+            return .snapshot(firstSnapshot)
         }
     }
 }

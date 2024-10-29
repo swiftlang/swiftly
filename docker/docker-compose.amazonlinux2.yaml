@@ -12,10 +12,6 @@ services:
 
   test:
     image: swiftly:amazonlinux2-test
-    environment:
-      - SWIFTLY_PLATFORM_NAME=amazonlinux2
-      - SWIFTLY_PLATFORM_NAME_FULL=amazonlinux2
-      - SWIFTLY_PLATFORM_NAME_PRETTY="Amazon Linux 2"
 
   install-test-setup:
     image: swiftly:amazonlinux2-install-test

@@ -181,7 +181,7 @@ struct Update: SwiftlyCommand {
     }
 
     /// Tries to find a toolchain version that meets the provided parameters, if one exists.
-    /// This does not download the toolchain, but it does query the GitHub API to find the suitable toolchain.
+    /// This does not download the toolchain, but it does query the swift.org API to find the suitable toolchain.
     private func lookupNewToolchain(_ config: Config, _ bounds: UpdateParameters) async throws -> ToolchainVersion? {
         switch bounds {
         case let .stable(old, range):
@@ -196,9 +196,18 @@ struct Update: SwiftlyCommand {
                 }
             }.first.map(ToolchainVersion.stable)
         case let .snapshot(old):
-            return try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: old.branch, limit: 1) { snapshot in
-                snapshot.branch == old.branch && snapshot.date > old.date
-            }.first.map(ToolchainVersion.snapshot)
+            let newerSnapshotToolchains: [ToolchainVersion.Snapshot]
+            do {
+                newerSnapshotToolchains = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: old.branch, limit: 1) { snapshot in
+                    snapshot.branch == old.branch && snapshot.date > old.date
+                }
+            } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
+                throw Error(message: "Snapshot branch \(branchNotFoundErr.branch) cannot be updated. One possible reason for this is that there has been a new release published to swift.org and this snapshot is for an older release. Snapshots are only available for the newest release and the main branch. You can install a fresh snapshot toolchain from the either the latest release x.y (major.minor) with `swiftly install x.y-snapshot` or from the main branch with `swiftly install main-snapshot`.")
+            } catch {
+                throw error
+            }
+
+            return newerSnapshotToolchains.first.map(ToolchainVersion.snapshot)
         }
     }
 }

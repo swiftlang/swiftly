@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install [<version>] [--use] [--token=<token>] [--verify|no-verify] [--post-install-file=<post-install-file>] [--assume-yes] [--verbose] [--version] [--help]
+swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **version:**
@@ -61,14 +61,6 @@ Likewise, the latest snapshot associated with a given development branch can be 
 **--use:**
 
 *Mark the newly installed toolchain as in-use.*
-
-
-**--token=\<token\>:**
-
-*A GitHub authentication token to use for any GitHub API requests.*
-
-This is useful to avoid GitHub's low rate limits. If an installation
-fails with an "unauthorized" status code, it likely means the rate limit has been hit.
 
 
 **--verify|no-verify:**
@@ -134,9 +126,9 @@ Likewise, the available toolchains associated with a given minor version can be 
 The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
 
     $ swiftly list-available main-snapshot
-    $ swiftly list-available 6.0-snapshot
+    $ swiftly list-available x.y-snapshot
 
-Note that listing available snapshots before 6.0 is unsupported.
+Note that listing available snapshots before the latest release (major and minor number) is unsupported.
 
 
 **--version:**

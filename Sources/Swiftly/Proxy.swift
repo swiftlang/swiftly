@@ -39,7 +39,7 @@ public enum Proxy {
                     //  an init.
                     try await Init.execute(assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false)
                     return
-                } else if CommandLine.arguments[1] != "init" {
+                } else if config == nil && CommandLine.arguments.count > 1 && CommandLine.arguments[1] != "init" {
                     // Check if we've been invoked outside the "init" subcommand and we're not yet configured.
                     // This will throw if the configuration couldn't be loaded and give the user an actionable message.
                     _ = try Config.load()

@@ -227,7 +227,7 @@ struct Install: SwiftlyCommand {
             )
         }
 
-        try Swiftly.currentPlatform.install(from: tmpFile, version: version)
+        try Swiftly.currentPlatform.install(from: tmpFile, version: version, verbose: verbose)
 
         config.installedToolchains.insert(version)
 

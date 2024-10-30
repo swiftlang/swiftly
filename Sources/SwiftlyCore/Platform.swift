@@ -65,7 +65,7 @@ public protocol Platform {
 
     /// Installs a toolchain from a file on disk pointed to by the given URL.
     /// After this completes, a user can “use” the toolchain.
-    func install(from: URL, version: ToolchainVersion) throws
+    func install(from: URL, version: ToolchainVersion, verbose: Bool) throws
 
     /// Extract swiftly from the provided downloaded archive and install
     /// ourselves from that.

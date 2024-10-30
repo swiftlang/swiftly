@@ -350,7 +350,7 @@ public struct Linux: Platform {
         }
     }
 
-    public func install(from tmpFile: URL, version: ToolchainVersion) throws {
+    public func install(from tmpFile: URL, version: ToolchainVersion, verbose: Bool) throws {
         guard tmpFile.fileExists() else {
             throw Error(message: "\(tmpFile) doesn't exist")
         }
@@ -371,7 +371,14 @@ public struct Linux: Platform {
             let relativePath = name.drop { c in c != "/" }.dropFirst()
 
             // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
-            return toolchainDir.appendingPathComponent(String(relativePath))
+            let destination = toolchainDir.appendingPathComponent(String(relativePath))
+
+            if verbose {
+                SwiftlyCore.print("\(destination.path)")
+            }
+
+            // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
+            return destination
         }
     }
 

@@ -49,7 +49,6 @@ final class HTTPClientTests: SwiftlyTests {
         let supportedPlatforms = [
             PlatformDefinition.macOS,
             PlatformDefinition.ubuntu2404,
-            PlatformDefinition.ubuntu2310,
             PlatformDefinition.ubuntu2204,
             PlatformDefinition.ubuntu2004,
             // PlatformDefinition.ubuntu1804, // There are no releases for Ubuntu 18.04 in the branches being tested below
@@ -61,7 +60,6 @@ final class HTTPClientTests: SwiftlyTests {
 
         let newPlatforms = [
             PlatformDefinition.ubuntu2404,
-            PlatformDefinition.ubuntu2310,
             PlatformDefinition.fedora39,
             PlatformDefinition.debian12,
         ]

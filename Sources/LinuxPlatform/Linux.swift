@@ -9,7 +9,6 @@ var swiftGPGKeysRefreshed = false
 public struct Linux: Platform {
     let linuxPlatforms = [
         PlatformDefinition.ubuntu2404,
-        PlatformDefinition.ubuntu2310,
         PlatformDefinition.ubuntu2204,
         PlatformDefinition.ubuntu2004,
         PlatformDefinition.ubuntu1804,
@@ -137,27 +136,6 @@ public struct Linux: Platform {
                 "tzdata",
                 "zlib1g-dev",
             ]
-        case "ubuntu2310":
-            [
-                "binutils",
-                "git",
-                "unzip",
-                "gnupg2",
-                "libc6-dev",
-                "libcurl4-openssl-dev",
-                "libedit2",
-                "libgcc-12-dev",
-                "libpython3-dev",
-                "libsqlite3-0",
-                "libstdc++-12-dev",
-                "libxml2-dev",
-                "libncurses-dev",
-                "libz3-dev",
-                "pkg-config",
-                "python3-lldb-13",
-                "tzdata",
-                "zlib1g-dev",
-            ]
         case "ubuntu2404":
             [
                 "binutils",
@@ -251,8 +229,6 @@ public struct Linux: Platform {
         case "ubuntu2004":
             "apt-get"
         case "ubuntu2204":
-            "apt-get"
-        case "ubuntu2310":
             "apt-get"
         case "ubuntu2404":
             "apt-get"
@@ -627,7 +603,7 @@ public struct Linux: Platform {
             }
 
             return PlatformDefinition.rhel9
-        } else if let pd = [PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2310, .ubuntu2404, .debian12, .fedora39].first(where: { $0.name == id + versionID }) {
+        } else if let pd = [PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2404, .debian12, .fedora39].first(where: { $0.name == id + versionID }) {
             return pd
         }
 

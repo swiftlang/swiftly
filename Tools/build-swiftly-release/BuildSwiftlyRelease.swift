@@ -298,13 +298,19 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let make = try await self.assertTool("make", message: "Please install make with `yum install make`")
         let git = try await self.assertTool("git", message: "Please install git with `yum install git`")
         let strip = try await self.assertTool("strip", message: "Please install strip with `yum install binutils`")
+        let sha256sum = try await self.assertTool("sha256sum", message: "Please install sha256sum with `yum install coreutils`")
 
         let swift = try await self.checkSwiftRequirement()
 
         try await self.checkGitRepoStatus(git)
 
-        // Build a specific version of libarchive
+        // Start with a fresh SwiftPM package
+        try runProgram(swift, "package", "reset")
+
+        // Build a specific version of libarchive with a check on the tarball's SHA256
         let libArchiveVersion = "3.7.4"
+        let libArchiveTarSha = "7875d49596286055b52439ed42f044bd8ad426aa4cc5aabd96bfe7abb971d5e8"
+
         let buildCheckoutsDir = FileManager.default.currentDirectoryPath + "/.build/checkouts"
         let libArchivePath = buildCheckoutsDir + "/libarchive-\(libArchiveVersion)"
         let pkgConfigPath = libArchivePath + "/pkgconfig"
@@ -314,6 +320,11 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         try? FileManager.default.removeItem(atPath: libArchivePath)
         try runProgram(curl, "-o", "\(buildCheckoutsDir + "/libarchive-\(libArchiveVersion).tar.gz")", "--remote-name", "--location", "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
+        let libArchiveTarShaActual = try await runProgramOutput(sha256sum, "\(buildCheckoutsDir)/libarchive-\(libArchiveVersion).tar.gz")
+        guard let libArchiveTarShaActual, libArchiveTarShaActual.starts(with: libArchiveTarSha) else {
+            let shaActual = libArchiveTarShaActual ?? "none"
+            throw Error(message: "The libarchive tar.gz file sha256sum is \(shaActual), but expected \(libArchiveTarSha)")
+        }
         try runProgram(tar, "--directory=\(buildCheckoutsDir)", "-xzf", "\(buildCheckoutsDir)/libarchive-\(libArchiveVersion).tar.gz")
 
         let cwd = FileManager.default.currentDirectoryPath
@@ -349,8 +360,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try runProgram(make, "install")
 
         FileManager.default.changeCurrentDirectoryPath(cwd)
-
-        try runProgram(swift, "package", "clean")
 
         // Statically link standard libraries for maximum portability of the swiftly binary
         try runProgram(swift, "build", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")

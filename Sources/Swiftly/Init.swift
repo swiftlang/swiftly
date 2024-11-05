@@ -54,10 +54,9 @@ internal struct Init: SwiftlyCommand {
             }
         }
 
-        // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
         let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
         let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
-        let willBeOverwritten = Set(proxyList + ["swiftly"]).intersection(swiftlyBinDirContents)
+        let willBeOverwritten = Set(["swiftly"]).intersection(swiftlyBinDirContents)
         if !willBeOverwritten.isEmpty && !overwrite {
             SwiftlyCore.print("The following existing executables will be overwritten:")
 
@@ -142,30 +141,6 @@ internal struct Init: SwiftlyCommand {
             }
         }
 
-        // Don't create the proxies in the tests
-        if !cmd.path.hasSuffix("xctest") {
-            SwiftlyCore.print("Setting up toolchain proxies...")
-
-            let proxyTo = if let systemManagedSwiftlyBin = systemManagedSwiftlyBin {
-                systemManagedSwiftlyBin
-            } else {
-                swiftlyBin.path
-            }
-
-            for p in proxyList {
-                let proxy = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(p)
-
-                if proxy.fileExists() {
-                    try FileManager.default.removeItem(at: proxy)
-                }
-
-                try FileManager.default.createSymbolicLink(
-                    atPath: proxy.path,
-                    withDestinationPath: proxyTo
-                )
-            }
-        }
-
         if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {
             SwiftlyCore.print("Creating shell environment file for the user...")
             var env = ""
@@ -241,17 +216,6 @@ internal struct Init: SwiftlyCommand {
                     \(sourceLine)
 
                 """)
-
-#if os(macOS)
-                SwiftlyCore.print("""
-                NOTE: On macOS it is possible that the shell will pick up the system Swift on the path
-                instead of the one that swiftly has installed for you. You can run the 'hash -r'
-                command to update the shell with the latest PATHs.
-
-                    hash -r
-
-                """)
-#endif
             }
         }
     }

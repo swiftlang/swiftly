@@ -1,25 +1,6 @@
 import Foundation
 import SwiftlyCore
 
-// This is the allowed list of executables that we will proxy
-let proxyList = [
-    "clang",
-    "lldb",
-    "lldb-dap",
-    "lldb-server",
-    "clang++",
-    "sourcekit-lsp",
-    "clangd",
-    "swift",
-    "docc",
-    "swiftc",
-    "lld",
-    "llvm-ar",
-    "plutil",
-    "repl_swift",
-    "wasm-ld",
-]
-
 @main
 public enum Proxy {
     static func main() async throws {
@@ -29,7 +10,7 @@ public enum Proxy {
                 fatalError("Could not determine the binary name for proxying")
             }
 
-            guard proxyList.contains(binName) else {
+            guard binName != "swiftly" else {
                 // Treat this as a swiftly invocation
                 await Swiftly.main()
                 return

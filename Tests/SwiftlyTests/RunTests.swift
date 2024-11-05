@@ -44,15 +44,8 @@ final class RunTests: SwiftlyTests {
             // The toolchains directory should be the fist entry on the path
             var run = try self.parseCommand(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $PATH"])
             var output = try await run.runWithMockedIO()
+            XCTAssert(output.count == 1)
             XCTAssert(output[0].contains(Swiftly.currentPlatform.swiftlyToolchainsDir.path))
-
-            // The CC and CXX variables should be set to clang/clang++ in the toolchains
-            run = try self.parseCommand(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $CC; echo $CXX"])
-            output = try await run.runWithMockedIO()
-            XCTAssert(output[0].hasPrefix(Swiftly.currentPlatform.swiftlyToolchainsDir.path))
-            XCTAssert(output[0].hasSuffix("clang"))
-            XCTAssert(output[1].hasPrefix(Swiftly.currentPlatform.swiftlyToolchainsDir.path))
-            XCTAssert(output[1].hasSuffix("clang++"))
         }
     }
 

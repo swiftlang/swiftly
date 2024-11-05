@@ -14,8 +14,7 @@ public struct Linux: Platform {
             return URL(fileURLWithPath: dir)
         } else {
             return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".local", isDirectory: true)
-                .appendingPathComponent("share", isDirectory: true)
+                .appendingPathComponent(".local/share", isDirectory: true)
         }
     }
 
@@ -23,8 +22,7 @@ public struct Linux: Platform {
         SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".local", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
+            .appendingPathComponent(".local/share/swiftly/bin", isDirectory: true)
     }
 
     public var swiftlyToolchainsDir: URL {

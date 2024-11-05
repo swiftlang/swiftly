@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--assume-yes] [--version] [--help]
 ```
 
 **version:**
@@ -74,6 +74,11 @@ Likewise, the latest snapshot associated with a given development branch can be 
 
 If the toolchain that is installed has extra post installation steps they they will be
 written to this file as commands that can be run after the installation.
+
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
 
 
 **--version:**
@@ -456,7 +461,7 @@ You can run one of the usual toolchain commands directly:
 
 Or you can run another program (or script) that runs one or more toolchain commands:
 
-    $ swiftly run make  # Builds targets using clang/swiftc
+    $ CC=clang swiftly run make  # Builds targets using clang
     $ swiftly run ./build-things.sh  # Script invokes 'swift build' to create certain product binaries
 
 Toolchain selection is determined by swift version files `.swift-version`, with a default global as the fallback. See the `swiftly use` command for more details.

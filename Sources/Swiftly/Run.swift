@@ -20,7 +20,7 @@ internal struct Run: SwiftlyCommand {
 
         Or you can run another program (or script) that runs one or more toolchain commands:
 
-            $ swiftly run make  # Builds targets using clang/swiftc
+            $ CC=clang swiftly run make  # Builds targets using clang
             $ swiftly run ./build-things.sh  # Script invokes 'swift build' to create certain product binaries
 
         Toolchain selection is determined by swift version files `.swift-version`, with a default global \

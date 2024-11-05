@@ -105,6 +105,9 @@ public protocol Platform {
 
     /// Find the location where the toolchain should be installed.
     func findToolchainLocation(_ toolchain: ToolchainVersion) -> URL
+
+    /// Find the location of the toolchain binaries.
+    func findToolchainBinDir(_ toolchain: ToolchainVersion) -> URL
 }
 
 extension Platform {
@@ -149,10 +152,6 @@ extension Platform {
             newPath = "\(tcPath.path):\(newPath)"
         }
         newEnv["PATH"] = newPath
-
-        // Add certain common environment variables that can be used to proxy to the toolchain
-        newEnv["CC"] = tcPath.appendingPathComponent("clang").path
-        newEnv["CXX"] = tcPath.appendingPathComponent("clang++").path
 
         return newEnv
     }
@@ -288,6 +287,9 @@ extension Platform {
         return bin
     }
 
+    public func findToolchainBinDir(_ toolchain: ToolchainVersion) -> URL {
+        self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
+    }
 #endif
 }
 

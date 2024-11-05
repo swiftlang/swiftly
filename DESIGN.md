@@ -67,7 +67,7 @@ A simple setup for managing the toolchains could look like this:
 
 The toolchains (i.e. the contents of a given Swift download tarball) would be contained in the toolchains directory, each named according to the major/minor/patch version. `config.json` would contain any required metadata (e.g. the latest Swift version, which toolchain is selected, etc.). If pulling in Foundation to use `JSONEncoder`/`JSONDecoder` (or some other JSON tool) would be a problem, we could also use something simpler.
 
-The `~/.local/bin` directory would include symlinks pointing to swiftly itself. When the proxies binaries are executed swiftly proxies them to the requested toolchain, or the default.
+The `~/.local/share/swiftly/bin` directory would include symlinks pointing to swiftly itself. When the proxies binaries are executed swiftly proxies them to the requested toolchain, or the default.
 
 This is all very similar to how rustup does things, but I figure there's no need to reinvent the wheel here.
 

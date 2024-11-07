@@ -29,22 +29,24 @@ jobs:
       linux_pre_build_command: ((apt-get update && apt-get -y install curl make) || ((curl --help || yum -y install curl) && yum -y install make)) && ./scripts/install-libarchive.sh
       enable_windows_checks: false
 
-  releasetest:
-    name: Release Test
+  releasebuild:
+    name: Release Build
     uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@main
     with:
       linux_os_versions: "[\"rhel-ubi9\"]"
       # We only care about the current stable release, because that's where we make our swiftly releases
       linux_exclude_swift_versions: "[{\"swift_version\": \"nightly-main\"},{\"swift_version\": \"nightly-6.0\"},{\"swift_version\": \"5.8\"},{\"swift_version\": \"5.9\"},{\"swift_version\": \"5.10\"}]"
+      linux_pre_build_command: echo ""
       linux_build_command: swift run build-swiftly-release --skip 0.4.0
       enable_windows_checks: false
 
-  formattest:
-    name: Format Test
+  formatcheck:
+    name: Format Check
     uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@main
     with:
       # We only need to run this with one swift release and on one of the linux distributions
       linux_os_versions: "[\"jammy\"]"
       linux_exclude_swift_versions: "[{\"swift_version\": \"nightly-main\"},{\"swift_version\": \"nightly-6.0\"},{\"swift_version\": \"5.8\"},{\"swift_version\": \"5.9\"},{\"swift_version\": \"5.10\"}]"
+      linux_pre_build_command: echo ""
       linux_build_command: swift run swiftformat --lint --dryrun .
       enable_windows_checks: false

@@ -126,7 +126,7 @@ public func getShell() async throws -> String {
 }
 #endif
 
-public func isAmazonLinux2() -> Bool {
+public func isRHEL9() -> Bool {
     let osReleaseFiles = ["/etc/os-release", "/usr/lib/os-release"]
     var releaseFile: String?
     for file in osReleaseFiles {
@@ -165,7 +165,7 @@ public func isAmazonLinux2() -> Bool {
         return false
     }
 
-    guard let versionID = versionID, versionID == "2", (id + idlike).contains("amzn") else {
+    guard let versionID, versionID.hasPrefix("9"), (id + idlike).contains("rhel") else {
         return false
     }
 
@@ -287,7 +287,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
     func buildLinuxRelease() async throws {
         // Check system requirements
-        guard isAmazonLinux2() else {
+        guard isRHEL9() else {
             // TODO: see if docker can be used to spawn an Amazon Linux 2 container to continue the release building process
             throw Error(message: "Linux releases must be made from Amazon Linux 2 because it has the oldest version of glibc for maximum compatibility with other versions of Linux")
         }

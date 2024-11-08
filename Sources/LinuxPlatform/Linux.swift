@@ -202,6 +202,8 @@ public struct Linux: Platform {
                 "libuuid-devel",
                 "libxml2-devel",
                 "python3-devel",
+                "libstdc++-devel",
+                "libstdc++-static",
             ]
         case "debian12":
             [
@@ -218,6 +220,7 @@ public struct Linux: Platform {
                 "tzdata",
                 "git",
                 "gcc",
+                "libstdc++-12-dev",
             ]
         default:
             []

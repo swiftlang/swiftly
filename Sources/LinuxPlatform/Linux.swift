@@ -162,11 +162,11 @@ public struct Linux: Platform {
 
         let manager: String? = switch platformName {
         case "ubuntu1804":
-            "apt"
+            "apt-get"
         case "ubuntu2004":
-            "apt"
+            "apt-get"
         case "ubuntu2204":
-            "apt"
+            "apt-get"
         case "amazonlinux2":
             "yum"
         case "ubi9":
@@ -214,21 +214,38 @@ public struct Linux: Platform {
             return nil
         }
 
-        let missingPackages = packages.filter { !self.isSystemPackageInstalled(manager, $0) }.joined(separator: " ")
+        var missingPackages: [String] = []
+
+        for pkg in packages {
+            if case let pkgInstalled = await self.isSystemPackageInstalled(manager, pkg), !pkgInstalled {
+                missingPackages.append(pkg)
+            }
+        }
 
         guard !missingPackages.isEmpty else {
             return nil
         }
 
-        return "\(manager) -y install \(missingPackages)"
+        return "\(manager) -y install \(missingPackages.joined(separator: " "))"
     }
 
-    public func isSystemPackageInstalled(_ manager: String?, _ package: String) -> Bool {
+    public func isSystemPackageInstalled(_ manager: String?, _ package: String) async -> Bool {
         do {
             switch manager {
-            case "apt":
-                try self.runProgram("dpkg", "-l", package, quiet: true)
-                return true
+            case "apt-get":
+                if let pkgList = try await self.runProgramOutput("dpkg", "-l", package) {
+                    // The package might be listed but not in an installed non-error state.
+                    //
+                    // Look for something like this:
+                    //
+                    //   Desired=Unknown/Install/Remove/Purge/Hold
+                    //   | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+                    //   |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+                    //   ||/
+                    //   ii  pkgfoo         1.0.0ubuntu12        My description goes here....
+                    return pkgList.contains("\nii ")
+                }
+                return false
             case "yum":
                 try self.runProgram("yum", "list", "installed", package, quiet: true)
                 return true

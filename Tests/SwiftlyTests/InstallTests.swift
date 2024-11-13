@@ -39,6 +39,9 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that `swiftly install a.b` installs the latest patch version of Swift a.b.
     func testInstallLatestPatchVersion() async throws {
+        let snapshotsAvailable = try await self.snapshotsAvailable()
+        try XCTSkipIf(!snapshotsAvailable)
+
         guard try await self.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
@@ -133,6 +136,9 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that `swiftly install main-snapshot` installs the latest available main snapshot.
     func testInstallLatestMainSnapshot() async throws {
+        let snapshotsAvailable = try await self.snapshotsAvailable()
+        try XCTSkipIf(!snapshotsAvailable)
+
         try await self.withTestHome {
             try await self.withMockedToolchain {
                 var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
@@ -165,6 +171,9 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that `swiftly install a.b-snapshot` installs the latest available a.b release snapshot.
     func testInstallLatestReleaseSnapshot() async throws {
+        let snapshotsAvailable = try await self.snapshotsAvailable()
+        try XCTSkipIf(!snapshotsAvailable)
+
         try await self.withTestHome {
             try await self.withMockedToolchain {
                 var cmd = try self.parseCommand(Install.self, ["install", "6.0-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
@@ -249,12 +258,18 @@ final class InstallTests: SwiftlyTests {
 
     /// Tests that attempting to install main snapshots that are already installed doesn't result in an error.
     func testInstallDuplicateMainSnapshots() async throws {
+        let snapshotsAvailable = try await self.snapshotsAvailable()
+        try XCTSkipIf(!snapshotsAvailable)
+
         try await self.duplicateTest("main-snapshot-2023-04-01")
         try await self.duplicateTest("main-snapshot")
     }
 
     /// Tests that attempting to install release snapshots that are already installed doesn't result in an error.
     func testInstallDuplicateReleaseSnapshots() async throws {
+        let snapshotsAvailable = try await self.snapshotsAvailable()
+        try XCTSkipIf(!snapshotsAvailable)
+
         try await self.duplicateTest("6.0-snapshot-2024-06-18")
         try await self.duplicateTest("6.0-snapshot")
     }

@@ -1,8 +1,10 @@
-name: Pull request
+name: Pull Request
 
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
 
 jobs:
   soundness:
@@ -28,16 +30,22 @@ jobs:
       linux_pre_build_command: ./scripts/prep-gh-action.sh && ./scripts/install-libarchive.sh
       enable_windows_checks: false
 
-  releasebuild:
-    name: Release Build
-    uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@main
-    with:
-      linux_os_versions: "[\"rhel-ubi9\"]"
-      # We only care about the current stable release, because that's where we make our swiftly releases
-      linux_exclude_swift_versions: "[{\"swift_version\": \"nightly-main\"},{\"swift_version\": \"nightly-6.0\"},{\"swift_version\": \"5.8\"},{\"swift_version\": \"5.9\"},{\"swift_version\": \"5.10\"}]"
-      linux_pre_build_command: ./scripts/prep-gh-action.sh
-      linux_build_command: swift run build-swiftly-release --skip 0.4.0
-      enable_windows_checks: false
+  releasebuildcheck:
+    name: Release Build Check
+    runs-on: ubuntu-latest
+    container:
+      image: "swift:6.0-rhel-ubi9"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build Artifact
+        run: swift run build-swiftly-release --skip "999.0.0"
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: .build/release/swiftly-*.tar.gz
+          if-no-files-found: error
+          retention-days: 1
 
   formatcheck:
     name: Format Check

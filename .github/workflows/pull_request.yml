@@ -57,3 +57,24 @@ jobs:
       linux_pre_build_command: ./scripts/prep-gh-action.sh
       linux_build_command: swift run swiftformat --lint --dryrun .
       enable_windows_checks: false
+
+  docscheck:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    container:
+      image: "swift:6.0-noble"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh && ./scripts/install-libarchive.sh
+      - name: Generate Swiftly CLI Reference and Check for Differences
+        run: swift package plugin --allow-writing-to-package-directory generate-docs-reference && git diff-index --quiet HEAD --  || (echo "The documentation hasn't been updated with the latest swiftly command-line reference. Please run 'swift package plugin generate-docs-reference' and commit/push the changes."; exit 1)
+      - name: Generate Documentation Set
+        run: swift package --allow-writing-to-directory .build/docs generate-documentation --target SwiftlyDocs --output-path .build/docs
+      - name: Upload Documentation Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: .build/docs/**
+          if-no-files-found: error
+          retention-days: 1

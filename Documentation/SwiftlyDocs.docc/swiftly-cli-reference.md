@@ -1,4 +1,4 @@
-# swiftly 
+# swiftly
 
 <!-- THIS FILE HAS BEEN GENERATED using the following command: swift package plugin generate-docs-reference -->
 

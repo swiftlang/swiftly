@@ -43,6 +43,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: swiftly-release-x86_64
           path: .build/release/swiftly-*.tar.gz
           if-no-files-found: error
           retention-days: 1
@@ -75,6 +76,7 @@ jobs:
       - name: Upload Documentation Artifacts
         uses: actions/upload-artifact@v4
         with:
+          name: swiftly-docs
           path: .build/docs/**
           if-no-files-found: error
           retention-days: 1

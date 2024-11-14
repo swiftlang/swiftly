@@ -28,6 +28,7 @@ jobs:
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: swiftly-release-x86_64
           path: .build/release/swiftly-*.tar.gz
           if-no-files-found: error
       - name: Build Documentation Artifacts
@@ -35,5 +36,6 @@ jobs:
       - name: Upload Documentation Artifacts
         uses: actions/upload-artifact@v4
         with:
+          name: swiftly-docs
           path: .build/docs/**
           if-no-files-found: error

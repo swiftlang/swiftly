@@ -133,49 +133,36 @@ $ swiftly list
 
 ### Selecting a toolchain for use
 
-“Using” a toolchain sets it as the active toolchain, meaning it will be the one found via $PATH and invoked via `swift` commands executed in the shell.
+“Using” a toolchain sets it as the active toolchain, meaning it will be the one found via $PATH and invoked via `swift` commands executed in the shell. The toolchain must be installed before you can use it.
 
-To use the toolchain associated with the most up-to-date Swift version, the “latest” version can be specified:
+You can provide the same version selectors as you used with `swiftly install` to use a toolchain, including exact releacs versions "major.minor.patch", and snapshots.
 
 ```
 $ swiftly use latest
-```
-
-To use a specific stable version of Swift already installed, specify the major/minor/patch version:
-
-```
 $ swiftly use 5.3.1
-```
-
-To use the latest installed patch version associated with a given major/minor version pair, the patch can be omitted:
-
-```
 $ swiftly use 5.3
-```
-
-To use a specific snapshot version, specify the full snapshot version name:
-
-```
-$ swiftly use 5.3-snapshot-YYYY-MM-DD
-```
-
-To use the latest installed snapshot associated with a given version, the date can be omitted:
-
-```
 $ swiftly use 5.3-snapshot
-```
-
-To use a specific main snapshot, specify the full snapshot version name:
-
-```
-$ swiftly use main-snapshot-YYYY-MM-DD
-```
-
-To use the latest installed main snapshot, leave off the date:
-
-```
+$ swiftly use 5.3-snapshot-2022-08-16
 $ swiftly use main-snapshot
+$ swiftly use main-snapshot-2024-06-18
 ```
+
+After you use a toolchain your commands at the shell will run with that toolchain:
+
+```
+$ swiftly use x.y.z
+$ swift build             # Build my package with toolchain version x.y.z
+$ clang -c foo.c -o foo.o # Compile this C file using the clang compiler in toolchain version x.y.z
+$ lldb                    # Open the debugger from toolchain version x.y.z
+```
+
+If you want to run just one command with a particular toolchain without having to switch back to the one you used previously you can use the `swiftly run` command with the version. This command builds your current package with the latest snapshot toolchain of the current release:
+
+```
+$ swiftly run swift build +main-snapshot
+```
+
+The parameter with the "+" indicates that this is the version selector of the toolchain to use and supports the full range of selectors shown above and with the `swiftly install` command. The toolchain must be installed to run a command with that toolchain.
 
 ### Updating a toolchain
 

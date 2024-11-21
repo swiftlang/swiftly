@@ -33,6 +33,11 @@ public struct PlatformDefinition: Codable, Equatable {
     public static let debian12 = PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12")
 }
 
+public struct RunProgramError: Swift.Error {
+    public let exitCode: Int32
+    public let program: String
+}
+
 public protocol Platform {
     /// The platform-specific location on disk where applications are
     /// supposed to store their custom data.
@@ -69,18 +74,6 @@ public protocol Platform {
     /// If this version is in use, the next latest version will be used afterwards.
     func uninstall(_ version: ToolchainVersion) throws
 
-    /// Select the toolchain associated with the given version.
-    /// Returns whether the selection was successful.
-    func use(_ version: ToolchainVersion, currentToolchain: ToolchainVersion?) throws -> Bool
-
-    /// Clear the current active toolchain.
-    func unUse(currentToolchain: ToolchainVersion) throws
-
-    /// Get a list of snapshot builds for the platform. If a version is specified, only
-    /// return snapshots associated with the version.
-    /// This will likely have a default implementation.
-    func listAvailableSnapshots(version: String?) async -> [Snapshot]
-
     /// Get the name of the swiftly release binary.
     func getExecutableName() -> String
 
@@ -113,6 +106,12 @@ public protocol Platform {
 
     /// Get the user's current login shell
     func getShell() async throws -> String
+
+    /// Find the location where the toolchain should be installed.
+    func findToolchainLocation(_ toolchain: ToolchainVersion) -> URL
+
+    /// Find the location of the toolchain binaries.
+    func findToolchainBinDir(_ toolchain: ToolchainVersion) -> URL
 }
 
 extension Platform {
@@ -141,10 +140,66 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
-    public func runProgram(_ args: String..., quiet: Bool = false) throws {
+    internal func proxyEnv(_ toolchain: ToolchainVersion) throws -> [String: String] {
+        let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
+        var newEnv = ProcessInfo.processInfo.environment
+
+        // Prevent circularities with a memento environment variable
+        guard newEnv["SWIFTLY_PROXY_IN_PROGRESS"] == nil else {
+            throw Error(message: "Circular swiftly proxy invocation")
+        }
+        newEnv["SWIFTLY_PROXY_IN_PROGRESS"] = "1"
+
+        // The toolchain goes to the beginning of the PATH
+        var newPath = newEnv["PATH"] ?? ""
+        if !newPath.hasPrefix(tcPath.path + ":") {
+            newPath = "\(tcPath.path):\(newPath)"
+        }
+        newEnv["PATH"] = newPath
+
+        return newEnv
+    }
+
+    /// Proxy the invocation of the provided command to the chosen toolchain.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws {
+        try self.runProgram([command] + arguments, env: self.proxyEnv(toolchain))
+    }
+
+    /// Proxy the invocation of the provided command to the chosen toolchain and capture the output.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func proxyOutput(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws -> String? {
+        try await self.runProgramOutput(command, arguments, env: self.proxyEnv(toolchain))
+    }
+
+    /// Run a program.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func runProgram(_ args: String..., quiet: Bool = false, env: [String: String]? = nil) throws {
+        try self.runProgram([String](args), quiet: quiet, env: env)
+    }
+
+    /// Run a program.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func runProgram(_ args: [String], quiet: Bool = false, env: [String: String]? = nil) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = args
+
+        if let env = env {
+            process.environment = env
+        }
 
         if quiet {
             process.standardOutput = nil
@@ -160,14 +215,32 @@ extension Platform {
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
+            throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)
         }
     }
 
-    public func runProgramOutput(_ program: String, _ args: String...) async throws -> String? {
+    /// Run a program and capture its output.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func runProgramOutput(_ program: String, _ args: String..., env: [String: String]? = nil) async throws -> String? {
+        try await self.runProgramOutput(program, [String](args), env: env)
+    }
+
+    /// Run a program and capture its output.
+    ///
+    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
+    /// the exit code and program information.
+    ///
+    public func runProgramOutput(_ program: String, _ args: [String], env: [String: String]? = nil) async throws -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = [program] + args
+
+        if let env = env {
+            process.environment = env
+        }
 
         let outPipe = Pipe()
         process.standardInput = FileHandle.nullDevice
@@ -185,7 +258,7 @@ extension Platform {
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
+            throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)
         }
 
         if let outData = outData {
@@ -195,7 +268,7 @@ extension Platform {
         }
     }
 
-    public func isSystemManagedBinary(_ cmd: String) throws -> Bool {
+    public func systemManagedBinary(_ cmd: String) throws -> String? {
         let userHome = FileManager.default.homeDirectoryForCurrentUser
         let binLocs = [cmd] + ProcessInfo.processInfo.environment["PATH"]!.components(separatedBy: ":").map { $0 + "/" + cmd }
         var bin: String?
@@ -212,10 +285,14 @@ extension Platform {
         // If the binary is in the user's home directory, or is not in system locations ("/usr", "/opt", "/bin")
         //  then it is expected to be outside of a system package location and we manage the binary ourselves.
         if bin.hasPrefix(userHome.path + "/") || (!bin.hasPrefix("/usr") && !bin.hasPrefix("/opt") && !bin.hasPrefix("/bin")) {
-            return false
+            return nil
         }
 
-        return true
+        return bin
+    }
+
+    public func findToolchainBinDir(_ toolchain: ToolchainVersion) -> URL {
+        self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
     }
 #endif
 }

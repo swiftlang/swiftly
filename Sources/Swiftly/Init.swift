@@ -227,7 +227,7 @@ internal struct Init: SwiftlyCommand {
             }
 
             var postInstall: String?
-            var pathChanged: Bool = false
+            var pathChanged = false
 
             if !skipInstall {
                 let latestVersion = try await Install.resolve(config: config, selector: ToolchainSelector.latest)

@@ -138,26 +138,8 @@ internal struct Init: SwiftlyCommand {
 
         guard var config else { throw Error(message: "Configuration could not be set") }
 
-        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
-
-        let cmd = URL(fileURLWithPath: CommandLine.arguments[0])
-        let systemManagedSwiftlyBin = try Swiftly.currentPlatform.systemManagedBinary(CommandLine.arguments[0])
-
-        // Don't move the binary if it's already in the right place, this is being invoked inside an xctest, or it is a system managed binary
-        if cmd != swiftlyBin && !cmd.path.hasSuffix("xctest") && systemManagedSwiftlyBin == nil {
-            SwiftlyCore.print("Moving swiftly into the installation directory...")
-
-            if swiftlyBin.fileExists() {
-                try FileManager.default.removeItem(at: swiftlyBin)
-            }
-
-            do {
-                try FileManager.default.moveItem(at: cmd, to: swiftlyBin)
-            } catch {
-                try FileManager.default.copyItem(at: cmd, to: swiftlyBin)
-                SwiftlyCore.print("Swiftly has been copied into the installation directory. You can remove '\(cmd.path)'. It is no longer needed.")
-            }
-        }
+        // Move our executable over to the correct place
+        let _ = try Swiftly.currentPlatform.findSwiftlyBin(installSwiftly: true)
 
         if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {
             SwiftlyCore.print("Creating shell environment file for the user...")

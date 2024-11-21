@@ -243,21 +243,13 @@ struct Install: SwiftlyCommand {
 
         var pathChanged = false
 
-        // Don't create the proxies in the tests
-        if CommandLine.arguments.count > 0 && !CommandLine.arguments[0].hasSuffix("xctest") {
+        // Create proxies if we have a location where we can point them
+        if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin(installSwiftly: false) {
             // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-            let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
-            let systemManagedSwiftlyBin = try Swiftly.currentPlatform.systemManagedBinary(CommandLine.arguments[0])
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
             let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
             let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(version)
             let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinDir.path)
-
-            let proxyTo = if let systemManagedSwiftlyBin = systemManagedSwiftlyBin {
-                systemManagedSwiftlyBin
-            } else {
-                swiftlyBin.path
-            }
 
             let existingProxies = swiftlyBinDirContents.filter { bin in
                 do {

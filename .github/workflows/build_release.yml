@@ -1,0 +1,32 @@
+name: Build Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version of swiftly to build release artifacts"
+        required: true
+        type: string
+        default: "0.3.0"
+      skip:
+        description: "Perform release checks, such as the git tag, and swift version, or '--skip' to skip that."
+        required: true
+        type: string
+        default: "--skip"
+
+jobs:
+  buildrelease:
+    name: Build Release
+    runs-on: ubuntu-latest
+    container:
+      image: "swift:6.0-rhel-ubi9"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build Artifact
+        run: swift run build-swiftly-release ${{ inputs.skip }} ${{ inputs.version }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: .build/release/swiftly-*.tar.gz
+          if-no-files-found: error

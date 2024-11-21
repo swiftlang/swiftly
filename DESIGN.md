@@ -67,7 +67,7 @@ A simple setup for managing the toolchains could look like this:
 
 The toolchains (i.e. the contents of a given Swift download tarball) would be contained in the toolchains directory, each named according to the major/minor/patch version. `config.json` would contain any required metadata (e.g. the latest Swift version, which toolchain is selected, etc.). If pulling in Foundation to use `JSONEncoder`/`JSONDecoder` (or some other JSON tool) would be a problem, we could also use something simpler.
 
-The `~/.local/bin` directory would include symlinks pointing to swiftly itself. When the proxies binaries are executed swiftly proxies them to the requested toolchain, or the default.
+The `~/.local/share/swiftly/bin` directory would include symlinks pointing to swiftly itself. When the proxies binaries are executed swiftly proxies them to the requested toolchain, or the default.
 
 This is all very similar to how rustup does things, but I figure there's no need to reinvent the wheel here.
 
@@ -115,7 +115,7 @@ This will install the latest available stable release of Swift. If the latest ve
 
 ##### Installing a specific release version of Swift
 
-To install a specific version of Swift, the user can provide it. 
+To install a specific version of Swift, the user can provide it.
 
 If a patch version isn't specified, it’ll install the latest patch version that matches the minor version provided. If a version is already installed that has the same major and minor version, a message will be printed indicating so and directing the user to `swiftly update a.b` if they wish to check for updates. 
 
@@ -306,19 +306,21 @@ This command will provide the full path to the directory where the selected tool
 
 #### Run with a selected toolchain
 
-There are cases where you might want to run an arbitrary command using a selected toolchain. An example could be that you want to build something with CMake.
+There are cases where you might want to run an arbitrary command using a selected toolchain. An example could be that you want to build something with CMake or Autoconf.
 
 ```
 # CMake
-swiftly run cmake -G ninja
+swiftly run cmake -G ninja -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
 swiftly run ninja build
 
 # Autoconf
-swiftly run ./configure
-swiftly run make
+CC=clang swiftly run ./configure
+CC=clang swiftly run make
 ```
 
-Swiftly adjusts certain environment variables, such as prefixing the PATH to the selected toolchain directory, and setting the CC and CXX variables to the locations of clang and clang++ in those toolchains so that the build tools use them. If you want to explicitly specify a toolchain for the command you can do that with a selector notation like this:
+Swiftly prefixes the PATH to the selected toolchain directory and runs the command so that the toolchain executables are available and have precedence.
+
+If you want to explicitly specify a toolchain for the command you can do that with a selector notation like this:
 
 ```
 swiftly run swift build +5.10.1 # Runs swift build with the 5.10.1 toolchain
@@ -333,8 +335,8 @@ If the selected toolchain is not installed then swiftly will exit with a message
 swiftly run swift build +main-snapshot
 
 # Generate makefiles with the latest released Swift toolchain
-swiftly run +latest cmake -G "Unix Makefile"
-swiftly run +latest make
+swiftly run +latest cmake -G "Unix Makefile" -D CMAKE_C_COMPILER=clang
+CC=clang swiftly run +latest make
 ```
 
 ## Detailed Design
@@ -498,7 +500,7 @@ If the tag is a newer version than the installed one, a prompt indicating the ne
 $ dpkg --status libcurl4
 ```
 
-If the exit code of the previous command was 0, then we know the dependency exists and can return true. If it wasn't, then we call fall back to attempting to locate the library via `pkg-config`:
+If the exit code of the previous command was 0, then we know the dependency exists and can return true. If it wasn't, then we can fall back to attempting to locate the library via `pkg-config`:
 
 ```
 $ pkg-config --exists libcurl

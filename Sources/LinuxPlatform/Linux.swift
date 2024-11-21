@@ -9,7 +9,6 @@ var swiftGPGKeysRefreshed = false
 public struct Linux: Platform {
     let linuxPlatforms = [
         PlatformDefinition.ubuntu2404,
-        PlatformDefinition.ubuntu2310,
         PlatformDefinition.ubuntu2204,
         PlatformDefinition.ubuntu2004,
         PlatformDefinition.ubuntu1804,
@@ -26,8 +25,7 @@ public struct Linux: Platform {
             return URL(fileURLWithPath: dir)
         } else {
             return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".local", isDirectory: true)
-                .appendingPathComponent("share", isDirectory: true)
+                .appendingPathComponent(".local/share", isDirectory: true)
         }
     }
 
@@ -35,8 +33,7 @@ public struct Linux: Platform {
         SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".local", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
+            .appendingPathComponent(".local/share/swiftly/bin", isDirectory: true)
     }
 
     public var swiftlyToolchainsDir: URL {
@@ -137,27 +134,6 @@ public struct Linux: Platform {
                 "tzdata",
                 "zlib1g-dev",
             ]
-        case "ubuntu2310":
-            [
-                "binutils",
-                "git",
-                "unzip",
-                "gnupg2",
-                "libc6-dev",
-                "libcurl4-openssl-dev",
-                "libedit2",
-                "libgcc-12-dev",
-                "libpython3-dev",
-                "libsqlite3-0",
-                "libstdc++-12-dev",
-                "libxml2-dev",
-                "libncurses-dev",
-                "libz3-dev",
-                "pkg-config",
-                "python3-lldb-13",
-                "tzdata",
-                "zlib1g-dev",
-            ]
         case "ubuntu2404":
             [
                 "binutils",
@@ -224,6 +200,8 @@ public struct Linux: Platform {
                 "libuuid-devel",
                 "libxml2-devel",
                 "python3-devel",
+                "libstdc++-devel",
+                "libstdc++-static",
             ]
         case "debian12":
             [
@@ -240,6 +218,7 @@ public struct Linux: Platform {
                 "tzdata",
                 "git",
                 "gcc",
+                "libstdc++-12-dev",
             ]
         default:
             []
@@ -251,8 +230,6 @@ public struct Linux: Platform {
         case "ubuntu2004":
             "apt-get"
         case "ubuntu2204":
-            "apt-get"
-        case "ubuntu2310":
             "apt-get"
         case "ubuntu2404":
             "apt-get"
@@ -552,7 +529,7 @@ public struct Linux: Platform {
             }
 
             return PlatformDefinition.rhel9
-        } else if let pd = [PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2310, .ubuntu2404, .debian12, .fedora39].first(where: { $0.name == id + versionID }) {
+        } else if let pd = [PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2404, .debian12, .fedora39].first(where: { $0.name == id + versionID }) {
             return pd
         }
 

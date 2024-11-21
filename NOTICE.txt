@@ -56,6 +56,6 @@ following third party libraries:
 * libarchive - Copyright (c) 2003-2018 Tim Kientzle. All rights reserved.
 
   * LICENSE ("New BSD license"):
-    * https://raw.githubusercontent.com/libarchive/libarchive/master/COPYING
+    * https://raw.githubusercontent.com/libarchive/libarchive/release/COPYING
   * HOMEPAGE:
     * http://www.libarchive.org/

@@ -1,25 +1,6 @@
 import Foundation
 import SwiftlyCore
 
-// This is the allowed list of executables that we will proxy
-let proxyList = [
-    "clang",
-    "lldb",
-    "lldb-dap",
-    "lldb-server",
-    "clang++",
-    "sourcekit-lsp",
-    "clangd",
-    "swift",
-    "docc",
-    "swiftc",
-    "lld",
-    "llvm-ar",
-    "plutil",
-    "repl_swift",
-    "wasm-ld",
-]
-
 @main
 public enum Proxy {
     static func main() async throws {
@@ -29,30 +10,8 @@ public enum Proxy {
                 fatalError("Could not determine the binary name for proxying")
             }
 
-            guard proxyList.contains(binName) else {
+            guard binName != "swiftly" else {
                 // Treat this as a swiftly invocation
-
-                let configResult = Result { try Config.load() }
-
-                switch configResult {
-                case .success:
-                    await Swiftly.main()
-                    return
-                case let .failure(err):
-                    guard CommandLine.arguments.count > 0 else { fatalError("argv is not set") }
-
-                    if CommandLine.arguments.count == 1 {
-                        // User ran swiftly with no extra arguments in an uninstalled environment, so we skip directly into
-                        //  an init.
-                        try await Init.execute(assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false)
-                        return
-                    } else if CommandLine.arguments[1] != "init" {
-                        // Check if we've been invoked outside the "init" subcommand and we're not yet configured.
-                        // This will throw if the configuration couldn't be loaded and give the user an actionable message.
-                        throw err
-                    }
-                }
-
                 await Swiftly.main()
                 return
             }

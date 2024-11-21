@@ -94,15 +94,26 @@ struct Install: SwiftlyCommand {
         }
 
         let toolchainVersion = try await Self.resolve(config: config, selector: selector)
-        let postInstallScript = try await Self.execute(
+        let (postInstallScript, pathChanged) = try await Self.execute(
             version: toolchainVersion,
             &config,
             useInstalledToolchain: self.use,
             verifySignature: self.verify,
-            verbose: self.root.verbose
+            verbose: self.root.verbose,
+            assumeYes: self.root.assumeYes
         )
 
-        if let postInstallScript = postInstallScript {
+        if pathChanged {
+            SwiftlyCore.print("""
+            NOTE: We have updated some elements in your path and your shell may not yet be
+            aware of the changes. You can run this command to update your shell.
+
+                hash -r
+
+            """)
+        }
+
+        if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
                 throw Error(message: """
 
@@ -123,11 +134,12 @@ struct Install: SwiftlyCommand {
         _ config: inout Config,
         useInstalledToolchain: Bool,
         verifySignature: Bool,
-        verbose: Bool
-    ) async throws -> String? {
+        verbose: Bool,
+        assumeYes: Bool
+    ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
             SwiftlyCore.print("\(version) is already installed.")
-            return nil
+            return (nil, false)
         }
 
         // Ensure the system is set up correctly before downloading it. Problems that prevent installation
@@ -229,6 +241,66 @@ struct Install: SwiftlyCommand {
 
         try Swiftly.currentPlatform.install(from: tmpFile, version: version, verbose: verbose)
 
+        var pathChanged = false
+
+        // Don't create the proxies in the tests
+        if CommandLine.arguments.count > 0 && !CommandLine.arguments[0].hasSuffix("xctest") {
+            // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
+            let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
+            let systemManagedSwiftlyBin = try Swiftly.currentPlatform.systemManagedBinary(CommandLine.arguments[0])
+            let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
+            let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
+            let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(version)
+            let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinDir.path)
+
+            let proxyTo = if let systemManagedSwiftlyBin = systemManagedSwiftlyBin {
+                systemManagedSwiftlyBin
+            } else {
+                swiftlyBin.path
+            }
+
+            let existingProxies = swiftlyBinDirContents.filter { bin in
+                do {
+                    let linkTarget = try FileManager.default.destinationOfSymbolicLink(atPath: swiftlyBinDir.appendingPathComponent(bin).path)
+                    return linkTarget == proxyTo
+                } catch { return false }
+            }
+
+            let overwrite = Set(toolchainBinDirContents).subtracting(existingProxies).intersection(swiftlyBinDirContents)
+            if !overwrite.isEmpty && !assumeYes {
+                SwiftlyCore.print("The following existing executables will be overwritten:")
+
+                for executable in overwrite {
+                    SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
+                }
+
+                let proceed = SwiftlyCore.readLine(prompt: "Proceed? [y/N]") ?? "n"
+
+                guard proceed == "y" else {
+                    throw Error(message: "Toolchain installation has been cancelled")
+                }
+            }
+
+            SwiftlyCore.print("Setting up toolchain proxies...")
+
+            let proxiesToCreate = Set(toolchainBinDirContents).subtracting(swiftlyBinDirContents).union(overwrite)
+
+            for p in proxiesToCreate {
+                let proxy = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(p)
+
+                if proxy.fileExists() {
+                    try FileManager.default.removeItem(at: proxy)
+                }
+
+                try FileManager.default.createSymbolicLink(
+                    atPath: proxy.path,
+                    withDestinationPath: proxyTo
+                )
+
+                pathChanged = true
+            }
+        }
+
         config.installedToolchains.insert(version)
 
         try config.save()
@@ -241,10 +313,10 @@ struct Install: SwiftlyCommand {
         }
 
         SwiftlyCore.print("\(version) installed successfully!")
-        return postInstallScript
+        return (postInstallScript, pathChanged)
     }
 
-    /// Utilize the GitHub API along with the provided selector to select a toolchain for install.
+    /// Utilize the swift.org API along with the provided selector to select a toolchain for install.
     public static func resolve(config: Config, selector: ToolchainSelector) async throws -> ToolchainVersion {
         switch selector {
         case .latest:

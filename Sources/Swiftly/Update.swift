@@ -108,12 +108,13 @@ struct Update: SwiftlyCommand {
             }
         }
 
-        let postInstallScript = try await Install.execute(
+        let (postInstallScript, pathChanged) = try await Install.execute(
             version: newToolchain,
             &config,
             useInstalledToolchain: config.inUse == parameters.oldToolchain,
             verifySignature: self.verify,
-            verbose: self.root.verbose
+            verbose: self.root.verbose,
+            assumeYes: self.root.assumeYes
         )
 
         try await Uninstall.execute(parameters.oldToolchain, &config)
@@ -132,6 +133,16 @@ struct Update: SwiftlyCommand {
             }
 
             try Data(postInstallScript.utf8).write(to: URL(fileURLWithPath: postInstallFile), options: .atomic)
+        }
+
+        if pathChanged {
+            SwiftlyCore.print("""
+            NOTE: We have updated some elements in your path and your shell may not yet be
+            aware of the changes. You can run this command to update your shell.
+
+                hash -r
+
+            """)
         }
     }
 

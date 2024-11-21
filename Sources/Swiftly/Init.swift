@@ -71,7 +71,7 @@ internal struct Init: SwiftlyCommand {
         // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
         let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
         let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
-        let willBeOverwritten = Set(proxyList + ["swiftly"]).intersection(swiftlyBinDirContents)
+        let willBeOverwritten = Set(["swiftly"]).intersection(swiftlyBinDirContents)
         if !willBeOverwritten.isEmpty && !overwrite {
             SwiftlyCore.print("The following existing executables will be overwritten:")
 
@@ -159,30 +159,6 @@ internal struct Init: SwiftlyCommand {
             }
         }
 
-        // Don't create the proxies in the tests
-        if !cmd.path.hasSuffix("xctest") {
-            SwiftlyCore.print("Setting up toolchain proxies...")
-
-            let proxyTo = if let systemManagedSwiftlyBin = systemManagedSwiftlyBin {
-                systemManagedSwiftlyBin
-            } else {
-                swiftlyBin.path
-            }
-
-            for p in proxyList {
-                let proxy = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent(p)
-
-                if proxy.fileExists() {
-                    try FileManager.default.removeItem(at: proxy)
-                }
-
-                try FileManager.default.createSymbolicLink(
-                    atPath: proxy.path,
-                    withDestinationPath: proxyTo
-                )
-            }
-        }
-
         if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {
             SwiftlyCore.print("Creating shell environment file for the user...")
             var env = ""
@@ -251,10 +227,11 @@ internal struct Init: SwiftlyCommand {
             }
 
             var postInstall: String?
+            var pathChanged: Bool = false
 
             if !skipInstall {
                 let latestVersion = try await Install.resolve(config: config, selector: ToolchainSelector.latest)
-                postInstall = try await Install.execute(version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose)
+                (postInstall, pathChanged) = try await Install.execute(version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
             }
 
             if addEnvToProfile {
@@ -265,17 +242,15 @@ internal struct Init: SwiftlyCommand {
                     \(sourceLine)
 
                 """)
+            }
 
-#if os(macOS)
+            if pathChanged {
                 SwiftlyCore.print("""
-                NOTE: On macOS it is possible that the shell will pick up the system Swift on the path
-                instead of the one that swiftly has installed for you. You can run this command to update
-                the shell with the latest PATHs.
+                Your shell caches items on your path for better performance. Swiftly has added items to your path that may not get picked up right away. You can run this command to update your shell to get these items.
 
-                hash -r
+                    hash -r
 
                 """)
-#endif
             }
 
             if let postInstall {
@@ -284,7 +259,7 @@ internal struct Init: SwiftlyCommand {
                 You can run the following script as the system administrator (e.g. root) to prepare
                 your system:
 
-                \(postInstall)
+                    \(postInstall)
 
                 """)
             }

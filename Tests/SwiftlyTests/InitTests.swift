@@ -27,7 +27,7 @@ final class InitTests: SwiftlyTests {
             }
 
             // WHEN: swiftly is invoked to init the user account and finish swiftly installation
-            var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes"])
+            var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
             try await initCmd.run()
 
             // THEN: it creates a valid configuration at the correct version
@@ -67,7 +67,7 @@ final class InitTests: SwiftlyTests {
             // GIVEN: a user account with swiftly already installed
             try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyConfigFile)
 
-            var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes"])
+            var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
             try await initCmd.run()
 
             // Add some customizations to files and directories
@@ -79,7 +79,7 @@ final class InitTests: SwiftlyTests {
             try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent("foo.txt"))
 
             // WHEN: swiftly is initialized with overwrite enabled
-            initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes", "--overwrite"])
+            initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes", "--skip-install", "--overwrite"])
             try await initCmd.run()
 
             // THEN: everything is overwritten in initialization
@@ -95,7 +95,7 @@ final class InitTests: SwiftlyTests {
             // GIVEN: a user account with swiftly already installed
             try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyConfigFile)
 
-            var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes"])
+            var initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
             try await initCmd.run()
 
             // Add some customizations to files and directories
@@ -107,7 +107,7 @@ final class InitTests: SwiftlyTests {
             try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent("foo.txt"))
 
             // WHEN: swiftly init is invoked a second time
-            initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes"])
+            initCmd = try self.parseCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
             var threw = false
             do {
                 try await initCmd.run()

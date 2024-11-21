@@ -72,8 +72,6 @@ struct SwiftOrgPlatform: Codable {
             PlatformDefinition.ubuntu2204
         case "Red Hat Universal Base Image 9":
             PlatformDefinition.rhel9
-        case "Ubuntu 23.10":
-            PlatformDefinition(name: "ubuntu2310", nameFull: "ubuntu23.10", namePretty: "Ubuntu 23.10")
         case "Ubuntu 24.04":
             PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04")
         case "Debian 12":

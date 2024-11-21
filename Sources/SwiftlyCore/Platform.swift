@@ -24,7 +24,6 @@ public struct PlatformDefinition: Codable, Equatable {
     public static let macOS = PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS")
 
     public static let ubuntu2404 = PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04")
-    public static let ubuntu2310 = PlatformDefinition(name: "ubuntu2310", nameFull: "ubuntu23.10", namePretty: "Ubuntu 23.10")
     public static let ubuntu2204 = PlatformDefinition(name: "ubuntu2204", nameFull: "ubuntu22.04", namePretty: "Ubuntu 22.04")
     public static let ubuntu2004 = PlatformDefinition(name: "ubuntu2004", nameFull: "ubuntu20.04", namePretty: "Ubuntu 20.04")
     public static let ubuntu1804 = PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
@@ -109,6 +108,9 @@ public protocol Platform {
 
     /// Find the location where the toolchain should be installed.
     func findToolchainLocation(_ toolchain: ToolchainVersion) -> URL
+
+    /// Find the location of the toolchain binaries.
+    func findToolchainBinDir(_ toolchain: ToolchainVersion) -> URL
 }
 
 extension Platform {
@@ -153,10 +155,6 @@ extension Platform {
             newPath = "\(tcPath.path):\(newPath)"
         }
         newEnv["PATH"] = newPath
-
-        // Add certain common environment variables that can be used to proxy to the toolchain
-        newEnv["CC"] = tcPath.appendingPathComponent("clang").path
-        newEnv["CXX"] = tcPath.appendingPathComponent("clang++").path
 
         return newEnv
     }
@@ -290,6 +288,10 @@ extension Platform {
         }
 
         return bin
+    }
+
+    public func findToolchainBinDir(_ toolchain: ToolchainVersion) -> URL {
+        self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
     }
 
 #endif

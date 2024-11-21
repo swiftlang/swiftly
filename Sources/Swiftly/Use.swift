@@ -103,18 +103,20 @@ internal struct Use: SwiftlyCommand {
         try await Self.execute(toolchain, globalDefault: self.globalDefault, assumeYes: self.root.assumeYes, &config)
     }
 
-    /// Use a toolchain. This method can modify and save the input config.
+    /// Use a toolchain. This method can modify and save the input config and also create/modify a `.swift-version` file.
     internal static func execute(_ toolchain: ToolchainVersion, globalDefault: Bool, assumeYes: Bool = true, _ config: inout Config) async throws {
         let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: globalDefault)
 
-        if let selectedVersion = selectedVersion {
-            guard selectedVersion != toolchain else {
-                SwiftlyCore.print("\(toolchain) is already in use")
-                return
-            }
-        }
-
         if case let .swiftVersionFile(versionFile, _, _) = result {
+            if !assumeYes {
+                SwiftlyCore.print("The file `\(versionFile)` will be updated to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with modifying this file?")
+
+                guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
+                    SwiftlyCore.print("Aborting setting in-use toolchain")
+                    return
+                }
+            }
+
             // We don't care in this case if there were any problems with the swift version files, just overwrite it with the new value
             try toolchain.name.write(to: versionFile, atomically: true, encoding: .utf8)
         } else if let newVersionFile = findNewVersionFile(), !globalDefault {

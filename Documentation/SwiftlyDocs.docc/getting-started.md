@@ -43,7 +43,7 @@ $ swift --version
 Swift version 6.0.1 (swift-6.0.1-RELEASE)
 Target: x86_64-unknown-linux-gnu
 
-$ swift build    # Build your package with the latest toolchain
+$ swift build    # Build with the latest (5.8.1) toolchain
 ```
 
 You can install (and use) another release toolchain:

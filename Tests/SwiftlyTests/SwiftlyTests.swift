@@ -369,6 +369,20 @@ class SwiftlyTests: XCTestCase {
         let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
         return try ToolchainVersion(parsing: toolchainVersion)
     }
+
+    func snapshotsAvailable() async throws -> Bool {
+        let pd = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
+
+        // Snapshots are currently unavailable for these platforms on swift.org
+        // TODO: remove these once snapshots are available for them
+        let snapshotsUnavailable = [
+            PlatformDefinition.ubuntu2404,
+            PlatformDefinition.fedora39,
+            PlatformDefinition.debian12,
+        ]
+
+        return !snapshotsUnavailable.contains(pd)
+    }
 }
 
 public class TestOutputHandler: SwiftlyCore.OutputHandler {

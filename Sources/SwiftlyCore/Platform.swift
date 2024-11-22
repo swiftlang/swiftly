@@ -283,7 +283,7 @@ extension Platform {
             }.first
         }
 
-        // We couldn't find outselves in the usual places, so if we're not going to be installing
+        // We couldn't find ourselves in the usual places, so if we're not going to be installing
         // swiftly then we can assume that we are running from the final location.
         if cmdAbsolute == nil && !installSwiftly && FileManager.default.fileExists(atPath: swiftlyHomeBin) {
             return swiftlyHomeBin

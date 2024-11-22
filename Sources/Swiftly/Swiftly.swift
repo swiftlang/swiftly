@@ -14,7 +14,6 @@ public struct GlobalOptions: ParsableArguments {
     public init() {}
 }
 
-@main
 public struct Swiftly: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "A utility for installing and managing Swift toolchains.",
@@ -30,6 +29,7 @@ public struct Swiftly: SwiftlyCommand {
             Update.self,
             Init.self,
             SelfUpdate.self,
+            Run.self,
         ]
     )
 

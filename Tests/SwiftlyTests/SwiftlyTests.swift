@@ -123,7 +123,7 @@ class SwiftlyTests: XCTestCase {
     }
 
     class func getTestHomePath(name: String) -> URL {
-        URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(name, isDirectory: true)
+        FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-tests-\(name)-\(UUID())")
     }
 
     /// Create a fresh swiftly home directory, populate it with a base config, and run the provided closure.
@@ -147,6 +147,13 @@ class SwiftlyTests: XCTestCase {
 
         let config = try await self.baseTestConfig()
         try config.save()
+
+        let cwd = FileManager.default.currentDirectoryPath
+        defer {
+            FileManager.default.changeCurrentDirectoryPath(cwd)
+        }
+
+        FileManager.default.changeCurrentDirectoryPath(testHome.path)
 
         try await f()
     }
@@ -283,17 +290,6 @@ class SwiftlyTests: XCTestCase {
     func validateInUse(expected: ToolchainVersion?) async throws {
         let config = try Config.load()
         XCTAssertEqual(config.inUse, expected)
-
-        let executable = SwiftExecutable(path: Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swift"))
-
-        XCTAssertEqual(executable.exists(), expected != nil)
-
-        guard let expected else {
-            return
-        }
-
-        let inUseVersion = try await executable.version()
-        XCTAssertEqual(inUseVersion, expected)
     }
 
     /// Validate that all of the provided toolchains have been installed.

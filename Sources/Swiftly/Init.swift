@@ -54,6 +54,23 @@ internal struct Init: SwiftlyCommand {
             }
         }
 
+        let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
+        let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
+        let willBeOverwritten = Set(["swiftly"]).intersection(swiftlyBinDirContents)
+        if !willBeOverwritten.isEmpty && !overwrite {
+            SwiftlyCore.print("The following existing executables will be overwritten:")
+
+            for executable in willBeOverwritten {
+                SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
+            }
+
+            let proceed = SwiftlyCore.readLine(prompt: "Proceed? [y/N]") ?? "n"
+
+            guard proceed == "y" else {
+                throw Error(message: "Swiftly installation has been cancelled")
+            }
+        }
+
         let shell = if let s = ProcessInfo.processInfo.environment["SHELL"] {
             s
         } else {
@@ -106,18 +123,14 @@ internal struct Init: SwiftlyCommand {
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
 
         let cmd = URL(fileURLWithPath: CommandLine.arguments[0])
-        let systemManaged = try Swiftly.currentPlatform.isSystemManagedBinary(cmd.path)
+        let systemManagedSwiftlyBin = try Swiftly.currentPlatform.systemManagedBinary(CommandLine.arguments[0])
 
         // Don't move the binary if it's already in the right place, this is being invoked inside an xctest, or it is a system managed binary
-        if cmd != swiftlyBin && !cmd.path.hasSuffix("xctest") && !systemManaged {
+        if cmd != swiftlyBin && !cmd.path.hasSuffix("xctest") && systemManagedSwiftlyBin == nil {
             SwiftlyCore.print("Moving swiftly into the installation directory...")
 
             if swiftlyBin.fileExists() {
-                if !overwrite {
-                    throw Error(message: "Swiftly binary already exists. You can try again with `--overwrite` to replace it.")
-                } else {
-                    try FileManager.default.removeItem(at: swiftlyBin)
-                }
+                try FileManager.default.removeItem(at: swiftlyBin)
             }
 
             do {
@@ -201,6 +214,7 @@ internal struct Init: SwiftlyCommand {
                 SwiftlyCore.print("""
                 To begin using installed swiftly from your current shell, first run the following command:
                     \(sourceLine)
+
                 """)
             }
         }

@@ -267,8 +267,60 @@ extension Platform {
         }
     }
 
-    // Find the resting place for the swiftly binary, installing ourselves there if possible.
-    public func findSwiftlyBin(installSwiftly: Bool) throws -> String? {
+    // Install ourselves in the final location
+    public func installSwiftlyBin() throws {
+        // First, let's find out where we are.
+        let cmd = CommandLine.arguments[0]
+        let cmdAbsolute = if cmd.hasPrefix("/") {
+            cmd
+        } else {
+            ([FileManager.default.currentDirectoryPath] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map {
+                $0 + "/" + cmd
+            }.filter {
+                FileManager.default.fileExists(atPath: $0)
+            }.first
+        }
+
+        // We couldn't find ourselves in the usual places. Assume that no installation is necessary
+        // since we were most likely invoked at SWIFTLY_BIN_DIR already.
+        guard let cmdAbsolute else {
+            return
+        }
+
+        // Proceed to installation only if we're in the user home directory, or a non-system location.
+        let userHome = FileManager.default.homeDirectoryForCurrentUser
+        guard cmdAbsolute.hasPrefix(userHome.path + "/") ||
+            (!cmdAbsolute.hasPrefix("/usr/") && !cmdAbsolute.hasPrefix("/opt/") && !cmdAbsolute.hasPrefix("/bin/"))
+        else {
+            return
+        }
+
+        // Proceed only if we're not running in the context of a test.
+        guard !cmdAbsolute.hasSuffix("xctest") else {
+            return
+        }
+
+        // We're already running from where we would be installing ourselves.
+        guard case let swiftlyHomeBin = self.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false).path, cmdAbsolute != swiftlyHomeBin else {
+            return
+        }
+
+        SwiftlyCore.print("Installing swiftly in \(swiftlyHomeBin)...")
+
+        if FileManager.default.fileExists(atPath: swiftlyHomeBin) {
+            try FileManager.default.removeItem(atPath: swiftlyHomeBin)
+        }
+
+        do {
+            try FileManager.default.moveItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
+        } catch {
+            try FileManager.default.copyItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
+            SwiftlyCore.print("Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed.")
+        }
+    }
+
+    // Find the location where swiftly should be executed.
+    public func findSwiftlyBin() throws -> String? {
         let swiftlyHomeBin = self.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false).path
 
         // First, let's find out where we are.
@@ -285,40 +337,19 @@ extension Platform {
 
         // We couldn't find ourselves in the usual places, so if we're not going to be installing
         // swiftly then we can assume that we are running from the final location.
-        if cmdAbsolute == nil && !installSwiftly && FileManager.default.fileExists(atPath: swiftlyHomeBin) {
+        if cmdAbsolute == nil && FileManager.default.fileExists(atPath: swiftlyHomeBin) {
             return swiftlyHomeBin
         }
 
-        // If we are system managed then we know where swiftly should be, no installation necessary.
+        // If we are system managed then we know where swiftly should be.
         let userHome = FileManager.default.homeDirectoryForCurrentUser
         if let cmdAbsolute, !cmdAbsolute.hasPrefix(userHome.path + "/") && (cmdAbsolute.hasPrefix("/usr/") || cmdAbsolute.hasPrefix("/opt/") || cmdAbsolute.hasPrefix("/bin/")) {
             return cmdAbsolute
         }
 
-        // If we're running inside an xctest or we couldn't determine our absolute path then
-        //  we don't install nor do we have a swiftly location for the proxies.
+        // If we're running inside an xctest then we don't have a location for this swiftly.
         guard let cmdAbsolute, !cmdAbsolute.hasSuffix("xctest") else {
             return nil
-        }
-
-        // We're installed and running in our bin directory, return our location
-        if cmdAbsolute == swiftlyHomeBin {
-            return swiftlyHomeBin
-        }
-
-        if installSwiftly {
-            SwiftlyCore.print("Installing swiftly in \(swiftlyHomeBin)...")
-
-            if FileManager.default.fileExists(atPath: swiftlyHomeBin) {
-                try FileManager.default.removeItem(atPath: swiftlyHomeBin)
-            }
-
-            do {
-                try FileManager.default.moveItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
-            } catch {
-                try FileManager.default.copyItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
-                SwiftlyCore.print("Swiftly has been copied into the installation directory. You can remove '\(cmd)'. It is no longer needed.")
-            }
         }
 
         return FileManager.default.fileExists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil

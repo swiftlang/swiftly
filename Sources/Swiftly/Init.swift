@@ -139,7 +139,7 @@ internal struct Init: SwiftlyCommand {
         guard var config else { throw Error(message: "Configuration could not be set") }
 
         // Move our executable over to the correct place
-        let _ = try Swiftly.currentPlatform.findSwiftlyBin(installSwiftly: true)
+        try Swiftly.currentPlatform.installSwiftlyBin()
 
         if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {
             SwiftlyCore.print("Creating shell environment file for the user...")

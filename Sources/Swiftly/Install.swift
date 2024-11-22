@@ -244,7 +244,7 @@ struct Install: SwiftlyCommand {
         var pathChanged = false
 
         // Create proxies if we have a location where we can point them
-        if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin(installSwiftly: false) {
+        if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin() {
             // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
             let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()

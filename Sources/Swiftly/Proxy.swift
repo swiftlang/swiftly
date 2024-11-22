@@ -11,9 +11,32 @@ public enum Proxy {
             }
 
             guard binName != "swiftly" else {
-                // Treat this as a swiftly invocation
-                await Swiftly.main()
-                return
+                // Treat this as a swiftly invocation, but first check that we are installed, bootstrapping
+                //  the installation process if we aren't.
+                let configResult = Result { try Config.load() }
+
+                switch configResult {
+                case .success:
+                    await Swiftly.main()
+                    return
+                case let .failure(err):
+                    guard CommandLine.arguments.count > 0 else { fatalError("argv is not set") }
+
+                    if CommandLine.arguments.count == 1 {
+                        // User ran swiftly with no extra arguments in an uninstalled environment, so we jump directly into
+                        //  an simple init.
+                        try await Init.execute(assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false)
+                        return
+                    } else if CommandLine.arguments.count >= 2 && CommandLine.arguments[1] == "init" {
+                        // Let the user run the init command with their arguments, if any.
+                        await Swiftly.main()
+                        return
+                    } else {
+                        // We've been invoked outside the "init" subcommand and we're not yet configured.
+                        // This will throw if the configuration couldn't be loaded and give the user an actionable message.
+                        throw err
+                    }
+                }
             }
 
             var config = try Config.load()

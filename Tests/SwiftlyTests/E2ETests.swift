@@ -82,7 +82,7 @@ final class E2ETests: SwiftlyTests {
         let extractedSwiftly = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("usr/local/bin/swiftly").path
 #endif
 
-        try Swiftly.currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--verbose", quiet: false)
+        try Swiftly.currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", quiet: false)
 
         let shell = try await Swiftly.currentPlatform.getShell()
 

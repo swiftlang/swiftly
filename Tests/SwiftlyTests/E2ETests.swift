@@ -63,4 +63,35 @@ final class E2ETests: SwiftlyTests {
             try await validateInstalledToolchains([installedToolchain], description: "install latest")
         }
     }
+
+    func testAutomatedWorkflow() async throws {
+        try XCTSkipIf(ProcessInfo.processInfo.environment["SWIFTLY_SYSTEM_MUTATING"] == nil, "Not running test since it mutates the system and SWIFTLY_SYSTEM_MUTATING environment variable is not set. This test should be run in a throw away environment, such as a container.")
+
+        print("Extracting swiftly release")
+#if os(Linux)
+        try Swiftly.currentPlatform.runProgram("tar", "-zxvf", "swiftly.tar.gz", quiet: false)
+#elseif os(macOS)
+        try Swiftly.currentPlatform.runProgram("installer", "-pkg", "swiftly.pkg", "-target", "CurrentUserHomeDirectory", quiet: false)
+#endif
+
+        print("Running 'swiftly init --assume-yes --verbose' to install swiftly and the latest toolchain")
+
+#if os(Linux)
+        let extractedSwiftly = "./swiftly"
+#elseif os(macOS)
+        let extractedSwiftly = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("usr/local/bin/swiftly").path
+#endif
+
+        try Swiftly.currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--verbose", quiet: false)
+
+        let shell = try await Swiftly.currentPlatform.getShell()
+
+        try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh")
+
+        if FileManager.default.fileExists(atPath: "./post-install.sh") {
+            try Swiftly.currentPlatform.runProgram("./post-install.sh")
+        }
+
+        try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swift --version", quiet: false)
+    }
 }

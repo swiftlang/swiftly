@@ -73,7 +73,7 @@ jobs:
         with:
           name: swiftly-tests-x86_64
       - name: Extract and Run Workflow Tests
-        run: mv swiftly-*.tar.gz swiftly.tar.gz && tar zxf test-swiftly.tar.gz && SWIFTLY_SYSTEM_MUTATING=1 ./swiftlyPackageTests.xctest SwiftlyTests.E2ETests/testAutomatedWorkflow
+        run: mv swiftly-*.tar.gz /root/swiftly.tar.gz && mv test-swiftly-tar.gz /root && cd /root && tar zxf test-swiftly.tar.gz && SWIFTLY_SYSTEM_MUTATING=1 ./swiftlyPackageTests.xctest SwiftlyTests.E2ETests/testAutomatedWorkflow
 
   formatcheck:
     name: Format Check

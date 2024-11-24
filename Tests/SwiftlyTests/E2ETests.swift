@@ -97,7 +97,9 @@ final class E2ETests: SwiftlyTests {
         }
         try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "shopt")
 
-        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh")
+        var env = ProcessInfo.processInfo.environment
+        env["BASH_ENV"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".profile").path
+        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)
 
         if FileManager.default.fileExists(atPath: "./post-install.sh") {
             try Swiftly.currentPlatform.runProgram(shell, "./post-install.sh")

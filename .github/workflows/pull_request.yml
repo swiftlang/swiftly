@@ -63,7 +63,7 @@ jobs:
       image: "ubuntu:22.04"
     steps:
       - name: Prepare System
-        run: apt-get update && apt-get -y install ca-certificates gpg
+        run: apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install ca-certificates gpg tzdata
       - name: Download Release
         uses: actions/download-artifact@v4
         with:

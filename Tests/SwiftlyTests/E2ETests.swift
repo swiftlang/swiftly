@@ -101,7 +101,14 @@ final class E2ETests: SwiftlyTests {
         env["BASH_ENV"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".profile").path
         try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)
 
+        // TODO: check if the user is root already before runing post install
         if FileManager.default.fileExists(atPath: "./post-install.sh") {
+#if os(Linux)
+            if !FileManager.default.fileExists(atPath: "/etc/timezone") {
+                // Prevent tzdata package installation from trying to prompt for the time zone
+                try? Swiftly.currentPlatform.runProgram(shell, "echo 'Etc/UTC' > /etc/timezone")
+            }
+#endif
             try Swiftly.currentPlatform.runProgram(shell, "./post-install.sh")
         }
 

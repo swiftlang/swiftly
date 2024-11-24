@@ -86,32 +86,19 @@ final class E2ETests: SwiftlyTests {
 
         let shell = try await Swiftly.currentPlatform.getShell()
 
-        // TODO: remove this
-        print("CHECKING /root/.profile")
-        try Swiftly.currentPlatform.runProgram("cat", "/root/.profile")
-        if FileManager.default.fileExists(atPath: "/root/.bash_profile") {
-            print("FILE EXISTS! /root/.bash_profile")
-        }
-        if FileManager.default.fileExists(atPath: "/root/.bash_login") {
-            print("FILE EXISTS! /root/.bash_login")
-        }
-        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "shopt")
-
         var env = ProcessInfo.processInfo.environment
-        env["BASH_ENV"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".profile").path
-        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)
 
-        // TODO: check if the user is root already before runing post install
+        // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
+        if shell == "/bin/bash" {
+            env["BASH_ENV"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".profile").path
+        }
+
+        try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)
+
         if FileManager.default.fileExists(atPath: "./post-install.sh") {
-#if os(Linux)
-            if !FileManager.default.fileExists(atPath: "/etc/timezone") {
-                // Prevent tzdata package installation from trying to prompt for the time zone
-                try? Swiftly.currentPlatform.runProgram(shell, "echo 'Etc/UTC' > /etc/timezone")
-            }
-#endif
             try Swiftly.currentPlatform.runProgram(shell, "./post-install.sh")
         }
 
-        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swift --version", quiet: false)
+        try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swift --version", quiet: false, env: env)
     }
 }

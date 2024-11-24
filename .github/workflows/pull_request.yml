@@ -95,7 +95,7 @@ jobs:
       - name: Extract and Run Workflow Tests
         run: cp swiftly-*.tar.gz /root/swiftly.tar.gz && cp test-swiftly.tar.gz /root && cd /root && tar zxf test-swiftly.tar.gz && SWIFTLY_SYSTEM_MUTATING=1 ./swiftlyPackageTests.xctest SwiftlyTests.E2ETests/testAutomatedWorkflow
 
-  releasetestzsh:
+  releasetestfish:
     name: Test Release FISH
     needs: releasebuildcheck
     runs-on: ubuntu-latest

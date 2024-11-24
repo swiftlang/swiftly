@@ -63,7 +63,7 @@ jobs:
       image: "ubuntu:22.04"
     steps:
       - name: Prepare System
-        run: apt update && apt -y install ca-certificates gpg
+        run: apt-get update && apt-get -y install ca-certificates gpg
       - name: Download Release
         uses: actions/download-artifact@v4
         with:

@@ -95,6 +95,7 @@ final class E2ETests: SwiftlyTests {
         if FileManager.default.fileExists(atPath: "/root/.bash_login") {
             print("FILE EXISTS! /root/.bash_login")
         }
+        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "shopt")
 
         try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh")
 

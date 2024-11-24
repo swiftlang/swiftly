@@ -89,6 +89,12 @@ final class E2ETests: SwiftlyTests {
         // TODO: remove this
         print("CHECKING /root/.profile")
         try Swiftly.currentPlatform.runProgram("cat", "/root/.profile")
+        if FileManager.default.fileExists(atPath: "/root/.bash_profile") {
+            print("FILE EXISTS! /root/.bash_profile")
+        }
+        if FileManager.default.fileExists(atPath: "/root/.bash_login") {
+            print("FILE EXISTS! /root/.bash_login")
+        }
 
         try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh")
 

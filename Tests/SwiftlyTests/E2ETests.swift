@@ -95,8 +95,8 @@ final class E2ETests: SwiftlyTests {
             env["ZDOTDIR"] = FileManager.default.homeDirectoryForCurrentUser.path
         } else if shell.hasSuffix("fish") {
             env["fish_trace"] = "on"
-            // TODO remove this check
-            try Swiftly.currentPlatform.runProgram(shell, "cat", FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/fish/conf.d/swiftly.fish").path)
+            // TODO: remove this check
+            try Swiftly.currentPlatform.runProgram(shell, "-c", "cat", FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/fish/conf.d/swiftly.fish").path)
         }
 
         try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)

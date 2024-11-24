@@ -91,14 +91,16 @@ final class E2ETests: SwiftlyTests {
         // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
         if shell == "/bin/bash" {
             env["BASH_ENV"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".profile").path
+        } else if shell == "/bin/fish" {
+            env["fish_trace"] = "on"
         }
 
-        try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)
+        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)
 
         if FileManager.default.fileExists(atPath: "./post-install.sh") {
             try Swiftly.currentPlatform.runProgram(shell, "./post-install.sh")
         }
 
-        try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swift --version", quiet: false, env: env)
+        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swift --version", quiet: false, env: env)
     }
 }

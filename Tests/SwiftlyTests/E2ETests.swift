@@ -90,12 +90,12 @@ final class E2ETests: SwiftlyTests {
         print("CHECKING /root/.profile")
         try Swiftly.currentPlatform.runProgram("cat", "/root/.profile")
 
-        try Swiftly.currentPlatform.runProgram(shell, "-i", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh")
+        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh")
 
         if FileManager.default.fileExists(atPath: "./post-install.sh") {
             try Swiftly.currentPlatform.runProgram(shell, "./post-install.sh")
         }
 
-        try Swiftly.currentPlatform.runProgram(shell, "-i", "-l", "-c", "swift --version", quiet: false)
+        try Swiftly.currentPlatform.runProgram(shell, "-v", "-l", "-c", "swift --version", quiet: false)
     }
 }

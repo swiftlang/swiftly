@@ -94,7 +94,7 @@ final class E2ETests: SwiftlyTests {
         } else if shell.hasSuffix("zsh") {
             env["ZDOTDIR"] = FileManager.default.homeDirectoryForCurrentUser.path
         } else if shell.hasSuffix("fish") {
-            env["XDG_CONFIG_HOME"] = "/root/.config"
+            env["XDG_CONFIG_HOME"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config").path
         }
 
         try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)

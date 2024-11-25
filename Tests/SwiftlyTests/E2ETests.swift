@@ -94,7 +94,6 @@ final class E2ETests: SwiftlyTests {
         } else if shell.hasSuffix("zsh") {
             env["ZDOTDIR"] = FileManager.default.homeDirectoryForCurrentUser.path
         } else if shell.hasSuffix("fish") {
-            env["fish_trace"] = "on"
             env["XDG_CONFIG_HOME"] = "/root/.config"
         }
 

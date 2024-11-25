@@ -11,8 +11,40 @@ public protocol HTTPRequestExecutor {
 
 /// An `HTTPRequestExecutor` backed by the shared `HTTPClient`.
 internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
+    let httpClient: HTTPClient
+
+    public init() {
+        var proxy: HTTPClient.Configuration.Proxy?
+
+        func getProxyFromEnv(keys: [String]) -> HTTPClient.Configuration.Proxy? {
+            let environment = ProcessInfo.processInfo.environment
+            for key in keys {
+                if let proxyString = environment[key],
+                   let url = URL(string: proxyString),
+                   let host = url.host,
+                   let port = url.port {
+                    return .server(host: host, port: port)
+                }
+            }
+            return nil
+        }
+
+        if let httpProxy = getProxyFromEnv(keys: ["http_proxy", "HTTP_PROXY"]) {
+            proxy = httpProxy
+        }
+        if let httpsProxy = getProxyFromEnv(keys: ["https_proxy", "HTTPS_PROXY"]) {
+            proxy = httpsProxy
+        }
+
+        if proxy != nil {
+            self.httpClient = HTTPClient(eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy))
+        } else {
+            self.httpClient = HTTPClient.shared
+        }
+    }
+
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
-        try await HTTPClient.shared.execute(request, timeout: timeout)
+        try await httpClient.execute(request, timeout: timeout)
     }
 }
 

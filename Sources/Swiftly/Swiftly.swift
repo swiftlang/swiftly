@@ -5,7 +5,7 @@ import LinuxPlatform
 #elseif os(macOS)
 import MacOSPlatform
 #endif
-import SwiftlyCore    
+import SwiftlyCore
 
 public struct GlobalOptions: ParsableArguments {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")

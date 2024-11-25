@@ -10,7 +10,7 @@ public protocol HTTPRequestExecutor {
 }
 
 /// An `HTTPRequestExecutor` backed by the shared `HTTPClient`.
-internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
+internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     let httpClient: HTTPClient
 
     public init() {
@@ -22,7 +22,8 @@ internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
                 if let proxyString = environment[key],
                    let url = URL(string: proxyString),
                    let host = url.host,
-                   let port = url.port {
+                   let port = url.port
+                {
                     return .server(host: host, port: port)
                 }
             }
@@ -43,8 +44,14 @@ internal struct HTTPRequestExecutorImpl: HTTPRequestExecutor {
         }
     }
 
+    deinit {
+        if httpClient !== HTTPClient.shared {
+            try? httpClient.syncShutdown()
+        }
+    }
+
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
-        try await httpClient.execute(request, timeout: timeout)
+        try await self.httpClient.execute(request, timeout: timeout)
     }
 }
 

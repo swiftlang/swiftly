@@ -55,5 +55,5 @@ jobs:
       linux_os_versions: "[\"jammy\"]"
       linux_exclude_swift_versions: "[{\"swift_version\": \"nightly-main\"},{\"swift_version\": \"nightly-6.0\"},{\"swift_version\": \"5.8\"},{\"swift_version\": \"5.9\"},{\"swift_version\": \"5.10\"}]"
       linux_pre_build_command: ./scripts/prep-gh-action.sh
-      linux_build_command: swift run swiftformat --lint --dryrun .
+      linux_build_command: swift run swiftformat --lint --dryrun . || (echo "Please run 'swift run swiftformat .' to format the source code."; exit 1)
       enable_windows_checks: false

@@ -70,7 +70,7 @@ public struct MacOS: Platform {
             if !toolchainDir.fileExists() {
                 try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: false)
             }
-            try runProgram("pkgutil", "--verbose", "--expand", tmpFile.path, tmpDir.path)
+            try runProgram("pkgutil", "--verbose", "--expand", tmpFile.path, tmpDir.path, quiet: !verbose)
             // There's a slight difference in the location of the special Payload file between official swift packages
             // and the ones that are mocked here in the test framework.
             var payload = tmpDir.appendingPathComponent("Payload")

@@ -73,6 +73,17 @@ Uninstall this toolchain after you're finished with it:
 $ swiftly uninstall main-snapshot
 ```
 
+# Proxy
+
+Swiftly downloads a list of toolchains from https://www.swift.org/ and retrieves them from Apple/Akamai CDN via https://download.swift.org.
+If your environment requires a proxy, Swiftly will attempt to use the standard environment variables `http_proxy`, `HTTP_PROXY`, `https_proxy` or `HTTPS_PROXY` to determine which proxy server to use instead of making a direct connection.
+
+To download latest nightly snapshot using a proxy:
+```
+$ export https_proxy=http://proxy:3128
+$ swiftly install main-snapshot
+```
+
 # See Also:
 
 - [Install Toolchains](install-toolchains)

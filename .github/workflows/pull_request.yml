@@ -43,6 +43,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: swiftly-release-x86_64
           path: .build/release/swiftly-*.tar.gz
           if-no-files-found: error
           retention-days: 1
@@ -55,5 +56,27 @@ jobs:
       linux_os_versions: "[\"jammy\"]"
       linux_exclude_swift_versions: "[{\"swift_version\": \"nightly-main\"},{\"swift_version\": \"nightly-6.0\"},{\"swift_version\": \"5.8\"},{\"swift_version\": \"5.9\"},{\"swift_version\": \"5.10\"}]"
       linux_pre_build_command: ./scripts/prep-gh-action.sh
-      linux_build_command: swift run swiftformat --lint --dryrun .
+      linux_build_command: swift run swiftformat --lint --dryrun . || (echo "Please run 'swift run swiftformat .' to format the source code."; exit 1)
       enable_windows_checks: false
+
+  docscheck:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    container:
+      image: "swift:6.0-noble"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh && ./scripts/install-libarchive.sh
+      - name: Generate Swiftly CLI Reference and Check for Differences
+        run: swift package plugin --allow-writing-to-package-directory generate-docs-reference && git config --global --add safe.directory $(pwd) && git diff --exit-code Documentation/SwiftlyDocs.docc/swiftly-cli-reference.md || (echo "The documentation hasn't been updated with the latest swiftly command-line reference. Please run 'swift package plugin generate-docs-reference' and commit/push the changes."; exit 1)
+      - name: Generate Documentation Set
+        run: swift package --allow-writing-to-directory .build/docs generate-documentation --target SwiftlyDocs --output-path .build/docs
+      - name: Upload Documentation Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftly-docs
+          path: .build/docs/**
+          if-no-files-found: error
+          retention-days: 1

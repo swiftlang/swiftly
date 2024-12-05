@@ -11,6 +11,9 @@ public struct GlobalOptions: ParsableArguments {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
     var assumeYes: Bool = false
 
+    @Flag(help: "Enable verbose reporting from swiftly")
+    var verbose: Bool = false
+
     public init() {}
 }
 

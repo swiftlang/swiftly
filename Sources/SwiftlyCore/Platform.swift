@@ -64,7 +64,7 @@ public protocol Platform {
 
     /// Installs a toolchain from a file on disk pointed to by the given URL.
     /// After this completes, a user can “use” the toolchain.
-    func install(from: URL, version: ToolchainVersion) throws
+    func install(from: URL, version: ToolchainVersion, verbose: Bool) throws
 
     /// Extract swiftly from the provided downloaded archive and install
     /// ourselves from that.
@@ -98,8 +98,7 @@ public protocol Platform {
 
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.
-    /// On Linux, signature verification will be skipped if gpg is not installed.
-    func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws
+    func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL, verbose: Bool) async throws
 
     /// Detect the platform definition for this platform.
     func detectPlatform(disableConfirmation: Bool, platform: String?) async throws -> PlatformDefinition
@@ -268,32 +267,98 @@ extension Platform {
         }
     }
 
-    public func systemManagedBinary(_ cmd: String) throws -> String? {
-        let userHome = FileManager.default.homeDirectoryForCurrentUser
-        let binLocs = [cmd] + ProcessInfo.processInfo.environment["PATH"]!.components(separatedBy: ":").map { $0 + "/" + cmd }
-        var bin: String?
-        for binLoc in binLocs {
-            if FileManager.default.fileExists(atPath: binLoc) {
-                bin = binLoc
-                break
-            }
-        }
-        guard let bin = bin else {
-            throw Error(message: "Could not locate source of \(cmd) binary in either the PATH, relative, or absolute path")
+    // Install ourselves in the final location
+    public func installSwiftlyBin() throws {
+        // First, let's find out where we are.
+        let cmd = CommandLine.arguments[0]
+        let cmdAbsolute = if cmd.hasPrefix("/") {
+            cmd
+        } else {
+            ([FileManager.default.currentDirectoryPath] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map {
+                $0 + "/" + cmd
+            }.filter {
+                FileManager.default.fileExists(atPath: $0)
+            }.first
         }
 
-        // If the binary is in the user's home directory, or is not in system locations ("/usr", "/opt", "/bin")
-        //  then it is expected to be outside of a system package location and we manage the binary ourselves.
-        if bin.hasPrefix(userHome.path + "/") || (!bin.hasPrefix("/usr") && !bin.hasPrefix("/opt") && !bin.hasPrefix("/bin")) {
+        // We couldn't find ourselves in the usual places. Assume that no installation is necessary
+        // since we were most likely invoked at SWIFTLY_BIN_DIR already.
+        guard let cmdAbsolute else {
+            return
+        }
+
+        // Proceed to installation only if we're in the user home directory, or a non-system location.
+        let userHome = FileManager.default.homeDirectoryForCurrentUser
+        guard cmdAbsolute.hasPrefix(userHome.path + "/") ||
+            (!cmdAbsolute.hasPrefix("/usr/") && !cmdAbsolute.hasPrefix("/opt/") && !cmdAbsolute.hasPrefix("/bin/"))
+        else {
+            return
+        }
+
+        // Proceed only if we're not running in the context of a test.
+        guard !cmdAbsolute.hasSuffix("xctest") else {
+            return
+        }
+
+        // We're already running from where we would be installing ourselves.
+        guard case let swiftlyHomeBin = self.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false).path, cmdAbsolute != swiftlyHomeBin else {
+            return
+        }
+
+        SwiftlyCore.print("Installing swiftly in \(swiftlyHomeBin)...")
+
+        if FileManager.default.fileExists(atPath: swiftlyHomeBin) {
+            try FileManager.default.removeItem(atPath: swiftlyHomeBin)
+        }
+
+        do {
+            try FileManager.default.moveItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
+        } catch {
+            try FileManager.default.copyItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
+            SwiftlyCore.print("Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed.")
+        }
+    }
+
+    // Find the location where swiftly should be executed.
+    public func findSwiftlyBin() throws -> String? {
+        let swiftlyHomeBin = self.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false).path
+
+        // First, let's find out where we are.
+        let cmd = CommandLine.arguments[0]
+        let cmdAbsolute = if cmd.hasPrefix("/") {
+            cmd
+        } else {
+            ([FileManager.default.currentDirectoryPath] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map {
+                $0 + "/" + cmd
+            }.filter {
+                FileManager.default.fileExists(atPath: $0)
+            }.first
+        }
+
+        // We couldn't find ourselves in the usual places, so if we're not going to be installing
+        // swiftly then we can assume that we are running from the final location.
+        if cmdAbsolute == nil && FileManager.default.fileExists(atPath: swiftlyHomeBin) {
+            return swiftlyHomeBin
+        }
+
+        // If we are system managed then we know where swiftly should be.
+        let userHome = FileManager.default.homeDirectoryForCurrentUser
+        if let cmdAbsolute, !cmdAbsolute.hasPrefix(userHome.path + "/") && (cmdAbsolute.hasPrefix("/usr/") || cmdAbsolute.hasPrefix("/opt/") || cmdAbsolute.hasPrefix("/bin/")) {
+            return cmdAbsolute
+        }
+
+        // If we're running inside an xctest then we don't have a location for this swiftly.
+        guard let cmdAbsolute, !cmdAbsolute.hasSuffix("xctest") else {
             return nil
         }
 
-        return bin
+        return FileManager.default.fileExists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil
     }
 
     public func findToolchainBinDir(_ toolchain: ToolchainVersion) -> URL {
         self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
     }
+
 #endif
 }
 

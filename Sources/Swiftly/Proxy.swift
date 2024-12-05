@@ -31,6 +31,10 @@ public enum Proxy {
                         // Let the user run the init command with their arguments, if any.
                         await Swiftly.main()
                         return
+                    } else if CommandLine.arguments.count == 2 && (CommandLine.arguments[1] == "--help" || CommandLine.arguments[1] == "--experimental-dump-help") {
+                        // Allow the showing of help information
+                        await Swiftly.main()
+                        return
                     } else {
                         // We've been invoked outside the "init" subcommand and we're not yet configured.
                         // This will throw if the configuration couldn't be loaded and give the user an actionable message.

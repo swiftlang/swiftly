@@ -99,6 +99,7 @@ struct Install: SwiftlyCommand {
             &config,
             useInstalledToolchain: self.use,
             verifySignature: self.verify,
+            verbose: self.root.verbose,
             assumeYes: self.root.assumeYes
         )
 
@@ -116,7 +117,7 @@ struct Install: SwiftlyCommand {
             guard let postInstallFile = self.postInstallFile else {
                 throw Error(message: """
 
-                There are some system dependencies that should be installed before using this toolchain.
+                There are some dependencies that should be installed before using this toolchain.
                 You can run the following script as the system administrator (e.g. root) to prepare
                 your system:
 
@@ -133,6 +134,7 @@ struct Install: SwiftlyCommand {
         _ config: inout Config,
         useInstalledToolchain: Bool,
         verifySignature: Bool,
+        verbose: Bool,
         assumeYes: Bool
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
@@ -232,29 +234,22 @@ struct Install: SwiftlyCommand {
             try await Swiftly.currentPlatform.verifySignature(
                 httpClient: SwiftlyCore.httpClient,
                 archiveDownloadURL: url,
-                archive: tmpFile
+                archive: tmpFile,
+                verbose: verbose
             )
         }
 
-        try Swiftly.currentPlatform.install(from: tmpFile, version: version)
+        try Swiftly.currentPlatform.install(from: tmpFile, version: version, verbose: verbose)
 
         var pathChanged = false
 
-        // Don't create the proxies in the tests
-        if CommandLine.arguments.count > 0 && !CommandLine.arguments[0].hasSuffix("xctest") {
+        // Create proxies if we have a location where we can point them
+        if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin() {
             // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-            let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly", isDirectory: false)
-            let systemManagedSwiftlyBin = try Swiftly.currentPlatform.systemManagedBinary(CommandLine.arguments[0])
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
             let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
             let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(version)
             let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinDir.path)
-
-            let proxyTo = if let systemManagedSwiftlyBin = systemManagedSwiftlyBin {
-                systemManagedSwiftlyBin
-            } else {
-                swiftlyBin.path
-            }
 
             let existingProxies = swiftlyBinDirContents.filter { bin in
                 do {

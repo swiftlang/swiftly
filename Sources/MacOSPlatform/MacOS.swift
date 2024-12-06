@@ -49,7 +49,7 @@ public struct MacOS: Platform {
         nil
     }
 
-    public func install(from tmpFile: URL, version: ToolchainVersion) throws {
+    public func install(from tmpFile: URL, version: ToolchainVersion, verbose: Bool) throws {
         guard tmpFile.fileExists() else {
             throw Error(message: "\(tmpFile) doesn't exist")
         }
@@ -60,23 +60,26 @@ public struct MacOS: Platform {
 
         if SwiftlyCore.mockedHomeDir == nil {
             SwiftlyCore.print("Installing package in user home directory...")
-            try runProgram("installer", "-pkg", tmpFile.path, "-target", "CurrentUserHomeDirectory")
+            try runProgram("installer", "-verbose", "-pkg", tmpFile.path, "-target", "CurrentUserHomeDirectory", quiet: !verbose)
         } else {
             // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
             //  the installer will not install to an arbitrary path, only a volume or user home directory.
+            SwiftlyCore.print("Expanding pkg...")
             let tmpDir = self.getTempFilePath()
             let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent("\(version.identifier).xctoolchain", isDirectory: true)
             if !toolchainDir.fileExists() {
                 try FileManager.default.createDirectory(at: toolchainDir, withIntermediateDirectories: false)
             }
-            try runProgram("pkgutil", "--expand", tmpFile.path, tmpDir.path)
+            try runProgram("pkgutil", "--verbose", "--expand", tmpFile.path, tmpDir.path, quiet: !verbose)
             // There's a slight difference in the location of the special Payload file between official swift packages
             // and the ones that are mocked here in the test framework.
             var payload = tmpDir.appendingPathComponent("Payload")
             if !payload.fileExists() {
                 payload = tmpDir.appendingPathComponent("\(version.identifier)-osx-package.pkg/Payload")
             }
-            try runProgram("tar", "-C", toolchainDir.path, "-xf", payload.path)
+
+            SwiftlyCore.print("Untarring pkg Payload...")
+            try runProgram("tar", "-C", toolchainDir.path, "-xvf", payload.path, quiet: !verbose)
         }
     }
 
@@ -146,7 +149,7 @@ public struct MacOS: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID()).pkg")
     }
 
-    public func verifySignature(httpClient _: SwiftlyHTTPClient, archiveDownloadURL _: URL, archive _: URL) async throws {
+    public func verifySignature(httpClient _: SwiftlyHTTPClient, archiveDownloadURL _: URL, archive _: URL, verbose _: Bool) async throws {
         // No signature verification is required on macOS since the pkg files have their own signing
         //  mechanism and the swift.org downloadables are trusted by stock macOS installations.
     }

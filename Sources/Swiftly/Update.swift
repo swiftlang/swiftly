@@ -113,6 +113,7 @@ struct Update: SwiftlyCommand {
             &config,
             useInstalledToolchain: config.inUse == parameters.oldToolchain,
             verifySignature: self.verify,
+            verbose: self.root.verbose,
             assumeYes: self.root.assumeYes
         )
 

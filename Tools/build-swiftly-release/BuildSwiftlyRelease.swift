@@ -196,7 +196,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     var identifier: String = "org.swift.swiftly"
 #elseif os(Linux)
     @Flag(name: .long, help: "Use RHEL UBI9 as the supported Linux to build a release instead of Amazon Linux 2")
-    var useRhelUbi9: Bool
+    var useRhelUbi9: Bool = false
 #endif
 
     @Argument(help: "Version of swiftly to build the release.")

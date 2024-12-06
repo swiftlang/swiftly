@@ -374,7 +374,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 #if arch(arm64)
         let releaseArchive = "\(releaseDir)/swiftly-\(version)-aarch64.tar.gz"
 #else
-        let releaseArchive = "\(releaseDir)/swiftly-\(version).tar.gz"
+        let releaseArchive = "\(releaseDir)/swiftly-\(version)-x86_64.tar.gz"
 #endif
 
         try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly", "LICENSE.txt")

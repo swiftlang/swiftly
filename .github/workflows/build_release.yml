@@ -7,7 +7,7 @@ on:
         description: "Version of swiftly to build release artifacts"
         required: true
         type: string
-        default: "0.3.0"
+        default: "0.4.0-dev"
       skip:
         description: "Perform release checks, such as the git tag, and swift version, or '--skip' to skip that."
         required: true
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Build Release Artifact
-        run: swift run build-swiftly-release ${{ inputs.skip }} ${{ inputs.version }}
+        run: swift run build-swiftly-release --use-rhel-ubi9 ${{ inputs.skip }} ${{ inputs.version }}
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:

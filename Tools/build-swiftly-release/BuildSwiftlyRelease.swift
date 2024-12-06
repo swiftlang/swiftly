@@ -295,12 +295,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     }
 
     func buildLinuxRelease() async throws {
-        #if os(Linux)
+#if os(Linux)
         // Check system requirements
         guard isSupportedLinux(useRhelUbi9: self.useRhelUbi9) else {
             throw Error(message: "Linux releases must be made from specific distributions so that the binary can be used everyone else because it has the oldest version of glibc for maximum compatibility with other versions of Linux. Please try again with \(!self.useRhelUbi9 ? "Amazon Linux 2" : "RedHat UBI 9").")
         }
-        #endif
+#endif
 
         // TODO: turn these into checks that the system meets the criteria for being capable of using the toolchain + checking for packages, not tools
         let curl = try await self.assertTool("curl", message: "Please install curl with `yum install curl`")

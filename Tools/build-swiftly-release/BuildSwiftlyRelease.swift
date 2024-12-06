@@ -40,6 +40,10 @@ public func runProgramEnv(_ args: String..., quiet: Bool = false, env: [String: 
 }
 
 public func runProgram(_ args: String..., quiet: Bool = false) throws {
+    try runProgram(args, quiet: quiet)
+}
+
+public func runProgram(_ args: [String], quiet: Bool = false) throws {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = args
@@ -189,6 +193,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     @Option(help: "Package identifier of macOS package")
     var identifier: String = "org.swift.swiftly"
 #endif
+
+    @Flag(help: "Produce a swiftly-test.tar.gz that has a standalone test suite to test the released bundle.")
+    var tests: Bool = false
 
     @Argument(help: "Version of swiftly to build the release.")
     var version: String
@@ -380,11 +387,33 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly", "LICENSE.txt")
 
         print(releaseArchive)
+
+        if self.tests {
+            try runProgram(swift, "build", "--build-tests", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig")
+
+            // Copy swift standard libraries to the build directory to bundle them with the test executable
+            let swiftLibEnum = FileManager.default.enumerator(atPath: "/usr/lib/swift")
+            var soFiles: [String] = []
+
+            while let file = swiftLibEnum?.nextObject() as? String {
+                if file.hasSuffix(".so") {
+                    let baseName = file.split(separator: "/").last!
+                    try? FileManager.default.removeItem(atPath: cwd + "/.build/debug/" + baseName)
+                    try FileManager.default.copyItem(atPath: "/usr/lib/swift/" + file, toPath: cwd + "/.build/debug/" + baseName)
+                    soFiles.append(String(baseName))
+                }
+            }
+
+            try runProgram([tar, "--directory=\(cwd + "/.build/debug")", "-czf", "\(cwd + "/.build/debug/test-swiftly.tar.gz")", "swiftlyPackageTests.xctest"] + soFiles)
+
+            print(".build/debug/test-swiftly.tar.gz")
+        }
     }
 
     func buildMacOSRelease(cert: String?, identifier: String) async throws {
         // Check system requirements
         let git = try await self.assertTool("git", message: "Please install git with either `xcode-select --install` or `brew install git`")
+        let tar = try await self.assertTool("tar", message: "Tar not found")
 
         let swift = try await checkSwiftRequirement()
 
@@ -438,6 +467,16 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 identifier,
                 ".build/release/swiftly-\(self.version).pkg"
             )
+        }
+
+        print(".build/release/swiftly-\(self.version).pkg")
+
+        if self.tests {
+            try runProgram(swift, "build", "--build-tests")
+
+            try runProgram([tar, "--directory=.build/debug", "-czf", ".build/debug/test-swiftly.tar.gz", "swiftlyPackageTests.xctest"])
+
+            print(".build/debug/test-swiftly.tar.gz")
         }
     }
 }

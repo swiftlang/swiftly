@@ -63,4 +63,46 @@ final class E2ETests: SwiftlyTests {
             try await validateInstalledToolchains([installedToolchain], description: "install latest")
         }
     }
+
+    func testAutomatedWorkflow() async throws {
+        try XCTSkipIf(ProcessInfo.processInfo.environment["SWIFTLY_SYSTEM_MUTATING"] == nil, "Not running test since it mutates the system and SWIFTLY_SYSTEM_MUTATING environment variable is not set. This test should be run in a throw away environment, such as a container.")
+
+        print("Extracting swiftly release")
+#if os(Linux)
+        try Swiftly.currentPlatform.runProgram("tar", "-zxvf", "swiftly.tar.gz", quiet: false)
+#elseif os(macOS)
+        try Swiftly.currentPlatform.runProgram("installer", "-pkg", "swiftly.pkg", "-target", "CurrentUserHomeDirectory", quiet: false)
+#endif
+
+        print("Running 'swiftly init --assume-yes --verbose' to install swiftly and the latest toolchain")
+
+#if os(Linux)
+        let extractedSwiftly = "./swiftly"
+#elseif os(macOS)
+        let extractedSwiftly = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("usr/local/bin/swiftly").path
+#endif
+
+        try Swiftly.currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--skip-install", quiet: false)
+
+        let shell = try await Swiftly.currentPlatform.getShell()
+
+        var env = ProcessInfo.processInfo.environment
+
+        // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
+        if shell.hasSuffix("bash") {
+            env["BASH_ENV"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".profile").path
+        } else if shell.hasSuffix("zsh") {
+            env["ZDOTDIR"] = FileManager.default.homeDirectoryForCurrentUser.path
+        } else if shell.hasSuffix("fish") {
+            env["XDG_CONFIG_HOME"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config").path
+        }
+
+        try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", env: env)
+
+        if FileManager.default.fileExists(atPath: "./post-install.sh") {
+            try Swiftly.currentPlatform.runProgram(shell, "./post-install.sh")
+        }
+
+        try Swiftly.currentPlatform.runProgram(shell, "-l", "-c", "swift --version", quiet: false, env: env)
+    }
 }

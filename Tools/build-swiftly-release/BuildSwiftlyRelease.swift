@@ -297,7 +297,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     func buildLinuxRelease() async throws {
         #if os(Linux)
         // Check system requirements
-        guard isSupportedLinux(self.useRhelUbi9) else {
+        guard isSupportedLinux(useRhelUbi9: self.useRhelUbi9) else {
             throw Error(message: "Linux releases must be made from specific distributions so that the binary can be used everyone else because it has the oldest version of glibc for maximum compatibility with other versions of Linux. Please try again with \(!self.useRhelUbi9 ? "Amazon Linux 2" : "RedHat UBI 9").")
         }
         #endif

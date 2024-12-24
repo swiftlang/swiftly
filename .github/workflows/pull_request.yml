@@ -39,7 +39,7 @@ jobs:
       - name: Perform swift toolchain post-installation
         run: chmod u+x post-install.sh && ./post-install.sh
       - name: Build and Test
-        run: CC=clang /root/.local/share/swiftly/bin/swiftly run ./scripts/install-libarchive.sh && /root/local/.share/swiftly/bin/swift test
+        run: CC=clang /root/.local/share/swiftly/bin/swiftly run ./scripts/install-libarchive.sh && /root/.local/share/swiftly/bin/swift test
 
   tests:
     name: Test

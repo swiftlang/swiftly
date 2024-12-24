@@ -37,7 +37,7 @@ jobs:
       - name: Install selected swift toolchain
         run: /root/.local/share/swiftly/bin/swiftly install --post-install-file=post-install.sh
       - name: Perform swift toolchain post-installation
-        run: ./post-install.sh
+        run: chmod u+x post-install.sh && ./post-install.sh
       - name: Build and Test
         run: ./scripts/install-libarchive.sh && /root/local/.share/swiftly/bin/swift test
 

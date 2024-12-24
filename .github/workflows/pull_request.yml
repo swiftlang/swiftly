@@ -116,7 +116,7 @@ jobs:
     name: Documentation Check
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:22.04
+      image: ubuntu:24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

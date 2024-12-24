@@ -34,11 +34,13 @@ jobs:
       - name: Prepare image
         run: ./scripts/prep-gh-action.sh
       - name: Install swiftly
-        run: curl -O https://download.swift.org/swiftly/linux/swiftly-0.4.0-dev-x86_64.tar.gz && tar zxf swiftly-*.tar.gz && mv swiftly /usr/bin && swiftly init -y --skip-install && . /root/.local/share/swiftly/env.sh && echo "PATH=$PATH" >> "$GITHUB_ENV"
+        run: curl -O https://download.swift.org/swiftly/linux/swiftly-0.4.0-dev-x86_64.tar.gz && tar zxf swiftly-*.tar.gz && mv swiftly /usr/bin && swiftly init -y --skip-install && . /root/.local/share/swiftly/env.sh && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "PATH=$PATH" "$GITHUB_ENV"
       - name: Install selected swift toolchain
-        run: swiftly install --post-install-file=post-install.sh && swift --version
+        run: swiftly install --post-install-file=post-install.sh
       - name: Perform swift toolchain post-installation
         run: chmod u+x post-install.sh && ./post-install.sh
+      - name: Display swift version
+        run: swift --version
       - name: Build and Test
         run: CC=clang swiftly run ./scripts/install-libarchive.sh && swift test
 

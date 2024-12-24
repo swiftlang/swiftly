@@ -34,7 +34,7 @@ jobs:
       - name: Prepare image
         run: ./scripts/prep-gh-action.sh
       - name: Install swiftly
-        run: curl -O https://download.swift.org/swiftly/linux/swiftly-0.4.0-dev-x86_64.tar.gz && tar zxf swiftly-*.tar.gz && mv swiftly /usr/bin && swiftly init --skip-install
+        run: curl -O https://download.swift.org/swiftly/linux/swiftly-0.4.0-dev-x86_64.tar.gz && tar zxf swiftly-*.tar.gz && mv swiftly /usr/bin && swiftly init --skip-install && . "/root/.local/share/swiftly/env.sh" && hash -r
       - name: Install selected swift toolchain
         run: swiftly install --post-install-file=post-install.sh
       - name: Perform swift toolchain post-installation

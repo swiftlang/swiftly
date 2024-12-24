@@ -23,6 +23,7 @@ jobs:
     name: Test Self Hosted
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         container: ["ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
     container:
@@ -39,7 +40,7 @@ jobs:
       - name: Perform swift toolchain post-installation
         run: chmod u+x post-install.sh && ./post-install.sh
       - name: Build and Test
-        run: CC=clang /root/.local/share/swiftly/bin/swiftly run ./scripts/install-libarchive.sh && /root/.local/share/swiftly/bin/swift test
+        run: CC=clang /root/.local/share/swiftly/bin/swiftly run ./scripts/install-libarchive.sh && /root/.local/share/swiftly/bin/swiftly run swift test
 
   tests:
     name: Test

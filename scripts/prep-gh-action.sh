@@ -1,6 +1,6 @@
 #!/bin/bash
 
-apt-get --help && apt-get update && apt-get -y install curl make gpg
+apt-get --help && apt-get update && TZ=Etc/UTC apt-get -y install curl make gpg tzdata
 yum --help && (curl --help && yum -y install curl) && yum install make gpg
 
 (cat /etc/os-release | grep bookworm) && apt-get -y install libstdc++-12-dev gnupg2

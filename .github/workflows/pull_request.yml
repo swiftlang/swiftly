@@ -35,7 +35,7 @@ jobs:
       - name: Install swiftly
         run: curl -O https://download.swift.org/swiftly/linux/swiftly-0.4.0-dev-x86_64.tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init --skip-install
       - name: Install selected swift toolchain
-        run: /root/.local/share/swiftly/bin/swiftly install --post-install=post-install.sh
+        run: /root/.local/share/swiftly/bin/swiftly install --post-install-file=post-install.sh
       - name: Perform swift toolchain post-installation
         run: ./post-install.sh
       - name: Build and Test

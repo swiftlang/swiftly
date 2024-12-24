@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Prepare image
+        run: ./scripts/prep-gh-action.sh
       - name: Install swiftly
         run: curl -O https://download.swift.org/swiftly/linux/swiftly-0.4.0-dev-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init --skip-install
       - name: Install selected swift toolchain
@@ -37,7 +39,7 @@ jobs:
       - name: Perform swift toolchain post-installation
         run: ./post-install.sh
       - name: Build and Test
-        run: ./scripts/prep-gh-action.sh && ./scripts/install-libarchive.sh && /root/local/.share/swiftly/bin/swift test
+        run: ./scripts/install-libarchive.sh && /root/local/.share/swiftly/bin/swift test
 
   tests:
     name: Test

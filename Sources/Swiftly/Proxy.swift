@@ -56,7 +56,13 @@ public enum Proxy {
                 throw Error(message: "No swift toolchain could be selected from either from a .swift-version file, or the default. You can try using `swiftly install <toolchain version>` to install one.")
             }
 
-            try await Swiftly.currentPlatform.proxy(toolchain, binName, Array(CommandLine.arguments[1...]))
+            // Prevent circularities with a memento environment variable
+            guard ProcessInfo.processInfo.environment["SWIFTLY_PROXY_IN_PROGRESS"] == nil else {
+                throw Error(message: "Circular swiftly proxy invocation")
+            }
+            let env = ["SWIFTLY_PROXY_IN_PROGRESS": "1"]
+
+            try await Swiftly.currentPlatform.proxy(toolchain, binName, Array(CommandLine.arguments[1...]), env)
         } catch let terminated as RunProgramError {
             exit(terminated.exitCode)
         } catch let error as Error {

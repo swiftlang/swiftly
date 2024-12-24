@@ -35,6 +35,8 @@ jobs:
         run: ./scripts/prep-gh-action.sh
       - name: Install swiftly
         run: curl -O https://download.swift.org/swiftly/linux/swiftly-0.4.0-dev-x86_64.tar.gz && tar zxf swiftly-*.tar.gz && mv swiftly /usr/bin && swiftly init -y --skip-install
+      - name: Show environment
+        run: cat "/root/.local/share/swiftly/env.sh"
       - name: Update environment
         run: . "/root/.local/share/swiftly/env.sh" && echo "GITHUB_ENV=$GITHUB_ENV" && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "PATH=$PATH" "$GITHUB_ENV"
       - name: Install selected swift toolchain

@@ -35,19 +35,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh
-      - name: Install swiftly
-        run: bash -c 'curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install'
-      - name: Update environment
-        run: bash -c '. "/root/.local/share/swiftly/env.sh" && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"'
-      - name: Install selected swift toolchain
-        run: swiftly install --post-install-file=post-install.sh
-      - name: Perform swift toolchain post-installation
-        run: chmod u+x post-install.sh && ./post-install.sh
-      - name: Display swift version
-        run: swift --version
+        run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build and Test
-        run: CC=clang swiftly run ./scripts/install-libarchive.sh && swift test
+        run: swift test
 
   tests:
     name: Test
@@ -56,7 +46,7 @@ jobs:
       linux_os_versions: "[\"jammy\"]"
       # We only care about the current stable release, because that's where we make our swiftly releases
       linux_exclude_swift_versions: "[{\"swift_version\": \"nightly-main\"},{\"swift_version\": \"nightly-6.0\"},{\"swift_version\": \"5.8\"},{\"swift_version\": \"5.9\"},{\"swift_version\": \"5.10\"}]"
-      linux_pre_build_command: ./scripts/prep-gh-action.sh && ./scripts/install-libarchive.sh
+      linux_pre_build_command: ./scripts/prep-gh-action.sh
       enable_windows_checks: false
 
   releasebuildcheck:
@@ -68,17 +58,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh
-      - name: Install swiftly
-        run: bash -c 'curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install'
-      - name: Update environment
-        run: bash -c '. "/root/.local/share/swiftly/env.sh" && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"'
-      - name: Install selected swift toolchain
-        run: swiftly install --post-install-file=post-install.sh
-      - name: Perform swift toolchain post-installation
-        run: chmod u+x post-install.sh && ./post-install.sh
-      - name: Display swift version
-        run: swift --version
+        run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build Artifact
         run: swift run build-swiftly-release --use-rhel-ubi9 --skip "999.0.0"
       - name: Upload Artifact
@@ -98,17 +78,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh
-      - name: Install swiftly
-        run: bash -c 'curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install'
-      - name: Update environment
-        run: bash -c '. "/root/.local/share/swiftly/env.sh" && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"'
-      - name: Install selected swift toolchain
-        run: swiftly install --post-install-file=post-install.sh
-      - name: Perform swift toolchain post-installation
-        run: chmod u+x post-install.sh && ./post-install.sh
-      - name: Display swift version
-        run: swift --version
+        run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Check format
         run: swift run swiftformat --lint --dryrun . || (echo "Please run 'swift run swiftformat .' to format the source code."; exit 1)
 
@@ -123,19 +93,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh
-      - name: Install swiftly
-        run: bash -c 'curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install'
-      - name: Update environment
-        run: bash -c '. "/root/.local/share/swiftly/env.sh" && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"'
-      - name: Install selected swift toolchain
-        run: swiftly install --post-install-file=post-install.sh
-      - name: Perform swift toolchain post-installation
-        run: chmod u+x post-install.sh && ./post-install.sh
-      - name: Display swift version
-        run: swift --version
-      - name: Install libarchive
-        run: CC=clang swiftly run ./scripts/install-libarchive.sh
+        run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Generate Swiftly CLI Reference and Check for Differences
         run: swift package plugin --allow-writing-to-package-directory generate-docs-reference && bash -c 'git config --global --add safe.directory $(pwd)' && git diff --exit-code Documentation/SwiftlyDocs.docc/swiftly-cli-reference.md || (echo "The documentation hasn't been updated with the latest swiftly command-line reference. Please run `swift package plugin generate-docs-reference` and commit/push the changes."; exit 1)
       - name: Generate Documentation Set

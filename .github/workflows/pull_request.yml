@@ -135,7 +135,7 @@ jobs:
       - name: Install libarchive
         run: CC=clang swiftly run ./scripts/install-libarchive.sh
       - name: Generate Swiftly CLI Reference and Check for Differences
-        run: swift package plugin --allow-writing-to-package-directory generate-docs-reference && git diff Documentation/SwiftlyDocs.docc/swiftly-cli-reference.md || (echo "The documentation hasn't been updated with the latest swiftly command-line reference. Please run `swift package plugin generate-docs-reference` and commit/push the changes."; exit 1)
+        run: swift package plugin --allow-writing-to-package-directory generate-docs-reference && bash -c 'echo "PWD is $(pwd)"' && bash -c 'git config --global --add safe.directory $(pwd)' && git diff Documentation/SwiftlyDocs.docc/swiftly-cli-reference.md || (echo "The documentation hasn't been updated with the latest swiftly command-line reference. Please run `swift package plugin generate-docs-reference` and commit/push the changes."; exit 1)
       - name: Generate Documentation Set
         run: swift package --allow-writing-to-directory .build/docs generate-documentation --target SwiftlyDocs --output-path .build/docs
       - name: Upload Documentation Artifacts

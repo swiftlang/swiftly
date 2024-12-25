@@ -23,7 +23,7 @@ jobs:
       unacceptable_language_check_enabled: true
 
   tests-selfhosted:
-    name: Test (Self Hosted) - ${{ matrix.container }}
+    name: Test (Self Hosted) / ${{ matrix.container }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

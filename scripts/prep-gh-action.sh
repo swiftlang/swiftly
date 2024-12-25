@@ -28,8 +28,10 @@ if [ "$installSwiftly" == true ]; then
     echo "Installing selected swift toolchain"
     swiftly install --post-install-file=post-install.sh
 
-    echo "Performing swift toolchain post-installation"
-    chmod u+x post-install.sh && ./post-install.sh
+    if [ -f post-install.sh ]; then
+        echo "Performing swift toolchain post-installation"
+        chmod u+x post-install.sh && ./post-install.sh
+    fi
 
     echo "Displaying swift version"
     swift --version

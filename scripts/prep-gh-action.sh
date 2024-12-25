@@ -22,11 +22,21 @@ if [ "$installSwiftly" == true ]; then
     echo "Installing swiftly"
     curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
 
-    echo "Updating environment"
-    . "/root/.local/share/swiftly/env.sh" && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"
+    . "/root/.local/share/swiftly/env.sh"
+    hash -r
 
-    echo "Installing selected swift toolchain"
-    swiftly install --post-install-file=post-install.sh
+    if [ -n "$GITHUB_ENV" ]; then
+        echo "Updating GitHub environment"
+        echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"
+    fi
+
+    if [ -f .swift-version ]; then
+        echo "Installing selected swift toolchain"
+        swiftly install --post-install-file=post-install.sh
+    else
+        echo "Installing latest toolchain"
+        swiftly install --post-install-file=post-install.sh latest
+    fi
 
     if [ -f post-install.sh ]; then
         echo "Performing swift toolchain post-installation"

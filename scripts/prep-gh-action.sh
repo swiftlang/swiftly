@@ -6,8 +6,7 @@ yum --help && (curl --help && yum -y install curl) && yum install make gpg
 
 set -e
 
-while [ $# -ne 0 ]
-do
+while [ $# -ne 0 ]; do
     arg="$1"
     case "$arg" in
         --install-swiftly)
@@ -24,7 +23,7 @@ if [ "$installSwiftly" == true ]; then
     curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
 
     echo "Updating environment"
-    . "/root/.local/share/swiftly/env.sh" && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"'
+    . "/root/.local/share/swiftly/env.sh" && echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"
 
     echo "Installing selected swift toolchain"
     swiftly install --post-install-file=post-install.sh

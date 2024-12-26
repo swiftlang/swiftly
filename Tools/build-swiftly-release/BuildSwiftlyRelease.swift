@@ -127,54 +127,6 @@ public func getShell() async throws -> String {
 #endif
 
 public func isSupportedLinux(useRhelUbi9: Bool) -> Bool {
-    let osReleaseFiles = ["/etc/os-release", "/usr/lib/os-release"]
-    var releaseFile: String?
-    for file in osReleaseFiles {
-        if FileManager.default.fileExists(atPath: file) {
-            releaseFile = file
-            break
-        }
-    }
-
-    guard let releaseFile = releaseFile else {
-        return false
-    }
-
-    guard let data = FileManager.default.contents(atPath: releaseFile) else {
-        return false
-    }
-
-    guard let releaseInfo = String(data: data, encoding: .utf8) else {
-        return false
-    }
-
-    var id: String?
-    var idlike: String?
-    var versionID: String?
-    for info in releaseInfo.split(separator: "\n").map(String.init) {
-        if info.hasPrefix("ID=") {
-            id = String(info.dropFirst("ID=".count)).replacingOccurrences(of: "\"", with: "")
-        } else if info.hasPrefix("ID_LIKE=") {
-            idlike = String(info.dropFirst("ID_LIKE=".count)).replacingOccurrences(of: "\"", with: "")
-        } else if info.hasPrefix("VERSION_ID=") {
-            versionID = String(info.dropFirst("VERSION_ID=".count)).replacingOccurrences(of: "\"", with: "")
-        }
-    }
-
-    guard let id = id, let idlike = idlike else {
-        return false
-    }
-
-    if useRhelUbi9 {
-        guard let versionID, versionID.hasPrefix("9"), (id + idlike).contains("rhel") else {
-            return false
-        }
-    } else {
-        guard let versionID = versionID, versionID == "2", (id + idlike).contains("amzn") else {
-            return false
-        }
-    }
-
     return true
 }
 
@@ -340,8 +292,13 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let cwd = FileManager.default.currentDirectoryPath
         FileManager.default.changeCurrentDirectoryPath(libArchivePath)
 
+        let sdkName = "swift-6.0.3-RELEASE_static-linux-0.0.1"
+
+        // FIXME: Adjust the URL and checksum to match the toolchain that is being used
+        try runProgram(swift, "sdk", "install", "https://download.swift.org/swift-6.0.3-release/static-sdk/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz", "--checksum", "67f765e0030e661a7450f7e4877cfe008db4f57f177d5a08a6e26fd661cdd0bd")
+
         var customEnv = ProcessInfo.processInfo.environment
-        customEnv["CC"] = "clang"
+        customEnv["CC"] = "musl-gcc"
 
         try runProgramEnv(
             "./configure",
@@ -371,17 +328,19 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         FileManager.default.changeCurrentDirectoryPath(cwd)
 
-        // Statically link standard libraries and use the static sdk for maximum portability
 #if arch(arm64)
-        let sdkName = "aarch64-swift-linux-musl"
+        let muslTriple = "aarch64-swift-linux-musl"
 #else
-        let sdkName = "x86_64-swift-linux-musl"
+        let muslTriple = "x86_64-swift-linux-musl"
 #endif
 
-        // FIXME: Adjust the URL and checksum to match the toolchain that is being used
-        try runProgram(swift, "sdk", "install", "https://download.swift.org/swift-6.0.3-release/static-sdk/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz", "--checksum", "67f765e0030e661a7450f7e4877cfe008db4f57f177d5a08a6e26fd661cdd0bd")
-
-        try runProgram(swift, "build", "--swift-sdk", sdkName, "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
+        do {
+            try runProgram(swift, "build", "--swift-sdk", sdkName, "--triple=\(muslTriple)", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
+        } catch {
+            try runProgram(swift, "sdk", "remove", sdkName)
+            throw error
+        }
+        try runProgram(swift, "sdk", "remove", sdkName)
 
         let releaseDir = cwd + "/.build/release"
 

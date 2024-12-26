@@ -1,5 +1,5 @@
 {
-  "originHash" : "9b0d92b6fbb59080a05ce00f87dc9c6277b32d78e56905abba4c40947edf6d7d",
+  "originHash" : "cc03f1f46471dab3d83dd2c3efecbcbb0807f138854b4d0f03bcee316fe44231",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -143,15 +143,6 @@
       "state" : {
         "revision" : "025bcb1165deab2e20d4eaba79967ce73013f496",
         "version" : "1.2.1"
-      }
-    },
-    {
-      "identity" : "swift-tools-support-core",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-tools-support-core.git",
-      "state" : {
-        "revision" : "5b130e04cc939373c4713b91704b0c47ceb36170",
-        "version" : "0.7.1"
       }
     },
     {

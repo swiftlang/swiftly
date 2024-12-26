@@ -371,8 +371,17 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         FileManager.default.changeCurrentDirectoryPath(cwd)
 
-        // Statically link standard libraries for maximum portability of the swiftly binary
-        try runProgram(swift, "build", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
+        // Statically link standard libraries and use the static sdk for maximum portability
+#if arch(arm64)
+        let sdkName = "aarch64-swift-linux-musl"
+#else
+        let sdkName = "x86_64-swift-linux-musl"
+#endif
+
+        // FIXME: Adjust the URL and checksum to match the toolchain that is being used
+        try runProgram(swift, "sdk", "install" "https://download.swift.org/swift-6.0.3-release/static-sdk/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz", "--checksum", "67f765e0030e661a7450f7e4877cfe008db4f57f177d5a08a6e26fd661cdd0bd")
+
+        try runProgram(swift, "build", "--swift-sdk", sdkName, "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
 
         let releaseDir = cwd + "/.build/release"
 

@@ -1,7 +1,7 @@
 import ArgumentParser
 import Foundation
-import TSCBasic
-import TSCUtility
+//import TSCBasic
+//import TSCUtility
 
 import SwiftlyCore
 
@@ -70,10 +70,10 @@ internal struct SelfUpdate: SwiftlyCommand {
             try? FileManager.default.removeItem(at: tmpFile)
         }
 
-        let animation = PercentProgressAnimation(
+        /*let animation = PercentProgressAnimation(
             stream: stdoutStream,
             header: "Downloading swiftly \(version)"
-        )
+        )*/
         do {
             try await SwiftlyCore.httpClient.downloadFile(
                 url: downloadURL,
@@ -82,18 +82,18 @@ internal struct SelfUpdate: SwiftlyCommand {
                     let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
                     let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
 
-                    animation.update(
+                    /*animation.update(
                         step: progress.receivedBytes,
                         total: progress.totalBytes!,
                         text: "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
-                    )
+                    )*/
                 }
             )
         } catch {
-            animation.complete(success: false)
+            //animation.complete(success: false)
             throw error
         }
-        animation.complete(success: true)
+        //animation.complete(success: true)
 
         try await Swiftly.currentPlatform.verifySignature(httpClient: SwiftlyCore.httpClient, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
         try Swiftly.currentPlatform.extractSwiftlyAndInstall(from: tmpFile)

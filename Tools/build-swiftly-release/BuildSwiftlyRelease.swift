@@ -338,9 +338,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         FileManager.default.changeCurrentDirectoryPath(cwd)
 
-        // FIXME: running this twice fixes certain linker errors
-        try? runProgram(swift, "build", "--swift-sdk", sdkName, "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
-        try runProgram(swift, "build", "--swift-sdk", sdkName, "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
+        try runProgram(swift, "build", "--swift-sdk", "\(arch)-swift-linux-musl", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
         try runProgram(swift, "sdk", "remove", sdkName)
 
         let releaseDir = cwd + "/.build/release"

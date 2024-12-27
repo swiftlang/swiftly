@@ -1,8 +1,8 @@
 import _StringProcessing
 import ArgumentParser
 import Foundation
-//import TSCBasic
-//import TSCUtility
+import TSCBasic
+import TSCUtility
 
 import SwiftlyCore
 
@@ -192,10 +192,10 @@ struct Install: SwiftlyCommand {
             throw Error(message: "Invalid toolchain URL: \(url)")
         }
 
-        /*let animation = PercentProgressAnimation(
+        let animation = PercentProgressAnimation(
             stream: stdoutStream,
             header: "Downloading \(version)"
-        )*/
+        )
 
         var lastUpdate = Date()
 
@@ -215,20 +215,20 @@ struct Install: SwiftlyCommand {
 
                     lastUpdate = Date()
 
-                    /*animation.update(
+                    animation.update(
                         step: progress.receivedBytes,
                         total: progress.totalBytes!,
                         text: "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
-                    )*/
+                    )
                 }
             )
         } catch let notFound as SwiftlyHTTPClient.DownloadNotFoundError {
             throw Error(message: "\(version) does not exist at URL \(notFound.url), exiting")
         } catch {
-            //animation.complete(success: false)
+            animation.complete(success: false)
             throw error
         }
-        //animation.complete(success: true)
+        animation.complete(success: true)
 
         if verifySignature {
             try await Swiftly.currentPlatform.verifySignature(

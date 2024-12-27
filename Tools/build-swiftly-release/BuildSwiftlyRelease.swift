@@ -128,8 +128,8 @@ public func getShell() async throws -> String {
 }
 #endif
 
-public func isSupportedLinux(useRhelUbi9: Bool) -> Bool {
-    return true
+public func isSupportedLinux(useRhelUbi9 _: Bool) -> Bool {
+    true
 }
 
 @main

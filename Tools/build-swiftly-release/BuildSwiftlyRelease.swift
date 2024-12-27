@@ -1,6 +1,16 @@
 import ArgumentParser
 import Foundation
 
+public struct SwiftPlatform: Codable {
+    public var name: String?
+    public var checksum: String?
+}
+
+public struct SwiftRelease: Codable {
+    public var name: String?
+    public var platforms: [SwiftPlatform]?
+}
+
 // These functions are cloned and adapted from SwiftlyCore until we can do better bootstrapping
 public struct Error: LocalizedError {
     public let message: String
@@ -128,10 +138,6 @@ public func getShell() async throws -> String {
 }
 #endif
 
-public func isSupportedLinux(useRhelUbi9 _: Bool) -> Bool {
-    true
-}
-
 @main
 struct BuildSwiftlyRelease: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -149,7 +155,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     @Option(help: "Package identifier of macOS package")
     var identifier: String = "org.swift.swiftly"
 #elseif os(Linux)
-    @Flag(name: .long, help: "Use RHEL UBI9 as the supported Linux to build a release instead of Amazon Linux 2")
+    @Flag(name: .long, help: "Deprecated option since releases can be built on any swift supported Linux distribution.")
     var useRhelUbi9: Bool = false
 #endif
 
@@ -249,13 +255,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     }
 
     func buildLinuxRelease() async throws {
-#if os(Linux)
-        // Check system requirements
-        guard isSupportedLinux(useRhelUbi9: self.useRhelUbi9) else {
-            throw Error(message: "Linux releases must be made from specific distributions so that the binary can be used everyone else because it has the oldest version of glibc for maximum compatibility with other versions of Linux. Please try again with \(!self.useRhelUbi9 ? "Amazon Linux 2" : "RedHat UBI 9").")
-        }
-#endif
-
         // TODO: turn these into checks that the system meets the criteria for being capable of using the toolchain + checking for packages, not tools
         let curl = try await self.assertTool("curl", message: "Please install curl with `yum install curl`")
         let tar = try await self.assertTool("tar", message: "Please install tar with `yum install tar`")
@@ -294,9 +293,15 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let cwd = FileManager.default.currentDirectoryPath
         FileManager.default.changeCurrentDirectoryPath(libArchivePath)
 
-        let sdkName = "swift-6.0.3-RELEASE_static-linux-0.0.1"
+        let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.\\d+) ")
+        let swiftVerOutput = (try await runProgramOutput(swift, "--version")) ?? ""
+        guard let swiftVerMatch = try swiftVerRegex.firstMatch(in: swiftVerOutput) else {
+            throw Error(message: "Unable to detect swift version")
+        }
 
-        // FIXME: Adjust the URL and checksum to match the toolchain that is being used
+        let swiftVersion = swiftVerMatch.output.1
+
+        let sdkName = "swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"
 
 #if arch(arm64)
         let arch = "aarch64"
@@ -304,7 +309,18 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let arch = "x86_64"
 #endif
 
-        try runProgram(swift, "sdk", "install", "https://download.swift.org/swift-6.0.3-release/static-sdk/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz", "--checksum", "67f765e0030e661a7450f7e4877cfe008db4f57f177d5a08a6e26fd661cdd0bd")
+        let swiftReleasesJson = (try await runProgramOutput(curl, "https://www.swift.org/api/v1/install/releases.json")) ?? "[]"
+        let swiftReleases = try JSONDecoder().decode([SwiftRelease].self, from: swiftReleasesJson.data(using: .utf8)!)
+
+        guard let swiftRelease = swiftReleases.first(where: { ($0.name ?? "") == swiftVersion }) else {
+            throw Error(message: "Unable to find swift release using swift.org API: \(swiftVersion)")
+        }
+
+        guard let sdkPlatform = (swiftRelease.platforms ?? [SwiftPlatform]()).first(where: { ($0.name ?? "") == "Static SDK" }) else {
+            throw Error(message: "Swift release \(swiftVersion) has no Static SDK offering")
+        }
+
+        try runProgram(swift, "sdk", "install", "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz", "--checksum", sdkPlatform.checksum ?? "deadbeef")
 
         var customEnv = ProcessInfo.processInfo.environment
         customEnv["CC"] = "\(cwd)/Tools/build-swiftly-release/musl-clang"

@@ -13,6 +13,7 @@ public struct Error: LocalizedError {
 }
 
 public func runProgramEnv(_ args: String..., quiet: Bool = false, env: [String: String]?) throws {
+    print("\(args.joined(separator: " "))")
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = args
@@ -40,6 +41,7 @@ public func runProgramEnv(_ args: String..., quiet: Bool = false, env: [String: 
 }
 
 public func runProgram(_ args: String..., quiet: Bool = false) throws {
+    print("\(args.joined(separator: " "))")
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = args
@@ -295,10 +297,18 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let sdkName = "swift-6.0.3-RELEASE_static-linux-0.0.1"
 
         // FIXME: Adjust the URL and checksum to match the toolchain that is being used
+
+#if arch(arm64)
+        let arch = "aarch64"
+#else
+        let arch = "x86_64"
+#endif
+
         try runProgram(swift, "sdk", "install", "https://download.swift.org/swift-6.0.3-release/static-sdk/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz", "--checksum", "67f765e0030e661a7450f7e4877cfe008db4f57f177d5a08a6e26fd661cdd0bd")
 
         var customEnv = ProcessInfo.processInfo.environment
-        customEnv["CC"] = "musl-gcc"
+        customEnv["CC"] = "\(cwd)/Tools/build-swiftly-release/musl-clang"
+        customEnv["MUSL_PREFIX"] = "\(FileManager.default.homeDirectoryForCurrentUser.path)/.swiftpm/swift-sdks/\(sdkName).artifactbundle/\(sdkName)/swift-linux-musl/musl-1.2.5.sdk/\(arch)/usr"
 
         try runProgramEnv(
             "./configure",
@@ -328,18 +338,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         FileManager.default.changeCurrentDirectoryPath(cwd)
 
-#if arch(arm64)
-        let muslTriple = "aarch64-swift-linux-musl"
-#else
-        let muslTriple = "x86_64-swift-linux-musl"
-#endif
-
-        do {
-            try runProgram(swift, "build", "--swift-sdk", sdkName, "--triple=\(muslTriple)", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
-        } catch {
-            try runProgram(swift, "sdk", "remove", sdkName)
-            throw error
-        }
+        // FIXME: running this twice fixes certain linker errors
+        try? runProgram(swift, "build", "--swift-sdk", sdkName, "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
+        try runProgram(swift, "build", "--swift-sdk", sdkName, "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
         try runProgram(swift, "sdk", "remove", sdkName)
 
         let releaseDir = cwd + "/.build/release"

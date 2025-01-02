@@ -1,0 +1,57 @@
+#!/bin/sh
+
+PREFIX=${MUSL_PREFIX:-"/usr/local/musl"}
+if [ ! -d "${PREFIX}" ]; then
+	echo "invalid prefix: ${PREFIX}"
+	return 1
+fi
+
+CLANG=${REALCLANG:-"clang"}
+
+hasNo() {
+	pat="$1"
+	shift 1
+
+	for e in "$@"; do
+		if [ "$e" = "${pat}" ]; then
+			return 1
+		fi
+	done
+	return 0
+}
+
+ARGS="-nostdinc"
+TAIL=""
+
+if hasNo '-nostdinc' "$@"; then
+	ARGS="${ARGS} -isystem ${PREFIX}/include"
+fi
+
+if \
+	hasNo '-c' "$@" && \
+	hasNo '-S' "$@" && \
+	hasNo '-E' "$@"
+then
+	ARGS="${ARGS} -nostdlib"
+	ARGS="${ARGS} -Wl,-dynamic-linker=${PREFIX}/lib/libc.so"
+	ARGS="${ARGS} -L${PREFIX}/lib -L${PREFIX}/lib/swift/clang/lib/linux"
+
+	if hasNo '-nostartfiles' "$@" && \
+	   hasNo '-nostdlib' "$@" && \
+	   hasNo '-nodefaultlibs' "$@"
+	then
+		ARGS="${ARGS} ${PREFIX}/lib/crt1.o"
+		ARGS="${ARGS} ${PREFIX}/lib/crti.o"
+
+		TAIL="${TAIL} ${PREFIX}/lib/crtn.o"
+	fi
+
+	if hasNo '-nostdlib' "$@" && \
+	   hasNo '-nodefaultlibs' "$@"
+	then
+		TAIL="${TAIL} -lc -lclang_rt.builtins-$(uname -m)"
+	fi
+fi
+
+exec ${CLANG} ${ARGS} "$@" ${TAIL} -static
+

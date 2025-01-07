@@ -23,7 +23,8 @@ public struct Error: LocalizedError {
 }
 
 public func runProgramEnv(_ args: String..., quiet: Bool = false, env: [String: String]?) throws {
-    print("\(args.joined(separator: " "))")
+    if !quiet { print("\(args.joined(separator: " "))") }
+
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = args
@@ -51,7 +52,8 @@ public func runProgramEnv(_ args: String..., quiet: Bool = false, env: [String: 
 }
 
 public func runProgram(_ args: String..., quiet: Bool = false) throws {
-    print("\(args.joined(separator: " "))")
+    if !quiet { print("\(args.joined(separator: " "))") }
+
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = args

@@ -7,7 +7,7 @@ on:
         description: "Version of swiftly to build release artifacts"
         required: true
         type: string
-        default: "0.3.0"
+        default: "0.4.0-dev"
       skip:
         description: "Perform release checks, such as the git tag, and swift version, or '--skip' to skip that."
         required: true
@@ -23,10 +23,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Build Artifact
-        run: swift run build-swiftly-release ${{ inputs.skip }} ${{ inputs.version }}
-      - name: Upload Artifact
+      - name: Build Release Artifact
+        run: swift run build-swiftly-release --use-rhel-ubi9 ${{ inputs.skip }} ${{ inputs.version }}
+      - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: swiftly-release-x86_64
           path: .build/release/swiftly-*.tar.gz
+          if-no-files-found: error
+      - name: Build Documentation Artifacts
+        run: swift package --allow-writing-to-directory .build/docs generate-documentation --target SwiftlyDocs --output-path .build/docs
+      - name: Upload Documentation Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftly-docs
+          path: .build/docs/**
           if-no-files-found: error

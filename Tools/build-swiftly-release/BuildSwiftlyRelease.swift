@@ -126,7 +126,7 @@ public func getShell() async throws -> String {
 }
 #endif
 
-public func isRHEL9() -> Bool {
+public func isSupportedLinux(useRhelUbi9: Bool) -> Bool {
     let osReleaseFiles = ["/etc/os-release", "/usr/lib/os-release"]
     var releaseFile: String?
     for file in osReleaseFiles {
@@ -165,8 +165,14 @@ public func isRHEL9() -> Bool {
         return false
     }
 
-    guard let versionID, versionID.hasPrefix("9"), (id + idlike).contains("rhel") else {
-        return false
+    if useRhelUbi9 {
+        guard let versionID, versionID.hasPrefix("9"), (id + idlike).contains("rhel") else {
+            return false
+        }
+    } else {
+        guard let versionID = versionID, versionID == "2", (id + idlike).contains("amzn") else {
+            return false
+        }
     }
 
     return true
@@ -188,6 +194,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
     @Option(help: "Package identifier of macOS package")
     var identifier: String = "org.swift.swiftly"
+#elseif os(Linux)
+    @Flag(name: .long, help: "Use RHEL UBI9 as the supported Linux to build a release instead of Amazon Linux 2")
+    var useRhelUbi9: Bool = false
 #endif
 
     @Argument(help: "Version of swiftly to build the release.")
@@ -286,11 +295,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     }
 
     func buildLinuxRelease() async throws {
+#if os(Linux)
         // Check system requirements
-        guard isRHEL9() else {
-            // TODO: see if docker can be used to spawn an Amazon Linux 2 container to continue the release building process
-            throw Error(message: "Linux releases must be made from Amazon Linux 2 because it has the oldest version of glibc for maximum compatibility with other versions of Linux")
+        guard isSupportedLinux(useRhelUbi9: self.useRhelUbi9) else {
+            throw Error(message: "Linux releases must be made from specific distributions so that the binary can be used everyone else because it has the oldest version of glibc for maximum compatibility with other versions of Linux. Please try again with \(!self.useRhelUbi9 ? "Amazon Linux 2" : "RedHat UBI 9").")
         }
+#endif
 
         // TODO: turn these into checks that the system meets the criteria for being capable of using the toolchain + checking for packages, not tools
         let curl = try await self.assertTool("curl", message: "Please install curl with `yum install curl`")
@@ -374,7 +384,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 #if arch(arm64)
         let releaseArchive = "\(releaseDir)/swiftly-\(version)-aarch64.tar.gz"
 #else
-        let releaseArchive = "\(releaseDir)/swiftly-\(version).tar.gz"
+        let releaseArchive = "\(releaseDir)/swiftly-\(version)-x86_64.tar.gz"
 #endif
 
         try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly", "LICENSE.txt")

@@ -22,7 +22,7 @@ final class PlatformTests: SwiftlyTests {
             // GIVEN: a toolchain has been downloaded
             var (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.7.1")
             // WHEN: the platform installs the toolchain
-            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version)
+            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version, verbose: true)
             // THEN: the toolchain is extracted in the toolchains directory
             var toolchains = try FileManager.default.contentsOfDirectory(at: Swiftly.currentPlatform.swiftlyToolchainsDir, includingPropertiesForKeys: nil)
             XCTAssertEqual(1, toolchains.count)
@@ -30,7 +30,7 @@ final class PlatformTests: SwiftlyTests {
             // GIVEN: a second toolchain has been downloaded
             (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.8.0")
             // WHEN: the platform installs the toolchain
-            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version)
+            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version, verbose: true)
             // THEN: the toolchain is added to the toolchains directory
             toolchains = try FileManager.default.contentsOfDirectory(at: Swiftly.currentPlatform.swiftlyToolchainsDir, includingPropertiesForKeys: nil)
             XCTAssertEqual(2, toolchains.count)
@@ -38,7 +38,7 @@ final class PlatformTests: SwiftlyTests {
             // GIVEN: an identical toolchain has been downloaded
             (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.8.0")
             // WHEN: the platform installs the toolchain
-            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version)
+            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version, verbose: true)
             // THEN: the toolchains directory remains the same
             toolchains = try FileManager.default.contentsOfDirectory(at: Swiftly.currentPlatform.swiftlyToolchainsDir, includingPropertiesForKeys: nil)
             XCTAssertEqual(2, toolchains.count)
@@ -49,9 +49,9 @@ final class PlatformTests: SwiftlyTests {
         try await self.rollbackLocalChanges {
             // GIVEN: toolchains have been downloaded, and installed
             var (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.8.0")
-            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version)
+            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version, verbose: true)
             (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.6.3")
-            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version)
+            try Swiftly.currentPlatform.install(from: mockedToolchainFile, version: version, verbose: true)
             // WHEN: one of the toolchains is uninstalled
             try Swiftly.currentPlatform.uninstall(version)
             // THEN: there is only one remaining toolchain installed

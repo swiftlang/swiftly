@@ -327,7 +327,7 @@ public struct Linux: Platform {
         }
     }
 
-    public func install(from tmpFile: URL, version: ToolchainVersion) throws {
+    public func install(from tmpFile: URL, version: ToolchainVersion, verbose: Bool) throws {
         guard tmpFile.fileExists() else {
             throw Error(message: "\(tmpFile) doesn't exist")
         }
@@ -348,7 +348,14 @@ public struct Linux: Platform {
             let relativePath = name.drop { c in c != "/" }.dropFirst()
 
             // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
-            return toolchainDir.appendingPathComponent(String(relativePath))
+            let destination = toolchainDir.appendingPathComponent(String(relativePath))
+
+            if verbose {
+                SwiftlyCore.print("\(destination.path)")
+            }
+
+            // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
+            return destination
         }
     }
 
@@ -390,7 +397,7 @@ public struct Linux: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
-    public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL) async throws {
+    public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL, verbose: Bool) async throws {
         SwiftlyCore.print("Downloading toolchain signature...")
         let sigFile = self.getTempFilePath()
         let _ = FileManager.default.createFile(atPath: sigFile.path, contents: nil)
@@ -405,7 +412,7 @@ public struct Linux: Platform {
 
         SwiftlyCore.print("Verifying toolchain signature...")
         do {
-            try self.runProgram("gpg", "--verify", sigFile.path, archive.path)
+            try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
         } catch {
             throw Error(message: "Signature verification failed: \(error).")
         }

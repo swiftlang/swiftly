@@ -6,12 +6,14 @@ Ongoing maintenance and stewardship of this project is led by the [SSWG](https:/
 
 ### Installation
 
-To download swiftly and install Swift, run the following in your terminal, then follow the on-screen instructions.
+Install swiftly using a script (hosted from this repository) using the command:
+
 ```
 curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
 ```
 
-Alternatively, you can download the swiftly binary and it can install itself:
+In the future, download the swiftly package from [swift.org](https://swift.org/download) and it can install itself with init:
+
 ```
 swiftly init
 ```

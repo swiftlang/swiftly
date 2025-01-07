@@ -43,7 +43,7 @@ final class RunTests: SwiftlyTests {
         try await self.withMockedHome(homeName: Self.homeName, toolchains: Self.allToolchains) {
             // The toolchains directory should be the fist entry on the path
             var run = try self.parseCommand(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $PATH"])
-            var output = try await run.runWithMockedIO()
+            let output = try await run.runWithMockedIO()
             XCTAssert(output.count == 1)
             XCTAssert(output[0].contains(Swiftly.currentPlatform.swiftlyToolchainsDir.path))
         }

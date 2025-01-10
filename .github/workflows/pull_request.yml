@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ["ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
+        container: ["ubuntu:20.04", "ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
     container:
       image: ${{ matrix.container }}
     steps:
@@ -38,16 +38,6 @@ jobs:
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build and Test
         run: swift test
-
-  tests:
-    name: Test
-    uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@main
-    with:
-      linux_os_versions: "[\"focal\"]"
-      # We only care about the current stable release, because that's where we make our swiftly releases
-      linux_exclude_swift_versions: "[{\"swift_version\": \"nightly-main\"},{\"swift_version\": \"nightly-6.0\"},{\"swift_version\": \"5.8\"},{\"swift_version\": \"5.9\"},{\"swift_version\": \"5.10\"}]"
-      linux_pre_build_command: ./scripts/prep-gh-action.sh
-      enable_windows_checks: false
 
   releasebuildcheck:
     name: Release Build Check

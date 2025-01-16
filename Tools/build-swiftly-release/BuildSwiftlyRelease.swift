@@ -1,6 +1,16 @@
 import ArgumentParser
 import Foundation
 
+public struct SwiftPlatform: Codable {
+    public var name: String?
+    public var checksum: String?
+}
+
+public struct SwiftRelease: Codable {
+    public var name: String?
+    public var platforms: [SwiftPlatform]?
+}
+
 // These functions are cloned and adapted from SwiftlyCore until we can do better bootstrapping
 public struct Error: LocalizedError {
     public let message: String
@@ -13,6 +23,8 @@ public struct Error: LocalizedError {
 }
 
 public func runProgramEnv(_ args: String..., quiet: Bool = false, env: [String: String]?) throws {
+    if !quiet { print("\(args.joined(separator: " "))") }
+
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = args
@@ -40,6 +52,8 @@ public func runProgramEnv(_ args: String..., quiet: Bool = false, env: [String: 
 }
 
 public func runProgram(_ args: String..., quiet: Bool = false) throws {
+    if !quiet { print("\(args.joined(separator: " "))") }
+
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = args
@@ -126,58 +140,6 @@ public func getShell() async throws -> String {
 }
 #endif
 
-public func isSupportedLinux(useRhelUbi9: Bool) -> Bool {
-    let osReleaseFiles = ["/etc/os-release", "/usr/lib/os-release"]
-    var releaseFile: String?
-    for file in osReleaseFiles {
-        if FileManager.default.fileExists(atPath: file) {
-            releaseFile = file
-            break
-        }
-    }
-
-    guard let releaseFile = releaseFile else {
-        return false
-    }
-
-    guard let data = FileManager.default.contents(atPath: releaseFile) else {
-        return false
-    }
-
-    guard let releaseInfo = String(data: data, encoding: .utf8) else {
-        return false
-    }
-
-    var id: String?
-    var idlike: String?
-    var versionID: String?
-    for info in releaseInfo.split(separator: "\n").map(String.init) {
-        if info.hasPrefix("ID=") {
-            id = String(info.dropFirst("ID=".count)).replacingOccurrences(of: "\"", with: "")
-        } else if info.hasPrefix("ID_LIKE=") {
-            idlike = String(info.dropFirst("ID_LIKE=".count)).replacingOccurrences(of: "\"", with: "")
-        } else if info.hasPrefix("VERSION_ID=") {
-            versionID = String(info.dropFirst("VERSION_ID=".count)).replacingOccurrences(of: "\"", with: "")
-        }
-    }
-
-    guard let id = id, let idlike = idlike else {
-        return false
-    }
-
-    if useRhelUbi9 {
-        guard let versionID, versionID.hasPrefix("9"), (id + idlike).contains("rhel") else {
-            return false
-        }
-    } else {
-        guard let versionID = versionID, versionID == "2", (id + idlike).contains("amzn") else {
-            return false
-        }
-    }
-
-    return true
-}
-
 @main
 struct BuildSwiftlyRelease: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -195,7 +157,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     @Option(help: "Package identifier of macOS package")
     var identifier: String = "org.swift.swiftly"
 #elseif os(Linux)
-    @Flag(name: .long, help: "Use RHEL UBI9 as the supported Linux to build a release instead of Amazon Linux 2")
+    @Flag(name: .long, help: "Deprecated option since releases can be built on any swift supported Linux distribution.")
     var useRhelUbi9: Bool = false
 #endif
 
@@ -295,13 +257,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     }
 
     func buildLinuxRelease() async throws {
-#if os(Linux)
-        // Check system requirements
-        guard isSupportedLinux(useRhelUbi9: self.useRhelUbi9) else {
-            throw Error(message: "Linux releases must be made from specific distributions so that the binary can be used everyone else because it has the oldest version of glibc for maximum compatibility with other versions of Linux. Please try again with \(!self.useRhelUbi9 ? "Amazon Linux 2" : "RedHat UBI 9").")
-        }
-#endif
-
         // TODO: turn these into checks that the system meets the criteria for being capable of using the toolchain + checking for packages, not tools
         let curl = try await self.assertTool("curl", message: "Please install curl with `yum install curl`")
         let tar = try await self.assertTool("tar", message: "Please install tar with `yum install tar`")
@@ -340,8 +295,38 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let cwd = FileManager.default.currentDirectoryPath
         FileManager.default.changeCurrentDirectoryPath(libArchivePath)
 
+        let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.\\d+) ")
+        let swiftVerOutput = (try await runProgramOutput(swift, "--version")) ?? ""
+        guard let swiftVerMatch = try swiftVerRegex.firstMatch(in: swiftVerOutput) else {
+            throw Error(message: "Unable to detect swift version")
+        }
+
+        let swiftVersion = swiftVerMatch.output.1
+
+        let sdkName = "swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"
+
+#if arch(arm64)
+        let arch = "aarch64"
+#else
+        let arch = "x86_64"
+#endif
+
+        let swiftReleasesJson = (try await runProgramOutput(curl, "https://www.swift.org/api/v1/install/releases.json")) ?? "[]"
+        let swiftReleases = try JSONDecoder().decode([SwiftRelease].self, from: swiftReleasesJson.data(using: .utf8)!)
+
+        guard let swiftRelease = swiftReleases.first(where: { ($0.name ?? "") == swiftVersion }) else {
+            throw Error(message: "Unable to find swift release using swift.org API: \(swiftVersion)")
+        }
+
+        guard let sdkPlatform = (swiftRelease.platforms ?? [SwiftPlatform]()).first(where: { ($0.name ?? "") == "Static SDK" }) else {
+            throw Error(message: "Swift release \(swiftVersion) has no Static SDK offering")
+        }
+
+        try runProgram(swift, "sdk", "install", "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz", "--checksum", sdkPlatform.checksum ?? "deadbeef")
+
         var customEnv = ProcessInfo.processInfo.environment
-        customEnv["CC"] = "clang"
+        customEnv["CC"] = "\(cwd)/Tools/build-swiftly-release/musl-clang"
+        customEnv["MUSL_PREFIX"] = "\(FileManager.default.homeDirectoryForCurrentUser.path)/.swiftpm/swift-sdks/\(sdkName).artifactbundle/\(sdkName)/swift-linux-musl/musl-1.2.5.sdk/\(arch)/usr"
 
         try runProgramEnv(
             "./configure",
@@ -371,8 +356,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         FileManager.default.changeCurrentDirectoryPath(cwd)
 
-        // Statically link standard libraries for maximum portability of the swiftly binary
-        try runProgram(swift, "build", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
+        try runProgram(swift, "build", "--swift-sdk", "\(arch)-swift-linux-musl", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
+        try runProgram(swift, "sdk", "remove", sdkName)
 
         let releaseDir = cwd + "/.build/release"
 

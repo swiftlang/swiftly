@@ -45,7 +45,7 @@ public protocol InputProvider {
 public var inputProvider: (any InputProvider)?
 
 public func readLine(prompt: String) -> String? {
-    print(prompt, terminator: ": ")
+    print(prompt, terminator: ": \n")
     guard let provider = SwiftlyCore.inputProvider else {
         return Swift.readLine(strippingNewline: true)
     }

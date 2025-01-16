@@ -6,7 +6,13 @@ Ongoing maintenance and stewardship of this project is led by the [SSWG](https:/
 
 ### Installation
 
-Download the swiftly package from [swift.org](https://swift.org/download) and it can install itself with init:
+Install swiftly using a script (hosted from this repository) using the command:
+
+```
+curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
+```
+
+In the future, download the swiftly package from [swift.org](https://swift.org/download) and it can install itself with init:
 
 ```
 swiftly init

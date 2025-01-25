@@ -120,7 +120,7 @@ internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
 
         let client = Client(
-            serverURL: URL(string: "https://swift.org/api")!,
+            serverURL: try Servers.Server1.url(),
             transport: AsyncHTTPClientTransport(configuration: config),
             middlewares: [swiftlyUserAgent]
         )

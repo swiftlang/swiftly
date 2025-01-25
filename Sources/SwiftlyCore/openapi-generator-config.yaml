@@ -3,3 +3,5 @@ generate:
   - client
 namingStrategy: idiomatic
 accessModifier: public
+filter:
+  tags: ["Swiftly"]

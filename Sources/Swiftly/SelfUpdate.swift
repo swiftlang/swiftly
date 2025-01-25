@@ -31,11 +31,8 @@ internal struct SelfUpdate: SwiftlyCommand {
         SwiftlyCore.print("Checking for swiftly updates...")
 
         let swiftlyRelease = try await SwiftlyCore.httpClient.getCurrentSwiftlyRelease()
-        guard let releaseVersion = try? SwiftlyVersion(parsing: swiftlyRelease.version) else {
-            throw SwiftlyError(message: "Invalid swiftly version reported: \(swiftlyRelease.version)")
-        }
 
-        guard releaseVersion > SwiftlyCore.version else {
+        guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
             SwiftlyCore.print("Already up to date.")
             return SwiftlyCore.version
         }
@@ -43,33 +40,29 @@ internal struct SelfUpdate: SwiftlyCommand {
         var downloadURL: Foundation.URL?
         for platform in swiftlyRelease.platforms {
 #if os(macOS)
-            guard platform.platform.value1 == .darwin else {
+            guard platform.isDarwin else {
                 continue
             }
 #elseif os(Linux)
-            guard platform.platform.value1 == .linux else {
+            guard platform.isLinux else {
                 continue
             }
 #endif
 
 #if arch(x86_64)
-            guard let url = URL(string: platform.x8664) else {
-                throw SwiftlyError(message: "The swiftly release URL is not valid: \(platform.x8664)")
-            }
-            downloadURL = url
+            downloadURL = try platform.x86_64URL
 #elseif arch(arm64)
-            guard let url = URL(string: platform.arm64) else {
-                throw SwiftlyError(message: "The swiftly release URL is not valid: \(platform.arm64)")
-            }
-            downloadURL = url
+            downloadURL = try platform.arm64URL
 #endif
         }
 
         guard let downloadURL else {
-            throw SwiftlyError(message: "No matching platform was found in swiftly release.")
+            throw SwiftlyError(message: "The newest release of swiftly is incompatible with your current OS and/or processor architecture.")
         }
 
-        SwiftlyCore.print("A new version is available: \(releaseVersion)")
+        let version = try swiftlyRelease.swiftlyVersion
+
+        SwiftlyCore.print("A new version is available: \(version)")
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
@@ -79,7 +72,7 @@ internal struct SelfUpdate: SwiftlyCommand {
 
         let animation = PercentProgressAnimation(
             stream: stdoutStream,
-            header: "Downloading swiftly \(releaseVersion)"
+            header: "Downloading swiftly \(version)"
         )
         do {
             try await SwiftlyCore.httpClient.downloadFile(
@@ -105,7 +98,7 @@ internal struct SelfUpdate: SwiftlyCommand {
         try await Swiftly.currentPlatform.verifySignature(httpClient: SwiftlyCore.httpClient, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
         try Swiftly.currentPlatform.extractSwiftlyAndInstall(from: tmpFile)
 
-        SwiftlyCore.print("Successfully updated swiftly to \(releaseVersion) (was \(SwiftlyCore.version))")
-        return releaseVersion
+        SwiftlyCore.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
+        return version
     }
 }

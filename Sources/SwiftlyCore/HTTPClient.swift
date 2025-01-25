@@ -1,15 +1,73 @@
 import _StringProcessing
 import AsyncHTTPClient
 import Foundation
+import HTTPTypes
 import NIO
 import NIOFoundationCompat
 import NIOHTTP1
 import OpenAPIAsyncHTTPClient
 import OpenAPIRuntime
 
+extension Components.Schemas.SwiftlyRelease {
+    public var swiftlyVersion: SwiftlyVersion {
+        get throws {
+            guard let releaseVersion = try? SwiftlyVersion(parsing: self.version) else {
+                throw SwiftlyError(message: "Invalid swiftly version reported: \(self.version)")
+            }
+
+            return releaseVersion
+        }
+    }
+}
+
+extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
+    public var isDarwin: Bool {
+        self.platform.value1 == .darwin
+    }
+
+    public var isLinux: Bool {
+        self.platform.value1 == .linux
+    }
+
+    public var x86_64URL: URL {
+        get throws {
+            guard let url = URL(string: self.x8664) else {
+                throw SwiftlyError(message: "The swiftly x86_64 URL is invalid: \(self.x8664)")
+            }
+
+            return url
+        }
+    }
+
+    public var arm64URL: URL {
+        get throws {
+            guard let url = URL(string: self.arm64) else {
+                throw SwiftlyError(message: "The swiftly arm64 URL is invalid: \(self.arm64)")
+            }
+
+            return url
+        }
+    }
+}
+
 public protocol HTTPRequestExecutor {
     func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse
     func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease
+}
+
+internal struct SwiftlyUserAgentMiddleware: ClientMiddleware {
+    package func intercept(
+        _ request: HTTPRequest,
+        body: HTTPBody?,
+        baseURL: URL,
+        operationID _: String,
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+    ) async throws -> (HTTPResponse, HTTPBody?) {
+        var request = request
+        // Adds the `Authorization` header field with the provided value.
+        request.headerFields[.userAgent] = "swiftly/\(SwiftlyCore.version)"
+        return try await next(request, body, baseURL)
+    }
 }
 
 /// An `HTTPRequestExecutor` backed by the shared `HTTPClient`.
@@ -59,11 +117,12 @@ internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
 
     public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
         let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
+        let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
 
-        // FIXME: use a middleware that adds the swiftly user agent header (problem is how to do this with async http client)
         let client = Client(
             serverURL: URL(string: "https://swift.org/api")!,
-            transport: AsyncHTTPClientTransport(configuration: config)
+            transport: AsyncHTTPClientTransport(configuration: config),
+            middlewares: [swiftlyUserAgent]
         )
 
         let response = try await client.getCurrentSwiftlyRelease()

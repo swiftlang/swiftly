@@ -21,7 +21,7 @@ internal struct SelfUpdate: SwiftlyCommand {
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly")
         guard FileManager.default.fileExists(atPath: swiftlyBin.path) else {
-            throw Error(message: "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place.")
+            throw SwiftlyError(message: "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place.")
         }
 
         let _ = try await Self.execute(verbose: self.root.verbose)
@@ -30,9 +30,12 @@ internal struct SelfUpdate: SwiftlyCommand {
     public static func execute(verbose: Bool) async throws -> SwiftlyVersion {
         SwiftlyCore.print("Checking for swiftly updates...")
 
-        let swiftlyRelease = try await SwiftlyCore.httpClient.getSwiftlyRelease()
+        let swiftlyRelease = try await SwiftlyCore.httpClient.getCurrentSwiftlyRelease()
+        guard let releaseVersion = try? SwiftlyVersion(parsing: swiftlyRelease.version) else {
+            throw SwiftlyError(message: "Invalid swiftly version reported: \(swiftlyRelease.version)")
+        }
 
-        guard swiftlyRelease.version > SwiftlyCore.version else {
+        guard releaseVersion > SwiftlyCore.version else {
             SwiftlyCore.print("Already up to date.")
             return SwiftlyCore.version
         }
@@ -40,29 +43,33 @@ internal struct SelfUpdate: SwiftlyCommand {
         var downloadURL: Foundation.URL?
         for platform in swiftlyRelease.platforms {
 #if os(macOS)
-            guard platform.platform == .Darwin else {
+            guard platform.platform.value1 == .darwin else {
                 continue
             }
 #elseif os(Linux)
-            guard platform.platform == .Linux else {
+            guard platform.platform.value1 == .linux else {
                 continue
             }
 #endif
 
 #if arch(x86_64)
-            downloadURL = platform.x86_64
+            guard let url = URL(string: platform.x8664) else {
+                throw SwiftlyError(message: "The swiftly release URL is not valid: \(platform.x8664)")
+            }
+            downloadURL = url
 #elseif arch(arm64)
-            downloadURL = platform.arm64
+            guard let url = URL(string: platform.arm64) else {
+                throw SwiftlyError(message: "The swiftly release URL is not valid: \(platform.arm64)")
+            }
+            downloadURL = url
 #endif
         }
 
-        guard let downloadURL = downloadURL else {
-            throw Error(message: "The newest release of swiftly is incompatible with your current OS and/or processor architecture.")
+        guard let downloadURL else {
+            throw SwiftlyError(message: "No matching platform was found in swiftly release.")
         }
 
-        let version = swiftlyRelease.version
-
-        SwiftlyCore.print("A new version is available: \(version)")
+        SwiftlyCore.print("A new version is available: \(releaseVersion)")
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
@@ -72,7 +79,7 @@ internal struct SelfUpdate: SwiftlyCommand {
 
         let animation = PercentProgressAnimation(
             stream: stdoutStream,
-            header: "Downloading swiftly \(version)"
+            header: "Downloading swiftly \(releaseVersion)"
         )
         do {
             try await SwiftlyCore.httpClient.downloadFile(
@@ -98,7 +105,7 @@ internal struct SelfUpdate: SwiftlyCommand {
         try await Swiftly.currentPlatform.verifySignature(httpClient: SwiftlyCore.httpClient, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
         try Swiftly.currentPlatform.extractSwiftlyAndInstall(from: tmpFile)
 
-        SwiftlyCore.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
-        return version
+        SwiftlyCore.print("Successfully updated swiftly to \(releaseVersion) (was \(SwiftlyCore.version))")
+        return releaseVersion
     }
 }

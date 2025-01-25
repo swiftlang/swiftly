@@ -4,9 +4,12 @@ import Foundation
 import NIO
 import NIOFoundationCompat
 import NIOHTTP1
+import OpenAPIAsyncHTTPClient
+import OpenAPIRuntime
 
 public protocol HTTPRequestExecutor {
     func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse
+    func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease
 }
 
 /// An `HTTPRequestExecutor` backed by the shared `HTTPClient`.
@@ -53,29 +56,25 @@ internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
         try await self.httpClient.execute(request, timeout: timeout)
     }
+
+    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
+
+        // FIXME: use a middleware that adds the swiftly user agent header (problem is how to do this with async http client)
+        let client = Client(
+            serverURL: URL(string: "https://swift.org/api")!,
+            transport: AsyncHTTPClientTransport(configuration: config)
+        )
+
+        let response = try await client.getCurrentSwiftlyRelease()
+        return try response.ok.body.json
+    }
 }
 
 private func makeRequest(url: String) -> HTTPClientRequest {
     var request = HTTPClientRequest(url: url)
     request.headers.add(name: "User-Agent", value: "swiftly/\(SwiftlyCore.version)")
     return request
-}
-
-public enum SwiftOrgSwiftlyPlatformType: String, Codable {
-    case Darwin
-    case Linux
-    case Windows
-}
-
-public struct SwiftOrgSwiftlyPlatform: Codable {
-    public var platform: SwiftOrgSwiftlyPlatformType
-    public var x86_64: URL
-    public var arm64: URL
-}
-
-public struct SwiftOrgSwiftlyRelease: Codable {
-    public var version: SwiftlyVersion
-    public var platforms: [SwiftOrgSwiftlyPlatform]
 }
 
 struct SwiftOrgPlatform: Codable {
@@ -165,7 +164,7 @@ public struct SwiftOrgSnapshot: Codable {
         let branch: ToolchainVersion.Snapshot.Branch
         if let majorString = match.output.1, let minorString = match.output.2 {
             guard let major = Int(majorString), let minor = Int(minorString) else {
-                throw Error(message: "malformatted release branch: \"\(majorString).\(minorString)\"")
+                throw SwiftlyError(message: "malformatted release branch: \"\(majorString).\(minorString)\"")
             }
             branch = .release(major: major, minor: minor)
         } else {
@@ -218,17 +217,15 @@ public struct SwiftlyHTTPClient {
             throw SwiftlyHTTPClient.JSONNotFoundError(url: url)
         default:
             let json = String(buffer: response.buffer)
-            throw Error(message: "Received \(response.status) when reaching \(url) for JSON: \(json)")
+            throw SwiftlyError(message: "Received \(response.status) when reaching \(url) for JSON: \(json)")
         }
 
         return try JSONDecoder().decode(type.self, from: response.buffer)
     }
 
     /// Return the current Swiftly release using the swift.org API.
-    public func getSwiftlyRelease() async throws -> SwiftOrgSwiftlyRelease {
-        let url = "https://www.swift.org/api/v1/swiftly.json"
-        let swiftlyRelease: SwiftOrgSwiftlyRelease = try await self.getFromJSON(url: url, type: SwiftOrgSwiftlyRelease.self)
-        return swiftlyRelease
+    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
+        try await SwiftlyCore.httpRequestExecutor.getCurrentSwiftlyRelease()
     }
 
     /// Return an array of released Swift versions that match the given filter, up to the provided
@@ -269,7 +266,7 @@ public struct SwiftlyHTTPClient {
             guard let version = try? ToolchainVersion(parsing: swiftOrgRelease.stableName),
                   case let .stable(release) = version
             else {
-                throw Error(message: "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
+                throw SwiftlyError(message: "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
             }
 
             if let filter {
@@ -392,7 +389,7 @@ public struct SwiftlyHTTPClient {
         case .notFound:
             throw SwiftlyHTTPClient.DownloadNotFoundError(url: url.path)
         default:
-            throw Error(message: "Received \(response.status) when trying to download \(url)")
+            throw SwiftlyError(message: "Received \(response.status) when trying to download \(url)")
         }
 
         // if defined, the content-length headers announces the size of the body

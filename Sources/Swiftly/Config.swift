@@ -40,7 +40,7 @@ public struct Config: Codable, Equatable {
 
             To begin using swiftly you can install it: '\(CommandLine.arguments[0]) init'.
             """
-            throw Error(message: msg)
+            throw SwiftlyError(message: msg)
         }
     }
 

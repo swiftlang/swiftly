@@ -90,7 +90,7 @@ internal struct Use: SwiftlyCommand {
         }
 
         guard !self.printLocation else {
-            throw Error(message: "The print location flag cannot be used with a toolchain version.")
+            throw SwiftlyError(message: "The print location flag cannot be used with a toolchain version.")
         }
 
         let selector = try ToolchainSelector(parsing: toolchain)
@@ -203,11 +203,11 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false) a
                 let contents = try? String(contentsOf: svFile, encoding: .utf8)
 
                 guard let contents = contents else {
-                    return (nil, .swiftVersionFile(svFile, nil, Error(message: "The swift version file could not be read: \(svFile)")))
+                    return (nil, .swiftVersionFile(svFile, nil, SwiftlyError(message: "The swift version file could not be read: \(svFile)")))
                 }
 
                 guard !contents.isEmpty else {
-                    return (nil, .swiftVersionFile(svFile, nil, Error(message: "The swift version file is empty: \(svFile)")))
+                    return (nil, .swiftVersionFile(svFile, nil, SwiftlyError(message: "The swift version file is empty: \(svFile)")))
                 }
 
                 let selectorString = contents.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: "\r", with: "")
@@ -215,15 +215,15 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false) a
                 do {
                     selector = try ToolchainSelector(parsing: selectorString)
                 } catch {
-                    return (nil, .swiftVersionFile(svFile, nil, Error(message: "The swift version file is malformed: \(svFile) \(error)")))
+                    return (nil, .swiftVersionFile(svFile, nil, SwiftlyError(message: "The swift version file is malformed: \(svFile) \(error)")))
                 }
 
                 guard let selector = selector else {
-                    return (nil, .swiftVersionFile(svFile, nil, Error(message: "The swift version file is malformed: \(svFile)")))
+                    return (nil, .swiftVersionFile(svFile, nil, SwiftlyError(message: "The swift version file is malformed: \(svFile)")))
                 }
 
                 guard let selectedToolchain = config.listInstalledToolchains(selector: selector).max() else {
-                    return (nil, .swiftVersionFile(svFile, selector, Error(message: "The swift version file `\(svFile.path)` uses toolchain version \(selector), but it doesn't match any of the installed toolchains. You can install the toolchain with `swiftly install`.")))
+                    return (nil, .swiftVersionFile(svFile, selector, SwiftlyError(message: "The swift version file `\(svFile.path)` uses toolchain version \(selector), but it doesn't match any of the installed toolchains. You can install the toolchain with `swiftly install`.")))
                 }
 
                 return (selectedToolchain, .swiftVersionFile(svFile, selector, nil))

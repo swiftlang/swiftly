@@ -39,7 +39,7 @@ internal struct Init: SwiftlyCommand {
 
         if let config, !overwrite && config.version != SwiftlyCore.version {
             // We don't support downgrades, and we don't yet support upgrades
-            throw Error(message: "An existing swiftly installation was detected. You can try again with '--overwrite' to overwrite it.")
+            throw SwiftlyError(message: "An existing swiftly installation was detected. You can try again with '--overwrite' to overwrite it.")
         }
 
         // Give the user the prompt and the choice to abort at this point.
@@ -64,7 +64,7 @@ internal struct Init: SwiftlyCommand {
             """)
 
             if SwiftlyCore.readLine(prompt: "Proceed with the installation? [Y/n] ") == "n" {
-                throw Error(message: "Swiftly installation has been cancelled")
+                throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }
 
@@ -82,7 +82,7 @@ internal struct Init: SwiftlyCommand {
             let proceed = SwiftlyCore.readLine(prompt: "Proceed? [y/N]") ?? "n"
 
             guard proceed == "y" else {
-                throw Error(message: "Swiftly installation has been cancelled")
+                throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }
 
@@ -121,7 +121,7 @@ internal struct Init: SwiftlyCommand {
                 do {
                     try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
                 } catch {
-                    throw Error(message: "Failed to create required directory \"\(requiredDir.path)\": \(error)")
+                    throw SwiftlyError(message: "Failed to create required directory \"\(requiredDir.path)\": \(error)")
                 }
             }
         }
@@ -136,7 +136,7 @@ internal struct Init: SwiftlyCommand {
             config = c
         }
 
-        guard var config else { throw Error(message: "Configuration could not be set") }
+        guard var config else { throw SwiftlyError(message: "Configuration could not be set") }
 
         // Move our executable over to the correct place
         try Swiftly.currentPlatform.installSwiftlyBin()

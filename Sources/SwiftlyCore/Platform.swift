@@ -145,7 +145,7 @@ extension Platform {
 
         // Prevent circularities with a memento environment variable
         guard newEnv["SWIFTLY_PROXY_IN_PROGRESS"] == nil else {
-            throw Error(message: "Circular swiftly proxy invocation")
+            throw SwiftlyError(message: "Circular swiftly proxy invocation")
         }
         newEnv["SWIFTLY_PROXY_IN_PROGRESS"] = "1"
 

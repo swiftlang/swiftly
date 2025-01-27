@@ -58,7 +58,7 @@ public enum Proxy {
 
             // Prevent circularities with a memento environment variable
             guard ProcessInfo.processInfo.environment["SWIFTLY_PROXY_IN_PROGRESS"] == nil else {
-                throw Error(message: "Circular swiftly proxy invocation")
+                throw SwiftlyError(message: "Circular swiftly proxy invocation")
             }
             let env = ["SWIFTLY_PROXY_IN_PROGRESS": "1"]
 

@@ -65,7 +65,7 @@ internal struct Run: SwiftlyCommand {
         if let selector = selector {
             let matchedToolchain = config.listInstalledToolchains(selector: selector).max()
             guard let matchedToolchain = matchedToolchain else {
-                throw Error(message: "The selected toolchain \(selector.description) didn't match any of the installed toolchains. You can install it with `swiftly install \(selector.description)`")
+                throw SwiftlyError(message: "The selected toolchain \(selector.description) didn't match any of the installed toolchains. You can install it with `swiftly install \(selector.description)`")
             }
 
             toolchain = matchedToolchain
@@ -81,7 +81,7 @@ internal struct Run: SwiftlyCommand {
         }
 
         guard let toolchain = toolchain else {
-            throw Error(message: "No swift toolchain could be selected from either from a .swift-version file, or the default. You can try using `swiftly install <toolchain version>` to install one.")
+            throw SwiftlyError(message: "No swift toolchain could be selected from either from a .swift-version file, or the default. You can try using `swiftly install <toolchain version>` to install one.")
         }
 
         do {
@@ -128,7 +128,7 @@ public func extractProxyArguments(command: [String]) throws -> (command: [String
     }
 
     guard args.command.count > 0 else {
-        throw Error(message: "Provide at least one command to run.")
+        throw SwiftlyError(message: "Provide at least one command to run.")
     }
 
     return args

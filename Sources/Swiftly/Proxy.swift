@@ -53,13 +53,13 @@ public enum Proxy {
             }
 
             guard let toolchain = toolchain else {
-                throw Error(message: "No swift toolchain could be selected from either from a .swift-version file, or the default. You can try using `swiftly install <toolchain version>` to install one.")
+                throw SwiftlyError(message: "No swift toolchain could be selected from either from a .swift-version file, or the default. You can try using `swiftly install <toolchain version>` to install one.")
             }
 
             try await Swiftly.currentPlatform.proxy(toolchain, binName, Array(CommandLine.arguments[1...]))
         } catch let terminated as RunProgramError {
             exit(terminated.exitCode)
-        } catch let error as Error {
+        } catch let error as SwiftlyError {
             SwiftlyCore.print(error.message)
             exit(1)
         } catch {

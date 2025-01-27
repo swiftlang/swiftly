@@ -78,7 +78,7 @@ extension SwiftlyCommand {
                 do {
                     try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
                 } catch {
-                    throw Error(message: "Failed to create required directory \"\(requiredDir.path)\": \(error)")
+                    throw SwiftlyError(message: "Failed to create required directory \"\(requiredDir.path)\": \(error)")
                 }
                 continue
             }

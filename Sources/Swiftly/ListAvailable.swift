@@ -54,7 +54,7 @@ struct ListAvailable: SwiftlyCommand {
             do {
                 tc = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map { ToolchainVersion.snapshot($0) }
             } catch let branchNotFoundError as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
-                throw Error(message: "The snapshot branch \(branchNotFoundError.branch) was not found on swift.org. Note that snapshot toolchains are only available for the current `main` release and the previous x.y (major.minor) release.")
+                throw SwiftlyError(message: "The snapshot branch \(branchNotFoundError.branch) was not found on swift.org. Note that snapshot toolchains are only available for the current `main` release and the previous x.y (major.minor) release.")
             } catch {
                 throw error
             }

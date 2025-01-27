@@ -21,7 +21,7 @@ internal struct SelfUpdate: SwiftlyCommand {
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly")
         guard FileManager.default.fileExists(atPath: swiftlyBin.path) else {
-            throw Error(message: "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place.")
+            throw SwiftlyError(message: "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place.")
         }
 
         let _ = try await Self.execute(verbose: self.root.verbose)
@@ -30,9 +30,9 @@ internal struct SelfUpdate: SwiftlyCommand {
     public static func execute(verbose: Bool) async throws -> SwiftlyVersion {
         SwiftlyCore.print("Checking for swiftly updates...")
 
-        let swiftlyRelease = try await SwiftlyCore.httpClient.getSwiftlyRelease()
+        let swiftlyRelease = try await SwiftlyCore.httpClient.getCurrentSwiftlyRelease()
 
-        guard swiftlyRelease.version > SwiftlyCore.version else {
+        guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
             SwiftlyCore.print("Already up to date.")
             return SwiftlyCore.version
         }
@@ -40,27 +40,27 @@ internal struct SelfUpdate: SwiftlyCommand {
         var downloadURL: Foundation.URL?
         for platform in swiftlyRelease.platforms {
 #if os(macOS)
-            guard platform.platform == .Darwin else {
+            guard platform.isDarwin else {
                 continue
             }
 #elseif os(Linux)
-            guard platform.platform == .Linux else {
+            guard platform.isLinux else {
                 continue
             }
 #endif
 
 #if arch(x86_64)
-            downloadURL = platform.x86_64
+            downloadURL = try platform.x86_64URL
 #elseif arch(arm64)
-            downloadURL = platform.arm64
+            downloadURL = try platform.arm64URL
 #endif
         }
 
-        guard let downloadURL = downloadURL else {
-            throw Error(message: "The newest release of swiftly is incompatible with your current OS and/or processor architecture.")
+        guard let downloadURL else {
+            throw SwiftlyError(message: "The newest release of swiftly is incompatible with your current OS and/or processor architecture.")
         }
 
-        let version = swiftlyRelease.version
+        let version = try swiftlyRelease.swiftlyVersion
 
         SwiftlyCore.print("A new version is available: \(version)")
 

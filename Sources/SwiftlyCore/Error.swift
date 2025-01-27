@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Error: LocalizedError, CustomStringConvertible {
+public struct SwiftlyError: LocalizedError, CustomStringConvertible {
     public let message: String
 
     public init(message: String) {

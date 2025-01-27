@@ -1,0 +1,7 @@
+generate:
+  - types
+  - client
+namingStrategy: idiomatic
+accessModifier: public
+filter:
+  tags: ["Swiftly"]

@@ -31,7 +31,7 @@ final class RunTests: SwiftlyTests {
             do {
                 try await run.run()
                 XCTAssert(false)
-            } catch let e as Error {
+            } catch let e as SwiftlyError {
                 XCTAssert(e.message.contains("didn't match any of the installed toolchains"))
             }
             // THEN: an error is shown because there is no matching toolchain that is installed

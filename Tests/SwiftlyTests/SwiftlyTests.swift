@@ -463,6 +463,10 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
     public func execute(_ request: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse {
         try await self.handler(request)
     }
+
+    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
+        throw SwiftlyTestError(message: "Mocking of fetching the current swiftly release is not implemented in MockHTTPRequestExecutor.")
+    }
 }
 
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
@@ -490,6 +494,18 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         self.latestSwiftlyVersion = latestSwiftlyVersion
     }
 
+    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
+        let release = Components.Schemas.SwiftlyRelease(
+            version: self.latestSwiftlyVersion.description,
+            platforms: [
+                .init(platform: .init(value1: .darwin), arm64: "https://download.swift.org/swiftly-darwin.pkg", x8664: "https://download.swift.org/swiftly-darwin.pkg"),
+                .init(platform: .init(value1: .linux), arm64: "https://download.swift.org/swiftly-linux.tar.gz", x8664: "https://download.swift.org/swiftly-linux.tar.gz"),
+            ]
+        )
+
+        return release
+    }
+
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
         guard let url = URL(string: request.url) else {
             throw SwiftlyTestError(message: "invalid request URL: \(request.url)")
@@ -501,31 +517,6 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         } else if url.host == "download.swift.org" && (url.path.hasPrefix("/swift-") || url.path.hasPrefix("/development")) {
             // Download a toolchain
             return try self.makeToolchainDownloadResponse(from: url)
-        } else if url.host == "www.swift.org" && url.path == "/api/v1/swiftly.json" {
-            // Mock a response that would represent the swiftly offerings using the latest version
-            let decoder = JSONDecoder()
-            let json = """
-            {
-                "version": "\(self.latestSwiftlyVersion)",
-                "platforms": [
-                    {
-                        "platform": "Darwin",
-                        "x86_64": "https://download.swift.org/swiftly-darwin.pkg",
-                        "arm64": "https://download.swift.org/swiftly-darwin.pkg"
-                    },
-                    {
-                        "platform": "Linux",
-                        "x86_64": "https://download.swift.org/swiftly-linux.tar.gz",
-                        "arm64": "https://download.swift.org/swiftly-linux.tar.gz"
-                    }
-                ]
-            }
-            """.data(using: .utf8)!
-
-            let swiftlyRelease = try decoder.decode(SwiftOrgSwiftlyRelease.self, from: json)
-            var buffer = ByteBuffer()
-            try buffer.writeJSONEncodable(swiftlyRelease)
-            return HTTPClientResponse(body: .bytes(buffer))
         } else if url.host == "www.swift.org" {
             // Delegate any API requests to swift.org
             return try await self.delegate.execute(request, timeout: timeout)

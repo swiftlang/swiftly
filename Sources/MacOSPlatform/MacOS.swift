@@ -51,7 +51,7 @@ public struct MacOS: Platform {
 
     public func install(from tmpFile: URL, version: ToolchainVersion, verbose: Bool) throws {
         guard tmpFile.fileExists() else {
-            throw Error(message: "\(tmpFile) doesn't exist")
+            throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
         if !self.swiftlyToolchainsDir.fileExists() {
@@ -85,7 +85,7 @@ public struct MacOS: Platform {
 
     public func extractSwiftlyAndInstall(from archive: URL) throws {
         guard archive.fileExists() else {
-            throw Error(message: "\(archive) doesn't exist")
+            throw SwiftlyError(message: "\(archive) doesn't exist")
         }
 
         let homeDir: URL
@@ -111,7 +111,7 @@ public struct MacOS: Platform {
             // and the ones that are mocked here in the test framework.
             let payload = tmpDir.appendingPathComponent("Payload")
             guard payload.fileExists() else {
-                throw Error(message: "Payload file could not be found at \(tmpDir).")
+                throw SwiftlyError(message: "Payload file could not be found at \(tmpDir).")
             }
 
             try runProgram("tar", "-C", installDir.path, "-xf", payload.path)
@@ -128,11 +128,11 @@ public struct MacOS: Platform {
         let decoder = PropertyListDecoder()
         let infoPlist = toolchainDir.appendingPathComponent("Info.plist")
         guard let data = try? Data(contentsOf: infoPlist) else {
-            throw Error(message: "could not open \(infoPlist)")
+            throw SwiftlyError(message: "could not open \(infoPlist)")
         }
 
         guard let pkgInfo = try? decoder.decode(SwiftPkgInfo.self, from: data) else {
-            throw Error(message: "could not decode plist at \(infoPlist)")
+            throw SwiftlyError(message: "could not decode plist at \(infoPlist)")
         }
 
         try FileManager.default.removeItem(at: toolchainDir)

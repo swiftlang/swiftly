@@ -1,12 +1,73 @@
 import _StringProcessing
 import AsyncHTTPClient
 import Foundation
+import HTTPTypes
 import NIO
 import NIOFoundationCompat
 import NIOHTTP1
+import OpenAPIAsyncHTTPClient
+import OpenAPIRuntime
+
+extension Components.Schemas.SwiftlyRelease {
+    public var swiftlyVersion: SwiftlyVersion {
+        get throws {
+            guard let releaseVersion = try? SwiftlyVersion(parsing: self.version) else {
+                throw SwiftlyError(message: "Invalid swiftly version reported: \(self.version)")
+            }
+
+            return releaseVersion
+        }
+    }
+}
+
+extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
+    public var isDarwin: Bool {
+        self.platform.value1 == .darwin
+    }
+
+    public var isLinux: Bool {
+        self.platform.value1 == .linux
+    }
+
+    public var x86_64URL: URL {
+        get throws {
+            guard let url = URL(string: self.x8664) else {
+                throw SwiftlyError(message: "The swiftly x86_64 URL is invalid: \(self.x8664)")
+            }
+
+            return url
+        }
+    }
+
+    public var arm64URL: URL {
+        get throws {
+            guard let url = URL(string: self.arm64) else {
+                throw SwiftlyError(message: "The swiftly arm64 URL is invalid: \(self.arm64)")
+            }
+
+            return url
+        }
+    }
+}
 
 public protocol HTTPRequestExecutor {
     func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse
+    func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease
+}
+
+internal struct SwiftlyUserAgentMiddleware: ClientMiddleware {
+    package func intercept(
+        _ request: HTTPRequest,
+        body: HTTPBody?,
+        baseURL: URL,
+        operationID _: String,
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+    ) async throws -> (HTTPResponse, HTTPBody?) {
+        var request = request
+        // Adds the `Authorization` header field with the provided value.
+        request.headerFields[.userAgent] = "swiftly/\(SwiftlyCore.version)"
+        return try await next(request, body, baseURL)
+    }
 }
 
 /// An `HTTPRequestExecutor` backed by the shared `HTTPClient`.
@@ -53,29 +114,26 @@ internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {
         try await self.httpClient.execute(request, timeout: timeout)
     }
+
+    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
+        let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
+
+        let client = Client(
+            serverURL: try Servers.Server1.url(),
+            transport: AsyncHTTPClientTransport(configuration: config),
+            middlewares: [swiftlyUserAgent]
+        )
+
+        let response = try await client.getCurrentSwiftlyRelease()
+        return try response.ok.body.json
+    }
 }
 
 private func makeRequest(url: String) -> HTTPClientRequest {
     var request = HTTPClientRequest(url: url)
     request.headers.add(name: "User-Agent", value: "swiftly/\(SwiftlyCore.version)")
     return request
-}
-
-public enum SwiftOrgSwiftlyPlatformType: String, Codable {
-    case Darwin
-    case Linux
-    case Windows
-}
-
-public struct SwiftOrgSwiftlyPlatform: Codable {
-    public var platform: SwiftOrgSwiftlyPlatformType
-    public var x86_64: URL
-    public var arm64: URL
-}
-
-public struct SwiftOrgSwiftlyRelease: Codable {
-    public var version: SwiftlyVersion
-    public var platforms: [SwiftOrgSwiftlyPlatform]
 }
 
 struct SwiftOrgPlatform: Codable {
@@ -165,7 +223,7 @@ public struct SwiftOrgSnapshot: Codable {
         let branch: ToolchainVersion.Snapshot.Branch
         if let majorString = match.output.1, let minorString = match.output.2 {
             guard let major = Int(majorString), let minor = Int(minorString) else {
-                throw Error(message: "malformatted release branch: \"\(majorString).\(minorString)\"")
+                throw SwiftlyError(message: "malformatted release branch: \"\(majorString).\(minorString)\"")
             }
             branch = .release(major: major, minor: minor)
         } else {
@@ -218,17 +276,15 @@ public struct SwiftlyHTTPClient {
             throw SwiftlyHTTPClient.JSONNotFoundError(url: url)
         default:
             let json = String(buffer: response.buffer)
-            throw Error(message: "Received \(response.status) when reaching \(url) for JSON: \(json)")
+            throw SwiftlyError(message: "Received \(response.status) when reaching \(url) for JSON: \(json)")
         }
 
         return try JSONDecoder().decode(type.self, from: response.buffer)
     }
 
     /// Return the current Swiftly release using the swift.org API.
-    public func getSwiftlyRelease() async throws -> SwiftOrgSwiftlyRelease {
-        let url = "https://www.swift.org/api/v1/swiftly.json"
-        let swiftlyRelease: SwiftOrgSwiftlyRelease = try await self.getFromJSON(url: url, type: SwiftOrgSwiftlyRelease.self)
-        return swiftlyRelease
+    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
+        try await SwiftlyCore.httpRequestExecutor.getCurrentSwiftlyRelease()
     }
 
     /// Return an array of released Swift versions that match the given filter, up to the provided
@@ -269,7 +325,7 @@ public struct SwiftlyHTTPClient {
             guard let version = try? ToolchainVersion(parsing: swiftOrgRelease.stableName),
                   case let .stable(release) = version
             else {
-                throw Error(message: "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
+                throw SwiftlyError(message: "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
             }
 
             if let filter {
@@ -392,7 +448,7 @@ public struct SwiftlyHTTPClient {
         case .notFound:
             throw SwiftlyHTTPClient.DownloadNotFoundError(url: url.path)
         default:
-            throw Error(message: "Received \(response.status) when trying to download \(url)")
+            throw SwiftlyError(message: "Received \(response.status) when trying to download \(url)")
         }
 
         // if defined, the content-length headers announces the size of the body

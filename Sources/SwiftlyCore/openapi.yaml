@@ -1,0 +1,357 @@
+openapi: '3.0.3'
+info:
+  title: swift.org API
+  description: API for retrieving Swift version release information, including date, platform support, tags, and toolchain details.
+  version: 1.1.0
+servers:
+  - url: https://www.swift.org/api/v1
+    description: The production deployment.
+  - url: http://127.0.0.1:4000/api/v1
+    description: A local deployment.
+tags:
+  - name: Toolchains
+    description: Information about published toolchains builds.
+  - name: Swiftly
+    description: Information about the Swiftly installer.
+  - name: SSWG
+    description: Information about the Swift Server Workgroup.
+paths:
+  /install/releases.json:
+    get:
+      operationId: listReleases
+      summary: Fetch all released toolchains
+      tags:
+        - Toolchains
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Release'
+  /install/dev/{branch}/{platform}.json:
+    parameters:
+      - name: branch
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/KnownSourceBranch'
+      - name: platform
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/KnownPlatformIdentifier'
+    get:
+      operationId: listDevToolchains
+      summary: Fetch all development toolchains
+      tags:
+        - Toolchains
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevToolchains'
+  /install/dev/{branch}/static-sdk.json:
+    parameters:
+      - name: branch
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/KnownSourceBranch'
+    get:
+      operationId: listStaticSDKDevToolchains
+      summary: Fetch all static SDK development toolchains
+      tags:
+        - Toolchains
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevToolchainsForArch'
+  /swiftly.json:
+    get:
+      operationId: getCurrentSwiftlyRelease
+      summary: Fetch the metadata of the current Swiftly release.
+      tags:
+        - Swiftly
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwiftlyRelease'
+  /sswg/incubation/{filter}.json:
+    parameters:
+      - name: filter
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/SSWGIncubationFilter'
+    get:
+      operationId: listSSWGIncubatedPackages
+      summary: List the packages incubated by the Swift Server Workgroup.
+      tags:
+        - SSWG
+      responses:
+        '200':
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSWGPackageList'
+components:
+  schemas:
+    Release:
+      type: object
+      properties:
+        name:
+          type: string
+          pattern: \d+\.\d+(\.\d+)?
+          description: Version number of the Swift release.
+          example: '6.0.2'
+        date:
+          type: string
+          pattern: \d{4}-\d{2}-\d{2}
+          description: Release date of the Swift version.
+          example: '2024-10-28'
+        platforms:
+          type: array
+          description: List of supported platforms for this release.
+          items:
+            $ref: '#/components/schemas/Platform'
+        tag:
+          type: string
+          description: Release tag identifier.
+          example: 'swift-6.0.2-RELEASE'
+        xcode:
+          type: string
+          description: Xcode version associated with the release.
+          example: 'Xcode 16.1'
+        xcode_release:
+          type: boolean
+          description: Indicates if this Swift version has an associated Xcode release.
+      required:
+        - name
+        - date
+        - platforms
+        - tag
+        - xcode
+    KnownPlatformIdentifier:
+      description: |-
+        A platform identifier known as of this snapshot of the API document.
+
+        This is distinct from `PlatformIdentifier` to allow parsing unknown identifiers.
+        Parsing unknown identifiers is important to avoid a new identifier causing a major API break.
+      type: string
+      enum:
+        - amazonlinux2
+        - centos7
+        - macos
+        - ubi9
+        - ubuntu2004
+        - ubuntu2204
+        - windows10
+    PlatformIdentifier:
+      anyOf:
+        - $ref: '#/components/schemas/KnownPlatformIdentifier'
+        - type: string
+          description: The raw identifier, a fallback for when an unknown identifier is received.
+    KnownDevToolchainKind:
+      description: |-
+        A dev toolchain name known as of this snapshot of the API document.
+
+        This is distinct from `DevToolchainKind` to allow parsing unknown names.
+        Parsing unknown names is important to avoid a new name causing a major API break.
+      type: string
+      enum:
+        - Swift Development Snapshot
+    DevToolchainKind:
+      anyOf:
+        - $ref: '#/components/schemas/KnownDevToolchainKind'
+        - type: string
+          description: The raw name, a fallback for when an unknown name is received.
+    DevToolchainForArch:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/DevToolchainKind'
+        date:
+          type: string
+          pattern: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [-+]\d{4}
+          description: Date and time of the snapshot in 'YYYY-MM-DD HH:MM:SS -ZZZZ' format.
+          example: '2024-10-12 10:10:00 -0600'
+        dir:
+          type: string
+          description: Directory name for the snapshot release.
+          example: 'swift-6.0-DEVELOPMENT-SNAPSHOT-2024-10-12-a'
+        download:
+          type: string
+          description: Filename of the snapshot archive to download.
+          example: 'swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-25-a-amazonlinux2-aarch64.tar.gz'
+        download_signature:
+          type: string
+          description: Filename of the signature file for the download.
+          example: 'swift-6.0-DEVELOPMENT-SNAPSHOT-2024-07-25-a-amazonlinux2-aarch64.tar.gz.sig'
+        debug_info:
+          type: string
+          description: Filename of the debug symbols file for the download.
+          example: 'swift-DEVELOPMENT-SNAPSHOT-2024-10-27-a-osx-symbols.pkg'
+      required:
+        - date
+        - dir
+        - download
+    DevToolchainsForArch:
+      type: array
+      items:
+        $ref: '#/components/schemas/DevToolchainForArch'
+    DevToolchains:
+      type: object
+      properties:
+        aarch64:
+          $ref: '#/components/schemas/DevToolchainsForArch'
+        arm64:
+          $ref: '#/components/schemas/DevToolchainsForArch'
+        x86_64:
+          $ref: '#/components/schemas/DevToolchainsForArch'
+        universal:
+          $ref: '#/components/schemas/DevToolchainsForArch'
+    KnownSourceBranch:
+      description: |-
+        A branch known as of this snapshot of the API document.
+
+        This is distinct from `SourceBranch` to allow parsing unknown branches.
+        Parsing unknown branches is important to avoid a new branch causing a major API break.
+      type: string
+      enum:
+        - main
+        - '6.0'
+    SourceBranch:
+      anyOf:
+        - $ref: '#/components/schemas/KnownSourceBranch'
+        - type: string
+          description: The raw branch, a fallback for when an unknown branch is received.
+    KnownPlatformType:
+      description: |-
+        A platform type known as of this snapshot of the API document.
+
+        This is distinct from `PlatformType` to allow parsing unknown platforms.
+        Parsing unknown platforms is important to avoid a new platform causing a major API break.
+      type: string
+      enum:
+        - Linux
+        - Windows
+        - static-sdk
+    PlatformType:
+      anyOf:
+        - $ref: '#/components/schemas/KnownPlatformType'
+        - type: string
+          description: The raw platform name, a fallback for when an unknown platform is received.
+    KnownArchitecture:
+      description: |-
+        An architecture known as of this snapshot of the API document.
+
+        This is distinct from `Architecture` to allow parsing unknown architectures.
+        Parsing unknown architectures is important to avoid a new architecture causing a major API break.
+      type: string
+      enum:
+        - aarch64
+        - arm64
+        - x86_64
+        - universal
+    Architecture:
+      anyOf:
+        - $ref: '#/components/schemas/KnownArchitecture'
+        - type: string
+          description: The raw architecture name, a fallback for when an unknown architecture is received.
+    Platform:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Platform name.
+          example: 'Ubuntu 24.04'
+        platform:
+          $ref: '#/components/schemas/PlatformType'
+        archs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Architecture'
+          description: List of supported architectures.
+      required:
+        - name
+        - platform
+        - archs
+    KnownSwiftlyPlatformIdentifier:
+      description: |-
+        A Swiftly platform identifier known as of this snapshot of the API document.
+
+        This is distinct from `SwiftlyPlatformIdentifier` to allow parsing unknown platform identifiers.
+        Parsing unknown platform identifiers is important to avoid a new platform causing a major API break.
+      type: string
+      enum:
+        - Linux
+        - Darwin
+        - Windows
+    SwiftlyPlatformIdentifier:
+      anyOf:
+        - $ref: '#/components/schemas/KnownSwiftlyPlatformIdentifier'
+        - type: string
+          description: The raw platform identifier, a fallback for when an unknown platform is received.
+    SwiftlyArtifactDownloadURL:
+      type: string
+      description: A download URL for a Swiftly artifact.
+      example: 'https://download.swift.org/swiftly/linux/swiftly-0.4.0-dev-aarch64.tar.gz'
+    SwiftlyReleasePlatformArtifacts:
+      type: object
+      description: Information about the Swiftly artifacts for a specific platform.
+      properties:
+        platform:
+          $ref: '#/components/schemas/SwiftlyPlatformIdentifier'
+        arm64:
+          $ref: '#/components/schemas/SwiftlyArtifactDownloadURL'
+        x86_64:
+          $ref: '#/components/schemas/SwiftlyArtifactDownloadURL'
+      required:
+        - platform
+        - arm64
+        - x86_64
+    SwiftlyRelease:
+      type: object
+      description: Information about a release of the Swiftly installer.
+      properties:
+        version:
+          type: string
+          description: The current Swiftly version.
+          example: '0.4.0-dev'
+        platforms:
+          type: array
+          description: A list of supported platforms with artifact URLs.
+          items:
+            $ref: '#/components/schemas/SwiftlyReleasePlatformArtifacts'
+      required:
+        - version
+        - platforms
+    SSWGPackageURL:
+      type: string
+      description: A URL of an SSWG-incubated package.
+      example: 'http://github.com/apple/swift-nio.git'
+    SSWGPackageList:
+      type: array
+      description: A list of SSWG-incubated packages.
+      items:
+        $ref: '#/components/schemas/SSWGPackageURL'
+    SSWGIncubationFilter:
+      type: string
+      description: A filter for fetching a subset of the SSWG-incubated packages.
+      enum:
+        - all
+        - graduated
+        - incubating
+        - sandbox

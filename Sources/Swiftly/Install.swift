@@ -86,10 +86,10 @@ struct Install: SwiftlyCommand {
                 } else if let error = error {
                     throw error
                 } else {
-                    throw Error(message: "Internal error selecting toolchain to install.")
+                    throw SwiftlyError(message: "Internal error selecting toolchain to install.")
                 }
             } else {
-                throw Error(message: "Swiftly couldn't determine the toolchain version to install. Please set a version like this and try again: `swiftly install latest`")
+                throw SwiftlyError(message: "Swiftly couldn't determine the toolchain version to install. Please set a version like this and try again: `swiftly install latest`")
             }
         }
 
@@ -115,7 +115,7 @@ struct Install: SwiftlyCommand {
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
-                throw Error(message: """
+                throw SwiftlyError(message: """
 
                 There are some dependencies that should be installed before using this toolchain.
                 You can run the following script as the system administrator (e.g. root) to prepare
@@ -189,7 +189,7 @@ struct Install: SwiftlyCommand {
         url += "\(version.identifier)-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
 
         guard let url = URL(string: url) else {
-            throw Error(message: "Invalid toolchain URL: \(url)")
+            throw SwiftlyError(message: "Invalid toolchain URL: \(url)")
         }
 
         let animation = PercentProgressAnimation(
@@ -223,7 +223,7 @@ struct Install: SwiftlyCommand {
                 }
             )
         } catch let notFound as SwiftlyHTTPClient.DownloadNotFoundError {
-            throw Error(message: "\(version) does not exist at URL \(notFound.url), exiting")
+            throw SwiftlyError(message: "\(version) does not exist at URL \(notFound.url), exiting")
         } catch {
             animation.complete(success: false)
             throw error
@@ -269,7 +269,7 @@ struct Install: SwiftlyCommand {
                 let proceed = SwiftlyCore.readLine(prompt: "Proceed? [y/N]") ?? "n"
 
                 guard proceed == "y" else {
-                    throw Error(message: "Toolchain installation has been cancelled")
+                    throw SwiftlyError(message: "Toolchain installation has been cancelled")
                 }
             }
 
@@ -315,13 +315,13 @@ struct Install: SwiftlyCommand {
             SwiftlyCore.print("Fetching the latest stable Swift release...")
 
             guard let release = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform, limit: 1).first else {
-                throw Error(message: "couldn't get latest releases")
+                throw SwiftlyError(message: "couldn't get latest releases")
             }
             return .stable(release)
 
         case let .stable(major, minor, patch):
             guard let minor else {
-                throw Error(
+                throw SwiftlyError(
                     message: "Need to provide at least major and minor versions when installing a release toolchain."
                 )
             }
@@ -338,7 +338,7 @@ struct Install: SwiftlyCommand {
             }.first
 
             guard let toolchain else {
-                throw Error(message: "No release toolchain found matching \(major).\(minor)")
+                throw SwiftlyError(message: "No release toolchain found matching \(major).\(minor)")
             }
 
             return .stable(toolchain)
@@ -358,7 +358,7 @@ struct Install: SwiftlyCommand {
                     snapshot.branch == branch
                 }
             } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
-                throw Error(message: "You have requested to install a snapshot toolchain from branch \(branchNotFoundErr.branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try again with a different branch.")
+                throw SwiftlyError(message: "You have requested to install a snapshot toolchain from branch \(branchNotFoundErr.branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try again with a different branch.")
             } catch {
                 throw error
             }
@@ -366,7 +366,7 @@ struct Install: SwiftlyCommand {
             let firstSnapshot = snapshots.first
 
             guard let firstSnapshot else {
-                throw Error(message: "No snapshot toolchain found for branch \(branch)")
+                throw SwiftlyError(message: "No snapshot toolchain found for branch \(branch)")
             }
 
             return .snapshot(firstSnapshot)

@@ -45,7 +45,12 @@ final class HTTPClientTests: SwiftlyTests {
         XCTAssertTrue(exceptionThrown)
     }
 
-    func testGetMetdataFromSwiftOrg() async throws {
+    func testGetSwiftlyReleaseMetadataFromSwiftOrg() async throws {
+        let currentRelease = try await SwiftlyCore.httpClient.getCurrentSwiftlyRelease()
+        XCTAssertNoThrow(try currentRelease.swiftlyVersion)
+    }
+
+    func testGetToolchainMetdataFromSwiftOrg() async throws {
         let supportedPlatforms = [
             PlatformDefinition.macOS,
             PlatformDefinition.ubuntu2404,

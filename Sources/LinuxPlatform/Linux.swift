@@ -69,7 +69,7 @@ public struct Linux: Platform {
             You can install the ca-certificates package on your system to fix this.
             """
 
-            throw Error(message: msg)
+            throw SwiftlyError(message: msg)
         }
     }
 
@@ -258,7 +258,7 @@ public struct Linux: Platform {
                 }
                 msg += "\n" + Self.skipVerificationMessage
 
-                throw Error(message: msg)
+                throw SwiftlyError(message: msg)
             }
 
             // Import the latest swift keys, but only once per session, which will help with the performance in tests
@@ -270,7 +270,7 @@ public struct Linux: Platform {
                 }
 
                 guard let url = URL(string: "https://www.swift.org/keys/all-keys.asc") else {
-                    throw Error(message: "malformed URL to the swift gpg keys")
+                    throw SwiftlyError(message: "malformed URL to the swift gpg keys")
                 }
 
                 try await httpClient.downloadFile(url: url, to: tmpFile)
@@ -329,7 +329,7 @@ public struct Linux: Platform {
 
     public func install(from tmpFile: URL, version: ToolchainVersion, verbose: Bool) throws {
         guard tmpFile.fileExists() else {
-            throw Error(message: "\(tmpFile) doesn't exist")
+            throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
         if !self.swiftlyToolchainsDir.fileExists() {
@@ -361,7 +361,7 @@ public struct Linux: Platform {
 
     public func extractSwiftlyAndInstall(from archive: URL) throws {
         guard archive.fileExists() else {
-            throw Error(message: "\(archive) doesn't exist")
+            throw SwiftlyError(message: "\(archive) doesn't exist")
         }
 
         let tmpDir = self.getTempFilePath()
@@ -414,7 +414,7 @@ public struct Linux: Platform {
         do {
             try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
         } catch {
-            throw Error(message: "Signature verification failed: \(error).")
+            throw SwiftlyError(message: "Signature verification failed: \(error).")
         }
     }
 
@@ -471,7 +471,7 @@ public struct Linux: Platform {
         guard let releaseFile = releaseFile else {
             let message = "Unable to detect the type of Linux OS and the release"
             if disableConfirmation {
-                throw Error(message: message)
+                throw SwiftlyError(message: message)
             } else {
                 print(message)
             }
@@ -498,7 +498,7 @@ public struct Linux: Platform {
         guard let id, let versionID else {
             let message = "Unable to find release information from file \(releaseFile)"
             if disableConfirmation {
-                throw Error(message: message)
+                throw SwiftlyError(message: message)
             } else {
                 print(message)
             }
@@ -509,7 +509,7 @@ public struct Linux: Platform {
             guard versionID == "2" else {
                 let message = "Unsupported version of Amazon Linux"
                 if disableConfirmation {
-                    throw Error(message: message)
+                    throw SwiftlyError(message: message)
                 } else {
                     print(message)
                 }
@@ -521,7 +521,7 @@ public struct Linux: Platform {
             guard versionID.hasPrefix("9") else {
                 let message = "Unsupported version of RHEL"
                 if disableConfirmation {
-                    throw Error(message: message)
+                    throw SwiftlyError(message: message)
                 } else {
                     print(message)
                 }
@@ -535,7 +535,7 @@ public struct Linux: Platform {
 
         let message = "Unsupported Linux platform"
         if disableConfirmation {
-            throw Error(message: message)
+            throw SwiftlyError(message: message)
         } else {
             print(message)
         }

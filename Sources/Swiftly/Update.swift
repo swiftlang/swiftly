@@ -122,7 +122,7 @@ struct Update: SwiftlyCommand {
 
         if let postInstallScript = postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
-                throw Error(message: """
+                throw SwiftlyError(message: """
 
                 There are some system dependencies that should be installed before using this toolchain.
                 You can run the following script as the system administrator (e.g. root) to prepare
@@ -213,7 +213,7 @@ struct Update: SwiftlyCommand {
                     snapshot.branch == old.branch && snapshot.date > old.date
                 }
             } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
-                throw Error(message: "Snapshot branch \(branchNotFoundErr.branch) cannot be updated. One possible reason for this is that there has been a new release published to swift.org and this snapshot is for an older release. Snapshots are only available for the newest release and the main branch. You can install a fresh snapshot toolchain from the either the latest release x.y (major.minor) with `swiftly install x.y-snapshot` or from the main branch with `swiftly install main-snapshot`.")
+                throw SwiftlyError(message: "Snapshot branch \(branchNotFoundErr.branch) cannot be updated. One possible reason for this is that there has been a new release published to swift.org and this snapshot is for an older release. Snapshots are only available for the newest release and the main branch. You can install a fresh snapshot toolchain from the either the latest release x.y (major.minor) with `swiftly install x.y-snapshot` or from the main branch with `swiftly install main-snapshot`.")
             } catch {
                 throw error
             }

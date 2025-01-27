@@ -21,7 +21,7 @@ public struct SwiftlyVersion: Equatable, Comparable, CustomStringConvertible {
 
     public init(parsing tag: String) throws {
         guard let match = try Self.regex.wholeMatch(in: tag) else {
-            throw Error(message: "unable to parse release tag: \"\(tag)\"")
+            throw SwiftlyError(message: "unable to parse release tag: \"\(tag)\"")
         }
 
         self.major = Int(match.output.1)!

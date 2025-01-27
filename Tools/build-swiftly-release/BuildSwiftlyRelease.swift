@@ -12,14 +12,15 @@ public struct SwiftRelease: Codable {
 }
 
 // These functions are cloned and adapted from SwiftlyCore until we can do better bootstrapping
-public struct Error: LocalizedError {
+public struct Error: LocalizedError, CustomStringConvertible {
     public let message: String
 
     public init(message: String) {
         self.message = message
     }
 
-    public var errorDescription: String? { self.message }
+    public var errorDescription: String { self.message }
+    public var description: String { self.message }
 }
 
 public func runProgramEnv(_ args: String..., quiet: Bool = false, env: [String: String]?) throws {

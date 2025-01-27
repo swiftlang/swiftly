@@ -116,7 +116,7 @@ public enum ToolchainVersion {
                 let minor = Int(match.output.2),
                 let patch = Int(match.output.3)
             else {
-                throw Error(message: "invalid stable version: \(string)")
+                throw SwiftlyError(message: "invalid stable version: \(string)")
             }
             self = ToolchainVersion(major: major, minor: minor, patch: patch)
         } else if let match = try Self.mainSnapshotRegex.wholeMatch(in: string) {
@@ -126,11 +126,11 @@ public enum ToolchainVersion {
                 let major = Int(match.output.1),
                 let minor = Int(match.output.2)
             else {
-                throw Error(message: "invalid release snapshot version: \(string)")
+                throw SwiftlyError(message: "invalid release snapshot version: \(string)")
             }
             self = ToolchainVersion(snapshotBranch: .release(major: major, minor: minor), date: String(match.output.3))
         } else {
-            throw Error(message: "invalid toolchain version: \"\(string)\"")
+            throw SwiftlyError(message: "invalid toolchain version: \"\(string)\"")
         }
     }
 
@@ -264,7 +264,7 @@ public enum ToolchainSelector {
             return
         }
 
-        throw Error(message: "invalid toolchain selector: \"\(input)\"")
+        throw SwiftlyError(message: "invalid toolchain selector: \"\(input)\"")
     }
 
     public func isReleaseSelector() -> Bool {
@@ -404,7 +404,7 @@ struct ReleaseSnapshotParser: ToolchainSelectorParser {
             let major = Int(match.output.1),
             let minor = Int(match.output.2)
         else {
-            throw Error(message: "malformatted version: \(match.output.1).\(match.output.2)")
+            throw SwiftlyError(message: "malformatted version: \(match.output.1).\(match.output.2)")
         }
 
         return .snapshot(branch: .release(major: major, minor: minor), date: match.output.3.map(String.init))

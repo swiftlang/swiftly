@@ -143,12 +143,6 @@ extension Platform {
         let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
         var newEnv = ProcessInfo.processInfo.environment
 
-        // Prevent circularities with a memento environment variable
-        guard newEnv["SWIFTLY_PROXY_IN_PROGRESS"] == nil else {
-            throw SwiftlyError(message: "Circular swiftly proxy invocation")
-        }
-        newEnv["SWIFTLY_PROXY_IN_PROGRESS"] = "1"
-
         // The toolchain goes to the beginning of the PATH
         var newPath = newEnv["PATH"] ?? ""
         if !newPath.hasPrefix(tcPath.path + ":") {
@@ -164,8 +158,12 @@ extension Platform {
     /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
     /// the exit code and program information.
     ///
-    public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws {
-        try self.runProgram([command] + arguments, env: self.proxyEnv(toolchain))
+    public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String], _ env: [String: String] = [:]) async throws {
+        var newEnv = try self.proxyEnv(toolchain)
+        for (key, value) in env {
+            newEnv[key] = value
+        }
+        try self.runProgram([command] + arguments, env: newEnv)
     }
 
     /// Proxy the invocation of the provided command to the chosen toolchain and capture the output.

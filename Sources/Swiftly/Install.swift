@@ -56,7 +56,7 @@ struct Install: SwiftlyCommand {
     @Option(help: ArgumentHelp(
         "A file path to a location for a post installation script",
         discussion: """
-        If the toolchain that is installed has extra post installation steps they they will be
+        If the toolchain that is installed has extra post installation steps, they will be
         written to this file as commands that can be run after the installation.
         """
     ))

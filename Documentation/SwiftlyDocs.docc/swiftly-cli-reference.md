@@ -72,7 +72,7 @@ Likewise, the latest snapshot associated with a given development branch can be 
 
 *A file path to a location for a post installation script*
 
-If the toolchain that is installed has extra post installation steps they they will be
+If the toolchain that is installed has extra post installation steps, they will be
 written to this file as commands that can be run after the installation.
 
 

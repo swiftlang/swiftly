@@ -339,7 +339,7 @@ set -o errexit
 shopt -s extglob
 
 short_options='yhvp:'
-long_options='disable-confirmation,no-modify-profile,no-install-system-deps,help,version,platform:,overwrite'
+long_options='disable-confirmation,no-modify-profile,no-install-system-deps,no-import-pgp-keys,help,version,platform:,overwrite'
 
 args=$(getopt --options "$short_options" --longoptions "$long_options" --name "swiftly-install" -- "${@}")
 eval "set -- ${args}"

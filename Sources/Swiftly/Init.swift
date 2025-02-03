@@ -37,8 +37,22 @@ internal struct Init: SwiftlyCommand {
 
         var config = try? Config.load()
 
+        if var config, !overwrite && config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev") {
+            // This is a simple upgrade from the 0.4.0-dev pre-release
+
+            // Move our executable over to the correct place
+            try Swiftly.currentPlatform.installSwiftlyBin()
+
+            // Update and save the version
+            config.version = SwiftlyCore.version
+
+            try config.save()
+
+            return
+        }
+
         if let config, !overwrite && config.version != SwiftlyCore.version {
-            // We don't support downgrades, and we don't yet support upgrades
+            // We don't support downgrades, and versions prior to 0.4.0-dev
             throw SwiftlyError(message: "An existing swiftly installation was detected. You can try again with '--overwrite' to overwrite it.")
         }
 

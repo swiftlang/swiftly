@@ -382,13 +382,7 @@ public struct Linux: Platform {
     }
 
     public func getExecutableName() -> String {
-#if arch(x86_64)
-        let arch = "x86_64"
-#elseif arch(arm64)
-        let arch = "aarch64"
-#else
-        fatalError("Unsupported processor architecture")
-#endif
+        let arch = cpuArch
 
         return "swiftly-\(arch)-unknown-linux-gnu"
     }

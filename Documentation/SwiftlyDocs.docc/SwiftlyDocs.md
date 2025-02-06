@@ -1,4 +1,4 @@
-# ``Swiftly``
+# ``SwiftlyDocs``
 
 Install and manage your Swift programming language toolchains.
 

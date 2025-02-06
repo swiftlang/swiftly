@@ -53,7 +53,7 @@ $ swiftly install --use 5.10
 $ swift --version
 
 Swift version 5.10.1 (swift-5.10.1-RELEASE)
-Target: x86_64-unknown-linux-gnu
+...
 
 $ swift build    # Build with the 5.10.1 toolchain
 ```

@@ -266,9 +266,7 @@ struct Install: SwiftlyCommand {
                     SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
                 }
 
-                let proceed = SwiftlyCore.readLine(prompt: "Proceed? [y/N]") ?? "n"
-
-                guard proceed == "y" else {
+                guard SwiftlyCore.promptForConfirmation(defaultBehavior: false) else {
                     throw SwiftlyError(message: "Toolchain installation has been cancelled")
                 }
             }

@@ -39,23 +39,23 @@ Swiftly will install itself and download the latest available Swift toolchain. F
 ```
 $ swift --version
 
-Swift version 6.0.1 (swift-6.0.1-RELEASE)
-Target: x86_64-unknown-linux-gnu
+Swift version 6.0.3 (swift-6.0.3-RELEASE)
+...
 
-$ swift build    # Build with the latest (5.8.1) toolchain
+$ swift build        # Build with the latest (6.0.3) toolchain
 ```
 
 You can install (and use) another release toolchain:
 
 ```
-$ swiftly install --use 5.7
+$ swiftly install --use 5.10
 
 $ swift --version
 
-Swift version 5.7.2 (swift-5.7.2-RELEASE)
-Target: x86_64-unknown-linux-gnu
+Swift version 5.10.1 (swift-5.10.1-RELEASE)
+...
 
-$ swift build    # Build with the 5.7.2 toolchain
+$ swift build    # Build with the 5.10.1 toolchain
 ```
 
 Quickly test your package with the latest nightly snapshot to prepare for the next release:
@@ -74,7 +74,7 @@ $ swiftly uninstall main-snapshot
 
 # Proxy
 
-Swiftly downloads a list of toolchains from https://www.swift.org/ and retrieves them from Apple/Akamai CDN via https://download.swift.org.
+Swiftly downloads a list of toolchains from https://www.swift.org/ and retrieves them from CDN via https://download.swift.org.
 If your environment requires a proxy, Swiftly will attempt to use the standard environment variables `http_proxy`, `HTTP_PROXY`, `https_proxy` or `HTTPS_PROXY` to determine which proxy server to use instead of making a direct connection.
 
 To download latest nightly snapshot using a proxy:

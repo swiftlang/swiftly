@@ -77,7 +77,7 @@ internal struct Init: SwiftlyCommand {
             \(installMsg)
             """)
 
-            if SwiftlyCore.readLine(prompt: "Proceed with the installation? [Y/n] ") == "n" {
+            guard promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }
@@ -93,9 +93,7 @@ internal struct Init: SwiftlyCommand {
                 SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
             }
 
-            let proceed = SwiftlyCore.readLine(prompt: "Proceed? [y/N]") ?? "n"
-
-            guard proceed == "y" else {
+            guard promptForConfirmation(defaultBehavior: false) else {
                 throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }

@@ -58,8 +58,7 @@ internal struct Run: SwiftlyCommand {
 
         // Handle the specific case where help is requested of the run subcommand
         if command == ["--help"] {
-            print(Run.helpMessage(for: Run.self))
-            Foundation.exit(0)
+            throw CleanExit.helpRequest(self)
         }
 
         var config = try Config.load()

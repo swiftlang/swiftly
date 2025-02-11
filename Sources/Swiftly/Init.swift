@@ -201,9 +201,11 @@ internal struct Init: SwiftlyCommand {
                     profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
                 } else {
                     let confDir = userHome.appendingPathComponent(
-                        ".config/fish/conf.d", isDirectory: true)
+                        ".config/fish/conf.d", isDirectory: true
+                    )
                     try FileManager.default.createDirectory(
-                        at: confDir, withIntermediateDirectories: true)
+                        at: confDir, withIntermediateDirectories: true
+                    )
                     profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
                 }
             } else {

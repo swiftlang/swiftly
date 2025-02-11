@@ -76,8 +76,7 @@ internal struct Init: SwiftlyCommand {
             These locations can be changed with SWIFTLY_HOME and SWIFTLY_BIN environment variables and run this again.
             \(installMsg)
             """)
-
-            if SwiftlyCore.readLine(prompt: "Proceed with the installation? [Y/n] ") == "n" {
+            guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }
@@ -93,9 +92,7 @@ internal struct Init: SwiftlyCommand {
                 SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
             }
 
-            let proceed = SwiftlyCore.readLine(prompt: "Proceed? [y/N]") ?? "n"
-
-            guard proceed == "y" else {
+            guard SwiftlyCore.promptForConfirmation(defaultBehavior: false) else {
                 throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }
@@ -203,8 +200,12 @@ internal struct Init: SwiftlyCommand {
                     try FileManager.default.createDirectory(at: confDir, withIntermediateDirectories: true)
                     profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
                 } else {
-                    let confDir = userHome.appendingPathComponent(".config/fish/conf.d", isDirectory: true)
-                    try FileManager.default.createDirectory(at: confDir, withIntermediateDirectories: true)
+                    let confDir = userHome.appendingPathComponent(
+                        ".config/fish/conf.d", isDirectory: true
+                    )
+                    try FileManager.default.createDirectory(
+                        at: confDir, withIntermediateDirectories: true
+                    )
                     profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
                 }
             } else {

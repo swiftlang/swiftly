@@ -77,7 +77,7 @@ internal struct Init: SwiftlyCommand {
             \(installMsg)
             """)
 
-            guard promptForConfirmation(defaultBehavior: true) else {
+            guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }
@@ -93,7 +93,7 @@ internal struct Init: SwiftlyCommand {
                 SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
             }
 
-            guard promptForConfirmation(defaultBehavior: false) else {
+            guard SwiftlyCore.promptForConfirmation(defaultBehavior: false) else {
                 throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }
@@ -201,8 +201,12 @@ internal struct Init: SwiftlyCommand {
                     try FileManager.default.createDirectory(at: confDir, withIntermediateDirectories: true)
                     profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
                 } else {
-                    let confDir = userHome.appendingPathComponent(".config/fish/conf.d", isDirectory: true)
-                    try FileManager.default.createDirectory(at: confDir, withIntermediateDirectories: true)
+                    let confDir = userHome.appendingPathComponent(
+                        ".config/fish/conf.d", isDirectory: true
+                    )
+                    try FileManager.default.createDirectory(
+                        at: confDir, withIntermediateDirectories: true
+                    )
                     profileHome = confDir.appendingPathComponent("swiftly.fish", isDirectory: false)
                 }
             } else {

@@ -9,7 +9,7 @@ When you install a toolchain you can start using it right away. If you don't hav
 ```
 $ swiftly install latest
 $ swift --version
-Swift version 6.0.1 (swift-6.0.1-RELEASE)
+Swift version 6.0.3 (swift-6.0.3-RELEASE)
 Target: aarch64-unknown-linux-gnu
 $ swift build    # Build with the current toolchain
 ```
@@ -27,11 +27,18 @@ $ swift build    # Builds with the latest snapshot toolchain on the main branch
 $ lldb           # Run the debugger from the latest snapshot toolchain
 ```
 
+The use command doesn't require a full version. It is sufficient to provide just a major version, or the major and minor versions. Swiftly will use the newest matching version that you have installed, if any.
+
+```
+$ swiftly use 5
+swift --version  # Version matches the 5.10.1 toolchain that was installed above
+```
+
 If you're not certain which toolchain is in-use then use the bare `swiftly use` command to provide details:
 
 ```
 $ swiftly use
-Swift 6.0.1 (default)
+Swift 5.10.1 (default)
 ```
 
 You can print the exact toolchain location with the `--print-location` flag:
@@ -54,7 +61,7 @@ $ cat .swift-version
 6.0.1
 ```
 
-When a team member uses swiftly with this git repository it can use the correct toolchain version automatically:
+When a team member uses swiftly with this git repository the toolchain that is in use matches the version in the file.
 
 ```
 $ cd path/to/git/repository
@@ -63,7 +70,7 @@ Swift version 6.0.1 (swift-6.0.1-RELEASE)
 Target: aarch64-unknown-linux-gnu
 ```
 
-If that team member doesn't have the toolchain installed on their system there will be a warning. They can install the selected toolchain automatically like this:
+If that team member doesn't have the toolchain installed on their system there will be an error. They can install the selected toolchain automatically like this:
 
 ```
 $ cd path/to/git/repository
@@ -77,3 +84,30 @@ $ swiftly run swift build +main-snapshot
 ```
 
 > Note: The toolchain must be installed on your system before you can run with it.
+
+The `.swift version` file, if it is present in your working directory (or parent) will select the toolchain that is in use. If you are working in a directory that doesn't have this file, then you can set a global default toolchain to use in these places.
+
+```
+$ swiftly use --global-default 6.0.1
+```
+
+Here the `--global-default` flag ensures that the default is set globally to the "6.0.1" toolchain whenever there isn't a swift version file, and there isn't a version specified in the `swiftly run` command. Also, this flag doesn't attempt to create a swift version file, or update it if it already exists.
+
+## In use toolchains and default toolchains
+
+When you list installed toolchains or use the `swiftly use` command to print the current in use toolchain there will be tags for both "in use" and "default." Sometimes the same toolchain will have both tags!
+
+```
+$ swiftly list
+Installed release toolchains
+----------------------------
+Swift 6.0.3
+Swift 6.0.2 (in use) (default)
+
+Installed snapshot toolchains
+-----------------------------
+```
+
+Whenever a toolchain is tagged as "in use" indicates the toolchain that will be used when running toolchain commands from your current working directory. The one that is selected is based either on what is in a `.swift-version` file or the global default if there is no such file there.
+
+The default tag is used to show the global default toolchain, which is independent of any swift version file. The global default is there for cases where the file doesn't exist. It sets the toolchain that is in use in those cases.

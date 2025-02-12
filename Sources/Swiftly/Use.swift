@@ -4,13 +4,13 @@ import SwiftlyCore
 
 internal struct Use: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
-        abstract: "Set the in-use toolchain. If no toolchain is provided, print the currently in-use toolchain, if any."
+        abstract: "Set the in-use or default toolchain. If no toolchain is provided, print the currently in-use toolchain, if any."
     )
 
     @Flag(name: .shortAndLong, help: "Print the location of the in-use toolchain. This is valid only when there is no toolchain argument.")
     var printLocation: Bool = false
 
-    @Flag(name: .shortAndLong, help: "Use the global default, ignoring any .swift-version files.")
+    @Flag(name: .shortAndLong, help: "Set the global default toolchain that is used when there are no .swift-version files.")
     var globalDefault: Bool = false
 
     @OptionGroup var root: GlobalOptions
@@ -19,7 +19,10 @@ internal struct Use: SwiftlyCommand {
         "The toolchain to use.",
         discussion: """
 
-        If no toolchain is provided, the currently in-use toolchain will be printed, if any:
+        If no toolchain is provided, the currently in-use toolchain will be printed, if any. \
+        This is based on the current working directory and `.swift-version` files if one is \
+        present. If the in-use toolchain is also the global default then it will be shown as \
+        the default.
 
             $ swiftly use
 
@@ -107,18 +110,13 @@ internal struct Use: SwiftlyCommand {
     internal static func execute(_ toolchain: ToolchainVersion, globalDefault: Bool, assumeYes: Bool = true, _ config: inout Config) async throws {
         let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: globalDefault)
 
+        var message: String
+
         if case let .swiftVersionFile(versionFile, _, _) = result {
-            if !assumeYes {
-                SwiftlyCore.print("The file `\(versionFile)` will be updated to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with modifying this file?")
-
-                guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
-                    SwiftlyCore.print("Aborting setting in-use toolchain")
-                    return
-                }
-            }
-
             // We don't care in this case if there were any problems with the swift version files, just overwrite it with the new value
             try toolchain.name.write(to: versionFile, atomically: true, encoding: .utf8)
+
+            message = "The file `\(versionFile)` has been set to `\(toolchain)`"
         } else if let newVersionFile = findNewVersionFile(), !globalDefault {
             if !assumeYes {
                 SwiftlyCore.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
@@ -130,12 +128,14 @@ internal struct Use: SwiftlyCommand {
             }
 
             try toolchain.name.write(to: newVersionFile, atomically: true, encoding: .utf8)
+
+            message = "The file `\(newVersionFile)` has been set to `\(toolchain)`"
         } else {
             config.inUse = toolchain
             try config.save()
+            message = "The global default toolchain has set to `\(toolchain)`"
         }
 
-        var message = "Set the in-use toolchain to \(toolchain)"
         if let selectedVersion = selectedVersion {
             message += " (was \(selectedVersion.name))"
         }

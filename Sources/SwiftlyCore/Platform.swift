@@ -211,9 +211,9 @@ extension Platform {
         }
         process.waitUntilExit()
 
-        if pgid != -1 {
+        defer { if pgid != -1 {
             tcsetpgrp(STDOUT_FILENO, pgid)
-        }
+        }}
 
         guard process.terminationStatus == 0 else {
             throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)
@@ -258,9 +258,9 @@ extension Platform {
 
         process.waitUntilExit()
 
-        if pgid != -1 {
+        defer { if pgid != -1 {
             tcsetpgrp(STDOUT_FILENO, pgid)
-        }
+        }}
 
         guard process.terminationStatus == 0 else {
             throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)

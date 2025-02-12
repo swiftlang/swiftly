@@ -93,7 +93,7 @@ internal struct Init: SwiftlyCommand {
                 SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
             }
 
-            guard promptForConfirmation(defaultBehavior: false) else {
+            guard SwiftlyCore.promptForConfirmation(defaultBehavior: false) else {
                 throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }

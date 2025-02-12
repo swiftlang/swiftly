@@ -266,7 +266,6 @@ struct Install: SwiftlyCommand {
                     SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
                 }
 
-
                 guard SwiftlyCore.promptForConfirmation(defaultBehavior: false) else {
                     throw SwiftlyError(message: "Toolchain installation has been cancelled")
                 }

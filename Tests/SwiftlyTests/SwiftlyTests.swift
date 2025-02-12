@@ -331,10 +331,10 @@ class SwiftlyTests: XCTestCase {
 
         // Snapshots are currently unavailable for these platforms on swift.org
         // TODO: remove these once snapshots are available for them
-        let snapshotsUnavailable = [
-            PlatformDefinition.ubuntu2404,
-            PlatformDefinition.fedora39,
-            PlatformDefinition.debian12,
+        let snapshotsUnavailable: [PlatformDefinition] = [
+            .ubuntu2404,
+            .fedora39,
+            .debian12,
         ]
 
         return !snapshotsUnavailable.contains(pd)

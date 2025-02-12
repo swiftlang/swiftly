@@ -295,17 +295,7 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.StableRelease) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.StableRelease] {
-        let arch = if a == nil {
-#if arch(x86_64)
-            "x86_64"
-#elseif arch(arm64)
-            "aarch64"
-#else
-            #error("Unsupported processor architecture")
-#endif
-        } else {
-            a!
-        }
+        let arch = a ?? cpuArch
 
         let url = "https://www.swift.org/api/v1/install/releases.json"
         let swiftOrgReleases: [SwiftOrgRelease] = try await self.getFromJSON(url: url, type: [SwiftOrgRelease].self)
@@ -359,17 +349,7 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
-        let arch = if a == nil {
-#if arch(x86_64)
-            "x86_64"
-#elseif arch(arm64)
-            "aarch64"
-#else
-            #error("Unsupported processor architecture")
-#endif
-        } else {
-            a!
-        }
+        let arch = a ?? cpuArch
 
         let platformName = if platform.name == PlatformDefinition.macOS.name {
             "macos"

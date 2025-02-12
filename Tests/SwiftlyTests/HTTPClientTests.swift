@@ -51,27 +51,27 @@ final class HTTPClientTests: SwiftlyTests {
     }
 
     func testGetToolchainMetdataFromSwiftOrg() async throws {
-        let supportedPlatforms = [
-            PlatformDefinition.macOS,
-            PlatformDefinition.ubuntu2404,
-            PlatformDefinition.ubuntu2204,
-            PlatformDefinition.ubuntu2004,
-            // PlatformDefinition.ubuntu1804, // There are no releases for Ubuntu 18.04 in the branches being tested below
-            PlatformDefinition.rhel9,
-            PlatformDefinition.fedora39,
-            PlatformDefinition.amazonlinux2,
-            PlatformDefinition.debian12,
+        let supportedPlatforms: [PlatformDefinition] = [
+            .macOS,
+            .ubuntu2404,
+            .ubuntu2204,
+            .ubuntu2004,
+            // .ubuntu1804, // There are no releases for Ubuntu 18.04 in the branches being tested below
+            .rhel9,
+            .fedora39,
+            .amazonlinux2,
+            .debian12,
         ]
 
-        let newPlatforms = [
-            PlatformDefinition.ubuntu2404,
-            PlatformDefinition.fedora39,
-            PlatformDefinition.debian12,
+        let newPlatforms: [PlatformDefinition] = [
+            .ubuntu2404,
+            .fedora39,
+            .debian12,
         ]
 
-        let branches = [
-            ToolchainVersion.Snapshot.Branch.main,
-            ToolchainVersion.Snapshot.Branch.release(major: 6, minor: 0), // This is available in swift.org API
+        let branches: [ToolchainVersion.Snapshot.Branch] = [
+            .main,
+            .release(major: 6, minor: 0), // This is available in swift.org API
         ]
 
         for arch in ["x86_64", "aarch64"] {

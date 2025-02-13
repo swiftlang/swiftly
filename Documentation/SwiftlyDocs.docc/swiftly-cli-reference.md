@@ -145,7 +145,7 @@ Note that listing available snapshots before the latest release (major and minor
 
 ## use
 
-Set the in-use toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
+Set the in-use or default toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
 
 ```
 swiftly use [--print-location] [--global-default] [--assume-yes] [--verbose] [<toolchain>] [--version] [--help]
@@ -158,7 +158,7 @@ swiftly use [--print-location] [--global-default] [--assume-yes] [--verbose] [<t
 
 **--global-default:**
 
-*Use the global default, ignoring any .swift-version files.*
+*Set the global default toolchain that is used when there are no .swift-version files.*
 
 
 **--assume-yes:**
@@ -176,7 +176,7 @@ swiftly use [--print-location] [--global-default] [--assume-yes] [--verbose] [<t
 *The toolchain to use.*
 
 
-If no toolchain is provided, the currently in-use toolchain will be printed, if any:
+If no toolchain is provided, the currently in-use toolchain will be printed, if any. This is based on the current working directory and `.swift-version` files if one is present. If the in-use toolchain is also the global default then it will be shown as the default.
 
     $ swiftly use
 

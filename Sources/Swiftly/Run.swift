@@ -56,6 +56,11 @@ internal struct Run: SwiftlyCommand {
     internal mutating func run() async throws {
         try validateSwiftly()
 
+        // Handle the specific case where help is requested of the run subcommand
+        if command == ["--help"] {
+            throw CleanExit.helpRequest(self)
+        }
+
         var config = try Config.load()
 
         let (command, selector) = try extractProxyArguments(command: self.command)

@@ -76,6 +76,7 @@ internal struct Init: SwiftlyCommand {
             These locations can be changed with SWIFTLY_HOME and SWIFTLY_BIN environment variables and run this again.
             \(installMsg)
             """)
+
             guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }

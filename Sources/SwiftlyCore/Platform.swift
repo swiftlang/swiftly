@@ -209,6 +209,11 @@ extension Platform {
         if pgid != -1 {
             tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
         }
+
+        defer { if pgid != -1 {
+            tcsetpgrp(STDOUT_FILENO, pgid)
+        }}
+
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
@@ -250,6 +255,10 @@ extension Platform {
         if pgid != -1 {
             tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
         }
+        defer { if pgid != -1 {
+            tcsetpgrp(STDOUT_FILENO, pgid)
+        }}
+
         let outData = try outPipe.fileHandleForReading.readToEnd()
 
         process.waitUntilExit()

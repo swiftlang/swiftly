@@ -209,11 +209,12 @@ extension Platform {
         if pgid != -1 {
             tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
         }
-        process.waitUntilExit()
 
         defer { if pgid != -1 {
             tcsetpgrp(STDOUT_FILENO, pgid)
         }}
+
+        process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
             throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)
@@ -254,13 +255,13 @@ extension Platform {
         if pgid != -1 {
             tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
         }
-        let outData = try outPipe.fileHandleForReading.readToEnd()
-
-        process.waitUntilExit()
-
         defer { if pgid != -1 {
             tcsetpgrp(STDOUT_FILENO, pgid)
         }}
+
+        let outData = try outPipe.fileHandleForReading.readToEnd()
+
+        process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
             throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)

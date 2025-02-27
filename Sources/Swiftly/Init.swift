@@ -37,8 +37,13 @@ internal struct Init: SwiftlyCommand {
 
         var config = try? Config.load()
 
-        if var config, !overwrite && config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev") {
-            // This is a simple upgrade from the 0.4.0-dev pre-release
+        if var config, !overwrite &&
+            (
+                config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev") ||
+                    config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0)
+            )
+        {
+            // This is a simple upgrade from the 0.4.0-dev pre-release, or 0.4.0 release
 
             // Move our executable over to the correct place
             try Swiftly.currentPlatform.installSwiftlyBin()

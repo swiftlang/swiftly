@@ -88,7 +88,7 @@ Swift.org currently provides experimental [`.rpm` and `.deb`](https://forums.swi
 
 swiftenv is an existing Swift version manager which already has much of the functionality that swiftly will eventually have. It's an awesome tool, and if it's part of your workflow then we encourage you to keep using it! That said, swiftly is/will be different a few ways:
 
-- swiftly is being built as a community driven effort, and through this collaboration, swiftly is an official installation tool for Swift toolchains. swiftly has helped ton inform the creation of API endpoints maintained by the Swift project that it uses to retrieve information about what toolchains are available to install and to verify their expected signatures. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations.
+- swiftly is being built as a community driven effort, and through this collaboration, swiftly is an official installation tool for Swift toolchains. swiftly has helped to inform the creation of API endpoints maintained by the Swift project that it uses to retrieve information about what toolchains are available to install and to verify their expected signatures. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations.
 
 - swiftly will be written in Swift, which we think is important for maintainability and encouraging community contributions. 
 

@@ -41,9 +41,9 @@ For more detailed usage guides there is [documentation](https://swiftpackageinde
 - [Switching which installed toolchain is active](https://swiftpackageindex.com/swiftlang/swiftly/main/documentation/swiftlydocs/use-toolchains) (i.e. which one is discovered via `$PATH`)
 - [Updating installed toolchains](https://swiftpackageindex.com/swiftlang/swiftly/main/documentation/swiftlydocs/update-toolchain) to the latest available versions of those toolchains
 - [Uninstalling installed toolchains](https://swiftpackageindex.com/swiftlang/swiftly/main/documentation/swiftlydocs/uninstall-toolchains)
-- Listing the toolchains that are available to install with the `list-available` subcommand
-- Sharing the preferred toolchain as a project setting with a `.swift-version` file
-- Running a single command on a particular toolchain with the `run` subcommand
+- Listing the toolchains that are available to install with the [list-available](https://swiftpackageindex.com/swiftlang/swiftly/main/documentation/swiftlydocs/swiftly-cli-reference#list-available) subcommand
+- Sharing the preferred toolchain as a project setting with a [.swift-version](https://swiftpackageindex.com/swiftlang/swiftly/main/documentation/swiftlydocs/use-toolchains#Sharing-recommended-toolchain-versions) file
+- Running a single command on a particular toolchain with the [run](https://swiftpackageindex.com/swiftlang/swiftly/main/documentation/swiftlydocs/swiftly-cli-reference#run) subcommand
 
 ## Platform support
 
@@ -55,7 +55,8 @@ This command checks to see if there are new versions of `swiftly` itself and upg
 
 `swiftly self-update`
 
-## Contributing 
+## Contributing
+
 Welcome to the Swift community!
 
 Contributions to Swiftly are welcomed and encouraged! Please see the [Contributing to Swift guide](swift.org/contributing) and check out the [structure of the community](https://www.swift.org/community/#community-structure).

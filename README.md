@@ -4,7 +4,7 @@ swiftly is a CLI tool for installing, managing, and switching between [Swift](ht
 
 ### Installation and Basic Usage
 
-⚠️ Installation has changed from the 0.3.0 release. See (#upgrade-from-previous) below for notes on upgrading from older releases.
+⚠️ Installation has changed from the 0.3.0 release. See [Upgrade from previous](#upgrade-from-previous) below for notes on upgrading from older releases.
 
 Install swiftly by going to the [Swift Install Page](https://swift.org/install) of swift.org and following the instructions there.
 

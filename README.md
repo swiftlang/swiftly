@@ -4,6 +4,8 @@ swiftly is a CLI tool for installing, managing, and switching between [Swift](ht
 
 ### Installation and Basic Usage
 
+⚠️ Installation has changed from the 0.3.0 release. See (#upgrade-from-previous) below for notes on upgrading from older releases.
+
 Install swiftly by going to the [Swift Install Page](https://swift.org/install) of swift.org and following the instructions there.
 
 Once swiftly is installed it will automatically install the latest released toolchain. You can use the familiar toolchain commands right away:
@@ -64,6 +66,17 @@ Contributions to Swiftly are welcomed and encouraged! Please see the [Contributi
 To be a truly great community, Swift needs to welcome developers from all walks of life, with different backgrounds, and with a wide range of experience. A diverse and friendly community will have more great ideas, more unique perspectives, and produce more great code. We will work diligently to make the Swift community welcoming to everyone.
 
 To give clarity of what is expected of our members, Swift has adopted the code of conduct defined by the Contributor Covenant. This document is used across many open source communities, and we think it articulates our values well. For more, see the [Code of Conduct](https://www.swift.org/code-of-conduct/).
+
+## Upgrade from previous
+
+Swiftly prior to verion 1.0.0 had a different installation and delivery mechanism. Upgrading to the newest version of swiftly involves two steps:
+
+1. Uninstall older swiftly
+2. Install the newest swiftly using the instructions above
+
+To uninstall the old swiftly, first locate the swiftly home directory, which is often in `~/.local/share/swiftly` and remove it. Then check your shell profile files and remove any entries that attempt to source the `env.sh` or `env.fish` file in the swiftly home directory. Finally, remove the symbolic links that swiftly placed in your `~/.local/bin` to toolchain binaries (e.g. swift, clang, lldb, etc.). These will likely be symbolic links to toolchain directories in the swiftly home directory. Remove them so that there aren't any orphaned path entries.
+
+Restart your shell and/or terminal to get a fresh environment. You should be ready to installing the new swiftly.
  
 ## FAQ
 

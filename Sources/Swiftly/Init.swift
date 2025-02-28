@@ -18,6 +18,8 @@ internal struct Init: SwiftlyCommand {
     var platform: String?
     @Flag(help: "Skip installing the latest toolchain")
     var skipInstall: Bool = false
+    @Flag(help: "Quiet shell follow up commands")
+    var quietShellFollowup: Bool = false
 
     @OptionGroup var root: GlobalOptions
 
@@ -237,7 +239,7 @@ internal struct Init: SwiftlyCommand {
                 (postInstall, pathChanged) = try await Install.execute(version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
             }
 
-            if addEnvToProfile {
+            if addEnvToProfile && !self.quietShellFollowup {
                 try Data(sourceLine.utf8).append(to: profileHome)
 
                 SwiftlyCore.print("""
@@ -247,7 +249,7 @@ internal struct Init: SwiftlyCommand {
                 """)
             }
 
-            if pathChanged {
+            if pathChanged && !self.quietShellFollowup {
                 SwiftlyCore.print("""
                 Your shell caches items on your path for better performance. Swiftly has added items to your path that may not get picked up right away. You can run this command to update your shell to get these items.
 

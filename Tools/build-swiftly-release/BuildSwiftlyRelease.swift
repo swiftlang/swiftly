@@ -406,6 +406,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? FileManager.default.createDirectory(atPath: swiftlyLicenseDir, withIntermediateDirectories: true)
         try await self.collectLicenses(swiftlyLicenseDir)
 
+        let cwd = FileManager.default.currentDirectoryPath
+
         if let cert {
             try runProgram(
                 pkgbuild,
@@ -413,6 +415,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 swiftlyBinDir + "/..",
                 "--install-location",
                 "usr/local",
+                "--scripts",
+                "\(cwd)/scripts/package",
                 "--version",
                 self.version,
                 "--identifier",
@@ -428,6 +432,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 swiftlyBinDir + "/..",
                 "--install-location",
                 "usr/local",
+                "--scripts",
+                "\(cwd)/scripts/package",
                 "--version",
                 self.version,
                 "--identifier",

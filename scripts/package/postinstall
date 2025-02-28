@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+# If the user happens to install this into the system then headlessly re-install it in their
+# user home directory instead so that they can self-update.
+
+if [ "$DSTROOT" == "/usr/local" ]; then
+    realuser=$(basename "$HOME")
+    if [ "$realuser" != "root" ]; then
+        sudo -u "$realuser" installer -pkg "$PACKAGE_PATH" -target CurrentUserHomeDirectory
+        pkgutil --forget org.swift.swiftly --volume / || true
+        rm /usr/local/bin/swiftly
+    fi
+fi

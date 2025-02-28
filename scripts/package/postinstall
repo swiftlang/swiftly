@@ -8,7 +8,7 @@ set -e
 if [ "$DSTROOT" == "/usr/local" ]; then
     realuser=$(basename "$HOME")
     if [ "$realuser" != "root" ]; then
-        sudo -u "$realuser" installer -pkg "$PACKAGE_PATH" -target CurrentUserHomeDirectory
+        sudo -u "$realuser" cp /usr/local/bin/swiftly "$HOME"
         pkgutil --forget org.swift.swiftly --volume / || true
         rm /usr/local/bin/swiftly
     fi

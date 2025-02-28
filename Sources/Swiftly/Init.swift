@@ -24,7 +24,7 @@ internal struct Init: SwiftlyCommand {
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case noModifyProfile, overwrite, platform, skipInstall, root
+        case noModifyProfile, overwrite, platform, skipInstall, root, quietShellFollowup
     }
 
     public mutating func validate() throws {}

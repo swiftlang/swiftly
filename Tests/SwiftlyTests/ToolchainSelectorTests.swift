@@ -34,6 +34,7 @@ final class ToolchainSelectorTests: SwiftlyTests {
             "main-SNAPSHOT-2023-06-05",
             "swift-DEVELOPMENT-SNAPSHOT-2023-06-05",
             "swift-DEVELOPMENT-SNAPSHOT-2023-06-05-a",
+            "DEVELOPMENT-SNAPSHOT-2023-06-05-a",
         ]
         try runTest(.snapshot(branch: .main, date: "2023-06-05"), parses)
     }

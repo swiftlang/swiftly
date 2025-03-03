@@ -411,17 +411,17 @@ struct ReleaseSnapshotParser: ToolchainSelectorParser {
     }
 }
 
-/// Parser for selectors like the following:
+/// Parser for selectors like the following (with optional "swift-" prefix):
 ///    - main-snapshot-YYYY-mm-dd
 ///    - main-snapshot
 ///    - main-SNAPSHOT-YYYY-mm-dd
 ///    - main-SNAPSHOT
-///    - swift-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
-///    - swift-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
-///    - swift-DEVELOPMENT-SNAPSHOT
+///    - DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
+///    - DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
+///    - DEVELOPMENT-SNAPSHOT
 struct MainSnapshotParser: ToolchainSelectorParser {
     static let regex: Regex<(Substring, Substring?)> =
-        try! Regex("^(?:main-snapshot|swift-DEVELOPMENT-SNAPSHOT|main-SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
+        try! Regex("^(?:swift-)?(?:main-snapshot|DEVELOPMENT-SNAPSHOT|main-SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
 
     func parse(_ input: String) throws -> ToolchainSelector? {
         guard let match = try Self.regex.wholeMatch(in: input) else {

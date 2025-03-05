@@ -7,15 +7,15 @@ var swiftGPGKeysRefreshed = false
 /// This implementation can be reused for any supported Linux platform.
 /// TODO: replace dummy implementations
 public struct Linux: Platform {
-    let linuxPlatforms = [
-        PlatformDefinition.ubuntu2404,
-        PlatformDefinition.ubuntu2204,
-        PlatformDefinition.ubuntu2004,
-        PlatformDefinition.ubuntu1804,
-        PlatformDefinition.fedora39,
-        PlatformDefinition.rhel9,
-        PlatformDefinition.amazonlinux2,
-        PlatformDefinition.debian12,
+    let linuxPlatforms: [PlatformDefinition] = [
+        .ubuntu2404,
+        .ubuntu2204,
+        .ubuntu2004,
+        .ubuntu1804,
+        .fedora39,
+        .rhel9,
+        .amazonlinux2,
+        .debian12,
     ]
 
     public init() {}
@@ -382,13 +382,7 @@ public struct Linux: Platform {
     }
 
     public func getExecutableName() -> String {
-#if arch(x86_64)
-        let arch = "x86_64"
-#elseif arch(arm64)
-        let arch = "aarch64"
-#else
-        fatalError("Unsupported processor architecture")
-#endif
+        let arch = cpuArch
 
         return "swiftly-\(arch)-unknown-linux-gnu"
     }
@@ -516,7 +510,7 @@ public struct Linux: Platform {
                 return await self.manualSelectPlatform(platformPretty)
             }
 
-            return PlatformDefinition.amazonlinux2
+            return .amazonlinux2
         } else if (id + (idlike ?? "")).contains("rhel") {
             guard versionID.hasPrefix("9") else {
                 let message = "Unsupported version of RHEL"
@@ -528,7 +522,7 @@ public struct Linux: Platform {
                 return await self.manualSelectPlatform(platformPretty)
             }
 
-            return PlatformDefinition.rhel9
+            return .rhel9
         } else if let pd = [PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2404, .debian12, .fedora39].first(where: { $0.name == id + versionID }) {
             return pd
         }

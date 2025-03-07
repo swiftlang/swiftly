@@ -141,6 +141,9 @@ extension Platform {
 #if os(macOS) || os(Linux)
     internal func proxyEnv(_ toolchain: ToolchainVersion) throws -> [String: String] {
         let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
+        guard tcPath.fileExists() else {
+            throw SwiftlyError(message: "Toolchain \(toolchain) could not be located. You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again.")
+        }
         var newEnv = ProcessInfo.processInfo.environment
 
         // The toolchain goes to the beginning of the PATH

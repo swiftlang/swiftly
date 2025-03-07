@@ -119,6 +119,10 @@ struct Uninstall: SwiftlyCommand {
         SwiftlyCore.print("Uninstalling \(toolchain)...", terminator: "")
         try Swiftly.currentPlatform.uninstall(toolchain)
         config.installedToolchains.remove(toolchain)
+        // This is here to prevent the inUse from referencing a toolchain that is not installed
+        if config.inUse == toolchain {
+            config.inUse = nil
+        }
         try config.save()
         SwiftlyCore.print("done")
     }

@@ -81,7 +81,7 @@ struct Update: SwiftlyCommand {
         try validateSwiftly()
         var config = try Config.load()
 
-        guard let parameters = try self.resolveUpdateParameters(config) else {
+        guard let parameters = try await self.resolveUpdateParameters(&config) else {
             if let toolchain = self.toolchain {
                 SwiftlyCore.print("No installed toolchain matched \"\(toolchain)\"")
             } else {
@@ -101,7 +101,7 @@ struct Update: SwiftlyCommand {
         }
 
         if !self.root.assumeYes {
-            SwiftlyCore.print("Update \(parameters.oldToolchain) ⟶ \(newToolchain)?")
+            SwiftlyCore.print("Update \(parameters.oldToolchain) -> \(newToolchain)?")
             guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
                 SwiftlyCore.print("Aborting")
                 return
@@ -152,7 +152,7 @@ struct Update: SwiftlyCommand {
     /// If the selector does not match an installed toolchain, this returns nil.
     /// If no selector is provided, the currently in-use toolchain will be used as the basis for the returned
     /// parameters.
-    private func resolveUpdateParameters(_ config: Config) throws -> UpdateParameters? {
+    private func resolveUpdateParameters(_ config: inout Config) async throws -> UpdateParameters? {
         let selector = try self.toolchain.map { try ToolchainSelector(parsing: $0) }
 
         let oldToolchain: ToolchainVersion?
@@ -163,7 +163,7 @@ struct Update: SwiftlyCommand {
             // 5.5.1 and 5.5.2 are installed (5.5.2 will be updated).
             oldToolchain = toolchains.max()
         } else {
-            oldToolchain = config.inUse
+            (oldToolchain, _) = try await selectToolchain(config: &config)
         }
 
         guard let oldToolchain else {

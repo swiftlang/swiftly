@@ -116,7 +116,7 @@ internal struct Use: SwiftlyCommand {
             // We don't care in this case if there were any problems with the swift version files, just overwrite it with the new value
             try toolchain.name.write(to: versionFile, atomically: true, encoding: .utf8)
 
-            message = "The file `\(versionFile)` has been set to `\(toolchain)`"
+            message = "The file `\(versionFile.path)` has been set to `\(toolchain)`"
         } else if let newVersionFile = findNewVersionFile(), !globalDefault {
             if !assumeYes {
                 SwiftlyCore.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
@@ -129,7 +129,7 @@ internal struct Use: SwiftlyCommand {
 
             try toolchain.name.write(to: newVersionFile, atomically: true, encoding: .utf8)
 
-            message = "The file `\(newVersionFile)` has been set to `\(toolchain)`"
+            message = "The file `\(newVersionFile.path)` has been set to `\(toolchain)`"
         } else {
             config.inUse = toolchain
             try config.save()

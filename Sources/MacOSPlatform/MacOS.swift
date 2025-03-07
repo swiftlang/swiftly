@@ -128,11 +128,11 @@ public struct MacOS: Platform {
         let decoder = PropertyListDecoder()
         let infoPlist = toolchainDir.appendingPathComponent("Info.plist")
         guard let data = try? Data(contentsOf: infoPlist) else {
-            throw SwiftlyError(message: "could not open \(infoPlist)")
+            throw SwiftlyError(message: "could not open \(infoPlist.path)")
         }
 
         guard let pkgInfo = try? decoder.decode(SwiftPkgInfo.self, from: data) else {
-            throw SwiftlyError(message: "could not decode plist at \(infoPlist)")
+            throw SwiftlyError(message: "could not decode plist at \(infoPlist.path)")
         }
 
         try FileManager.default.removeItem(at: toolchainDir)

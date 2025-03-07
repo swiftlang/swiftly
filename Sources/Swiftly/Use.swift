@@ -133,7 +133,7 @@ internal struct Use: SwiftlyCommand {
         } else {
             config.inUse = toolchain
             try config.save()
-            message = "The global default toolchain has set to `\(toolchain)`"
+            message = "The global default toolchain has been set to `\(toolchain)`"
         }
 
         if let selectedVersion = selectedVersion {
@@ -177,7 +177,8 @@ public enum ToolchainSelectionResult {
 /// Selection of a toolchain can be accomplished in a number of ways. There is the
 /// the configuration's global default 'inUse' setting. This is the fallback selector
 /// if there are no other selections. The returned tuple will contain the default toolchain
-/// version and the result will be .default.
+/// version and the result will be .globalDefault. This will always be the result if
+/// the globalDefault parameter is true.
 ///
 /// A toolchain can also be selected from a `.swift-version` file in the current
 /// working directory, or an ancestor directory. If it successfully selects a toolchain
@@ -233,5 +234,11 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false) a
         }
     }
 
-    return (config.inUse, .globalDefault)
+    // Check to ensure that the global default in use toolchain matches one of the installed toolchains, and return
+    // no selected toolchain if it doesn't.
+    guard let defaultInUse = config.inUse, config.installedToolchains.contains(defaultInUse) else {
+        return (nil, .globalDefault)
+    }
+
+    return (defaultInUse, .globalDefault)
 }

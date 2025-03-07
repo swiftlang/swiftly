@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
         .package(url: "https://github.com/swift-server/async-http-client", from: "1.24.0"),
         .package(url: "https://github.com/swift-server/swift-openapi-async-http-client", from: "1.1.0"),
-        .package(url: "https://github.com/apple/swift-nio.git", from: "2.79.0"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.80.0"),
         .package(url: "https://github.com/apple/swift-tools-support-core.git", from: "0.7.2"),
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
         .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.6.0"),

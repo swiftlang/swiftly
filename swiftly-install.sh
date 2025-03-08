@@ -209,6 +209,24 @@ set_platform_rhel () {
     fi
 }
 
+set_platform_debian () {
+    # Debian Docker nightlies are not yet available, so use Ubuntu's Dockerfile for computing the dependency list for now
+
+    #docker_platform_name="debian"
+    docker_platform_name="ubuntu"
+    package_manager="apt-get"
+    export DEBIAN_FRONTEND=noninteractive
+
+    PLATFORM_NAME="debian$1"
+    PLATFORM_NAME_FULL="debian$1"    
+    #docker_platform_version="$1"
+    docker_platform_version="24.04"
+
+    if [[ -z "$PLATFORM_NAME_PRETTY" ]]; then
+        PLATFORM_NAME_PRETTY="Debian GNU/Linux $1"
+    fi
+}
+
 detect_platform () {
     if [[ -f "/etc/os-release" ]]; then
         OS_RELEASE="/etc/os-release"
@@ -258,6 +276,14 @@ detect_platform () {
             fi
             ;;
 
+        *"debian"*)
+            if [[ "$VERSION_ID" != "12" ]]; then
+                manually_select_platform
+            else
+                set_platform_debian "12"
+            fi
+            ;;
+
         *)
             manually_select_platform
             ;;
@@ -279,6 +305,7 @@ manually_select_platform () {
     echo "3) Ubuntu 18.04"
     echo "4) RHEL 9"
     echo "5) Amazon Linux 2"
+    echo "6) Debian GNU/Linux 12"
 
     read_input_with_default "0"
     case "$READ_INPUT_RETURN" in
@@ -300,6 +327,10 @@ manually_select_platform () {
 
         "5" | "5)")
             set_platform_amazonlinux "2"
+            ;;
+
+        "6" | "6)")
+            set_platform_debian "12"
             ;;
 
         *)
@@ -419,6 +450,10 @@ EOF
 
                 "rhel9")
                     set_platform_rhel "9"
+                    ;;
+
+                "debian12")
+                    set_platform_debian "12"
                     ;;
 
                 *)

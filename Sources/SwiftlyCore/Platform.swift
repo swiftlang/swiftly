@@ -72,7 +72,7 @@ public protocol Platform {
 
     /// Uninstalls a toolchain associated with the given version.
     /// If this version is in use, the next latest version will be used afterwards.
-    func uninstall(_ version: ToolchainVersion) throws
+    func uninstall(_ version: ToolchainVersion, verbose: Bool) throws
 
     /// Get the name of the swiftly release binary.
     func getExecutableName() -> String

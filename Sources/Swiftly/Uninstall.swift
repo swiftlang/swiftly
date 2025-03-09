@@ -113,14 +113,14 @@ struct Uninstall: SwiftlyCommand {
                 }
             }
 
-            try await Self.execute(toolchain, &config)
+            try await Self.execute(toolchain, &config, verbose: self.root.verbose)
         }
 
         SwiftlyCore.print()
         SwiftlyCore.print("\(toolchains.count) toolchain(s) successfully uninstalled")
     }
 
-    static func execute(_ toolchain: ToolchainVersion, _ config: inout Config) async throws {
+    static func execute(_ toolchain: ToolchainVersion, _ config: inout Config, verbose: Bool) async throws {
         SwiftlyCore.print("Uninstalling \(toolchain)...", terminator: "")
         config.installedToolchains.remove(toolchain)
         // This is here to prevent the inUse from referencing a toolchain that is not installed
@@ -129,7 +129,7 @@ struct Uninstall: SwiftlyCommand {
         }
         try config.save()
 
-        try Swiftly.currentPlatform.uninstall(toolchain)
+        try Swiftly.currentPlatform.uninstall(toolchain, verbose: verbose)
         SwiftlyCore.print("done")
     }
 }

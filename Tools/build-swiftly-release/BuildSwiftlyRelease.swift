@@ -215,14 +215,14 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
     func checkSwiftRequirement() async throws -> String {
         guard !self.skip else {
-            return try await self.assertTool("swift", message: "Please install swift and make sure that it is added to your path.")
+            return try await self.assertTool("/usr/bin/swift", message: "Please install swift and make sure that it is added to your path.")
         }
 
         guard let requiredSwiftVersion = try? self.findSwiftVersion() else {
             throw Error(message: "Unable to determine the required swift version for this version of swiftly. Please make sure that you `cd <swiftly_git_dir>` and there is a .swift-version file there.")
         }
 
-        let swift = try await self.assertTool("swift", message: "Please install swift \(requiredSwiftVersion) and make sure that it is added to your path.")
+        let swift = try await self.assertTool("/usr/bin/swift", message: "Please install swift \(requiredSwiftVersion) and make sure that it is added to your path.")
 
         // We also need a swift toolchain with the correct version
         guard let swiftVersion = try await runProgramOutput(swift, "--version"), swiftVersion.contains("Swift version \(requiredSwiftVersion)") else {
@@ -408,6 +408,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         let cwd = FileManager.default.currentDirectoryPath
 
+        let pkgFile = URL(fileURLWithPath: cwd + "/.build/release/swiftly-\(self.version).pkg")
+
         if let cert {
             try runProgram(
                 pkgbuild,
@@ -415,8 +417,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 swiftlyBinDir + "/..",
                 "--install-location",
                 "usr/local",
-                "--scripts",
-                "\(cwd)/scripts/package",
                 "--version",
                 self.version,
                 "--identifier",
@@ -432,8 +432,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 swiftlyBinDir + "/..",
                 "--install-location",
                 "usr/local",
-                "--scripts",
-                "\(cwd)/scripts/package",
                 "--version",
                 self.version,
                 "--identifier",
@@ -441,5 +439,25 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 ".build/release/swiftly-\(self.version).pkg"
             )
         }
+
+        // Re-configure the pkg to prefer installs into the current user's home directory with the help of productbuild.
+        // Note that command-line installs can override this preference, but the GUI install will limit the choices.
+
+        let pkgFileReconfigured = URL(fileURLWithPath: cwd + "/.build/release/swiftly-\(self.version)-reconfigured.pkg")
+        let distFile = URL(fileURLWithPath: cwd + "/.build/release/distribution.plist")
+
+        try runProgram("productbuild", "--synthesize", "--package", pkgFile.path, distFile.path)
+
+        var distFileContents = try String(contentsOf: distFile, encoding: .utf8)
+        distFileContents = distFileContents.replacingOccurrences(of: "<choices-outline>", with: "<domains enable_anywhere=\"false\" enable_currentUserHome=\"true\" enable_localSystem=\"false\"/><choices-outline>")
+        try distFileContents.write(to: distFile, atomically: true, encoding: .utf8)
+
+        if let cert = cert {
+            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.path, "--sign", cert, pkgFileReconfigured.path)
+        } else {
+            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.path, pkgFileReconfigured.path)
+        }
+        try FileManager.default.removeItem(at: pkgFile)
+        try FileManager.default.copyItem(atPath: pkgFileReconfigured.path, toPath: pkgFile.path)
     }
 }

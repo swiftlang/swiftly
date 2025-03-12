@@ -78,13 +78,14 @@ public func runProgram(_ args: String..., quiet: Bool = false) throws {
 }
 
 public func runProgramOutput(_ program: String, _ args: String...) async throws -> String? {
+    print("\(program) \(args.joined(separator: " "))")
+
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = [program] + args
 
     let outPipe = Pipe()
     process.standardInput = FileHandle.nullDevice
-    process.standardError = FileHandle.nullDevice
     process.standardOutput = outPipe
 
     try process.run()
@@ -98,6 +99,7 @@ public func runProgramOutput(_ program: String, _ args: String...) async throws 
     process.waitUntilExit()
 
     guard process.terminationStatus == 0 else {
+        print("\(args.first!) exited with non-zero status: \(process.terminationStatus)")
         throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
     }
 
@@ -406,6 +408,10 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? FileManager.default.createDirectory(atPath: swiftlyLicenseDir, withIntermediateDirectories: true)
         try await self.collectLicenses(swiftlyLicenseDir)
 
+        let cwd = FileManager.default.currentDirectoryPath
+
+        let pkgFile = URL(fileURLWithPath: cwd + "/.build/release/swiftly-\(self.version).pkg")
+
         if let cert {
             try runProgram(
                 pkgbuild,
@@ -435,5 +441,25 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 ".build/release/swiftly-\(self.version).pkg"
             )
         }
+
+        // Re-configure the pkg to prefer installs into the current user's home directory with the help of productbuild.
+        // Note that command-line installs can override this preference, but the GUI install will limit the choices.
+
+        let pkgFileReconfigured = URL(fileURLWithPath: cwd + "/.build/release/swiftly-\(self.version)-reconfigured.pkg")
+        let distFile = URL(fileURLWithPath: cwd + "/.build/release/distribution.plist")
+
+        try runProgram("productbuild", "--synthesize", "--package", pkgFile.path, distFile.path)
+
+        var distFileContents = try String(contentsOf: distFile, encoding: .utf8)
+        distFileContents = distFileContents.replacingOccurrences(of: "<choices-outline>", with: "<domains enable_anywhere=\"false\" enable_currentUserHome=\"true\" enable_localSystem=\"false\"/><choices-outline>")
+        try distFileContents.write(to: distFile, atomically: true, encoding: .utf8)
+
+        if let cert = cert {
+            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.path, "--sign", cert, pkgFileReconfigured.path)
+        } else {
+            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.path, pkgFileReconfigured.path)
+        }
+        try FileManager.default.removeItem(at: pkgFile)
+        try FileManager.default.copyItem(atPath: pkgFileReconfigured.path, toPath: pkgFile.path)
     }
 }

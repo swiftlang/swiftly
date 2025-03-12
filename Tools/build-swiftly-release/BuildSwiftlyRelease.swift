@@ -217,14 +217,14 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
     func checkSwiftRequirement() async throws -> String {
         guard !self.skip else {
-            return try await self.assertTool("/usr/bin/swift", message: "Please install swift and make sure that it is added to your path.")
+            return try await self.assertTool("swift", message: "Please install swift and make sure that it is added to your path.")
         }
 
         guard let requiredSwiftVersion = try? self.findSwiftVersion() else {
             throw Error(message: "Unable to determine the required swift version for this version of swiftly. Please make sure that you `cd <swiftly_git_dir>` and there is a .swift-version file there.")
         }
 
-        let swift = try await self.assertTool("/usr/bin/swift", message: "Please install swift \(requiredSwiftVersion) and make sure that it is added to your path.")
+        let swift = try await self.assertTool("swift", message: "Please install swift \(requiredSwiftVersion) and make sure that it is added to your path.")
 
         // We also need a swift toolchain with the correct version
         guard let swiftVersion = try await runProgramOutput(swift, "--version"), swiftVersion.contains("Swift version \(requiredSwiftVersion)") else {

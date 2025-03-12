@@ -78,7 +78,7 @@ public func runProgram(_ args: String..., quiet: Bool = false) throws {
 }
 
 public func runProgramOutput(_ program: String, _ args: String...) async throws -> String? {
-    print("\(args.joined(separator: " "))")
+    print("\(program) \(args.joined(separator: " "))")
 
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")

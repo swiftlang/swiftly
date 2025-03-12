@@ -78,13 +78,14 @@ public func runProgram(_ args: String..., quiet: Bool = false) throws {
 }
 
 public func runProgramOutput(_ program: String, _ args: String...) async throws -> String? {
+    print("\(args.joined(separator: " "))")
+
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = [program] + args
 
     let outPipe = Pipe()
     process.standardInput = FileHandle.nullDevice
-    process.standardError = FileHandle.nullDevice
     process.standardOutput = outPipe
 
     try process.run()
@@ -98,6 +99,7 @@ public func runProgramOutput(_ program: String, _ args: String...) async throws 
     process.waitUntilExit()
 
     guard process.terminationStatus == 0 else {
+        print("\(args.first!) exited with non-zero status: \(process.terminationStatus)")
         throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
     }
 

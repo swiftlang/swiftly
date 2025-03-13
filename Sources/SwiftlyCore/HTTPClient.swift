@@ -53,6 +53,12 @@ extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
 public protocol HTTPRequestExecutor {
     func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse
     func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease
+    func getReleaseToolchains(
+        platform: PlatformDefinition,
+        arch a: Components.Schemas.Architecture?,
+        limit: Int?,
+        filter: ((ToolchainVersion.StableRelease) -> Bool)?
+    ) async throws -> [ToolchainVersion.StableRelease]
 }
 
 internal struct SwiftlyUserAgentMiddleware: ClientMiddleware {
@@ -128,6 +134,61 @@ internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
         let response = try await client.getCurrentSwiftlyRelease()
         return try response.ok.body.json
     }
+
+    public func getReleaseToolchains(
+        platform: PlatformDefinition,
+        arch a: Components.Schemas.Architecture? = nil,
+        limit: Int? = nil,
+        filter: ((ToolchainVersion.StableRelease) -> Bool)? = nil
+    ) async throws -> [ToolchainVersion.StableRelease] {
+        let arch = a ?? cpuArch
+
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
+        let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
+
+        let client = Client(
+            serverURL: try Servers.Server1.url(),
+            transport: AsyncHTTPClientTransport(configuration: config),
+            middlewares: [swiftlyUserAgent]
+        )
+
+        let response = try await client.listReleases()
+
+        var swiftOrgFiltered: [ToolchainVersion.StableRelease] = try response.ok.body.json.compactMap { swiftOrgRelease in
+            if platform.name != PlatformDefinition.macOS.name {
+                // If the platform isn't xcode then verify that there is an offering for this platform name and arch
+                guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.matches(platform) }) else {
+                    return nil
+                }
+
+                guard case let archs = swiftOrgPlatform.archs, archs.contains(arch) else {
+                    return nil
+                }
+            }
+
+            guard let version = try? ToolchainVersion(parsing: swiftOrgRelease.stableName),
+                  case let .stable(release) = version
+            else {
+                throw SwiftlyError(message: "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
+            }
+
+            if let filter {
+                guard filter(release) else {
+                    return nil
+                }
+            }
+
+            return release
+        }
+
+        swiftOrgFiltered.sort(by: >)
+
+        return if let limit = limit {
+            Array(swiftOrgFiltered.prefix(limit))
+        } else {
+            swiftOrgFiltered
+        }
+    }
 }
 
 private func makeRequest(url: String) -> HTTPClientRequest {
@@ -136,13 +197,21 @@ private func makeRequest(url: String) -> HTTPClientRequest {
     return request
 }
 
-struct SwiftOrgPlatform: Codable {
-    var name: String
-    var archs: [String]?
+extension Components.Schemas.Release {
+    var stableName: String {
+        let components = self.name.components(separatedBy: ".")
+        if components.count == 2 {
+            return self.name + ".0"
+        } else {
+            return self.name
+        }
+    }
+}
 
-    /// platform is a mapping from the 'name' field of the swift.org platform object
+extension Components.Schemas.Platform {
+    /// platformDef is a mapping from the 'name' field of the swift.org platform object
     /// to swiftly's PlatformDefinition, if possible.
-    var platform: PlatformDefinition? {
+    var platformDef: PlatformDefinition? {
         // NOTE: some of these platforms are represented on swift.org metadata, but not supported by swiftly and so they don't have constants in PlatformDefinition
         switch self.name {
         case "Ubuntu 14.04":
@@ -181,25 +250,11 @@ struct SwiftOrgPlatform: Codable {
     }
 
     func matches(_ platform: PlatformDefinition) -> Bool {
-        guard let myPlatform = self.platform else {
+        guard let myPlatform = self.platformDef else {
             return false
         }
 
         return myPlatform.name == platform.name
-    }
-}
-
-public struct SwiftOrgRelease: Codable {
-    var name: String
-    var platforms: [SwiftOrgPlatform]
-
-    var stableName: String {
-        let components = self.name.components(separatedBy: ".")
-        if components.count == 2 {
-            return self.name + ".0"
-        } else {
-            return self.name
-        }
     }
 }
 
@@ -291,49 +346,11 @@ public struct SwiftlyHTTPClient {
     /// limit (default unlimited).
     public func getReleaseToolchains(
         platform: PlatformDefinition,
-        arch a: String? = nil,
+        arch a: Components.Schemas.Architecture? = nil,
         limit: Int? = nil,
         filter: ((ToolchainVersion.StableRelease) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.StableRelease] {
-        let arch = a ?? cpuArch
-
-        let url = "https://www.swift.org/api/v1/install/releases.json"
-        let swiftOrgReleases: [SwiftOrgRelease] = try await self.getFromJSON(url: url, type: [SwiftOrgRelease].self)
-
-        var swiftOrgFiltered: [ToolchainVersion.StableRelease] = try swiftOrgReleases.compactMap { swiftOrgRelease in
-            if platform.name != PlatformDefinition.macOS.name {
-                // If the platform isn't xcode then verify that there is an offering for this platform name and arch
-                guard let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.matches(platform) }) else {
-                    return nil
-                }
-
-                guard let archs = swiftOrgPlatform.archs, archs.contains(arch) else {
-                    return nil
-                }
-            }
-
-            guard let version = try? ToolchainVersion(parsing: swiftOrgRelease.stableName),
-                  case let .stable(release) = version
-            else {
-                throw SwiftlyError(message: "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
-            }
-
-            if let filter {
-                guard filter(release) else {
-                    return nil
-                }
-            }
-
-            return release
-        }
-
-        swiftOrgFiltered.sort(by: >)
-
-        return if let limit = limit {
-            Array(swiftOrgFiltered.prefix(limit))
-        } else {
-            swiftOrgFiltered
-        }
+        try await SwiftlyCore.httpRequestExecutor.getReleaseToolchains(platform: platform, arch: a, limit: limit, filter: filter)
     }
 
     public struct SnapshotBranchNotFoundError: LocalizedError {
@@ -349,7 +366,7 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
-        let arch = a ?? cpuArch
+        let arch = a ?? String(describing: cpuArch)
 
         let platformName = if platform.name == PlatformDefinition.macOS.name {
             "macos"

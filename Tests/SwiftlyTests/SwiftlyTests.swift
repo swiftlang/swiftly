@@ -467,6 +467,15 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
     public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
         throw SwiftlyTestError(message: "Mocking of fetching the current swiftly release is not implemented in MockHTTPRequestExecutor.")
     }
+
+    public func getReleaseToolchains(
+        platform _: PlatformDefinition,
+        arch _: Components.Schemas.Architecture?,
+        limit _: Int?,
+        filter _: ((ToolchainVersion.StableRelease) -> Bool)?
+    ) async throws -> [ToolchainVersion.StableRelease] {
+        throw SwiftlyTestError(message: "Mocking of fetching the release toolchains is not implemented in MockHTTPRequestExecutor.")
+    }
 }
 
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
@@ -504,6 +513,15 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         )
 
         return release
+    }
+
+    public func getReleaseToolchains(
+        platform _: PlatformDefinition,
+        arch _: Components.Schemas.Architecture?,
+        limit _: Int?,
+        filter _: ((ToolchainVersion.StableRelease) -> Bool)?
+    ) async throws -> [ToolchainVersion.StableRelease] {
+        throw SwiftlyTestError(message: "Mocking of the fetching of release toolchains is not implemented by the MockToolchainDownloader")
     }
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {

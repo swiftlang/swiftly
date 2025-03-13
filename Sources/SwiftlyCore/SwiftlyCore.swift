@@ -1,6 +1,6 @@
 import Foundation
 
-public let version = SwiftlyVersion(major: 0, minor: 4, patch: 0)
+public let version = SwiftlyVersion(major: 1, minor: 0, patch: 0)
 
 /// A separate home directory to use for testing purposes. This overrides swiftly's default
 /// home directory location logic.

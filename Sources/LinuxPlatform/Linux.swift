@@ -376,7 +376,7 @@ public struct Linux: Platform {
         try self.runProgram(tmpDir.appendingPathComponent("swiftly").path, "init")
     }
 
-    public func uninstall(_ toolchain: ToolchainVersion) throws {
+    public func uninstall(_ toolchain: ToolchainVersion, verbose _: Bool) throws {
         let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent(toolchain.name)
         try FileManager.default.removeItem(at: toolchainDir)
     }

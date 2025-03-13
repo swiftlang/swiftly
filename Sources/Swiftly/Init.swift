@@ -18,27 +18,34 @@ internal struct Init: SwiftlyCommand {
     var platform: String?
     @Flag(help: "Skip installing the latest toolchain")
     var skipInstall: Bool = false
+    @Flag(help: "Quiet shell follow up commands")
+    var quietShellFollowup: Bool = false
 
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case noModifyProfile, overwrite, platform, skipInstall, root
+        case noModifyProfile, overwrite, platform, skipInstall, root, quietShellFollowup
     }
 
     public mutating func validate() throws {}
 
     internal mutating func run() async throws {
-        try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall)
+        try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, quietShellFollowup: self.quietShellFollowup)
     }
 
     /// Initialize the installation of swiftly.
-    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool) async throws {
+    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool) async throws {
         try Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
 
         var config = try? Config.load()
 
-        if var config, !overwrite && config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev") {
-            // This is a simple upgrade from the 0.4.0-dev pre-release
+        if var config, !overwrite &&
+            (
+                config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev") ||
+                    config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0)
+            )
+        {
+            // This is a simple upgrade from the 0.4.0-dev pre-release, or 0.4.0 release
 
             // Move our executable over to the correct place
             try Swiftly.currentPlatform.installSwiftlyBin()
@@ -232,7 +239,7 @@ internal struct Init: SwiftlyCommand {
                 (postInstall, pathChanged) = try await Install.execute(version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
             }
 
-            if addEnvToProfile {
+            if addEnvToProfile && !quietShellFollowup {
                 try Data(sourceLine.utf8).append(to: profileHome)
 
                 SwiftlyCore.print("""
@@ -243,7 +250,7 @@ internal struct Init: SwiftlyCommand {
             }
 
             // Fish doesn't have path caching, so this might only be needed for bash/zsh
-            if pathChanged && !shell.hasSuffix("fish") {
+            if pathChanged && !quietShellFollowup && !shell.hasSuffix("fish") {
                 SwiftlyCore.print("""
                 Your shell caches items on your path for better performance. Swiftly has added items to your path that may not get picked up right away. You can run this command to update your shell to get these items.
 

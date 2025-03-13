@@ -306,9 +306,16 @@ struct Install: SwiftlyCommand {
 
         // If this is the first installed toolchain, mark it as in-use regardless of whether the
         // --use argument was provided.
-        if useInstalledToolchain || config.inUse == nil {
-            // TODO: consider adding the global default option to this commands flags
+        if useInstalledToolchain {
             try await Use.execute(version, globalDefault: false, &config)
+        }
+
+        // We always update the global default toolchain if there is none set. This could
+        //  be the only toolchain that is installed, which makes it the only choice.
+        if config.inUse == nil {
+            config.inUse = version
+            try config.save()
+            SwiftlyCore.print("The global default toolchain has been set to `\(version)`")
         }
 
         SwiftlyCore.print("\(version) installed successfully!")

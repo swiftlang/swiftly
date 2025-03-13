@@ -120,7 +120,7 @@ public struct MacOS: Platform {
         try self.runProgram(homeDir.appendingPathComponent("usr/local/bin/swiftly").path, "init")
     }
 
-    public func uninstall(_ toolchain: ToolchainVersion) throws {
+    public func uninstall(_ toolchain: ToolchainVersion, verbose: Bool) throws {
         SwiftlyCore.print("Uninstalling package in user home directory...")
 
         let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent("\(toolchain.identifier).xctoolchain", isDirectory: true)
@@ -138,7 +138,7 @@ public struct MacOS: Platform {
         try FileManager.default.removeItem(at: toolchainDir)
 
         let homedir = ProcessInfo.processInfo.environment["HOME"]!
-        try? runProgram("pkgutil", "--volume", homedir, "--forget", pkgInfo.CFBundleIdentifier)
+        try? runProgram("pkgutil", "--volume", homedir, "--forget", pkgInfo.CFBundleIdentifier, quiet: !verbose)
     }
 
     public func getExecutableName() -> String {

@@ -56,7 +56,12 @@ struct Uninstall: SwiftlyCommand {
             }
         } else {
             let selector = try ToolchainSelector(parsing: self.toolchain)
-            toolchains = startingConfig.listInstalledToolchains(selector: selector)
+            var installedToolchains = startingConfig.listInstalledToolchains(selector: selector)
+            // This is in the unusual case that the inUse toolchain is not listed in the installed toolchains
+            if let inUse = startingConfig.inUse, selector.matches(toolchain: inUse) && !startingConfig.installedToolchains.contains(inUse) {
+                installedToolchains.append(inUse)
+            }
+            toolchains = installedToolchains
         }
 
         guard !toolchains.isEmpty else {
@@ -108,18 +113,23 @@ struct Uninstall: SwiftlyCommand {
                 }
             }
 
-            try await Self.execute(toolchain, &config)
+            try await Self.execute(toolchain, &config, verbose: self.root.verbose)
         }
 
         SwiftlyCore.print()
         SwiftlyCore.print("\(toolchains.count) toolchain(s) successfully uninstalled")
     }
 
-    static func execute(_ toolchain: ToolchainVersion, _ config: inout Config) async throws {
+    static func execute(_ toolchain: ToolchainVersion, _ config: inout Config, verbose: Bool) async throws {
         SwiftlyCore.print("Uninstalling \(toolchain)...", terminator: "")
-        try Swiftly.currentPlatform.uninstall(toolchain)
         config.installedToolchains.remove(toolchain)
+        // This is here to prevent the inUse from referencing a toolchain that is not installed
+        if config.inUse == toolchain {
+            config.inUse = nil
+        }
         try config.save()
+
+        try Swiftly.currentPlatform.uninstall(toolchain, verbose: verbose)
         SwiftlyCore.print("done")
     }
 }

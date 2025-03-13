@@ -86,7 +86,7 @@ internal struct Run: SwiftlyCommand {
         }
 
         guard let toolchain = toolchain else {
-            throw SwiftlyError(message: "No swift toolchain could be selected from either from a .swift-version file, or the default. You can try using `swiftly install <toolchain version>` to install one.")
+            throw SwiftlyError(message: "No installed swift toolchain is selected from either from a .swift-version file, or the default. You can try using one that's already installed with `swiftly use <toolchain version>` or install a new toolchain to use with `swiftly install --use <toolchain version>`.")
         }
 
         do {

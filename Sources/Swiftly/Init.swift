@@ -42,18 +42,11 @@ internal struct Init: SwiftlyCommand {
         if var config, !overwrite &&
             (
                 config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev") ||
-<<<<<<< HEAD
-                    config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0)
-            )
-        {
-            // This is a simple upgrade from the 0.4.0-dev pre-release, or 0.4.0 release
-=======
                     config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0) ||
                     (config.version?.major == 1 && config.version?.minor == 0)
             )
         {
             // This is a simple upgrade from the 0.4.0 pre-releases, or 1.x
->>>>>>> 726ea90b9c304068d9649abc8718f8752169ce7b
 
             // Move our executable over to the correct place
             try Swiftly.currentPlatform.installSwiftlyBin()

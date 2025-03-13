@@ -29,7 +29,7 @@ To get started with swiftly you can download it from [swift.org](https://swift.o
         Now run swiftly init to finish the installation:
 
         ```
-        ~/usr/local/bin/swiftly init
+        /usr/local/bin/swiftly init
         ```
     }
 }

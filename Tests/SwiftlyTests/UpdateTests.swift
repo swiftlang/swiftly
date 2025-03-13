@@ -109,9 +109,9 @@ final class UpdateTests: SwiftlyTests {
         }
     }
 
-    /// Verifies that updating the currently in-use toolchain can be updated, and that after update the new toolchain
-    /// will be in-use instead.
-    func testUpdateInUse() async throws {
+    /// Verifies that updating the currently global default toolchain can be updated, and that after update the new toolchain
+    /// will be the global default instead.
+    func testUpdateGlobalDefault() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
                 try await self.installMockedToolchain(selector: "6.0.0")
@@ -132,6 +132,34 @@ final class UpdateTests: SwiftlyTests {
                 )
 
                 try await self.validateInUse(expected: config.inUse!)
+            }
+        }
+    }
+
+    /// Verifies that updating the currently in-use toolchain can be updated, and that after update the new toolchain
+    /// will be in-use with the swift version file updated.
+    func testUpdateInUse() async throws {
+        try await self.withTestHome {
+            try await self.withMockedToolchain {
+                try await self.installMockedToolchain(selector: "6.0.0")
+
+                let versionFile = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(".swift-version")
+                try "6.0.0".write(to: versionFile, atomically: true, encoding: .utf8)
+
+                var update = try self.parseCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+                try await update.run()
+
+                let versionFileContents = try String(contentsOf: versionFile, encoding: .utf8)
+                let inUse = try ToolchainVersion(parsing: versionFileContents)
+                XCTAssertGreaterThan(inUse, .init(major: 6, minor: 0, patch: 0))
+
+                // Since the global default was set to 6.0.0, and that toolchain is no longer installed
+                // the update should have unset it to prevent the config from going into a bad state.
+                let config = try Config.load()
+                XCTAssertTrue(config.inUse == nil)
+
+                // The new toolchain should be installed
+                XCTAssertTrue(config.installedToolchains.contains(inUse))
             }
         }
     }

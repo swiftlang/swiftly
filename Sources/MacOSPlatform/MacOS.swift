@@ -120,7 +120,7 @@ public struct MacOS: Platform {
         try self.runProgram(homeDir.appendingPathComponent("usr/local/bin/swiftly").path, "init")
     }
 
-    public func uninstall(_ toolchain: ToolchainVersion) throws {
+    public func uninstall(_ toolchain: ToolchainVersion, verbose: Bool) throws {
         SwiftlyCore.print("Uninstalling package in user home directory...")
 
         let toolchainDir = self.swiftlyToolchainsDir.appendingPathComponent("\(toolchain.identifier).xctoolchain", isDirectory: true)
@@ -128,17 +128,17 @@ public struct MacOS: Platform {
         let decoder = PropertyListDecoder()
         let infoPlist = toolchainDir.appendingPathComponent("Info.plist")
         guard let data = try? Data(contentsOf: infoPlist) else {
-            throw SwiftlyError(message: "could not open \(infoPlist)")
+            throw SwiftlyError(message: "could not open \(infoPlist.path)")
         }
 
         guard let pkgInfo = try? decoder.decode(SwiftPkgInfo.self, from: data) else {
-            throw SwiftlyError(message: "could not decode plist at \(infoPlist)")
+            throw SwiftlyError(message: "could not decode plist at \(infoPlist.path)")
         }
 
         try FileManager.default.removeItem(at: toolchainDir)
 
         let homedir = ProcessInfo.processInfo.environment["HOME"]!
-        try? runProgram("pkgutil", "--volume", homedir, "--forget", pkgInfo.CFBundleIdentifier)
+        try? runProgram("pkgutil", "--volume", homedir, "--forget", pkgInfo.CFBundleIdentifier, quiet: !verbose)
     }
 
     public func getExecutableName() -> String {
@@ -156,7 +156,7 @@ public struct MacOS: Platform {
 
     public func detectPlatform(disableConfirmation _: Bool, platform _: String?) async -> PlatformDefinition {
         // No special detection required on macOS platform
-        PlatformDefinition.macOS
+        .macOS
     }
 
     public func getShell() async throws -> String {

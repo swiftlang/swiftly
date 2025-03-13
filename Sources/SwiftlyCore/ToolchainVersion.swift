@@ -383,14 +383,21 @@ struct StableReleaseParser: ToolchainSelectorParser {
     }
 }
 
-/// Parser for selectors like the following (with optional "swift-" prefix):
+/// Parser for selectors like the following:
 ///    - a.b-snapshot-YYYY-mm-dd
 ///    - a.b-snapshot
+///    - a.b-SNAPSHOT-YYYY-mm-dd
+///    - a.b-SNAPSHOT
 ///    - a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
 ///    - a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
 ///    - a.b-DEVELOPMENT-SNAPSHOT
-///    - a.b-SNAPSHOT-YYYY-mm-dd
-///    - a.b-SNAPSHOT
+///    - swift-a.b-snapshot-YYYY-mm-dd
+///    - swift-a.b-snapshot
+///    - swift-a.b-SNAPSHOT-YYYY-mm-dd
+///    - swift-a.b-SNAPSHOT
+///    - swift-a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
+///    - swift-a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
+///    - swift-a.b-DEVELOPMENT-SNAPSHOT
 struct ReleaseSnapshotParser: ToolchainSelectorParser {
     static let regex: Regex<(Substring, Substring, Substring, Substring?)> =
         try! Regex("^(?:swift-)?([0-9]+)\\.([0-9]+)-(?:snapshot|DEVELOPMENT-SNAPSHOT|SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
@@ -416,12 +423,19 @@ struct ReleaseSnapshotParser: ToolchainSelectorParser {
 ///    - main-snapshot
 ///    - main-SNAPSHOT-YYYY-mm-dd
 ///    - main-SNAPSHOT
+///    - DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
+///    - DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
+///    - DEVELOPMENT-SNAPSHOT
+///    - swift-main-snapshot-YYYY-mm-dd
+///    - swift-main-snapshot
+///    - swift-main-SNAPSHOT-YYYY-mm-dd
+///    - swift-main-SNAPSHOT
 ///    - swift-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
 ///    - swift-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
 ///    - swift-DEVELOPMENT-SNAPSHOT
 struct MainSnapshotParser: ToolchainSelectorParser {
     static let regex: Regex<(Substring, Substring?)> =
-        try! Regex("^(?:main-snapshot|swift-DEVELOPMENT-SNAPSHOT|main-SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
+        try! Regex("^(?:swift-)?(?:main-snapshot|DEVELOPMENT-SNAPSHOT|main-SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
 
     func parse(_ input: String) throws -> ToolchainSelector? {
         guard let match = try Self.regex.wholeMatch(in: input) else {

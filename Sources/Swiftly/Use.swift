@@ -116,7 +116,7 @@ internal struct Use: SwiftlyCommand {
             // We don't care in this case if there were any problems with the swift version files, just overwrite it with the new value
             try toolchain.name.write(to: versionFile, atomically: true, encoding: .utf8)
 
-            message = "The file `\(versionFile)` has been set to `\(toolchain)`"
+            message = "The file `\(versionFile.path)` has been set to `\(toolchain)`"
         } else if let newVersionFile = findNewVersionFile(), !globalDefault {
             if !assumeYes {
                 SwiftlyCore.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
@@ -129,11 +129,11 @@ internal struct Use: SwiftlyCommand {
 
             try toolchain.name.write(to: newVersionFile, atomically: true, encoding: .utf8)
 
-            message = "The file `\(newVersionFile)` has been set to `\(toolchain)`"
+            message = "The file `\(newVersionFile.path)` has been set to `\(toolchain)`"
         } else {
             config.inUse = toolchain
             try config.save()
-            message = "The global default toolchain has set to `\(toolchain)`"
+            message = "The global default toolchain has been set to `\(toolchain)`"
         }
 
         if let selectedVersion = selectedVersion {
@@ -177,7 +177,8 @@ public enum ToolchainSelectionResult {
 /// Selection of a toolchain can be accomplished in a number of ways. There is the
 /// the configuration's global default 'inUse' setting. This is the fallback selector
 /// if there are no other selections. The returned tuple will contain the default toolchain
-/// version and the result will be .default.
+/// version and the result will be .globalDefault. This will always be the result if
+/// the globalDefault parameter is true.
 ///
 /// A toolchain can also be selected from a `.swift-version` file in the current
 /// working directory, or an ancestor directory. If it successfully selects a toolchain
@@ -233,5 +234,11 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false) a
         }
     }
 
-    return (config.inUse, .globalDefault)
+    // Check to ensure that the global default in use toolchain matches one of the installed toolchains, and return
+    // no selected toolchain if it doesn't.
+    guard let defaultInUse = config.inUse, config.installedToolchains.contains(defaultInUse) else {
+        return (nil, .globalDefault)
+    }
+
+    return (defaultInUse, .globalDefault)
 }

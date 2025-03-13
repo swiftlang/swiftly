@@ -103,7 +103,14 @@ struct Install: SwiftlyCommand {
             assumeYes: self.root.assumeYes
         )
 
-        if pathChanged {
+        let shell = if let s = ProcessInfo.processInfo.environment["SHELL"] {
+            s
+        } else {
+            try await Swiftly.currentPlatform.getShell()
+        }
+
+        // Fish doesn't cache its path, so this instruction is not necessary.
+        if pathChanged && !shell.hasSuffix("fish") {
             SwiftlyCore.print("""
             NOTE: We have updated some elements in your path and your shell may not yet be
             aware of the changes. You can run this command to update your shell.
@@ -271,7 +278,9 @@ struct Install: SwiftlyCommand {
                 }
             }
 
-            SwiftlyCore.print("Setting up toolchain proxies...")
+            if verbose {
+                SwiftlyCore.print("Setting up toolchain proxies...")
+            }
 
             let proxiesToCreate = Set(toolchainBinDirContents).subtracting(swiftlyBinDirContents).union(overwrite)
 

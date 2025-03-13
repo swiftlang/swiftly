@@ -205,7 +205,7 @@ public struct Linux: Platform {
             ]
         case "debian12":
             [
-                "binutils-gold",
+                "binutils",
                 "libicu-dev",
                 "libcurl4-openssl-dev",
                 "libedit-dev",
@@ -398,7 +398,10 @@ public struct Linux: Platform {
     }
 
     public func verifySignature(httpClient: SwiftlyHTTPClient, archiveDownloadURL: URL, archive: URL, verbose: Bool) async throws {
-        SwiftlyCore.print("Downloading toolchain signature...")
+        if verbose {
+            SwiftlyCore.print("Downloading toolchain signature...")
+        }
+
         let sigFile = self.getTempFilePath()
         let _ = FileManager.default.createFile(atPath: sigFile.path, contents: nil)
         defer {

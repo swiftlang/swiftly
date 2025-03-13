@@ -133,7 +133,7 @@ internal struct Use: SwiftlyCommand {
         } else {
             config.inUse = toolchain
             try config.save()
-            message = "The global default toolchain has set to `\(toolchain)`"
+            message = "The global default toolchain has been set to `\(toolchain)`"
         }
 
         if let selectedVersion = selectedVersion {

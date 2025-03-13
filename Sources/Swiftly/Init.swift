@@ -78,7 +78,7 @@ internal struct Init: SwiftlyCommand {
             """)
 
             guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
-                throw SwiftlyError(message: "Swiftly installation has been cancelled")
+                throw SwiftlyError(message: "swiftly installation has been cancelled")
             }
         }
 
@@ -242,7 +242,8 @@ internal struct Init: SwiftlyCommand {
                 """)
             }
 
-            if pathChanged {
+            // Fish doesn't have path caching, so this might only be needed for bash/zsh
+            if pathChanged && !shell.hasSuffix("fish") {
                 SwiftlyCore.print("""
                 Your shell caches items on your path for better performance. Swiftly has added items to your path that may not get picked up right away. You can run this command to update your shell to get these items.
 

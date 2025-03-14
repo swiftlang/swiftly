@@ -560,11 +560,11 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             Components.Schemas.Release(
                 name: String(describing: releaseToolchain),
                 date: "",
-                platforms: [.init(
+                platforms: platformName != "Xcode" ? [.init(
                     name: platformName,
                     platform: .init(value1: .linux, value2: "Linux"),
                     archs: [cpuArch]
-                )],
+                )] : [],
                 tag: "",
                 xcode: "",
                 xcodeRelease: true

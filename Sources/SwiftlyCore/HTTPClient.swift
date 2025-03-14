@@ -363,7 +363,7 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
-        let arch = a ?? String(describing: cpuArch)
+        let arch = a ?? cpuArch.value2
 
         let platformName = if platform.name == PlatformDefinition.macOS.name {
             "macos"

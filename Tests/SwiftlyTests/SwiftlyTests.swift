@@ -17,8 +17,8 @@ struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
-class SwiftlyTests: XCTestCase {
-    override class func tearDown() {
+public class SwiftlyTests: XCTestCase {
+    override public class func tearDown() {
 #if os(Linux)
         let deleteTestGPGKeys = Process()
         deleteTestGPGKeys.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -36,13 +36,13 @@ class SwiftlyTests: XCTestCase {
     }
 
     // Below are some constants that can be used to write test cases.
-    static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
-    static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
-    static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
-    static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-09-10")
-    static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-10-22")
-    static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-27")
-    static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30")
+    public static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
+    public static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
+    public static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
+    public static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-09-10")
+    public static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-10-22")
+    public static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-27")
+    public static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30")
 
     static let allToolchains: Set<ToolchainVersion> = [
         oldStable,
@@ -468,12 +468,7 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
         throw SwiftlyTestError(message: "Mocking of fetching the current swiftly release is not implemented in MockHTTPRequestExecutor.")
     }
 
-    public func getReleaseToolchains(
-        platform _: PlatformDefinition,
-        arch _: Components.Schemas.Architecture?,
-        limit _: Int?,
-        filter _: ((ToolchainVersion.StableRelease) -> Bool)?
-    ) async throws -> [ToolchainVersion.StableRelease] {
+    public func getReleaseToolchains() async throws -> [Components.Schemas.Release] {
         throw SwiftlyTestError(message: "Mocking of fetching the release toolchains is not implemented in MockHTTPRequestExecutor.")
     }
 }
@@ -494,13 +489,31 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
     private let latestSwiftlyVersion: SwiftlyVersion
 
-    public init(executables: [String]? = nil, latestSwiftlyVersion: SwiftlyVersion = SwiftlyCore.version, delegate: HTTPRequestExecutor) {
+    private let releaseToolchains: [ToolchainVersion.StableRelease]
+
+    public init(
+        executables: [String]? = nil,
+        latestSwiftlyVersion: SwiftlyVersion = SwiftlyCore.version,
+        releaseToolchains: [ToolchainVersion.StableRelease] = [
+            SwiftlyTests.oldStable.asStableRelease!,
+            SwiftlyTests.newStable.asStableRelease!,
+            SwiftlyTests.oldStableNewPatch.asStableRelease!,
+            ToolchainVersion.StableRelease(major: 5, minor: 7, patch: 4), // Some tests look for a patch in the 5.7.x series larger than 5.0.3
+            ToolchainVersion.StableRelease(major: 5, minor: 9, patch: 0), // Some tests try to update from 5.9.0
+            ToolchainVersion.StableRelease(major: 5, minor: 9, patch: 1),
+            ToolchainVersion.StableRelease(major: 6, minor: 0, patch: 0), // Some tests check for a release larger than 5.8.0 to be present
+            ToolchainVersion.StableRelease(major: 6, minor: 0, patch: 1), // Some tests try to update from 6.0.0
+            ToolchainVersion.StableRelease(major: 6, minor: 0, patch: 2), // Some tests try to update from 6.0.1
+        ],
+        delegate: HTTPRequestExecutor
+    ) {
         self.executables = executables ?? ["swift"]
 #if os(Linux)
         self.signatures = [:]
 #endif
         self.delegate = delegate
         self.latestSwiftlyVersion = latestSwiftlyVersion
+        self.releaseToolchains = releaseToolchains
     }
 
     public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
@@ -515,13 +528,48 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         return release
     }
 
-    public func getReleaseToolchains(
-        platform _: PlatformDefinition,
-        arch _: Components.Schemas.Architecture?,
-        limit _: Int?,
-        filter _: ((ToolchainVersion.StableRelease) -> Bool)?
-    ) async throws -> [ToolchainVersion.StableRelease] {
-        throw SwiftlyTestError(message: "Mocking of the fetching of release toolchains is not implemented by the MockToolchainDownloader")
+    public func getReleaseToolchains() async throws -> [Components.Schemas.Release] {
+        let currentPlatform = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
+
+        let platformName = switch currentPlatform {
+        case PlatformDefinition.ubuntu2004:
+            "Ubuntu 20.04"
+        case PlatformDefinition.amazonlinux2:
+            "Amazon Linux 2"
+        case PlatformDefinition.ubuntu2204:
+            "Ubuntu 22.04"
+        case PlatformDefinition.rhel9:
+            "Red Hat Universal Base Image 9"
+        case PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"):
+            "Ubuntu 24.04"
+        case PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian 12"):
+            "Debian 12"
+        case PlatformDefinition(name: "fedora39", nameFull: "fedora39", namePretty: "Fedora 39"):
+            "Fedora 39"
+        case PlatformDefinition.macOS:
+            "Xcode" // NOTE: this is not actually a platform that gets added in the swift.org API for macos/xcode
+        default:
+            String?.none
+        }
+
+        guard let platformName else {
+            throw SwiftlyTestError(message: "Could not detect the current platform in test")
+        }
+
+        return self.releaseToolchains.map { releaseToolchain in
+            Components.Schemas.Release(
+                name: String(describing: releaseToolchain),
+                date: "",
+                platforms: [.init(
+                    name: platformName,
+                    platform: .init(value1: .linux, value2: "Linux"),
+                    archs: [cpuArch]
+                )],
+                tag: "",
+                xcode: "",
+                xcodeRelease: true
+            )
+        }
     }
 
     public func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse {

@@ -30,6 +30,7 @@ final class InstallTests: SwiftlyTests {
                 }
 
                 // As of writing this, 5.8.0 is the latest stable release. Assert it is at least that new.
+                print("RELEASE IS \(release)")
                 XCTAssertTrue(release >= ToolchainVersion.StableRelease(major: 5, minor: 8, patch: 0))
 
                 try await validateInstalledToolchains([installedToolchain], description: "install latest")

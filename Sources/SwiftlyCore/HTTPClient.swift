@@ -54,6 +54,7 @@ public protocol HTTPRequestExecutor {
     func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse
     func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease
     func getReleaseToolchains() async throws -> [Components.Schemas.Release]
+    func getSnapshotToolchains(branch: Components.Schemas.KnownSourceBranch, platform: Components.Schemas.KnownPlatformIdentifier) async throws -> Components.Schemas.DevToolchains
 }
 
 internal struct SwiftlyUserAgentMiddleware: ClientMiddleware {
@@ -144,6 +145,21 @@ internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
 
         return try response.ok.body.json
     }
+
+    public func getSnapshotToolchains(branch: Components.Schemas.KnownSourceBranch, platform: Components.Schemas.KnownPlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
+        let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
+
+        let client = Client(
+            serverURL: try Servers.Server1.url(),
+            transport: AsyncHTTPClientTransport(configuration: config),
+            middlewares: [swiftlyUserAgent]
+        )
+
+        let response = try await client.listDevToolchains(.init(path: .init(branch: branch, platform: platform)))
+
+        return try response.ok.body.json
+    }
 }
 
 private func makeRequest(url: String) -> HTTPClientRequest {
@@ -218,15 +234,7 @@ extension Components.Schemas.Platform {
     }
 }
 
-public struct SwiftOrgSnapshotList: Codable {
-    var aarch64: [SwiftOrgSnapshot]?
-    var x86_64: [SwiftOrgSnapshot]?
-    var universal: [SwiftOrgSnapshot]?
-}
-
-public struct SwiftOrgSnapshot: Codable {
-    var dir: String
-
+extension Components.Schemas.DevToolchainForArch {
     private static let snapshotRegex: Regex<(Substring, Substring?, Substring?, Substring)> =
         try! Regex("swift(?:-(\\d+)\\.(\\d+))?-DEVELOPMENT-SNAPSHOT-(\\d{4}-\\d{2}-\\d{2})")
 
@@ -363,35 +371,49 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
+        let platformId: Components.Schemas.KnownPlatformIdentifier = switch platform.name {
+        // case PlatformDefinition.ubuntu2404.name:
+        //    .ubuntu2404
+        // case PlatformDefinition.debian12.name:
+        //    .debian12
+        // case PlatformDefinition.fedora39.name:
+        //    .fedora39
+        case PlatformDefinition.ubuntu2204.name:
+            .ubuntu2204
+        case PlatformDefinition.ubuntu2004.name:
+            .ubuntu2004
+        case PlatformDefinition.rhel9.name:
+            .ubi9
+        case PlatformDefinition.amazonlinux2.name:
+            .amazonlinux2
+        case PlatformDefinition.macOS.name:
+            .macos
+        default:
+            throw SwiftlyError(message: "No snapshot toolchains available for platform \(platform.name)")
+        }
+
+        let sourceBranch: Components.Schemas.KnownSourceBranch = switch branch {
+        case .main:
+            .main
+        case .release(major: 6, minor: 0):
+            ._6_0
+        default:
+            throw SwiftlyError(message: "Unknown snapshot branch: \(branch)")
+        }
+
+        let devToolchains = try await SwiftlyCore.httpRequestExecutor.getSnapshotToolchains(branch: sourceBranch, platform: platformId)
+
         let arch = a ?? cpuArch.value2
-
-        let platformName = if platform.name == PlatformDefinition.macOS.name {
-            "macos"
-        } else {
-            platform.name
-        }
-
-        let url = "https://www.swift.org/api/v1/install/dev/\(branch.name)/\(platformName).json"
-
-        // For a particular branch and platform the snapshots are listed underneath their architecture
-        let swiftOrgSnapshotArchs: SwiftOrgSnapshotList
-        do {
-            swiftOrgSnapshotArchs = try await self.getFromJSON(url: url, type: SwiftOrgSnapshotList.self)
-        } catch is JSONNotFoundError {
-            throw SnapshotBranchNotFoundError(branch: branch)
-        } catch {
-            throw error
-        }
 
         // These are the available snapshots for the branch, platform, and architecture
         let swiftOrgSnapshots = if platform.name == PlatformDefinition.macOS.name {
-            swiftOrgSnapshotArchs.universal ?? [SwiftOrgSnapshot]()
+            devToolchains.universal ?? [Components.Schemas.DevToolchainForArch]()
         } else if arch == "aarch64" {
-            swiftOrgSnapshotArchs.aarch64 ?? [SwiftOrgSnapshot]()
+            devToolchains.aarch64 ?? [Components.Schemas.DevToolchainForArch]()
         } else if arch == "x86_64" {
-            swiftOrgSnapshotArchs.x86_64 ?? [SwiftOrgSnapshot]()
+            devToolchains.x8664 ?? [Components.Schemas.DevToolchainForArch]()
         } else {
-            [SwiftOrgSnapshot]()
+            [Components.Schemas.DevToolchainForArch]()
         }
 
         // Convert these into toolchain snapshot versions that match the filter

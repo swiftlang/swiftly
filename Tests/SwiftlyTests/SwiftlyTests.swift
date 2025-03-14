@@ -39,10 +39,10 @@ public class SwiftlyTests: XCTestCase {
     public static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
     public static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
     public static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
-    public static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-09-10")
-    public static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2022-10-22")
-    public static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-27")
-    public static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 5, minor: 7), date: "2022-08-30")
+    public static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2025-03-10")
+    public static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2025-03-14")
+    public static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 6, minor: 0), date: "2025-02-09")
+    public static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 6, minor: 0), date: "2025-02-11")
 
     static let allToolchains: Set<ToolchainVersion> = [
         oldStable,
@@ -471,6 +471,10 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
     public func getReleaseToolchains() async throws -> [Components.Schemas.Release] {
         throw SwiftlyTestError(message: "Mocking of fetching the release toolchains is not implemented in MockHTTPRequestExecutor.")
     }
+
+    public func getSnapshotToolchains(branch _: Components.Schemas.KnownSourceBranch, platform _: Components.Schemas.KnownPlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
+        throw SwiftlyTestError(message: "Mocking of fetching the snapshot toolchains is not implemented in MockHTTPRequestExecutor.")
+    }
 }
 
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
@@ -491,6 +495,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
     private let releaseToolchains: [ToolchainVersion.StableRelease]
 
+    private let snapshotToolchains: [ToolchainVersion.Snapshot]
+
     public init(
         executables: [String]? = nil,
         latestSwiftlyVersion: SwiftlyVersion = SwiftlyCore.version,
@@ -505,6 +511,12 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             ToolchainVersion.StableRelease(major: 6, minor: 0, patch: 1), // Some tests try to update from 6.0.0
             ToolchainVersion.StableRelease(major: 6, minor: 0, patch: 2), // Some tests try to update from 6.0.1
         ],
+        snapshotToolchains: [ToolchainVersion.Snapshot] = [
+            SwiftlyTests.oldMainSnapshot.asSnapshot!,
+            SwiftlyTests.newMainSnapshot.asSnapshot!,
+            SwiftlyTests.oldReleaseSnapshot.asSnapshot!,
+            SwiftlyTests.newReleaseSnapshot.asSnapshot!,
+        ],
         delegate: HTTPRequestExecutor
     ) {
         self.executables = executables ?? ["swift"]
@@ -514,6 +526,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         self.delegate = delegate
         self.latestSwiftlyVersion = latestSwiftlyVersion
         self.releaseToolchains = releaseToolchains
+        self.snapshotToolchains = snapshotToolchains
     }
 
     public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
@@ -569,6 +582,42 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                 xcode: "",
                 xcodeRelease: true
             )
+        }
+    }
+
+    public func getSnapshotToolchains(branch: Components.Schemas.KnownSourceBranch, platform _: Components.Schemas.KnownPlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
+        let currentPlatform = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
+
+        let releasesForBranch = self.snapshotToolchains.filter { snapshotVersion in
+            switch snapshotVersion.branch {
+            case .main:
+                branch == .main
+            case let .release(major, minor):
+                major == 6 && minor == 0 && branch == ._6_0
+            }
+        }
+
+        let devToolchainsForArch = releasesForBranch.map { branchSnapshot in
+            Components.Schemas.DevToolchainForArch(
+                name: Components.Schemas.DevToolchainKind?.none,
+                date: "",
+                dir: branch == .main ?
+                    "swift-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)" :
+                    "swift-6.0-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)",
+                download: "",
+                downloadSignature: nil,
+                debugInfo: nil
+            )
+        }
+
+        if currentPlatform == PlatformDefinition.macOS {
+            return Components.Schemas.DevToolchains(universal: devToolchainsForArch)
+        } else if cpuArch == Components.Schemas.Architecture.x8664 {
+            return Components.Schemas.DevToolchains(x8664: devToolchainsForArch)
+        } else if cpuArch == Components.Schemas.Architecture.aarch64 {
+            return Components.Schemas.DevToolchains(aarch64: devToolchainsForArch)
+        } else {
+            return Components.Schemas.DevToolchains()
         }
     }
 

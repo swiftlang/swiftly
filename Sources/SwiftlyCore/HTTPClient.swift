@@ -201,7 +201,7 @@ extension Components.Schemas.Platform {
         case "Ubuntu 24.04":
             PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04")
         case "Debian 12":
-            PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian 12")
+            PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12")
         case "Fedora 39":
             PlatformDefinition(name: "fedora39", nameFull: "fedora39", namePretty: "Fedora 39")
         default:

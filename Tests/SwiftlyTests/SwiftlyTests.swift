@@ -542,7 +542,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             "Red Hat Universal Base Image 9"
         case PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"):
             "Ubuntu 24.04"
-        case PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian 12"):
+        case PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"):
             "Debian 12"
         case PlatformDefinition(name: "fedora39", nameFull: "fedora39", namePretty: "Fedora 39"):
             "Fedora 39"
@@ -553,7 +553,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         }
 
         guard let platformName else {
-            throw SwiftlyTestError(message: "Could not detect the current platform in test")
+            throw SwiftlyTestError(message: "Could not detect the current platform in test: \(currentPlatform)")
         }
 
         return self.releaseToolchains.map { releaseToolchain in

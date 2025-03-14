@@ -208,6 +208,11 @@ extension Components.Schemas.Release {
     }
 }
 
+extension Components.Schemas.Architecture {
+    static var x8664: Components.Schemas.Architecture = .init(value1: Components.Schemas.KnownArchitecture.x8664, value2: "x86_64")
+    static var aarch64: Components.Schemas.Architecture = .init(value1: Components.Schemas.KnownArchitecture.aarch64, value2: "aarch64")
+}
+
 extension Components.Schemas.Platform {
     /// platformDef is a mapping from the 'name' field of the swift.org platform object
     /// to swiftly's PlatformDefinition, if possible.

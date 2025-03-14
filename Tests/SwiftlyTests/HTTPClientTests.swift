@@ -74,7 +74,7 @@ final class HTTPClientTests: SwiftlyTests {
             .release(major: 6, minor: 0), // This is available in swift.org API
         ]
 
-        for arch in [Components.Schemas.Architecture(value1: Components.Schemas.KnownArchitecture.x8664), Components.Schemas.Architecture(value1: Components.Schemas.KnownArchitecture.aarch64)] {
+        for arch in [Components.Schemas.Architecture.x8664, Components.Schemas.Architecture.aarch64] {
             for platform in supportedPlatforms {
                 // GIVEN: we have a swiftly http client with swift.org metadata capability
                 // WHEN: we ask for the first five releases of a supported platform in a supported arch
@@ -87,7 +87,7 @@ final class HTTPClientTests: SwiftlyTests {
                 for branch in branches {
                     // GIVEN: we have a swiftly http client with swift.org metadata capability
                     // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch
-                    let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: String(describing: arch), branch: branch, limit: 5)
+                    let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: arch.value2!, branch: branch, limit: 5)
                     // THEN: we get at least 3 releases
                     XCTAssertTrue(3 <= snapshots.count)
                 }

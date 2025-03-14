@@ -177,7 +177,7 @@ final class UpdateTests: SwiftlyTests {
         for branch in branches {
             try await self.withTestHome {
                 try await self.withMockedToolchain {
-                    let date = "2024-06-18"
+                    let date = branch == .main ? SwiftlyTests.oldMainSnapshot.asSnapshot!.date : SwiftlyTests.oldReleaseSnapshot.asSnapshot!.date
                     try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
                     var update = try self.parseCommand(

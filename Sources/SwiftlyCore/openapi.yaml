@@ -37,12 +37,12 @@ paths:
         in: path
         required: true
         schema:
-          $ref: '#/components/schemas/KnownSourceBranch'
+          $ref: '#/components/schemas/SourceBranch'
       - name: platform
         in: path
         required: true
         schema:
-          $ref: '#/components/schemas/KnownPlatformIdentifier'
+          $ref: '#/components/schemas/PlatformIdentifier'
     get:
       operationId: listDevToolchains
       summary: Fetch all development toolchains
@@ -61,7 +61,7 @@ paths:
         in: path
         required: true
         schema:
-          $ref: '#/components/schemas/KnownSourceBranch'
+          $ref: '#/components/schemas/SourceBranch'
     get:
       operationId: listStaticSDKDevToolchains
       summary: Fetch all static SDK development toolchains

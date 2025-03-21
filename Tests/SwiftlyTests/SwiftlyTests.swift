@@ -472,7 +472,7 @@ private struct MockHTTPRequestExecutor: HTTPRequestExecutor {
         throw SwiftlyTestError(message: "Mocking of fetching the release toolchains is not implemented in MockHTTPRequestExecutor.")
     }
 
-    public func getSnapshotToolchains(branch _: Components.Schemas.KnownSourceBranch, platform _: Components.Schemas.KnownPlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
+    public func getSnapshotToolchains(branch _: Components.Schemas.SourceBranch, platform _: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
         throw SwiftlyTestError(message: "Mocking of fetching the snapshot toolchains is not implemented in MockHTTPRequestExecutor.")
     }
 }
@@ -585,15 +585,15 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         }
     }
 
-    public func getSnapshotToolchains(branch: Components.Schemas.KnownSourceBranch, platform _: Components.Schemas.KnownPlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
+    public func getSnapshotToolchains(branch: Components.Schemas.SourceBranch, platform _: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
         let currentPlatform = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
 
         let releasesForBranch = self.snapshotToolchains.filter { snapshotVersion in
             switch snapshotVersion.branch {
             case .main:
-                branch == .main
+                branch.value1 == .main || branch.value1?.rawValue == "main"
             case let .release(major, minor):
-                major == 6 && minor == 0 && branch == ._6_0
+                branch.value2 == "\(major).\(minor)" || branch.value1?.rawValue == "\(major).\(minor)"
             }
         }
 
@@ -601,7 +601,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             Components.Schemas.DevToolchainForArch(
                 name: Components.Schemas.DevToolchainKind?.none,
                 date: "",
-                dir: branch == .main ?
+                dir: branch.value1 == .main || branch.value2 == "main" ?
                     "swift-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)" :
                     "swift-6.0-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)",
                 download: "",

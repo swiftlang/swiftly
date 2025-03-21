@@ -54,7 +54,7 @@ public protocol HTTPRequestExecutor {
     func execute(_ request: HTTPClientRequest, timeout: TimeAmount) async throws -> HTTPClientResponse
     func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease
     func getReleaseToolchains() async throws -> [Components.Schemas.Release]
-    func getSnapshotToolchains(branch: Components.Schemas.KnownSourceBranch, platform: Components.Schemas.KnownPlatformIdentifier) async throws -> Components.Schemas.DevToolchains
+    func getSnapshotToolchains(branch: Components.Schemas.SourceBranch, platform: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains
 }
 
 internal struct SwiftlyUserAgentMiddleware: ClientMiddleware {
@@ -146,7 +146,7 @@ internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
         return try response.ok.body.json
     }
 
-    public func getSnapshotToolchains(branch: Components.Schemas.KnownSourceBranch, platform: Components.Schemas.KnownPlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
+    public func getSnapshotToolchains(branch: Components.Schemas.SourceBranch, platform: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
         let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
 
@@ -371,34 +371,30 @@ public struct SwiftlyHTTPClient {
         limit: Int? = nil,
         filter: ((ToolchainVersion.Snapshot) -> Bool)? = nil
     ) async throws -> [ToolchainVersion.Snapshot] {
-        let platformId: Components.Schemas.KnownPlatformIdentifier = switch platform.name {
-        // case PlatformDefinition.ubuntu2404.name:
-        //    .ubuntu2404
-        // case PlatformDefinition.debian12.name:
-        //    .debian12
-        // case PlatformDefinition.fedora39.name:
-        //    .fedora39
+        let platformId: Components.Schemas.PlatformIdentifier = switch platform.name {
+        // These are new platforms that aren't yet in the list of known platforms in the OpenAPI schema
+        case PlatformDefinition.ubuntu2404.name, PlatformDefinition.debian12.name, PlatformDefinition.fedora39.name:
+            .init(value2: platform.name)
+
         case PlatformDefinition.ubuntu2204.name:
-            .ubuntu2204
+            .init(value1: .ubuntu2204)
         case PlatformDefinition.ubuntu2004.name:
-            .ubuntu2004
+            .init(value1: .ubuntu2004)
         case PlatformDefinition.rhel9.name:
-            .ubi9
+            .init(value1: .ubi9)
         case PlatformDefinition.amazonlinux2.name:
-            .amazonlinux2
+            .init(value1: .amazonlinux2)
         case PlatformDefinition.macOS.name:
-            .macos
+            .init(value1: .macos)
         default:
             throw SwiftlyError(message: "No snapshot toolchains available for platform \(platform.name)")
         }
 
-        let sourceBranch: Components.Schemas.KnownSourceBranch = switch branch {
+        let sourceBranch: Components.Schemas.SourceBranch = switch branch {
         case .main:
-            .main
-        case .release(major: 6, minor: 0):
-            ._6_0
-        default:
-            throw SwiftlyError(message: "Unknown snapshot branch: \(branch)")
+            .init(value1: .main)
+        case let .release(major, minor):
+            .init(value2: "\(major).\(minor)")
         }
 
         let devToolchains = try await SwiftlyCore.httpRequestExecutor.getSnapshotToolchains(branch: sourceBranch, platform: platformId)

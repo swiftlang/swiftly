@@ -8,7 +8,7 @@ import NIOHTTP1
 import OpenAPIAsyncHTTPClient
 import OpenAPIRuntime
 
-public extension Components.Schemas.SwiftlyRelease {
+extension Components.Schemas.SwiftlyRelease {
     public var swiftlyVersion: SwiftlyVersion {
         get throws {
             guard let releaseVersion = try? SwiftlyVersion(parsing: self.version) else {
@@ -20,7 +20,7 @@ public extension Components.Schemas.SwiftlyRelease {
     }
 }
 
-public extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
+extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
     public var isDarwin: Bool {
         self.platform.value1 == .darwin
     }
@@ -50,8 +50,8 @@ public extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
     }
 }
 
-public extension Components.Schemas.SwiftlyPlatformIdentifier {
-    init(_ knownSwiftlyPlatformIdentifier: Components.Schemas.KnownSwiftlyPlatformIdentifier) {
+extension Components.Schemas.SwiftlyPlatformIdentifier {
+    public init(_ knownSwiftlyPlatformIdentifier: Components.Schemas.KnownSwiftlyPlatformIdentifier) {
         self.init(value1: knownSwiftlyPlatformIdentifier)
     }
 }
@@ -185,32 +185,32 @@ extension Components.Schemas.Release {
     }
 }
 
-public extension Components.Schemas.Architecture {
-    init(_ knownArchitecture: Components.Schemas.KnownArchitecture) {
+extension Components.Schemas.Architecture {
+    public init(_ knownArchitecture: Components.Schemas.KnownArchitecture) {
         self.init(value1: knownArchitecture, value2: knownArchitecture.rawValue)
     }
 
-    init(_ string: String) {
+    public init(_ string: String) {
         self.init(value2: string)
     }
 }
 
-public extension Components.Schemas.PlatformIdentifier {
-    init(_ knownPlatformIdentifier: Components.Schemas.KnownPlatformIdentifier) {
+extension Components.Schemas.PlatformIdentifier {
+    public init(_ knownPlatformIdentifier: Components.Schemas.KnownPlatformIdentifier) {
         self.init(value1: knownPlatformIdentifier)
     }
 
-    init(_ string: String) {
+    public init(_ string: String) {
         self.init(value2: string)
     }
 }
 
-public extension Components.Schemas.SourceBranch {
-    init(_ knownSourceBranch: Components.Schemas.KnownSourceBranch) {
+extension Components.Schemas.SourceBranch {
+    public init(_ knownSourceBranch: Components.Schemas.KnownSourceBranch) {
         self.init(value1: knownSourceBranch)
     }
 
-    init(_ string: String) {
+    public init(_ string: String) {
         self.init(value2: string)
     }
 }

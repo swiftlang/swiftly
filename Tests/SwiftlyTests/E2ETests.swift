@@ -27,16 +27,15 @@ final class E2ETests: SwiftlyTests {
             XCTAssertEqual(SwiftlyCore.version, config.version)
 
             // Check the environment script, if the shell is supported
-            let envScript: URL?
-            if shell.hasSuffix("bash") || shell.hasSuffix("zsh") {
-                envScript = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.sh")
+            let envScript: URL? = if shell.hasSuffix("bash") || shell.hasSuffix("zsh") {
+                Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.sh")
             } else if shell.hasSuffix("fish") {
-                envScript = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.fish")
+                Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.fish")
             } else {
-                envScript = nil
+                nil
             }
 
-            if let envScript = envScript {
+            if let envScript {
                 XCTAssertTrue(envScript.fileExists())
             }
 
@@ -53,7 +52,7 @@ final class E2ETests: SwiftlyTests {
             let installedToolchain = config.installedToolchains.first!
 
             guard case let .stable(release) = installedToolchain else {
-                XCTFail("expected swiftly install latest to insall release toolchain but got \(installedToolchain)")
+                XCTFail("expected swiftly install latest to install release toolchain but got \(installedToolchain)")
                 return
             }
 

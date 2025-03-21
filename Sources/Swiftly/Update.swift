@@ -120,7 +120,7 @@ struct Update: SwiftlyCommand {
         try await Uninstall.execute(parameters.oldToolchain, &config, verbose: self.root.verbose)
         SwiftlyCore.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
 
-        if let postInstallScript = postInstallScript {
+        if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
                 throw SwiftlyError(message: """
 

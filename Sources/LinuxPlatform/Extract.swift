@@ -44,7 +44,7 @@ func copyData(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws 
 /// the provided closure which will return the path the file will be written to.
 ///
 /// This uses libarchive under the hood, so a wide variety of archive formats are supported (e.g. .tar.gz).
-internal func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws {
+func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws {
     var flags = Int32(0)
     flags = ARCHIVE_EXTRACT_TIME
     flags |= ARCHIVE_EXTRACT_PERM

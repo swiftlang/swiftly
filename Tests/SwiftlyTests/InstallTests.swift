@@ -25,7 +25,7 @@ final class InstallTests: SwiftlyTests {
                 let installedToolchain = config.installedToolchains.first!
 
                 guard case let .stable(release) = installedToolchain else {
-                    XCTFail("expected swiftly install latest to insall release toolchain but got \(installedToolchain)")
+                    XCTFail("expected swiftly install latest to install release toolchain but got \(installedToolchain)")
                     return
                 }
 
@@ -55,14 +55,14 @@ final class InstallTests: SwiftlyTests {
                 let config = try Config.load()
 
                 guard !config.installedToolchains.isEmpty else {
-                    XCTFail("expected swiftly install latest to insall release toolchain but installed toolchains is empty in config")
+                    XCTFail("expected swiftly install latest to install release toolchain but installed toolchains is empty in config")
                     return
                 }
 
                 let installedToolchain = config.installedToolchains.first!
 
                 guard case let .stable(release) = installedToolchain else {
-                    XCTFail("expected swiftly install latest to insall release toolchain but got \(installedToolchain)")
+                    XCTFail("expected swiftly install latest to install release toolchain but got \(installedToolchain)")
                     return
                 }
 

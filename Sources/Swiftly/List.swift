@@ -25,7 +25,7 @@ struct List: SwiftlyCommand {
 
             $ swiftly list 5.2
 
-        The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
+        The installed snapshots for a given development branch can be listed by specifying the branch as the selector:
 
             $ swiftly list main-snapshot
             $ swiftly list 5.7-snapshot
@@ -33,7 +33,7 @@ struct List: SwiftlyCommand {
     ))
     var toolchainSelector: String?
 
-    internal mutating func run() async throws {
+    mutating func run() async throws {
         try validateSwiftly()
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
@@ -46,7 +46,7 @@ struct List: SwiftlyCommand {
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"
-            if let inUse = inUse, toolchain == inUse {
+            if let inUse, toolchain == inUse {
                 message += " (in use)"
             }
             if toolchain == config.inUse {
@@ -56,20 +56,19 @@ struct List: SwiftlyCommand {
         }
 
         if let selector {
-            let modifier: String
-            switch selector {
+            let modifier = switch selector {
             case let .stable(major, minor, nil):
                 if let minor {
-                    modifier = "Swift \(major).\(minor) release"
+                    "Swift \(major).\(minor) release"
                 } else {
-                    modifier = "Swift \(major) release"
+                    "Swift \(major) release"
                 }
             case .snapshot(.main, nil):
-                modifier = "main development snapshot"
+                "main development snapshot"
             case let .snapshot(.release(major, minor), nil):
-                modifier = "\(major).\(minor) development snapshot"
+                "\(major).\(minor) development snapshot"
             default:
-                modifier = "matching"
+                "matching"
             }
 
             let message = "Installed \(modifier) toolchains"

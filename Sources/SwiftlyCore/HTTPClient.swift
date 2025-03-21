@@ -55,7 +55,7 @@ public protocol HTTPRequestExecutor {
     func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease
 }
 
-internal struct SwiftlyUserAgentMiddleware: ClientMiddleware {
+struct SwiftlyUserAgentMiddleware: ClientMiddleware {
     package func intercept(
         _ request: HTTPRequest,
         body: HTTPBody?,
@@ -71,7 +71,7 @@ internal struct SwiftlyUserAgentMiddleware: ClientMiddleware {
 }
 
 /// An `HTTPRequestExecutor` backed by the shared `HTTPClient`.
-internal class HTTPRequestExecutorImpl: HTTPRequestExecutor {
+class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     let httpClient: HTTPClient
 
     public init() {
@@ -215,7 +215,7 @@ public struct SwiftOrgSnapshot: Codable {
     private static let snapshotRegex: Regex<(Substring, Substring?, Substring?, Substring)> =
         try! Regex("swift(?:-(\\d+)\\.(\\d+))?-DEVELOPMENT-SNAPSHOT-(\\d{4}-\\d{2}-\\d{2})")
 
-    internal func parseSnapshot() throws -> ToolchainVersion.Snapshot? {
+    func parseSnapshot() throws -> ToolchainVersion.Snapshot? {
         guard let match = try? Self.snapshotRegex.firstMatch(in: self.dir) else {
             return nil
         }
@@ -329,7 +329,7 @@ public struct SwiftlyHTTPClient {
 
         swiftOrgFiltered.sort(by: >)
 
-        return if let limit = limit {
+        return if let limit {
             Array(swiftOrgFiltered.prefix(limit))
         } else {
             swiftOrgFiltered
@@ -393,7 +393,7 @@ public struct SwiftlyHTTPClient {
 
         matchingSnapshots.sort(by: >)
 
-        return if let limit = limit {
+        return if let limit {
             Array(matchingSnapshots.prefix(limit))
         } else {
             matchingSnapshots

@@ -10,7 +10,7 @@ If you have a released version that you want to uninstall then give the exact th
 $ swiftly uninstall 5.6.1
 ```
 
-When you're done working with every patch of a minor swift release you can remove them all by omiting the patch version.
+When you're done working with every patch of a minor swift release you can remove them all by omitting the patch version.
 
 ```
 $ swiftly uninstall 5.6

@@ -248,7 +248,7 @@ public struct Linux: Platform {
         if requireSignatureValidation {
             guard (try? self.runProgram("gpg", "--version", quiet: true)) != nil else {
                 var msg = "gpg is not installed. "
-                if let manager = manager {
+                if let manager {
                     msg += """
                     You can install it by running this command as root:
                         \(manager) -y install gpg
@@ -416,7 +416,7 @@ public struct Linux: Platform {
     }
 
     private func manualSelectPlatform(_ platformPretty: String?) async -> PlatformDefinition {
-        if let platformPretty = platformPretty {
+        if let platformPretty {
             print("\(platformPretty) is not an officially supported platform, but the toolchains for another platform may still work on it.")
         } else {
             print("This platform could not be detected, but a toolchain for one of the supported platforms may work on it.")

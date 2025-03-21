@@ -123,7 +123,7 @@ Likewise, the available toolchains associated with a given minor version can be 
 
     $ swiftly list-available 5.2
 
-The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
+The installed snapshots for a given development branch can be listed by specifying the branch as the selector:
 
     $ swiftly list-available main-snapshot
     $ swiftly list-available x.y-snapshot
@@ -301,7 +301,7 @@ Likewise, the installed toolchains associated with a given minor version can be 
 
     $ swiftly list 5.2
 
-The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
+The installed snapshots for a given development branch can be listed by specifying the branch as the selector:
 
     $ swiftly list main-snapshot
     $ swiftly list 5.7-snapshot
@@ -522,7 +522,7 @@ If the command that you are running needs the arguments with the '+' prefixes th
 
     $ swiftly run ./myscript.sh ++abcde
 
-The script will receive the argument as '+abcde'. If there are multiple arguments with the '+' prefix that should be escaped you can disable the selection using a '++' argument, which turns off any selector argument processing for subsequent arguments. This is anologous to the '--' that turns off flag and option processing for subsequent arguments in many argument parsers.
+The script will receive the argument as '+abcde'. If there are multiple arguments with the '+' prefix that should be escaped you can disable the selection using a '++' argument, which turns off any selector argument processing for subsequent arguments. This is analogous to the '--' that turns off flag and option processing for subsequent arguments in many argument parsers.
 
     $ swiftly run ./myscript.sh ++ +abcde +xyz
 

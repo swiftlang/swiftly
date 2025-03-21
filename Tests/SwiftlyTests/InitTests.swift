@@ -22,7 +22,7 @@ final class InitTests: SwiftlyTests {
                 envScript = nil
             }
 
-            if let envScript = envScript {
+            if let envScript {
                 XCTAssertFalse(envScript.fileExists())
             }
 
@@ -35,7 +35,7 @@ final class InitTests: SwiftlyTests {
             XCTAssertEqual(SwiftlyCore.version, config.version)
 
             // AND: it creates an environment script suited for the type of shell
-            if let envScript = envScript {
+            if let envScript {
                 XCTAssertTrue(envScript.fileExists())
                 if let scriptContents = try? String(contentsOf: envScript) {
                     XCTAssertTrue(scriptContents.contains("SWIFTLY_HOME_DIR"))
@@ -46,7 +46,7 @@ final class InitTests: SwiftlyTests {
             }
 
             // AND: it sources the script from the user profile
-            if let envScript = envScript {
+            if let envScript {
                 var foundSourceLine = false
                 for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"] {
                     let profile = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(p)

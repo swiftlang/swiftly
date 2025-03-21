@@ -11,7 +11,7 @@ public struct Config: Codable, Equatable {
     public var platform: PlatformDefinition
     public var version: SwiftlyVersion?
 
-    internal init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition) {
+    init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition) {
         self.inUse = inUse
         self.installedToolchains = installedToolchains
         self.platform = platform

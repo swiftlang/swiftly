@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 import SwiftlyCore
 
-internal struct Init: SwiftlyCommand {
+struct Init: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Perform swiftly initialization into your user account."
     )
@@ -29,12 +29,12 @@ internal struct Init: SwiftlyCommand {
 
     public mutating func validate() throws {}
 
-    internal mutating func run() async throws {
+    mutating func run() async throws {
         try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, quietShellFollowup: self.quietShellFollowup)
     }
 
     /// Initialize the installation of swiftly.
-    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool) async throws {
+    static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool) async throws {
         try Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
 
         var config = try? Config.load()

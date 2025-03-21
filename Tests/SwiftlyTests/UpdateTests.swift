@@ -39,7 +39,7 @@ final class UpdateTests: SwiftlyTests {
         }
     }
 
-    /// Verify that updating the lastest installed toolchain updates it to the latest available toolchain.
+    /// Verify that updating the latest installed toolchain updates it to the latest available toolchain.
     func testUpdateLatestToLatest() async throws {
         try await self.withTestHome {
             try await self.withMockedToolchain {
@@ -59,7 +59,7 @@ final class UpdateTests: SwiftlyTests {
         }
     }
 
-    /// Verify that the latest installed toolchain for a given major version can be updated to the lastest
+    /// Verify that the latest installed toolchain for a given major version can be updated to the latest
     /// released minor version.
     func testUpdateToLatestMinor() async throws {
         try await self.withTestHome {

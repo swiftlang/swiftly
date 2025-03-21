@@ -533,8 +533,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         let release = Components.Schemas.SwiftlyRelease(
             version: self.latestSwiftlyVersion.description,
             platforms: [
-                .init(platform: .init(value1: .darwin), arm64: "https://download.swift.org/swiftly-darwin.pkg", x8664: "https://download.swift.org/swiftly-darwin.pkg"),
-                .init(platform: .init(value1: .linux), arm64: "https://download.swift.org/swiftly-linux.tar.gz", x8664: "https://download.swift.org/swiftly-linux.tar.gz"),
+                .init(platform: .init(.darwin), arm64: "https://download.swift.org/swiftly-darwin.pkg", x8664: "https://download.swift.org/swiftly-darwin.pkg"),
+                .init(platform: .init(.linux), arm64: "https://download.swift.org/swiftly-linux.tar.gz", x8664: "https://download.swift.org/swiftly-linux.tar.gz"),
             ]
         )
 

@@ -8,7 +8,7 @@ import NIOHTTP1
 import OpenAPIAsyncHTTPClient
 import OpenAPIRuntime
 
-extension Components.Schemas.SwiftlyRelease {
+public extension Components.Schemas.SwiftlyRelease {
     public var swiftlyVersion: SwiftlyVersion {
         get throws {
             guard let releaseVersion = try? SwiftlyVersion(parsing: self.version) else {
@@ -20,7 +20,7 @@ extension Components.Schemas.SwiftlyRelease {
     }
 }
 
-extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
+public extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
     public var isDarwin: Bool {
         self.platform.value1 == .darwin
     }
@@ -47,6 +47,12 @@ extension Components.Schemas.SwiftlyReleasePlatformArtifacts {
 
             return url
         }
+    }
+}
+
+public extension Components.Schemas.SwiftlyPlatformIdentifier {
+    init(_ knownSwiftlyPlatformIdentifier: Components.Schemas.KnownSwiftlyPlatformIdentifier) {
+        self.init(value1: knownSwiftlyPlatformIdentifier)
     }
 }
 
@@ -179,9 +185,39 @@ extension Components.Schemas.Release {
     }
 }
 
+public extension Components.Schemas.Architecture {
+    init(_ knownArchitecture: Components.Schemas.KnownArchitecture) {
+        self.init(value1: knownArchitecture, value2: knownArchitecture.rawValue)
+    }
+
+    init(_ string: String) {
+        self.init(value2: string)
+    }
+}
+
+public extension Components.Schemas.PlatformIdentifier {
+    init(_ knownPlatformIdentifier: Components.Schemas.KnownPlatformIdentifier) {
+        self.init(value1: knownPlatformIdentifier)
+    }
+
+    init(_ string: String) {
+        self.init(value2: string)
+    }
+}
+
+public extension Components.Schemas.SourceBranch {
+    init(_ knownSourceBranch: Components.Schemas.KnownSourceBranch) {
+        self.init(value1: knownSourceBranch)
+    }
+
+    init(_ string: String) {
+        self.init(value2: string)
+    }
+}
+
 extension Components.Schemas.Architecture {
-    static var x8664: Components.Schemas.Architecture = .init(value1: Components.Schemas.KnownArchitecture.x8664, value2: "x86_64")
-    static var aarch64: Components.Schemas.Architecture = .init(value1: Components.Schemas.KnownArchitecture.aarch64, value2: "aarch64")
+    static var x8664: Components.Schemas.Architecture = .init(Components.Schemas.KnownArchitecture.x8664)
+    static var aarch64: Components.Schemas.Architecture = .init(Components.Schemas.KnownArchitecture.aarch64)
 }
 
 extension Components.Schemas.Platform {
@@ -374,27 +410,27 @@ public struct SwiftlyHTTPClient {
         let platformId: Components.Schemas.PlatformIdentifier = switch platform.name {
         // These are new platforms that aren't yet in the list of known platforms in the OpenAPI schema
         case PlatformDefinition.ubuntu2404.name, PlatformDefinition.debian12.name, PlatformDefinition.fedora39.name:
-            .init(value2: platform.name)
+            .init(platform.name)
 
         case PlatformDefinition.ubuntu2204.name:
-            .init(value1: .ubuntu2204)
+            .init(.ubuntu2204)
         case PlatformDefinition.ubuntu2004.name:
-            .init(value1: .ubuntu2004)
+            .init(.ubuntu2004)
         case PlatformDefinition.rhel9.name:
-            .init(value1: .ubi9)
+            .init(.ubi9)
         case PlatformDefinition.amazonlinux2.name:
-            .init(value1: .amazonlinux2)
+            .init(.amazonlinux2)
         case PlatformDefinition.macOS.name:
-            .init(value1: .macos)
+            .init(.macos)
         default:
             throw SwiftlyError(message: "No snapshot toolchains available for platform \(platform.name)")
         }
 
         let sourceBranch: Components.Schemas.SourceBranch = switch branch {
         case .main:
-            .init(value1: .main)
+            .init(.main)
         case let .release(major, minor):
-            .init(value2: "\(major).\(minor)")
+            .init("\(major).\(minor)")
         }
 
         let devToolchains = try await SwiftlyCore.httpRequestExecutor.getSnapshotToolchains(branch: sourceBranch, platform: platformId)

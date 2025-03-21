@@ -49,9 +49,9 @@ public struct Swiftly: SwiftlyCommand {
     public init() {}
 
 #if os(Linux)
-    internal static let currentPlatform = Linux.currentPlatform
+    static let currentPlatform = Linux.currentPlatform
 #elseif os(macOS)
-    internal static let currentPlatform = MacOS.currentPlatform
+    static let currentPlatform = MacOS.currentPlatform
 #endif
 }
 

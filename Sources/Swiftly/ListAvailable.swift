@@ -25,7 +25,7 @@ struct ListAvailable: SwiftlyCommand {
 
             $ swiftly list-available 5.2
 
-        The installed snapshots for a given devlopment branch can be listed by specifying the branch as the selector:
+        The installed snapshots for a given development branch can be listed by specifying the branch as the selector:
 
             $ swiftly list-available main-snapshot
             $ swiftly list-available x.y-snapshot
@@ -39,7 +39,7 @@ struct ListAvailable: SwiftlyCommand {
         case toolchainSelector
     }
 
-    internal mutating func run() async throws {
+    mutating func run() async throws {
         try validateSwiftly()
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
@@ -80,20 +80,19 @@ struct ListAvailable: SwiftlyCommand {
         }
 
         if let selector {
-            let modifier: String
-            switch selector {
+            let modifier = switch selector {
             case let .stable(major, minor, nil):
                 if let minor {
-                    modifier = "Swift \(major).\(minor) release"
+                    "Swift \(major).\(minor) release"
                 } else {
-                    modifier = "Swift \(major) release"
+                    "Swift \(major) release"
                 }
             case .snapshot(.main, nil):
-                modifier = "main development snapshot"
+                "main development snapshot"
             case let .snapshot(.release(major, minor), nil):
-                modifier = "\(major).\(minor) development snapshot"
+                "\(major).\(minor) development snapshot"
             default:
-                modifier = "matching"
+                "matching"
             }
 
             let message = "Available \(modifier) toolchains"

@@ -103,7 +103,7 @@ public func runProgramOutput(_ program: String, _ args: String...) async throws 
         throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
     }
 
-    if let outData = outData {
+    if let outData {
         return String(data: outData, encoding: .utf8)
     } else {
         return nil
@@ -203,7 +203,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
             if FileManager.default.fileExists(atPath: svFile.path) {
                 let selector = try? String(contentsOf: svFile, encoding: .utf8)
-                if let selector = selector {
+                if let selector {
                     return selector.replacingOccurrences(of: "\n", with: "")
                 }
                 return selector

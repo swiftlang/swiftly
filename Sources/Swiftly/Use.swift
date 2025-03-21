@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 import SwiftlyCore
 
-internal struct Use: SwiftlyCommand {
+struct Use: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Set the in-use or default toolchain. If no toolchain is provided, print the currently in-use toolchain, if any."
     )
@@ -54,7 +54,7 @@ internal struct Use: SwiftlyCommand {
     ))
     var toolchain: String?
 
-    internal mutating func run() async throws {
+    mutating func run() async throws {
         try validateSwiftly()
         var config = try Config.load()
 
@@ -63,11 +63,11 @@ internal struct Use: SwiftlyCommand {
             let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: self.globalDefault)
 
             // Abort on any errors with the swift version files
-            if case let .swiftVersionFile(_, _, error) = result, let error = error {
+            if case let .swiftVersionFile(_, _, error) = result, let error {
                 throw error
             }
 
-            guard let selectedVersion = selectedVersion else {
+            guard let selectedVersion else {
                 // Return with nothing if there's no toolchain that is selected
                 return
             }
@@ -107,7 +107,7 @@ internal struct Use: SwiftlyCommand {
     }
 
     /// Use a toolchain. This method can modify and save the input config and also create/modify a `.swift-version` file.
-    internal static func execute(_ toolchain: ToolchainVersion, globalDefault: Bool, assumeYes: Bool = true, _ config: inout Config) async throws {
+    static func execute(_ toolchain: ToolchainVersion, globalDefault: Bool, assumeYes: Bool = true, _ config: inout Config) async throws {
         let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: globalDefault)
 
         var message: String
@@ -136,14 +136,14 @@ internal struct Use: SwiftlyCommand {
             message = "The global default toolchain has been set to `\(toolchain)`"
         }
 
-        if let selectedVersion = selectedVersion {
+        if let selectedVersion {
             message += " (was \(selectedVersion.name))"
         }
 
         SwiftlyCore.print(message)
     }
 
-    internal static func findNewVersionFile() -> URL? {
+    static func findNewVersionFile() -> URL? {
         var cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 
         while cwd.path != "" && cwd.path != "/" {
@@ -203,7 +203,7 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false) a
             if FileManager.default.fileExists(atPath: svFile.path) {
                 let contents = try? String(contentsOf: svFile, encoding: .utf8)
 
-                guard let contents = contents else {
+                guard let contents else {
                     return (nil, .swiftVersionFile(svFile, nil, SwiftlyError(message: "The swift version file could not be read: \(svFile)")))
                 }
 
@@ -219,7 +219,7 @@ public func selectToolchain(config: inout Config, globalDefault: Bool = false) a
                     return (nil, .swiftVersionFile(svFile, nil, SwiftlyError(message: "The swift version file is malformed: \(svFile) \(error)")))
                 }
 
-                guard let selector = selector else {
+                guard let selector else {
                     return (nil, .swiftVersionFile(svFile, nil, SwiftlyError(message: "The swift version file is malformed: \(svFile)")))
                 }
 

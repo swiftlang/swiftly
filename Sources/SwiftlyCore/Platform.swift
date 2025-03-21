@@ -139,7 +139,7 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
-    internal func proxyEnv(_ toolchain: ToolchainVersion) throws -> [String: String] {
+    func proxyEnv(_ toolchain: ToolchainVersion) throws -> [String: String] {
         let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
         guard tcPath.fileExists() else {
             throw SwiftlyError(message: "Toolchain \(toolchain) could not be located. You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again.")
@@ -197,7 +197,7 @@ extension Platform {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = args
 
-        if let env = env {
+        if let env {
             process.environment = env
         }
 
@@ -243,7 +243,7 @@ extension Platform {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = [program] + args
 
-        if let env = env {
+        if let env {
             process.environment = env
         }
 
@@ -270,7 +270,7 @@ extension Platform {
             throw RunProgramError(exitCode: process.terminationStatus, program: args.first!)
         }
 
-        if let outData = outData {
+        if let outData {
             return String(data: outData, encoding: .utf8)
         } else {
             return nil

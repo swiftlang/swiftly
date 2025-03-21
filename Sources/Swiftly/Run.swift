@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 import SwiftlyCore
 
-internal struct Run: SwiftlyCommand {
+struct Run: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Run a command while proxying to the selected toolchain commands."
     )
@@ -43,7 +43,7 @@ internal struct Run: SwiftlyCommand {
 
         The script will receive the argument as '+abcde'. If there are multiple arguments with the '+' prefix \
         that should be escaped you can disable the selection using a '++' argument, which turns off any \
-        selector argument processing for subsequent arguments. This is anologous to the '--' that turns off \
+        selector argument processing for subsequent arguments. This is analogous to the '--' that turns off \
         flag and option processing for subsequent arguments in many argument parsers.
 
             $ swiftly run ./myscript.sh ++ +abcde +xyz
@@ -53,7 +53,7 @@ internal struct Run: SwiftlyCommand {
     ))
     var command: [String]
 
-    internal mutating func run() async throws {
+    mutating func run() async throws {
         try validateSwiftly()
 
         // Handle the specific case where help is requested of the run subcommand
@@ -67,9 +67,9 @@ internal struct Run: SwiftlyCommand {
 
         let toolchain: ToolchainVersion?
 
-        if let selector = selector {
+        if let selector {
             let matchedToolchain = config.listInstalledToolchains(selector: selector).max()
-            guard let matchedToolchain = matchedToolchain else {
+            guard let matchedToolchain else {
                 throw SwiftlyError(message: "The selected toolchain \(selector.description) didn't match any of the installed toolchains. You can install it with `swiftly install \(selector.description)`")
             }
 
@@ -78,14 +78,14 @@ internal struct Run: SwiftlyCommand {
             let (version, result) = try await selectToolchain(config: &config)
 
             // Abort on any errors relating to swift version files
-            if case let .swiftVersionFile(_, _, error) = result, let error = error {
+            if case let .swiftVersionFile(_, _, error) = result, let error {
                 throw error
             }
 
             toolchain = version
         }
 
-        guard let toolchain = toolchain else {
+        guard let toolchain else {
             throw SwiftlyError(message: "No installed swift toolchain is selected from either from a .swift-version file, or the default. You can try using one that's already installed with `swiftly use <toolchain version>` or install a new toolchain to use with `swiftly install --use <toolchain version>`.")
         }
 

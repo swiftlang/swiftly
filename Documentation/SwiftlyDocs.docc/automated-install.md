@@ -34,7 +34,7 @@ To begin using installed swiftly from your current shell, first run the followin
 . "/root/.local/share/swiftly/env.sh"
 ```
 
-> Note: on macOS systems you may need to run 'hash -r' to recalcuate the zsh PATH cache when installing swiftly and toolchains.
+> Note: on macOS systems you may need to run 'hash -r' to recalculate the zsh PATH cache when installing swiftly and toolchains.
 
 You can go ahead and add this command to the list of commands in your build script so that the build can proceed to call swiftly from the path. The usual next step is to install a specific swift toolchain like this:
 

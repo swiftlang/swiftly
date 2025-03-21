@@ -5,7 +5,7 @@ import TSCUtility
 
 import SwiftlyCore
 
-internal struct SelfUpdate: SwiftlyCommand {
+struct SelfUpdate: SwiftlyCommand {
     public static var configuration = CommandConfiguration(
         abstract: "Update the version of swiftly itself."
     )
@@ -16,7 +16,7 @@ internal struct SelfUpdate: SwiftlyCommand {
         case root
     }
 
-    internal mutating func run() async throws {
+    mutating func run() async throws {
         try validateSwiftly()
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly")

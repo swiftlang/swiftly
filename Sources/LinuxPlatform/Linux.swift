@@ -20,12 +20,12 @@ public struct Linux: Platform {
 
     public init() {}
 
-    public var appDataDirectory: URL {
+    public var defaultSwiftlyHomeDirectory: URL {
         if let dir = ProcessInfo.processInfo.environment["XDG_DATA_HOME"] {
             return URL(fileURLWithPath: dir)
         } else {
             return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".local/share", isDirectory: true)
+                .appendingPathComponent(".swiftly", isDirectory: true)
         }
     }
 
@@ -33,7 +33,7 @@ public struct Linux: Platform {
         SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".local/share/swiftly/bin", isDirectory: true)
+            .appendingPathComponent(".swiftly/bin", isDirectory: true)
     }
 
     public var swiftlyToolchainsDir: URL {

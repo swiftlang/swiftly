@@ -729,7 +729,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 #elseif os(macOS)
     public func makeMockedSwiftly(from _: URL) throws -> Data {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-        let swiftlyDir = tmp.appendingPathComponent("swiftly", isDirectory: true)
+        let swiftlyDir = tmp.appendingPathComponent(".swiftly", isDirectory: true)
         let swiftlyBinDir = swiftlyDir.appendingPathComponent("bin")
 
         try FileManager.default.createDirectory(
@@ -766,7 +766,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             "--root",
             swiftlyDir.path,
             "--install-location",
-            "usr/local",
+            ".swiftly",
             "--version",
             "\(self.latestSwiftlyVersion)",
             "--identifier",

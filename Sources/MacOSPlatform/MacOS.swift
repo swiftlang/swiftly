@@ -99,7 +99,7 @@ public struct MacOS: Platform {
         } else {
             homeDir = SwiftlyCore.mockedHomeDir ?? FileManager.default.homeDirectoryForCurrentUser
 
-            let installDir = homeDir.appendingPathComponent("usr/local")
+            let installDir = homeDir.appendingPathComponent(".swiftly")
             try FileManager.default.createDirectory(atPath: installDir.path, withIntermediateDirectories: true)
 
             // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
@@ -114,10 +114,11 @@ public struct MacOS: Platform {
                 throw SwiftlyError(message: "Payload file could not be found at \(tmpDir).")
             }
 
-            try runProgram("tar", "-C", installDir.path, "-xf", payload.path)
+            SwiftlyCore.print("Extracting the swiftly package into \(installDir.path)...")
+            try runProgram("tar", "-C", installDir.path, "-xvf", payload.path, quiet: false)
         }
 
-        try self.runProgram(homeDir.appendingPathComponent("usr/local/bin/swiftly").path, "init")
+        try self.runProgram(homeDir.appendingPathComponent(".swiftly/bin/swiftly").path, "init")
     }
 
     public func uninstall(_ toolchain: ToolchainVersion, verbose: Bool) throws {

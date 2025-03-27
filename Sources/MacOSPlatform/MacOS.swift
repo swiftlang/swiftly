@@ -15,14 +15,14 @@ public struct MacOS: Platform {
 
     public var appDataDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support", isDirectory: true)
+            .appendingPathComponent(".swiftly", isDirectory: true)
     }
 
     public var swiftlyBinDir: URL {
         SwiftlyCore.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/swiftly/bin", isDirectory: true)
+            .appendingPathComponent(".swiftly/bin", isDirectory: true)
     }
 
     public var swiftlyToolchainsDir: URL {

@@ -399,12 +399,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             try runProgram(strip, ".build/\(arch)-apple-macosx/release/swiftly")
         }
 
-        let swiftlyBinDir = FileManager.default.currentDirectoryPath + "/.build/release/usr/local/bin"
+        let swiftlyBinDir = FileManager.default.currentDirectoryPath + "/.build/release/.swiftly/bin"
         try? FileManager.default.createDirectory(atPath: swiftlyBinDir, withIntermediateDirectories: true)
 
         try runProgram(lipo, ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly", "-create", "-o", "\(swiftlyBinDir)/swiftly")
 
-        let swiftlyLicenseDir = FileManager.default.currentDirectoryPath + "/.build/release/usr/local/share/doc/swiftly/license"
+        let swiftlyLicenseDir = FileManager.default.currentDirectoryPath + "/.build/release/.swiftly/license"
         try? FileManager.default.createDirectory(atPath: swiftlyLicenseDir, withIntermediateDirectories: true)
         try await self.collectLicenses(swiftlyLicenseDir)
 
@@ -418,7 +418,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 "--root",
                 swiftlyBinDir + "/..",
                 "--install-location",
-                "usr/local",
+                ".swiftly",
                 "--version",
                 self.version,
                 "--identifier",
@@ -433,7 +433,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 "--root",
                 swiftlyBinDir + "/..",
                 "--install-location",
-                "usr/local",
+                ".swiftly",
                 "--version",
                 self.version,
                 "--identifier",
@@ -455,9 +455,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try distFileContents.write(to: distFile, atomically: true, encoding: .utf8)
 
         if let cert = cert {
-            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.path, "--sign", cert, pkgFileReconfigured.path)
+            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.deletingLastPathComponent().path, "--sign", cert, pkgFileReconfigured.path)
         } else {
-            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.path, pkgFileReconfigured.path)
+            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.deletingLastPathComponent().path, pkgFileReconfigured.path)
         }
         try FileManager.default.removeItem(at: pkgFile)
         try FileManager.default.copyItem(atPath: pkgFileReconfigured.path, toPath: pkgFile.path)

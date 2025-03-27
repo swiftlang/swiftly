@@ -39,9 +39,9 @@ public struct RunProgramError: Swift.Error {
 }
 
 public protocol Platform {
-    /// The platform-specific location on disk where applications are
-    /// supposed to store their custom data.
-    var appDataDirectory: URL { get }
+    /// The platform-specific defaut location on disk for swiftly's home
+    /// directory.
+    var defaultSwiftlyHomeDirectory: URL { get }
 
     /// The directory which stores the swiftly executable itself as well as symlinks
     /// to executables in the "bin" directory of the active toolchain.
@@ -130,7 +130,7 @@ extension Platform {
     public var swiftlyHomeDir: URL {
         SwiftlyCore.mockedHomeDir
             ?? ProcessInfo.processInfo.environment["SWIFTLY_HOME_DIR"].map { URL(fileURLWithPath: $0) }
-            ?? self.appDataDirectory.appendingPathComponent("swiftly", isDirectory: true)
+            ?? self.defaultSwiftlyHomeDirectory
     }
 
     /// The URL of the configuration file in swiftly's home directory.

@@ -20,12 +20,12 @@ public struct Linux: Platform {
 
     public init() {}
 
-    public var appDataDirectory: URL {
+    public var defaultSwiftlyHomeDirectory: URL {
         if let dir = ProcessInfo.processInfo.environment["XDG_DATA_HOME"] {
-            return URL(fileURLWithPath: dir)
+            return URL(fileURLWithPath: dir).appendingPathComponent("swiftly", isDirectory: true)
         } else {
             return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".local/share", isDirectory: true)
+                .appendingPathComponent(".local/share/swiftly", isDirectory: true)
         }
     }
 

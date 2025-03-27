@@ -13,7 +13,7 @@ public struct SwiftPkgInfo: Codable {
 public struct MacOS: Platform {
     public init() {}
 
-    public var appDataDirectory: URL {
+    public var defaultSwiftlyHomeDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".swiftly", isDirectory: true)
     }

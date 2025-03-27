@@ -80,7 +80,7 @@ internal struct Init: SwiftlyCommand {
             \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Data and configuration files directory including toolchains
             \(Swiftly.currentPlatform.swiftlyBinDir.path) - Executables installation directory
 
-            These locations can be changed with SWIFTLY_HOME and SWIFTLY_BIN environment variables and run this again.
+            These locations can be changed with SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR environment variables and run this again.
             \(installMsg)
             """)
 

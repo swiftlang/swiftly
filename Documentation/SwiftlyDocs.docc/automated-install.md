@@ -1,6 +1,6 @@
 # Install Swiftly Automatically
 
-Automatically install Swiftly and Swift toolchains.
+Automatically install swiftly and Swift toolchains.
 
 This guide helps you to automate the installation of swiftly and toolchains so that it can run unattended, for example in build or continous integration systems.
 We assume that you have working understanding of your build system. The examples are based on a typical Unix environment.

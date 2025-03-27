@@ -10,7 +10,7 @@ Install and manage your Swift programming language toolchains.
 
 - <doc:getting-started>
 
-### HOWTOS
+### Guides
 
 - <doc:install-toolchains>
 - <doc:use-toolchains>

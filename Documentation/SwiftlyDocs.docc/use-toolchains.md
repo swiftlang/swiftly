@@ -1,6 +1,6 @@
 # Use Swift Toolchains
 
-swiftly use and swiftly run
+Using installed swift toolchains.
 
 Swiftly toolchains include a variety of compilers, linkers, debuggers, documentation generators, and other useful tools for working with Swift. Using a toolchain activates it so that when you run toolchain commands they are run with that version.
 

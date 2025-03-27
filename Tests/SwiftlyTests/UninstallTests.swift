@@ -301,10 +301,10 @@ final class UninstallTests: SwiftlyTests {
     func testUninstallNotInstalled() async throws {
         let toolchains = Set([Self.oldStable, Self.newStable, Self.newMainSnapshot, Self.oldReleaseSnapshot])
         try await self.withMockedHome(homeName: Self.homeName, toolchains: toolchains, inUse: Self.newMainSnapshot) {
-            var config = try await Config.load()
+            var config = try Config.load()
             config.inUse = Self.newMainSnapshot
             config.installedToolchains.remove(Self.newMainSnapshot)
-            try await config.save()
+            try config.save()
 
             var uninstall = try self.parseCommand(Uninstall.self, ["uninstall", "-y", Self.newMainSnapshot.name])
             _ = try await uninstall.run()

@@ -81,28 +81,12 @@ struct Init: SwiftlyCommand {
             \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Data and configuration files directory including toolchains
             \(Swiftly.currentPlatform.swiftlyBinDir.path) - Executables installation directory
 
-            These locations can be changed with SWIFTLY_HOME and SWIFTLY_BIN environment variables and run this again.
+            These locations can be changed with SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR environment variables and run this again.
             \(installMsg)
             """)
 
             guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "swiftly installation has been cancelled")
-            }
-        }
-
-        // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-        let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir
-        let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
-        let willBeOverwritten = Set(["swiftly"]).intersection(swiftlyBinDirContents)
-        if !willBeOverwritten.isEmpty && !overwrite {
-            SwiftlyCore.print("The following existing executables will be overwritten:")
-
-            for executable in willBeOverwritten {
-                SwiftlyCore.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
-            }
-
-            guard SwiftlyCore.promptForConfirmation(defaultBehavior: false) else {
-                throw SwiftlyError(message: "Swiftly installation has been cancelled")
             }
         }
 
@@ -240,14 +224,16 @@ struct Init: SwiftlyCommand {
                 (postInstall, pathChanged) = try await Install.execute(version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
             }
 
-            if addEnvToProfile && !quietShellFollowup {
+            if addEnvToProfile {
                 try Data(sourceLine.utf8).append(to: profileHome)
 
-                SwiftlyCore.print("""
-                To begin using installed swiftly from your current shell, first run the following command:
-                    \(sourceLine)
+                if !quietShellFollowup {
+                    SwiftlyCore.print("""
+                    To begin using installed swiftly from your current shell, first run the following command:
+                        \(sourceLine)
 
-                """)
+                    """)
+                }
             }
 
             // Fish doesn't have path caching, so this might only be needed for bash/zsh

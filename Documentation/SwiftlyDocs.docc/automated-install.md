@@ -1,8 +1,9 @@
 # Install Swiftly Automatically
 
-Swiftly can be installed automatically in places like build/CI systems.
+Automatically install swiftly and Swift toolchains.
 
-This guide will help you to script to the installation of swiftly and toolchains so that it can be unattended. We assume that you have working understanding of your build system. The examples are based on a typical Unix environment.
+This guide helps you to automate the installation of swiftly and toolchains so that it can run unattended, for example in build or continous integration systems.
+We assume that you have working understanding of your build system. The examples are based on a typical Unix environment.
 
 First, download the swiftly binary from swift.org for your operating system (e.g. Linux) and processor architecture (e.g. arm64, or x86_64). Here's an example using the popular curl command.
 

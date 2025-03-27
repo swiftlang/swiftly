@@ -1,6 +1,6 @@
 # Install Swift Toolchains
 
-swiftly install
+Install swift toolchains with Swiftly.
 
 Installing a swift toolchain using swiftly involves downloading it securely and extracting it into a well-known location in your account. Here we will guide you through the different ways you can install a swift toolchain. You will need to install swiftly first. The [Getting Started](getting-started.md) guide is a good place to start with swiftly.
 

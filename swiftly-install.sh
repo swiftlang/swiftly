@@ -508,7 +508,10 @@ case "$SHELL" in
     *)
 esac
 
-echo "This script will install swiftly, a Swift toolchain installer and manager."
+echo "This script will install swiftly, a Swift toolchain installer and manager version 0.3.0."
+echo ""
+echo "WARNING: This is an outdated version of swiftly and this installation method is deprecated."
+echo "         Install the newest version of swiftly by visiting https://swift.org/install"
 echo ""
 
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
@@ -649,7 +652,7 @@ if [[ "$swiftly_import_pgp_keys" != "false" ]]; then
 fi
 
 echo ""
-echo "swiftly has been successfully installed!"
+echo "swiftly 0.3.0 has been successfully installed!"
 echo ""
 
 if ! has_command "swiftly" || [[ "$HOME_DIR" != "$DEFAULT_HOME_DIR" || "$BIN_DIR" != "$DEFAULT_BIN_DIR" ]] ; then

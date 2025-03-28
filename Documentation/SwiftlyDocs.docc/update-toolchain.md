@@ -1,16 +1,21 @@
-# Update Swift Toolchain
+# Update Swift toolchains
 
-Update swift toolchains.
+Update installed toolchains.
 
-Update replaces a given toolchain with a later version of that toolchain. For a stable release, this means updating to a later patch, minor, or major version. For snapshots, this means updating to the most recently available snapshot. Swiftly can help you to keep up-to-date. We assume that you have installed swiftly and use it to manage your toolchains.
+Update replaces a given toolchain with a later version of that toolchain.
+For a stable release, this means updating to a later patch, minor, or major version. 
+For snapshots, swiftly helps you stay up-to-date by updating to the most recently available snapshot.
+Swiftly only updates toolchains that it installed.
 
-If no version is provided, update will update the currently selected toolchain to its latest patch release if a release toolchain or the latest available snapshot if a snapshot. The newly installed version will be selected.
+If no version is provided, update updates the currently selected toolchain to its latest patch release if a release toolchain, or the latest available snapshot if a snapshot.
+The newly installed version is then activated to use.
 
 ```
 swiftly update
 ```
 
-To update the latest installed release version to the latest available release version, the “latest” version can be provided. Note that this may update the toolchain to the next minor or even major version.
+To update the latest installed release version to the latest available release version, use `latest` as the version. 
+Note that this may update the toolchain to the next minor or even major version.
 
 ```
 swiftly update latest
@@ -28,13 +33,13 @@ If the major and minor version are specified, the latest installed toolchain ass
 swiftly update 5.3
 ```
 
-Similarly, to update the latest snapshot associated with a specific version, the “a.b-snapshot” version can be supplied:
+Similarly, to update the latest snapshot associated with a specific version, append `-snapshot` to the version. For example, the following command updates to the latest 5.3 snapshot version:
 
 ```
 swiftly update 5.3-snapshot
 ```
 
-You can also update the latest installed main snapshot to the latest available one by just providing `main-snapshot`:
+You can also update the latest installed main snapshot to the latest available one by providing `main-snapshot`:
 
 ```
 swiftly update main-snapshot

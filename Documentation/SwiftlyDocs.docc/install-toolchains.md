@@ -1,8 +1,10 @@
-# Install Swift Toolchains
+# Install Swift toolchains
 
 Install swift toolchains with Swiftly.
 
-Installing a swift toolchain using swiftly involves downloading it securely and extracting it into a well-known location in your account. Here we will guide you through the different ways you can install a swift toolchain. You will need to install swiftly first. The [Getting Started](getting-started.md) guide is a good place to start with swiftly.
+Installing a swift toolchain using swiftly involves downloading it securely and extracting it into a well-known location in your account.
+This guides you through the different ways you can install a swift toolchain.
+Follow the [Getting Started](getting-started.md) guide to install swiftly.
 
 The easiest way to install a swift toolchain is to select the latest stable release:
 
@@ -10,9 +12,10 @@ The easiest way to install a swift toolchain is to select the latest stable rele
 $ swiftly install latest
 ```
 
-> Note: After you install a toolchain there may be certain system dependencies that are needed. Swiftly will provide instructions.
+> Note: After you install a toolchain there may be certain system dependencies that are needed.
+Swiftly provides instructions for any additional dependencies that need to be installed.
 
-If this is the only toolchain that is installed then swiftly will automatically "use" it so that when you run swift (or any other toolchain command) it will be this version.
+If this is the only installed toolchain, swiftly automatically uses it. When you run `swift` (or another toolchain command), it uses the installed version.
 
 ```
 $ swift --version
@@ -21,7 +24,8 @@ Swift version 5.8.1 (swift-5.8.1-RELEASE)
 Target: x86_64-unknown-linux-gnu
 ```
 
-You can be very specific about the released version that you want. We can install the 5.6.1 version like this:
+You can be very specific about the released version to install.
+For example, the following command installs the 5.6.1 toolchain version:
 
 ```
 $ swiftly install 5.6.1
@@ -33,13 +37,13 @@ Once you've installed more than one toolchain you may notice that swift is on th
 $ swiftly use 5.6.1
 ```
 
-You can also combine install and use into one command to automate this process with the `--use` switch on the install subcommand:
+You can combine `install` and `use` into one command with the `--use` switch on the `install` subcommand:
 
 ```
 $ swiftly install --use 5.7.1
 ```
 
-Sometimes you want the latest available patch of a minor release, such as 5.7. Let's omit the patch number so that we get the latest patch.
+Sometimes you want the latest available patch of a minor release, such as 5.7. If you omit the patch number from the release you request, swiftly installs the latest patch.
 
 ```
 $ swiftly install 5.7

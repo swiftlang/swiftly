@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv='refresh' content='3; URL=https://swift.org/install'>
     <title>swiftly - A Swift toolchain installer and manager, written in Swift</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="css/font.css">
@@ -21,7 +22,9 @@
   <section>
     <div class="container is-max-desktop">
       <div class="box has-text-centered has-background-light">
-        To install swiftly, run the following command in your terminal.
+        To install swiftly, go to the <a href="https://swift.org/install">Install Page</a> at swift.org.
+
+        WARNING: These are the outdated instructions to install the older swiftly 0.3.0 release.
         <br/>
         <br/>
         <div class="box is-family-monospace has-background-dark has-text-light">
@@ -34,7 +37,6 @@
             </svg>
           </button>
         </div>
-        <p class="content is-small">Swiftly is currently only available for Linux.</p>
       </div>
     </div>
   </section>
@@ -43,9 +45,9 @@
     <div class="container is-max-desktop mt-5">
       <div class="content has-text-centered is-small">
         <p>
-        Swiftly is a Swift Server Working Group project.
+        swiftly is a Swift project.
         </p>
-        <a href="https://github.com/swift-server/swiftly">
+        <a href="https://github.com/swiftlang/swiftly">
           <p id="gh-link">
             <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg"><use href="#icon_github" xlink:href="#icon_github" role="image" /></svg>
             &nbsp;View on GitHub
@@ -65,15 +67,5 @@
         </symbol>
       </defs>
     </svg>  
-    <script>
-      var button = document.getElementById("copy-button");
-      button.addEventListener('click', function() {
-          handle_copy_button_click();
-      });
-      function handle_copy_button_click() {
-        const swiftly_install_command = "curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash";
-        navigator.clipboard.writeText(swiftly_install_command);
-      }
-    </script>
   </body>
 </html>

@@ -1,6 +1,6 @@
 # Uninstall Swift Toolchains
 
-swiftly uninstall
+Uninstall Swift toolchains.
 
 After installing several toolchains the list of the available toolchains to use becomes too large. Each toolchain also occupies substantial storage space. It's good to be able to cleanup toolchains when they aren't needed anymore. This guide will cover how to uninstall your toolchains assuming that you have installed swiftly and used it to install them.
 

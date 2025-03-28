@@ -1,6 +1,6 @@
 # Update Swift Toolchain
 
-swiftly update
+Update swift toolchains.
 
 Update replaces a given toolchain with a later version of that toolchain. For a stable release, this means updating to a later patch, minor, or major version. For snapshots, this means updating to the most recently available snapshot. Swiftly can help you to keep up-to-date. We assume that you have installed swiftly and use it to manage your toolchains.
 

@@ -67,21 +67,21 @@ struct Init: SwiftlyCommand {
         // Give the user the prompt and the choice to abort at this point.
         if !assumeYes {
 #if os(Linux)
-            let sigMsg = " In the process of installing the new toolchain swiftly will add swift.org GnuPG keys into your keychain to verify the integrity of the downloads."
+            let sigMsg = " In the process of installing the new toolchain, swiftly will add swift.org GnuPG keys into your keychain to verify the integrity of the downloads."
 #else
             let sigMsg = ""
 #endif
             let installMsg = if !skipInstall {
-                "\nOnce swiftly is installed it will install the latest available swift toolchain.\(sigMsg)\n"
+                "\nOnce swiftly is installed it will install the latest available Swift toolchain.\(sigMsg)\n"
             } else { "" }
 
             SwiftlyCore.print("""
-            Swiftly will be installed into the following locations:
+            Swiftly will install files into the following locations:
 
-            \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Data and configuration files directory including toolchains
-            \(Swiftly.currentPlatform.swiftlyBinDir.path) - Executables installation directory
+            \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Directory for configuration files
+            \(Swiftly.currentPlatform.swiftlyBinDir.path) - Links to the binaries of the active toolchain
 
-            These locations can be changed with SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR environment variables and run this again.
+            These locations can be changed by setting the environment variables SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR before running 'swiftly init' again.
             \(installMsg)
             """)
 

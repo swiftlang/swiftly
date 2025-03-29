@@ -66,24 +66,33 @@ struct Init: SwiftlyCommand {
 
         // Give the user the prompt and the choice to abort at this point.
         if !assumeYes {
-#if os(Linux)
-            let sigMsg = " In the process of installing the new toolchain, swiftly will add swift.org GnuPG keys into your keychain to verify the integrity of the downloads."
-#else
-            let sigMsg = ""
-#endif
-            let installMsg = if !skipInstall {
-                "\nOnce swiftly is installed it will install the latest available Swift toolchain.\(sigMsg)\n"
-            } else { "" }
+            var msg = """
+                Swiftly installs files into the following locations:
 
-            SwiftlyCore.print("""
-            Swiftly will install files into the following locations:
+                \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Directory for configuration files
+                \(Swiftly.currentPlatform.swiftlyBinDir.path) - Links to the binaries of the active toolchain
+                \(Swiftly.currentPlatform.swiftlyToolchainsDir.path) - Directory hosting installed toolchains
 
-            \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Directory for configuration files
-            \(Swiftly.currentPlatform.swiftlyBinDir.path) - Links to the binaries of the active toolchain
+                These locations can be changed by setting the environment variables
+                SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR before running 'swiftly init' again.
 
-            These locations can be changed by setting the environment variables SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR before running 'swiftly init' again.
-            \(installMsg)
-            """)
+                """
+            if !skipInstall {
+                msg += """
+
+                    Once swiftly is set up, it will install the latest available Swift toolchain.
+
+                    """
+                #if os(Linux)
+                msg += """
+                    In the process, swiftly will add swift.org GnuPG keys into your keychain to verify
+                    the integrity of the downloads.
+
+                    """
+                #endif
+            }
+
+            SwiftlyCore.print(msg)
 
             guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "swiftly installation has been cancelled")

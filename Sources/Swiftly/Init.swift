@@ -239,9 +239,7 @@ struct Init: SwiftlyCommand {
             // Fish doesn't have path caching, so this might only be needed for bash/zsh
             if pathChanged && !quietShellFollowup && !shell.hasSuffix("fish") {
                 SwiftlyCore.print("""
-                Your shell caches items on your path for better performance. Swiftly has added items to your path that may not get picked up right away. You can run this command to update your shell to get these items.
-
-                    hash -r
+                Your shell caches items on your path for better performance. Swiftly has added items to your path that may not get picked up right away. You can run 'hash -r' to update your shell in place.
 
                 """)
             }

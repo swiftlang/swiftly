@@ -137,10 +137,8 @@ struct Update: SwiftlyCommand {
 
         if pathChanged {
             SwiftlyCore.print("""
-            NOTE: We have updated some elements in your path and your shell may not yet be
-            aware of the changes. You can run this command to update your shell.
-
-                hash -r
+            NOTE: Swiftly has updated some elements in your path and your shell may not yet be
+            aware of the changes. You can run 'hash -r' to update your shell.
 
             """)
         }

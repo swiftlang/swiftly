@@ -86,16 +86,27 @@ struct Init: SwiftlyCommand {
             if !skipInstall {
                 msg += """
 
-                    Once swiftly is set up, it will install the latest available Swift toolchain.
-
+                    Once swiftly is set up, it will install the latest available Swift toolchain. This can be
+                    suppressed with the '--skip-install' option.
                     """
                 #if os(Linux)
                 msg += """
-                    In the process, swiftly will add swift.org GnuPG keys into your keychain to verify
-                    the integrity of the downloads.
+                     In the process, swiftly will add swift.org
+                    GnuPG keys into your keychain to verify the integrity of the downloads.
 
                     """
+                #else
+                msg += "\n"
                 #endif
+            }
+            if !noModifyProfile {
+                msg += """
+
+                    For your convenience, swiftly will also attempt to modify your shell's profile file to make
+                    installed items available in your environment upon login. This can be suppressed with the
+                    '--no-modify-profile' option.
+
+                    """
             }
 
             SwiftlyCore.print(msg)

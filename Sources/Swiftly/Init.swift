@@ -67,6 +67,12 @@ struct Init: SwiftlyCommand {
         // Give the user the prompt and the choice to abort at this point.
         if !assumeYes {
             var msg = """
+                Welcome to swiftly, the Swift toolchain manager for Linux and macOS!
+
+                Please read the following information carefully before proceeding with the installation. If you
+                wish to customize the steps performed during the installation process, refer to 'swiftly init -h'
+                for configuration options.
+
                 Swiftly installs files into the following locations:
 
                 \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Directory for configuration files

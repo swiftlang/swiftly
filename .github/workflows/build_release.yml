@@ -7,7 +7,7 @@ on:
         description: "Version of swiftly to build release artifacts"
         required: true
         type: string
-        default: "1.1.0"
+        default: "1.0.1"
       skip:
         description: "Perform release checks, such as the git tag, and swift version, or '--skip' to skip that."
         required: true

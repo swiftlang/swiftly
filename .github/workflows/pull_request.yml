@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  SWIFTLY_BOOTSTRAP_VERSION: 0.4.0-dev
+  SWIFTLY_BOOTSTRAP_VERSION: 1.0.0
 
 jobs:
   soundness:

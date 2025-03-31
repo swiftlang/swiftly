@@ -341,7 +341,7 @@ CC=clang swiftly run +latest make
 
 ## Detailed Design
 
-Swiftly itself will be a SPM project consisting of several executable products, one per supported platform, and all of these will share the core module that handles argument parsing, printing help information, and dispatching commands. Each platform’s executable will be built to statically link the stdlib so that they can be run without having installed Swift first.
+Swiftly itself will be a SwiftPM project consisting of several executable products, one per supported platform, and all of these will share the core module that handles argument parsing, printing help information, and dispatching commands. Each platform’s executable will be built to statically link the stdlib so that they can be run without having installed Swift first.
 
 Within the core module, the following protocol will be defined:
 
@@ -440,7 +440,7 @@ Determining whether the system has these installed or not is a bit of a tricky p
     
 If neither of these steps find the package, then we'll consider the dependency as not installed, and print a message that shows users how to install it using the system package manager (e.g. `apt` on Ubuntu).
 
-SPM has some code for detecting system libraries too, so it's possible we could integrate that here instead of using this approach.
+SwiftPM has some code for detecting system libraries too, so it's possible we could integrate that here instead of using this approach.
 
 #### Downloading a toolchain
 

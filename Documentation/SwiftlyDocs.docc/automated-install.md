@@ -19,7 +19,7 @@ tar zxf swiftly.tar.gz
 On macOS, download the pkg file and extract it like this from the command-line:
 
 ```
-curl -L <location_of_swiftly_swift_org> > swiftly.pkg
+curl -L https://download.swift.org/swiftly/darwin/swiftly.pkg > swiftly.pkg
 installer -pkg swiftly.pkg -target CurrentUserHomeDirectory
 ```
 

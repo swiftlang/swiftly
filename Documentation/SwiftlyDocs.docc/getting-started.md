@@ -6,10 +6,11 @@ To get started with swiftly you can download it from [swift.org](https://swift.o
 
 @TabNavigator {
     @Tab("Linux") {
-        If you are using Linux then you can verify and extract the archive like this:
+        If you are using Linux then you can download the binary:
 
         ```
-        tar zxf swiftly-x.y.z.tar.gz
+        curl -L https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz > swiftly.tar.gz
+        tar zxf swiftly.tar.gz
         ```
 
         Now run swiftly init to finish the installation:
@@ -23,13 +24,14 @@ To get started with swiftly you can download it from [swift.org](https://swift.o
         On macOS you can either run the pkg installer from the command-line like this or run the package by double-clicking on it (not recommended):
 
         ```
-        installer -pkg swift-x.y.z.pkg -target CurrentUserHomeDirectory
+        curl -L https://download.swift.org/swiftly/darwin/swiftly.pkg > swiftly.pkg
+        installer -pkg swiftly.pkg -target CurrentUserHomeDirectory
         ```
 
         Once the package is installed, run `swiftly init` to finish the installation:
 
         ```
-        ~/usr/local/bin/swiftly init
+        ~/.swiftly/bin/swiftly init
         ```
     }
 }
@@ -74,7 +76,7 @@ Uninstall this toolchain after you're finished with it:
 $ swiftly uninstall main-snapshot
 ```
 
-# Installing toolchains through a proxy
+# Installing toolchains through an HTTP proxy
 
 Swiftly downloads a list of toolchains from https://www.swift.org/ and retrieves them from CDN via https://download.swift.org.
 If your environment requires a proxy, Swiftly attempts to use the standard environment variables `http_proxy`, `HTTP_PROXY`, `https_proxy` or `HTTPS_PROXY` to determine which proxy server to use instead of making a direct connection.

@@ -109,8 +109,8 @@ struct Install: SwiftlyCommand {
             try await Swiftly.currentPlatform.getShell()
         }
 
-        // Fish doesn't cache its path, so this instruction is not necessary.
-        if pathChanged && !shell.hasSuffix("fish") {
+        // Fish or Nushell don't seem to cache their `PATH` env var, so this instruction is not necessary.
+        if pathChanged && !shell.hasSuffix("fish") && !shell.hasSuffix("/nu") {
             SwiftlyCore.print("""
             NOTE: We have updated some elements in your path and your shell may not yet be
             aware of the changes. You can run this command to update your shell.

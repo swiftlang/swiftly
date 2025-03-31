@@ -67,46 +67,46 @@ struct Init: SwiftlyCommand {
         // Give the user the prompt and the choice to abort at this point.
         if !assumeYes {
             var msg = """
-                Welcome to swiftly, the Swift toolchain manager for Linux and macOS!
+            Welcome to swiftly, the Swift toolchain manager for Linux and macOS!
 
-                Please read the following information carefully before proceeding with the installation. If you
-                wish to customize the steps performed during the installation process, refer to 'swiftly init -h'
-                for configuration options.
+            Please read the following information carefully before proceeding with the installation. If you
+            wish to customize the steps performed during the installation process, refer to 'swiftly init -h'
+            for configuration options.
 
-                Swiftly installs files into the following locations:
+            Swiftly installs files into the following locations:
 
-                \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Directory for configuration files
-                \(Swiftly.currentPlatform.swiftlyBinDir.path) - Links to the binaries of the active toolchain
-                \(Swiftly.currentPlatform.swiftlyToolchainsDir.path) - Directory hosting installed toolchains
+            \(Swiftly.currentPlatform.swiftlyHomeDir.path) - Directory for configuration files
+            \(Swiftly.currentPlatform.swiftlyBinDir.path) - Links to the binaries of the active toolchain
+            \(Swiftly.currentPlatform.swiftlyToolchainsDir.path) - Directory hosting installed toolchains
 
-                These locations can be changed by setting the environment variables
-                SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR before running 'swiftly init' again.
+            These locations can be changed by setting the environment variables
+            SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR before running 'swiftly init' again.
 
-                """
+            """
             if !skipInstall {
                 msg += """
 
-                    Once swiftly is set up, it will install the latest available Swift toolchain. This can be
-                    suppressed with the '--skip-install' option.
-                    """
-                #if os(Linux)
+                Once swiftly is set up, it will install the latest available Swift toolchain. This can be
+                suppressed with the '--skip-install' option.
+                """
+#if os(Linux)
                 msg += """
-                     In the process, swiftly will add swift.org
-                    GnuPG keys into your keychain to verify the integrity of the downloads.
+                 In the process, swiftly will add swift.org
+                GnuPG keys into your keychain to verify the integrity of the downloads.
 
-                    """
-                #else
+                """
+#else
                 msg += "\n"
-                #endif
+#endif
             }
             if !noModifyProfile {
                 msg += """
 
-                    For your convenience, swiftly will also attempt to modify your shell's profile file to make
-                    installed items available in your environment upon login. This can be suppressed with the
-                    '--no-modify-profile' option.
+                For your convenience, swiftly will also attempt to modify your shell's profile file to make
+                installed items available in your environment upon login. This can be suppressed with the
+                '--no-modify-profile' option.
 
-                    """
+                """
             }
 
             SwiftlyCore.print(msg)

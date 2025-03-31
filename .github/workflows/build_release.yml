@@ -7,7 +7,7 @@ on:
         description: "Version of swiftly to build release artifacts"
         required: true
         type: string
-        default: "0.4.0"
+        default: "1.0.1"
       skip:
         description: "Perform release checks, such as the git tag, and swift version, or '--skip' to skip that."
         required: true
@@ -15,7 +15,7 @@ on:
         default: "--skip"
 
 env:
-  SWIFTLY_BOOTSTRAP_VERSION: 0.4.0-dev
+  SWIFTLY_BOOTSTRAP_VERSION: 1.0.0
 
 jobs:
   buildrelease:

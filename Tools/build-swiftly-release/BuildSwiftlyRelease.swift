@@ -451,7 +451,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try runProgram("productbuild", "--synthesize", "--package", pkgFile.path, distFile.path)
 
         var distFileContents = try String(contentsOf: distFile, encoding: .utf8)
-        distFileContents = distFileContents.replacingOccurrences(of: "<choices-outline>", with: "<domains enable_anywhere=\"false\" enable_currentUserHome=\"true\" enable_localSystem=\"false\"/><choices-outline>")
+        distFileContents = distFileContents.replacingOccurrences(of: "<choices-outline>", with: "<title>Swiftly</title><domains enable_anywhere=\"false\" enable_currentUserHome=\"true\" enable_localSystem=\"false\"/><choices-outline>")
         try distFileContents.write(to: distFile, atomically: true, encoding: .utf8)
 
         if let cert = cert {

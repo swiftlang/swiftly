@@ -1,8 +1,8 @@
-# Add Shell Auto-completions
+# Add shell auto-completions
 
-Generate shell auto-completions for Swiftly.
+Generate shell autocompletions for swiftly.
 
-Swiftly can generate shell auto-completion scripts for your shell to automatically complete subcommands, arguments, options and flags. It does this using the [swift-argument-parser](https://apple.github.io/swift-argument-parser/documentation/argumentparser/installingcompletionscripts/), which has support for Bash, Z shell, and Fish.
+Swiftly can generate shell autocompletion scripts for your shell to automatically complete subcommands, arguments, options and flags. It does this using the [swift-argument-parser](https://apple.github.io/swift-argument-parser/documentation/argumentparser/installingcompletionscripts/), which has support for Bash, Z shell, and Fish.
 
 You can ask swiftly to generate the script using the hidden `--generate-completion-script` flag with the type of shell like this:
 
@@ -63,4 +63,4 @@ swiftly --generate-completion-script <shell>
     }
 }
 
-Once you have installed the completions you can type out a swiftly command, and press a special key (e.g. tab) and the shell will show you the available subcommand, argument, or options to make it easier to assemble a working command-line.
+Once you have installed the completions you can type out a swiftly command, and press a special key (for example, tab) and the shell will show you the available subcommand, argument, or options to make it easier to assemble a working command-line.

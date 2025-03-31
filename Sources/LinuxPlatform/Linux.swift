@@ -162,12 +162,15 @@ public struct Linux: Platform {
                 "unzip",
                 "glibc-static",
                 "gzip",
+                "libbsd",
                 "libcurl-devel",
                 "libedit",
                 "libicu",
+                "libsqlite",
+                "libstdc++-static",
                 "libuuid",
                 "libxml2-devel",
-                "sqlite-devel",
+                "openssl-devel",
                 "tar",
                 "tzdata",
                 "zlib-devel",
@@ -205,7 +208,7 @@ public struct Linux: Platform {
             ]
         case "debian12":
             [
-                "binutils",
+                "binutils",// binutils-gold is a virtual package that points to binutils
                 "libicu-dev",
                 "libcurl4-openssl-dev",
                 "libedit-dev",

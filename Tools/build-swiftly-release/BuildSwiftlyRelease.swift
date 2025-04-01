@@ -299,6 +299,10 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         FileManager.default.changeCurrentDirectoryPath(libArchivePath)
 
         let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.\\d+) ")
+
+        // FIXME remove this once the problem is determined
+        try runProgram(swift, "--version")
+
         let swiftVerOutput = (try await runProgramOutput(swift, "--version")) ?? ""
         guard let swiftVerMatch = try swiftVerRegex.firstMatch(in: swiftVerOutput) else {
             throw Error(message: "Unable to detect swift version")

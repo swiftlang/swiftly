@@ -287,7 +287,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? FileManager.default.createDirectory(atPath: pkgConfigPath, withIntermediateDirectories: true)
 
         try? FileManager.default.removeItem(atPath: libArchivePath)
-        try runProgram(curl, "-o", "\(buildCheckoutsDir + "/libarchive-\(libArchiveVersion).tar.gz")", "--remote-name", "--location", "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
+        try runProgram(curl, "-L", "-o", "\(buildCheckoutsDir + "/libarchive-\(libArchiveVersion).tar.gz")", "--remote-name", "--location", "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
         let libArchiveTarShaActual = try await runProgramOutput(sha256sum, "\(buildCheckoutsDir)/libarchive-\(libArchiveVersion).tar.gz")
         guard let libArchiveTarShaActual, libArchiveTarShaActual.starts(with: libArchiveTarSha) else {
             let shaActual = libArchiveTarShaActual ?? "none"

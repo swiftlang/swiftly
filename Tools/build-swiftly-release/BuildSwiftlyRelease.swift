@@ -220,8 +220,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             return try await self.assertTool("swift", message: "Please install swift and make sure that it is added to your path.")
         }
 
-        guard let requiredSwiftVersion = try? self.findSwiftVersion() else {
+        guard var requiredSwiftVersion = try? self.findSwiftVersion() else {
             throw Error(message: "Unable to determine the required swift version for this version of swiftly. Please make sure that you `cd <swiftly_git_dir>` and there is a .swift-version file there.")
+        }
+
+        if requiredSwiftVersion.hasSuffix(".0") {
+            requiredSwiftVersion = String(requiredSwiftVersion.dropLast(2))
         }
 
         let swift = try await self.assertTool("swift", message: "Please install swift \(requiredSwiftVersion) and make sure that it is added to your path.")
@@ -298,10 +302,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let cwd = FileManager.default.currentDirectoryPath
         FileManager.default.changeCurrentDirectoryPath(libArchivePath)
 
-        let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.\\d+) ")
-
-        // FIXME remove this once the problem is determined
-        try runProgram(swift, "--version")
+        let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.?\\d*) ")
 
         let swiftVerOutput = (try await runProgramOutput(swift, "--version")) ?? ""
         guard let swiftVerMatch = try swiftVerRegex.firstMatch(in: swiftVerOutput) else {

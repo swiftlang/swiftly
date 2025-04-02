@@ -164,6 +164,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     var useRhelUbi9: Bool = false
 #endif
 
+    @Flag(help: "Produce a swiftly-test.tar.gz that has a standalone test suite to test the released bundle.")
+    var test: Bool = false
+
     @Argument(help: "Version of swiftly to build the release.")
     var version: String
 
@@ -365,7 +368,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         FileManager.default.changeCurrentDirectoryPath(cwd)
 
         try runProgram(swift, "build", "--swift-sdk", "\(arch)-swift-linux-musl", "--product=swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
-        try runProgram(swift, "sdk", "remove", sdkName)
 
         let releaseDir = cwd + "/.build/release"
 
@@ -383,6 +385,23 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly", "LICENSE.txt")
 
         print(releaseArchive)
+
+        if self.test {
+            let debugDir = cwd + "/.build/debug"
+
+#if arch(arm64)
+            let testArchive = "\(debugDir)/test-swiftly-linux-aarch64.tar.gz"
+#else
+            let testArchive = "\(debugDir)/test-swiftly-linux-x86_64.tar.gz"
+#endif
+
+            try runProgram(swift, "build", "--swift-sdk", "\(arch)-swift-linux-musl", "--product=test-swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=debug")
+            try runProgram(tar, "--directory=\(debugDir)", "-czf", testArchive, "test-swiftly")
+
+            print(testArchive)
+        }
+
+        try runProgram(swift, "sdk", "remove", sdkName)
     }
 
     func buildMacOSRelease(cert: String?, identifier: String) async throws {
@@ -396,6 +415,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let lipo = try await self.assertTool("lipo", message: "In order to make a universal binary there needs to be the `lipo` tool that is installed on macOS.")
         let pkgbuild = try await self.assertTool("pkgbuild", message: "In order to make pkg installers there needs to be the `pkgbuild` tool that is installed on macOS.")
         let strip = try await self.assertTool("strip", message: "In order to strip binaries there needs to be the `strip` tool that is installed on macOS.")
+
+        let tar = try await self.assertTool("tar", message: "In order to produce archives there needs to be the `tar` tool that is installed on macOS.")
 
         try runProgram(swift, "package", "clean")
 
@@ -415,7 +436,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         let cwd = FileManager.default.currentDirectoryPath
 
-        let pkgFile = URL(fileURLWithPath: cwd + "/.build/release/swiftly-\(self.version).pkg")
+        let releaseDir = URL(fileURLWithPath: cwd + "/.build/release")
+        let pkgFile = releaseDir.appendingPathComponent("/swiftly-\(self.version).pkg")
 
         if let cert {
             try runProgram(
@@ -450,8 +472,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         // Re-configure the pkg to prefer installs into the current user's home directory with the help of productbuild.
         // Note that command-line installs can override this preference, but the GUI install will limit the choices.
 
-        let pkgFileReconfigured = URL(fileURLWithPath: cwd + "/.build/release/swiftly-\(self.version)-reconfigured.pkg")
-        let distFile = URL(fileURLWithPath: cwd + "/.build/release/distribution.plist")
+        let pkgFileReconfigured = releaseDir.appendingPathComponent("swiftly-\(self.version)-reconfigured.pkg")
+        let distFile = releaseDir.appendingPathComponent("distribution.plist")
 
         try runProgram("productbuild", "--synthesize", "--package", pkgFile.path, distFile.path)
 
@@ -466,5 +488,21 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         }
         try FileManager.default.removeItem(at: pkgFile)
         try FileManager.default.copyItem(atPath: pkgFileReconfigured.path, toPath: pkgFile.path)
+
+        print(pkgFile.path)
+
+        if self.test {
+            for arch in ["x86_64", "arm64"] {
+                try runProgram(swift, "build", "--product=test-swiftly", "--configuration=debug", "--arch=\(arch)")
+                try runProgram(strip, ".build/\(arch)-apple-macosx/release/swiftly")
+            }
+
+            let testArchive = releaseDir.appendingPathComponent("test-swiftly-macos.tar.gz")
+
+            try runProgram(lipo, ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly", "-create", "-o", "\(swiftlyBinDir)/swiftly")
+            try runProgram(tar, "--directory=.build/x86_64-apple-macosx/debug", "-czf", testArchive.path, "test-swiftly")
+
+            print(testArchive.path)
+        }
     }
 }

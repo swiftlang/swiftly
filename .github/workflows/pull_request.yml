@@ -84,7 +84,7 @@ jobs:
         with:
           name: swiftly-tests-x86_64
       - name: Extract and Run Workflow Tests
-        run: cp swiftly-*.tar.gz /root/swiftly.tar.gz && cp test-swiftly-*.tar.gz /root && cd /root && tar zxf test-swiftly.tar.gz && ./test-swiftly -y ./swiftly.tar.gz
+        run: cp swiftly-*.tar.gz /root/swiftly.tar.gz && cp test-swiftly-*.tar.gz /root && cd /root && tar zxf test-swiftly-*.tar.gz && ./test-swiftly -y ./swiftly.tar.gz
 
   formatcheck:
     name: Format Check

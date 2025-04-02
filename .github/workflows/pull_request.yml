@@ -86,6 +86,46 @@ jobs:
       - name: Extract and Run Workflow Tests
         run: cp swiftly-*.tar.gz /root/swiftly.tar.gz && cp test-swiftly-*.tar.gz /root && cd /root && tar zxf test-swiftly-*.tar.gz && ./test-swiftly -y ./swiftly.tar.gz
 
+  releasetestzsh:
+    name: Test Release ZSH
+    needs: releasebuildcheck
+    runs-on: ubuntu-latest
+    container:
+      image: "ubuntu:24.04"
+    steps:
+      - name: Prepare System
+        run: apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install ca-certificates gpg tzdata zsh && chsh -s /bin/zsh
+      - name: Download Release
+        uses: actions/download-artifact@v4
+        with:
+          name: swiftly-release-x86_64
+      - name: Download Tests
+        uses: actions/download-artifact@v4
+        with:
+          name: swiftly-tests-x86_64
+      - name: Extract and Run Workflow Tests
+        run: cp swiftly-*.tar.gz /root/swiftly.tar.gz && cp test-swiftly-*.tar.gz /root && cd /root && tar zxf test-swiftly-*.tar.gz && ./test-swiftly -y ./swiftly.tar.gz
+
+  releasetestfish:
+    name: Test Release FISH
+    needs: releasebuildcheck
+    runs-on: ubuntu-latest
+    container:
+      image: "ubuntu:24.04"
+    steps:
+      - name: Prepare System
+        run: apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install ca-certificates gpg tzdata fish && chsh -s /bin/fish
+      - name: Download Release
+        uses: actions/download-artifact@v4
+        with:
+          name: swiftly-release-x86_64
+      - name: Download Tests
+        uses: actions/download-artifact@v4
+        with:
+          name: swiftly-tests-x86_64
+      - name: Extract and Run Workflow Tests
+        run: cp swiftly-*.tar.gz /root/swiftly.tar.gz && cp test-swiftly-*.tar.gz /root && cd /root && tar zxf test-swiftly-*.tar.gz && ./test-swiftly -y ./swiftly.tar.gz
+
   formatcheck:
     name: Format Check
     runs-on: ubuntu-latest

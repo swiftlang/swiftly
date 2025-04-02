@@ -123,46 +123,33 @@ class HTTPRequestExecutorImpl: HTTPRequestExecutor {
         try await self.httpClient.execute(request, timeout: timeout)
     }
 
-    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
+    private func client() throws -> Client {
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
+        let transport: ClientTransport
 
-        let client = Client(
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
+        transport = AsyncHTTPClientTransport(configuration: config)
+
+        return Client(
             serverURL: try Servers.Server1.url(),
-            transport: AsyncHTTPClientTransport(configuration: config),
+            transport: transport,
             middlewares: [swiftlyUserAgent]
         )
+    }
 
-        let response = try await client.getCurrentSwiftlyRelease()
+    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
+        let response = try await client().getCurrentSwiftlyRelease()
         return try response.ok.body.json
     }
 
     public func getReleaseToolchains() async throws -> [Components.Schemas.Release] {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
-        let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
-
-        let client = Client(
-            serverURL: try Servers.Server1.url(),
-            transport: AsyncHTTPClientTransport(configuration: config),
-            middlewares: [swiftlyUserAgent]
-        )
-
-        let response = try await client.listReleases()
+        let response = try await client().listReleases()
 
         return try response.ok.body.json
     }
 
     public func getSnapshotToolchains(branch: Components.Schemas.SourceBranch, platform: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
-        let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
-
-        let client = Client(
-            serverURL: try Servers.Server1.url(),
-            transport: AsyncHTTPClientTransport(configuration: config),
-            middlewares: [swiftlyUserAgent]
-        )
-
-        let response = try await client.listDevToolchains(.init(path: .init(branch: branch, platform: platform)))
+        let response = try await client().listDevToolchains(.init(path: .init(branch: branch, platform: platform)))
 
         return try response.ok.body.json
     }
@@ -295,51 +282,7 @@ extension Components.Schemas.DevToolchainForArch {
 
 /// HTTPClient wrapper used for interfacing with various REST APIs and downloading things.
 public struct SwiftlyHTTPClient {
-    private struct Response {
-        let status: HTTPResponseStatus
-        let buffer: ByteBuffer
-    }
-
     public init() {}
-
-    private func get(url: String, headers: [String: String], maxBytes: Int) async throws -> Response {
-        var request = makeRequest(url: url)
-
-        for (k, v) in headers {
-            request.headers.add(name: k, value: v)
-        }
-
-        let response = try await SwiftlyCore.httpRequestExecutor.execute(request, timeout: .seconds(30))
-
-        return Response(status: response.status, buffer: try await response.body.collect(upTo: maxBytes))
-    }
-
-    public struct JSONNotFoundError: LocalizedError {
-        public var url: String
-    }
-
-    /// Decode the provided type `T` from the JSON body of the response from a GET request
-    /// to the given URL.
-    public func getFromJSON<T: Decodable>(
-        url: String,
-        type: T.Type,
-        headers: [String: String] = [:]
-    ) async throws -> T {
-        // Maximum expected size for a JSON payload for an API is 1MB
-        let response = try await self.get(url: url, headers: headers, maxBytes: 1024 * 1024)
-
-        switch response.status {
-        case .ok:
-            break
-        case .notFound:
-            throw SwiftlyHTTPClient.JSONNotFoundError(url: url)
-        default:
-            let json = String(buffer: response.buffer)
-            throw SwiftlyError(message: "Received \(response.status) when reaching \(url) for JSON: \(json)")
-        }
-
-        return try JSONDecoder().decode(type.self, from: response.buffer)
-    }
 
     /// Return the current Swiftly release using the swift.org API.
     public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {

@@ -3,48 +3,6 @@
 import XCTest
 
 final class HTTPClientTests: SwiftlyTests {
-    func testGet() async throws {
-        // GIVEN: we have a swiftly http client
-        // WHEN: we make get request for a particular type of JSON
-        var releases: [Components.Schemas.Release] = try await SwiftlyCore.httpClient.getFromJSON(
-            url: "https://www.swift.org/api/v1/install/releases.json",
-            type: [Components.Schemas.Release].self,
-            headers: [:]
-        )
-        // THEN: we get a decoded JSON response
-        XCTAssertTrue(releases.count > 0)
-
-        // GIVEN: we have a swiftly http client
-        // WHEN: we make a request to an invalid URL path
-        var exceptionThrown = false
-        do {
-            releases = try await SwiftlyCore.httpClient.getFromJSON(
-                url: "https://www.swift.org/api/v1/install/releases-invalid.json",
-                type: [Components.Schemas.Release].self,
-                headers: [:]
-            )
-        } catch {
-            exceptionThrown = true
-        }
-        // THEN: we receive an exception
-        XCTAssertTrue(exceptionThrown)
-
-        // GIVEN: we have a swiftly http client
-        // WHEN: we make a request to an invalid host path
-        exceptionThrown = false
-        do {
-            releases = try await SwiftlyCore.httpClient.getFromJSON(
-                url: "https://invalid.swift.org/api/v1/install/releases.json",
-                type: [Components.Schemas.Release].self,
-                headers: [:]
-            )
-        } catch {
-            exceptionThrown = true
-        }
-        // THEN: we receive an exception
-        XCTAssertTrue(exceptionThrown)
-    }
-
     func testGetSwiftlyReleaseMetadataFromSwiftOrg() async throws {
         let currentRelease = try await SwiftlyCore.httpClient.getCurrentSwiftlyRelease()
         XCTAssertNoThrow(try currentRelease.swiftlyVersion)

@@ -12,6 +12,10 @@ let package = Package(
             name: "swiftly",
             targets: ["Swiftly"]
         ),
+        .executable(
+            name: "test-swiftly",
+            targets: ["TestSwiftly"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
@@ -34,6 +38,15 @@ let package = Package(
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
+            ]
+        ),
+        .executableTarget(
+            name: "TestSwiftly",
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .target(name: "SwiftlyCore"),
+                .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
+                .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
             ]
         ),
         .target(

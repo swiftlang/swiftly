@@ -62,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: swiftly-tests-x86_64
-          path: .build/release/test-swiftly-linux-x86_64.tar.gz
+          path: .build/debug/test-swiftly-linux-x86_64.tar.gz
           if-no-files-found: error
           retention-days: 1
 

@@ -387,14 +387,16 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         print(releaseArchive)
 
         if self.test {
+            let debugDir = cwd + "/.build/debug"
+
 #if arch(arm64)
-            let testArchive = "\(releaseDir)/test-swiftly-linux-aarch64.tar.gz"
+            let testArchive = "\(debugDir)/test-swiftly-linux-aarch64.tar.gz"
 #else
-            let testArchive = "\(releaseDir)/test-swiftly-linux-x86_64.tar.gz"
+            let testArchive = "\(debugDir)/test-swiftly-linux-x86_64.tar.gz"
 #endif
 
-            try runProgram(swift, "build", "--swift-sdk", "\(arch)-swift-linux-musl", "--product=test-swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=release")
-            try runProgram(tar, "--directory=\(releaseDir)", "-czf", testArchive, "test-swiftly")
+            try runProgram(swift, "build", "--swift-sdk", "\(arch)-swift-linux-musl", "--product=test-swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=debug")
+            try runProgram(tar, "--directory=\(debugDir)", "-czf", testArchive, "test-swiftly")
 
             print(testArchive)
         }
@@ -491,14 +493,16 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         if self.test {
             for arch in ["x86_64", "arm64"] {
-                try runProgram(swift, "build", "--product=test-swiftly", "--configuration=release", "--arch=\(arch)")
+                try runProgram(swift, "build", "--product=test-swiftly", "--configuration=debug", "--arch=\(arch)")
                 try runProgram(strip, ".build/\(arch)-apple-macosx/release/swiftly")
             }
 
             let testArchive = releaseDir.appendingPathComponent("test-swiftly-macos.tar.gz")
 
-            try runProgram(lipo, ".build/x86_64-apple-macosx/release/test-swiftly", ".build/arm64-apple-macosx/release/test-swiftly", "-create", "-o", "\(swiftlyBinDir)/swiftly")
-            try runProgram(tar, "--directory=\(swiftlyBinDir)", "-czf", testArchive.path, "test-swiftly")
+            try runProgram(lipo, ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly", "-create", "-o", "\(swiftlyBinDir)/swiftly")
+            try runProgram(tar, "--directory=.build/x86_64-apple-macosx/debug", "-czf", testArchive.path, "test-swiftly")
+
+            print(testArchive.path)
         }
     }
 }

@@ -49,7 +49,7 @@ struct TestSwiftly: AsyncParsableCommand {
         let extractedSwiftly = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly/bin/swiftly").path
 #endif
 
-        try currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", quiet: false)
+        try currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--skip-install", quiet: false)
 
         let shell = try await currentPlatform.getShell()
 

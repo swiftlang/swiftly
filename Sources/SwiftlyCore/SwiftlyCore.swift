@@ -53,9 +53,9 @@ public func readLine(prompt: String) -> String? {
 }
 
 #if arch(x86_64)
-public let cpuArch = "x86_64"
+public let cpuArch = Components.Schemas.Architecture.x8664
 #elseif arch(arm64)
-public let cpuArch = "aarch64"
+public let cpuArch = Components.Schemas.Architecture.aarch64
 #else
 #error("Unsupported processor architecture")
 #endif

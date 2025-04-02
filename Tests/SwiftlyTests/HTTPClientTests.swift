@@ -6,9 +6,9 @@ final class HTTPClientTests: SwiftlyTests {
     func testGet() async throws {
         // GIVEN: we have a swiftly http client
         // WHEN: we make get request for a particular type of JSON
-        var releases: [SwiftOrgRelease] = try await SwiftlyCore.httpClient.getFromJSON(
+        var releases: [Components.Schemas.Release] = try await SwiftlyCore.httpClient.getFromJSON(
             url: "https://www.swift.org/api/v1/install/releases.json",
-            type: [SwiftOrgRelease].self,
+            type: [Components.Schemas.Release].self,
             headers: [:]
         )
         // THEN: we get a decoded JSON response
@@ -20,7 +20,7 @@ final class HTTPClientTests: SwiftlyTests {
         do {
             releases = try await SwiftlyCore.httpClient.getFromJSON(
                 url: "https://www.swift.org/api/v1/install/releases-invalid.json",
-                type: [SwiftOrgRelease].self,
+                type: [Components.Schemas.Release].self,
                 headers: [:]
             )
         } catch {
@@ -35,7 +35,7 @@ final class HTTPClientTests: SwiftlyTests {
         do {
             releases = try await SwiftlyCore.httpClient.getFromJSON(
                 url: "https://invalid.swift.org/api/v1/install/releases.json",
-                type: [SwiftOrgRelease].self,
+                type: [Components.Schemas.Release].self,
                 headers: [:]
             )
         } catch {
@@ -74,7 +74,7 @@ final class HTTPClientTests: SwiftlyTests {
             .release(major: 6, minor: 0), // This is available in swift.org API
         ]
 
-        for arch in ["x86_64", "aarch64"] {
+        for arch in [Components.Schemas.Architecture.x8664, Components.Schemas.Architecture.aarch64] {
             for platform in supportedPlatforms {
                 // GIVEN: we have a swiftly http client with swift.org metadata capability
                 // WHEN: we ask for the first five releases of a supported platform in a supported arch
@@ -87,7 +87,7 @@ final class HTTPClientTests: SwiftlyTests {
                 for branch in branches {
                     // GIVEN: we have a swiftly http client with swift.org metadata capability
                     // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch
-                    let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: arch, branch: branch, limit: 5)
+                    let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: arch.value2!, branch: branch, limit: 5)
                     // THEN: we get at least 3 releases
                     XCTAssertTrue(3 <= snapshots.count)
                 }

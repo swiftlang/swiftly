@@ -1,7 +1,6 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
-import System
 
 #if os(Linux)
 import LinuxPlatform

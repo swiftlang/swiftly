@@ -131,6 +131,13 @@ struct Init: SwiftlyCommand {
             # Added by swiftly
             source "\(envFile.path)"
             """
+        } else if shell.hasSuffix("/nu") {
+            envFile = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.nu", isDirectory: false)
+            sourceLine = """
+
+            # Added by swiftly
+            source "\(envFile.path)"
+            """
         } else {
             envFile = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.sh", isDirectory: false)
             sourceLine = """
@@ -181,6 +188,15 @@ struct Init: SwiftlyCommand {
                 if not contains "$SWIFTLY_BIN_DIR" $PATH
                     set -x PATH "$SWIFTLY_BIN_DIR" $PATH
                 end
+
+                """
+            } else if shell.hasSuffix("/nu") {
+                env = """
+                $env.SWIFTLY_HOME_DIR = "\(Swiftly.currentPlatform.swiftlyHomeDir.path)"
+                $env.SWIFTLY_BIN_DIR = "\(Swiftly.currentPlatform.swiftlyBinDir.path)"
+                if "$SWIFTLY_BIN_DIR" not-in $env.PATH {
+                    $env.PATH = ($env.PATH | split row (char esep) | prepend $env.SWIFTLY_BIN_DIR)
+                }
 
                 """
             } else {

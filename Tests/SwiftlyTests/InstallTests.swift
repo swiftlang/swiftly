@@ -1,104 +1,97 @@
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
-import XCTest
+import Testing
 
-final class InstallTests: SwiftlyTests {
+@Suite struct InstallTests {
     /// Tests that `swiftly install latest` successfully installs the latest stable release of Swift.
     ///
     /// It stops short of verifying that it actually installs the _most_ recently released version, which is the intended
     /// behavior, since determining which version is the latest is non-trivial and would require duplicating code
     /// from within swiftly itself.
-    func testInstallLatest() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "latest", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+    @Test func installLatest() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.runCommand(Install.self, ["install", "latest", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
 
                 guard !config.installedToolchains.isEmpty else {
-                    XCTFail("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
+                    Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
                     return
                 }
 
                 let installedToolchain = config.installedToolchains.first!
 
                 guard case let .stable(release) = installedToolchain else {
-                    XCTFail("expected swiftly install latest to install release toolchain but got \(installedToolchain)")
+                    Issue.record("expected swiftly install latest to install release toolchain but got \(installedToolchain)")
                     return
                 }
 
                 // As of writing this, 5.8.0 is the latest stable release. Assert it is at least that new.
-                XCTAssertTrue(release >= ToolchainVersion.StableRelease(major: 5, minor: 8, patch: 0))
+                #expect(release >= ToolchainVersion.StableRelease(major: 5, minor: 8, patch: 0))
 
-                try await validateInstalledToolchains([installedToolchain], description: "install latest")
+                try await SwiftlyTests.validateInstalledToolchains([installedToolchain], description: "install latest")
             }
         }
     }
 
     /// Tests that `swiftly install a.b` installs the latest patch version of Swift a.b.
-    func testInstallLatestPatchVersion() async throws {
-        let snapshotsAvailable = try await self.snapshotsAvailable()
-        try XCTSkipIf(!snapshotsAvailable)
-
-        guard try await self.baseTestConfig().platform.name != "ubi9" else {
+    @Test func installLatestPatchVersion() async throws {
+        guard try await SwiftlyTests.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }
 
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "5.7", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.runCommand(Install.self, ["install", "5.7", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
 
                 guard !config.installedToolchains.isEmpty else {
-                    XCTFail("expected swiftly install latest to install release toolchain but installed toolchains is empty in config")
+                    Issue.record("expected swiftly install latest to install release toolchain but installed toolchains is empty in config")
                     return
                 }
 
                 let installedToolchain = config.installedToolchains.first!
 
                 guard case let .stable(release) = installedToolchain else {
-                    XCTFail("expected swiftly install latest to install release toolchain but got \(installedToolchain)")
+                    Issue.record("expected swiftly install latest to install release toolchain but got \(installedToolchain)")
                     return
                 }
 
                 // As of writing this, 5.7.3 is the latest 5.7 patch release. Assert it is at least that new.
-                XCTAssertTrue(release >= ToolchainVersion.StableRelease(major: 5, minor: 7, patch: 3))
+                #expect(release >= ToolchainVersion.StableRelease(major: 5, minor: 7, patch: 3))
 
-                try await validateInstalledToolchains([installedToolchain], description: "install latest")
+                try await SwiftlyTests.validateInstalledToolchains([installedToolchain], description: "install latest")
             }
         }
     }
 
     /// Tests that swiftly can install different stable release versions by their full a.b.c versions.
-    func testInstallReleases() async throws {
-        guard try await self.baseTestConfig().platform.name != "ubi9" else {
+    @Test func installReleases() async throws {
+        guard try await SwiftlyTests.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }
 
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
                 var installedToolchains: Set<ToolchainVersion> = []
 
-                var cmd = try self.parseCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
                 installedToolchains.insert(ToolchainVersion(major: 5, minor: 7, patch: 0))
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     installedToolchains,
                     description: "install a stable release toolchain"
                 )
 
-                cmd = try self.parseCommand(Install.self, ["install", "5.7.2", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.2", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
                 installedToolchains.insert(ToolchainVersion(major: 5, minor: 7, patch: 2))
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     installedToolchains,
                     description: "install another stable release toolchain"
                 )
@@ -107,26 +100,24 @@ final class InstallTests: SwiftlyTests {
     }
 
     /// Tests that swiftly can install main and release snapshots by their full snapshot names.
-    func testInstallSnapshots() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
+    @Test func installSnapshots() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
                 var installedToolchains: Set<ToolchainVersion> = []
 
-                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
                 installedToolchains.insert(ToolchainVersion(snapshotBranch: .main, date: "2023-04-01"))
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     installedToolchains,
                     description: "install a main snapshot toolchain"
                 )
 
-                cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", "5.9-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
                 installedToolchains.insert(
                     ToolchainVersion(snapshotBranch: .release(major: 5, minor: 9), date: "2023-04-01"))
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     installedToolchains,
                     description: "install a 5.9 snapshot toolchain"
                 )
@@ -135,33 +126,29 @@ final class InstallTests: SwiftlyTests {
     }
 
     /// Tests that `swiftly install main-snapshot` installs the latest available main snapshot.
-    func testInstallLatestMainSnapshot() async throws {
-        let snapshotsAvailable = try await self.snapshotsAvailable()
-        try XCTSkipIf(!snapshotsAvailable)
+    @Test func installLatestMainSnapshot() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
-
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
 
                 guard !config.installedToolchains.isEmpty else {
-                    XCTFail("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
+                    Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
                     return
                 }
 
                 let installedToolchain = config.installedToolchains.first!
 
                 guard case let .snapshot(snapshot) = installedToolchain, snapshot.branch == .main else {
-                    XCTFail("expected to install latest main snapshot toolchain but got \(installedToolchain)")
+                    Issue.record("expected to install latest main snapshot toolchain but got \(installedToolchain)")
                     return
                 }
 
                 // As of writing this, this is the date of the latest main snapshot. Assert it is at least that new.
-                XCTAssertTrue(snapshot.date >= "2023-04-01")
+                #expect(snapshot.date >= "2023-04-01")
 
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     [installedToolchain],
                     description: "install the latest main snapshot toolchain"
                 )
@@ -170,33 +157,29 @@ final class InstallTests: SwiftlyTests {
     }
 
     /// Tests that `swiftly install a.b-snapshot` installs the latest available a.b release snapshot.
-    func testInstallLatestReleaseSnapshot() async throws {
-        let snapshotsAvailable = try await self.snapshotsAvailable()
-        try XCTSkipIf(!snapshotsAvailable)
+    @Test func installLatestReleaseSnapshot() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.runCommand(Install.self, ["install", "6.0-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "6.0-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
-
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
 
                 guard !config.installedToolchains.isEmpty else {
-                    XCTFail("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
+                    Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
                     return
                 }
 
                 let installedToolchain = config.installedToolchains.first!
 
                 guard case let .snapshot(snapshot) = installedToolchain, snapshot.branch == .release(major: 6, minor: 0) else {
-                    XCTFail("expected swiftly install 6.0-snapshot to install snapshot toolchain but got \(installedToolchain)")
+                    Issue.record("expected swiftly install 6.0-snapshot to install snapshot toolchain but got \(installedToolchain)")
                     return
                 }
 
                 // As of writing this, this is the date of the latest 5.7 snapshot. Assert it is at least that new.
-                XCTAssertTrue(snapshot.date >= "2024-06-18")
+                #expect(snapshot.date >= "2024-06-18")
 
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     [installedToolchain],
                     description: "install the latest 6.0 snapshot toolchain"
                 )
@@ -205,19 +188,16 @@ final class InstallTests: SwiftlyTests {
     }
 
     /// Tests that swiftly can install both stable release toolchains and snapshot toolchains.
-    func testInstallReleaseAndSnapshots() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+    @Test func installReleaseAndSnapshots() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                cmd = try self.parseCommand(Install.self, ["install", "5.9-snapshot-2023-03-28", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", "5.9-snapshot-2023-03-28", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                cmd = try self.parseCommand(Install.self, ["install", "5.8.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", "5.8.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     [
                         ToolchainVersion(snapshotBranch: .main, date: "2023-04-01"),
                         ToolchainVersion(snapshotBranch: .release(major: 5, minor: 9), date: "2023-03-28"),
@@ -230,87 +210,76 @@ final class InstallTests: SwiftlyTests {
     }
 
     func duplicateTest(_ version: String) async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                var cmd = try self.parseCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.runCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let before = try Config.load()
+                let before = try Config.load(SwiftlyTests.ctx)
 
                 let startTime = Date()
-                cmd = try self.parseCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
                 // Assert that swiftly didn't attempt to download a new toolchain.
-                XCTAssertTrue(startTime.timeIntervalSinceNow.magnitude < 10)
+                #expect(startTime.timeIntervalSinceNow.magnitude < 10)
 
-                let after = try Config.load()
-                XCTAssertEqual(before, after)
+                let after = try Config.load(SwiftlyTests.ctx)
+                #expect(before == after)
             }
         }
     }
 
     /// Tests that attempting to install stable releases that are already installed doesn't result in an error.
-    func testInstallDuplicateReleases() async throws {
+    @Test func installDuplicateReleases() async throws {
         try await self.duplicateTest("5.8.0")
         try await self.duplicateTest("latest")
     }
 
     /// Tests that attempting to install main snapshots that are already installed doesn't result in an error.
-    func testInstallDuplicateMainSnapshots() async throws {
-        let snapshotsAvailable = try await self.snapshotsAvailable()
-        try XCTSkipIf(!snapshotsAvailable)
-
+    @Test func installDuplicateMainSnapshots() async throws {
         try await self.duplicateTest("main-snapshot-2023-04-01")
         try await self.duplicateTest("main-snapshot")
     }
 
     /// Tests that attempting to install release snapshots that are already installed doesn't result in an error.
-    func testInstallDuplicateReleaseSnapshots() async throws {
-        let snapshotsAvailable = try await self.snapshotsAvailable()
-        try XCTSkipIf(!snapshotsAvailable)
-
+    @Test func installDuplicateReleaseSnapshots() async throws {
         try await self.duplicateTest("6.0-snapshot-2024-06-18")
         try await self.duplicateTest("6.0-snapshot")
     }
 
     /// Verify that the installed toolchain will be used if no toolchains currently are installed.
-    func testInstallUsesFirstToolchain() async throws {
-        guard try await self.baseTestConfig().platform.name != "ubi9" else {
+    @Test func installUsesFirstToolchain() async throws {
+        guard try await SwiftlyTests.baseTestConfig().platform.name != "ubi9" else {
             print("Skipping test due to insufficient download availability for ubi9")
             return
         }
 
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                let config = try Config.load()
-                XCTAssertTrue(config.inUse == nil)
-                try await validateInUse(expected: nil)
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                let config = try Config.load(SwiftlyTests.ctx)
+                #expect(config.inUse == nil)
+                try await SwiftlyTests.validateInUse(expected: nil)
 
-                var cmd = try self.parseCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await cmd.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                try await validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
+                try await SwiftlyTests.validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
 
-                var installOther = try self.parseCommand(Install.self, ["install", "5.7.1", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await installOther.run()
+                try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.1", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
                 // Verify that 5.7.0 is still in use.
-                try await self.validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
+                try await SwiftlyTests.validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
             }
         }
     }
 
     /// Verify that the installed toolchain will be marked as in-use if the --use flag is specified.
-    func testInstallUseFlag() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                try await self.installMockedToolchain(toolchain: Self.oldStable)
-                var use = try self.parseCommand(Use.self, ["use", Self.oldStable.name])
-                try await use.run()
-                try await validateInUse(expected: Self.oldStable)
-                try await self.installMockedToolchain(selector: Self.newStable.name, args: ["--use"])
-                try await self.validateInUse(expected: Self.newStable)
+    @Test func installUseFlag() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.installMockedToolchain(toolchain: SwiftlyTests.oldStable)
+                try await SwiftlyTests.runCommand(Use.self, ["use", SwiftlyTests.oldStable.name])
+                try await SwiftlyTests.validateInUse(expected: SwiftlyTests.oldStable)
+                try await SwiftlyTests.installMockedToolchain(selector: SwiftlyTests.newStable.name, args: ["--use"])
+                try await SwiftlyTests.validateInUse(expected: SwiftlyTests.newStable)
             }
         }
     }

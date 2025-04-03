@@ -40,28 +40,32 @@ struct ListAvailable: SwiftlyCommand {
     }
 
     mutating func run() async throws {
-        try validateSwiftly()
+        try await self.run(Swiftly.createDefaultContext())
+    }
+
+    mutating func run(_ ctx: SwiftlyCoreContext) async throws {
+        try validateSwiftly(ctx)
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
 
-        let config = try Config.load()
+        let config = try Config.load(ctx)
 
         let tc: [ToolchainVersion]
 
         switch selector {
         case let .snapshot(branch, _):
             do {
-                tc = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map { ToolchainVersion.snapshot($0) }
+                tc = try await ctx.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch).map { ToolchainVersion.snapshot($0) }
             } catch let branchNotFoundError as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
                 throw SwiftlyError(message: "The snapshot branch \(branchNotFoundError.branch) was not found on swift.org. Note that snapshot toolchains are only available for the current `main` release and the previous x.y (major.minor) release.")
             } catch {
                 throw error
             }
         case .stable, .latest:
-            tc = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform).map { ToolchainVersion.stable($0) }
+            tc = try await ctx.httpClient.getReleaseToolchains(platform: config.platform).map { ToolchainVersion.stable($0) }
         default:
-            tc = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform).map { ToolchainVersion.stable($0) }
+            tc = try await ctx.httpClient.getReleaseToolchains(platform: config.platform).map { ToolchainVersion.stable($0) }
         }
 
         let toolchains = tc.filter { selector?.matches(toolchain: $0) ?? true }
@@ -76,7 +80,7 @@ struct ListAvailable: SwiftlyCommand {
             } else if installedToolchains.contains(toolchain) {
                 message += " (installed)"
             }
-            SwiftlyCore.print(message)
+            SwiftlyCore.print(ctx, message)
         }
 
         if let selector {
@@ -96,8 +100,8 @@ struct ListAvailable: SwiftlyCommand {
             }
 
             let message = "Available \(modifier) toolchains"
-            SwiftlyCore.print(message)
-            SwiftlyCore.print(String(repeating: "-", count: message.count))
+            SwiftlyCore.print(ctx, message)
+            SwiftlyCore.print(ctx, String(repeating: "-", count: message.count))
             for toolchain in toolchains {
                 printToolchain(toolchain)
             }

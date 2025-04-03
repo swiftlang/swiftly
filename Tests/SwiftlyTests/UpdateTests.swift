@@ -1,22 +1,21 @@
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
-import XCTest
+import Testing
 
-final class UpdateTests: SwiftlyTests {
+@Suite struct UpdateTests {
     /// Verify updating the most up-to-date toolchain has no effect.
-    func testUpdateLatest() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: .latest)
+    @Test func updateLatest() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.installMockedToolchain(selector: .latest)
 
-                let beforeUpdateConfig = try Config.load()
+                let beforeUpdateConfig = try Config.load(SwiftlyTests.ctx)
 
-                var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await update.run()
+                try await SwiftlyTests.runCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                XCTAssertEqual(try Config.load(), beforeUpdateConfig)
-                try await validateInstalledToolchains(
+                #expect(try Config.load(SwiftlyTests.ctx) == beforeUpdateConfig)
+                try await SwiftlyTests.validateInstalledToolchains(
                     beforeUpdateConfig.installedToolchains,
                     description: "Updating latest toolchain should have no effect"
                 )
@@ -25,13 +24,12 @@ final class UpdateTests: SwiftlyTests {
     }
 
     /// Verify that attempting to update when no toolchains are installed has no effect.
-    func testUpdateLatestWithNoToolchains() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                var update = try self.parseCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await update.run()
+    @Test func updateLatestWithNoToolchains() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.runCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     [],
                     description: "Updating should not install any toolchains"
                 )
@@ -40,18 +38,17 @@ final class UpdateTests: SwiftlyTests {
     }
 
     /// Verify that updating the latest installed toolchain updates it to the latest available toolchain.
-    func testUpdateLatestToLatest() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
-                var update = try self.parseCommand(Update.self, ["update", "-y", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await update.run()
+    @Test func updateLatestToLatest() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
+                try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
                 let inUse = config.inUse!.asStableRelease!
 
-                XCTAssertGreaterThan(inUse, .init(major: 5, minor: 9, patch: 0))
-                try await validateInstalledToolchains(
+                #expect(inUse > .init(major: 5, minor: 9, patch: 0))
+                try await SwiftlyTests.validateInstalledToolchains(
                     [config.inUse!],
                     description: "Updating toolchain should properly install new toolchain and uninstall old"
                 )
@@ -61,20 +58,19 @@ final class UpdateTests: SwiftlyTests {
 
     /// Verify that the latest installed toolchain for a given major version can be updated to the latest
     /// released minor version.
-    func testUpdateToLatestMinor() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
-                var update = try self.parseCommand(Update.self, ["update", "-y", "5", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await update.run()
+    @Test func updateToLatestMinor() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
+                try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
                 let inUse = config.inUse!.asStableRelease!
 
-                XCTAssertEqual(inUse.major, 5)
-                XCTAssertGreaterThan(inUse.minor, 0)
+                #expect(inUse.major == 5)
+                #expect(inUse.minor > 0)
 
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     [config.inUse!],
                     description: "Updating toolchain should properly install new toolchain and uninstall old"
                 )
@@ -83,25 +79,21 @@ final class UpdateTests: SwiftlyTests {
     }
 
     /// Verify that a toolchain can be updated to the latest patch version of that toolchain's minor version.
-    func testUpdateToLatestPatch() async throws {
-        let snapshotsAvailable = try await self.snapshotsAvailable()
-        try XCTSkipIf(!snapshotsAvailable)
+    @Test func updateToLatestPatch() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.installMockedToolchain(selector: "5.9.0")
 
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: "5.9.0")
+                try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5.9.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "5.9.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await update.run()
-
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
                 let inUse = config.inUse!.asStableRelease!
 
-                XCTAssertEqual(inUse.major, 5)
-                XCTAssertEqual(inUse.minor, 9)
-                XCTAssertGreaterThan(inUse.patch, 0)
+                #expect(inUse.major == 5)
+                #expect(inUse.minor == 9)
+                #expect(inUse.patch > 0)
 
-                try await validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     [config.inUse!],
                     description: "Updating toolchain should properly install new toolchain and uninstall old"
                 )
@@ -111,87 +103,81 @@ final class UpdateTests: SwiftlyTests {
 
     /// Verifies that updating the currently global default toolchain can be updated, and that after update the new toolchain
     /// will be the global default instead.
-    func testUpdateGlobalDefault() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: "6.0.0")
+    @Test func updateGlobalDefault() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.installMockedToolchain(selector: "6.0.0")
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await update.run()
+                try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
                 let inUse = config.inUse!.asStableRelease!
-                XCTAssertGreaterThan(inUse, .init(major: 6, minor: 0, patch: 0))
-                XCTAssertEqual(inUse.major, 6)
-                XCTAssertEqual(inUse.minor, 0)
-                XCTAssertGreaterThan(inUse.patch, 0)
+                #expect(inUse > .init(major: 6, minor: 0, patch: 0))
+                #expect(inUse.major == 6)
+                #expect(inUse.minor == 0)
+                #expect(inUse.patch > 0)
 
-                try await self.validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     [config.inUse!],
                     description: "update should update the in use toolchain to latest patch"
                 )
 
-                try await self.validateInUse(expected: config.inUse!)
+                try await SwiftlyTests.validateInUse(expected: config.inUse!)
             }
         }
     }
 
     /// Verifies that updating the currently in-use toolchain can be updated, and that after update the new toolchain
     /// will be in-use with the swift version file updated.
-    func testUpdateInUse() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: "6.0.0")
+    @Test func updateInUse() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.installMockedToolchain(selector: "6.0.0")
 
-                let versionFile = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(".swift-version")
+                let versionFile = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".swift-version")
                 try "6.0.0".write(to: versionFile, atomically: true, encoding: .utf8)
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await update.run()
+                try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
                 let versionFileContents = try String(contentsOf: versionFile, encoding: .utf8)
                 let inUse = try ToolchainVersion(parsing: versionFileContents)
-                XCTAssertGreaterThan(inUse, .init(major: 6, minor: 0, patch: 0))
+                #expect(inUse > .init(major: 6, minor: 0, patch: 0))
 
                 // Since the global default was set to 6.0.0, and that toolchain is no longer installed
                 // the update should have unset it to prevent the config from going into a bad state.
-                let config = try Config.load()
-                XCTAssertTrue(config.inUse == nil)
+                let config = try Config.load(SwiftlyTests.ctx)
+                #expect(config.inUse == nil)
 
                 // The new toolchain should be installed
-                XCTAssertTrue(config.installedToolchains.contains(inUse))
+                #expect(config.installedToolchains.contains(inUse))
             }
         }
     }
 
     /// Verifies that snapshots, both from the main branch and from development branches, can be updated.
-    func testUpdateSnapshot() async throws {
-        let snapshotsAvailable = try await self.snapshotsAvailable()
-        try XCTSkipIf(!snapshotsAvailable)
-
+    @Test func updateSnapshot() async throws {
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
             .release(major: 6, minor: 0),
         ]
 
         for branch in branches {
-            try await self.withTestHome {
-                try await self.withMockedToolchain {
+            try await SwiftlyTests.withTestHome {
+                try await SwiftlyTests.withMockedToolchain {
                     let date = branch == .main ? SwiftlyTests.oldMainSnapshot.asSnapshot!.date : SwiftlyTests.oldReleaseSnapshot.asSnapshot!.date
-                    try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
+                    try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
-                    var update = try self.parseCommand(
+                    try await SwiftlyTests.runCommand(
                         Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
                     )
-                    try await update.run()
 
-                    let config = try Config.load()
+                    let config = try Config.load(SwiftlyTests.ctx)
                     let inUse = config.inUse!.asSnapshot!
-                    XCTAssertGreaterThan(inUse, .init(branch: branch, date: date))
-                    XCTAssertEqual(inUse.branch, branch)
-                    XCTAssertGreaterThan(inUse.date, date)
+                    #expect(inUse > .init(branch: branch, date: date))
+                    #expect(inUse.branch == branch)
+                    #expect(inUse.date > date)
 
-                    try await self.validateInstalledToolchains(
+                    try await SwiftlyTests.validateInstalledToolchains(
                         [config.inUse!],
                         description: "update should work with snapshots"
                     )
@@ -201,22 +187,21 @@ final class UpdateTests: SwiftlyTests {
     }
 
     /// Verify that the latest of all the matching release toolchains is updated.
-    func testUpdateSelectsLatestMatchingStableRelease() async throws {
-        try await self.withTestHome {
-            try await self.withMockedToolchain {
-                try await self.installMockedToolchain(selector: "6.0.1")
-                try await self.installMockedToolchain(selector: "6.0.0")
+    @Test func updateSelectsLatestMatchingStableRelease() async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await SwiftlyTests.installMockedToolchain(selector: "6.0.1")
+                try await SwiftlyTests.installMockedToolchain(selector: "6.0.0")
 
-                var update = try self.parseCommand(Update.self, ["update", "-y", "6.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
-                try await update.run()
+                try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "6.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load()
+                let config = try Config.load(SwiftlyTests.ctx)
                 let inUse = config.inUse!.asStableRelease!
-                XCTAssertEqual(inUse.major, 6)
-                XCTAssertEqual(inUse.minor, 0)
-                XCTAssertGreaterThan(inUse.patch, 1)
+                #expect(inUse.major == 6)
+                #expect(inUse.minor == 0)
+                #expect(inUse.patch > 1)
 
-                try await self.validateInstalledToolchains(
+                try await SwiftlyTests.validateInstalledToolchains(
                     [config.inUse!, .init(major: 6, minor: 0, patch: 0)],
                     description: "update with ambiguous selector should update the latest matching toolchain"
                 )
@@ -225,33 +210,29 @@ final class UpdateTests: SwiftlyTests {
     }
 
     /// Verify that the latest of all the matching snapshot toolchains is updated.
-    func testUpdateSelectsLatestMatchingSnapshotRelease() async throws {
-        let snapshotsAvailable = try await self.snapshotsAvailable()
-        try XCTSkipIf(!snapshotsAvailable)
-
+    @Test func updateSelectsLatestMatchingSnapshotRelease() async throws {
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
             .release(major: 6, minor: 0),
         ]
 
         for branch in branches {
-            try await self.withTestHome {
-                try await self.withMockedToolchain {
-                    try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-19"))
-                    try await self.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-18"))
+            try await SwiftlyTests.withTestHome {
+                try await SwiftlyTests.withMockedToolchain {
+                    try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-19"))
+                    try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-18"))
 
-                    var update = try self.parseCommand(
+                    try await SwiftlyTests.runCommand(
                         Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
                     )
-                    try await update.run()
 
-                    let config = try Config.load()
+                    let config = try Config.load(SwiftlyTests.ctx)
                     let inUse = config.inUse!.asSnapshot!
 
-                    XCTAssertEqual(inUse.branch, branch)
-                    XCTAssertGreaterThan(inUse.date, "2024-06-18")
+                    #expect(inUse.branch == branch)
+                    #expect(inUse.date > "2024-06-18")
 
-                    try await self.validateInstalledToolchains(
+                    try await SwiftlyTests.validateInstalledToolchains(
                         [config.inUse!, .init(snapshotBranch: branch, date: "2024-06-18")],
                         description: "update with ambiguous selector should update the latest matching toolchain"
                     )

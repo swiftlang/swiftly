@@ -16,7 +16,7 @@ extension URL {
     }
 }
 
-public func promptForConfirmation(defaultBehavior: Bool) -> Bool {
+public func promptForConfirmation(_ ctx: SwiftlyCoreContext, defaultBehavior: Bool) -> Bool {
     let options: String
     if defaultBehavior {
         options = "(Y/n)"
@@ -25,10 +25,10 @@ public func promptForConfirmation(defaultBehavior: Bool) -> Bool {
     }
 
     while true {
-        let answer = (SwiftlyCore.readLine(prompt: "Proceed? \(options)") ?? (defaultBehavior ? "y" : "n")).lowercased()
+        let answer = (SwiftlyCore.readLine(ctx, prompt: "Proceed? \(options)") ?? (defaultBehavior ? "y" : "n")).lowercased()
 
         guard ["y", "n", ""].contains(answer) else {
-            SwiftlyCore.print("Please input either \"y\" or \"n\", or press ENTER to use the default.")
+            SwiftlyCore.print(ctx, "Please input either \"y\" or \"n\", or press ENTER to use the default.")
             continue
         }
 

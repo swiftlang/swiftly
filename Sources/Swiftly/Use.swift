@@ -55,12 +55,16 @@ struct Use: SwiftlyCommand {
     var toolchain: String?
 
     mutating func run() async throws {
-        try validateSwiftly()
-        var config = try Config.load()
+        try await self.run(Swiftly.createDefaultContext())
+    }
+
+    mutating func run(_ ctx: SwiftlyCoreContext) async throws {
+        try validateSwiftly(ctx)
+        var config = try Config.load(ctx)
 
         // This is the bare use command where we print the selected toolchain version (or the path to it)
         guard let toolchain = self.toolchain else {
-            let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: self.globalDefault)
+            let (selectedVersion, result) = try await selectToolchain(ctx, config: &config, globalDefault: self.globalDefault)
 
             // Abort on any errors with the swift version files
             if case let .swiftVersionFile(_, _, error) = result, let error {
@@ -74,7 +78,7 @@ struct Use: SwiftlyCommand {
 
             if self.printLocation {
                 // Print the toolchain location and exit
-                SwiftlyCore.print("\(Swiftly.currentPlatform.findToolchainLocation(selectedVersion).path)")
+                SwiftlyCore.print(ctx, "\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion).path)")
                 return
             }
 
@@ -87,7 +91,7 @@ struct Use: SwiftlyCommand {
                 message += " (default)"
             }
 
-            SwiftlyCore.print(message)
+            SwiftlyCore.print(ctx, message)
 
             return
         }
@@ -99,16 +103,16 @@ struct Use: SwiftlyCommand {
         let selector = try ToolchainSelector(parsing: toolchain)
 
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
-            SwiftlyCore.print("No installed toolchains match \"\(toolchain)\"")
+            SwiftlyCore.print(ctx, "No installed toolchains match \"\(toolchain)\"")
             return
         }
 
-        try await Self.execute(toolchain, globalDefault: self.globalDefault, assumeYes: self.root.assumeYes, &config)
+        try await Self.execute(ctx, toolchain, globalDefault: self.globalDefault, assumeYes: self.root.assumeYes, &config)
     }
 
     /// Use a toolchain. This method can modify and save the input config and also create/modify a `.swift-version` file.
-    static func execute(_ toolchain: ToolchainVersion, globalDefault: Bool, assumeYes: Bool = true, _ config: inout Config) async throws {
-        let (selectedVersion, result) = try await selectToolchain(config: &config, globalDefault: globalDefault)
+    static func execute(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, globalDefault: Bool, assumeYes: Bool = true, _ config: inout Config) async throws {
+        let (selectedVersion, result) = try await selectToolchain(ctx, config: &config, globalDefault: globalDefault)
 
         var message: String
 
@@ -117,12 +121,12 @@ struct Use: SwiftlyCommand {
             try toolchain.name.write(to: versionFile, atomically: true, encoding: .utf8)
 
             message = "The file `\(versionFile.path)` has been set to `\(toolchain)`"
-        } else if let newVersionFile = findNewVersionFile(), !globalDefault {
+        } else if let newVersionFile = findNewVersionFile(ctx), !globalDefault {
             if !assumeYes {
-                SwiftlyCore.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
+                SwiftlyCore.print(ctx, "A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
 
-                guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
-                    SwiftlyCore.print("Aborting setting in-use toolchain")
+                guard SwiftlyCore.promptForConfirmation(ctx, defaultBehavior: true) else {
+                    SwiftlyCore.print(ctx, "Aborting setting in-use toolchain")
                     return
                 }
             }
@@ -132,7 +136,7 @@ struct Use: SwiftlyCommand {
             message = "The file `\(newVersionFile.path)` has been set to `\(toolchain)`"
         } else {
             config.inUse = toolchain
-            try config.save()
+            try config.save(ctx)
             message = "The global default toolchain has been set to `\(toolchain)`"
         }
 
@@ -140,11 +144,11 @@ struct Use: SwiftlyCommand {
             message += " (was \(selectedVersion.name))"
         }
 
-        SwiftlyCore.print(message)
+        SwiftlyCore.print(ctx, message)
     }
 
-    static func findNewVersionFile() -> URL? {
-        var cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    static func findNewVersionFile(_ ctx: SwiftlyCoreContext) -> URL? {
+        var cwd = ctx.currentDirectory
 
         while cwd.path != "" && cwd.path != "/" {
             guard FileManager.default.fileExists(atPath: cwd.path) else {
@@ -189,9 +193,9 @@ public enum ToolchainSelectionResult {
 /// If such a case happens then the toolchain version in the tuple will be nil, but the
 /// result will be .swiftVersionFile and a detailed error about the problem. This error
 /// can be thrown by the client, or ignored.
-public func selectToolchain(config: inout Config, globalDefault: Bool = false) async throws -> (ToolchainVersion?, ToolchainSelectionResult) {
+public func selectToolchain(_ ctx: SwiftlyCoreContext, config: inout Config, globalDefault: Bool = false) async throws -> (ToolchainVersion?, ToolchainSelectionResult) {
     if !globalDefault {
-        var cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        var cwd = ctx.currentDirectory
 
         while cwd.path != "" && cwd.path != "/" {
             guard FileManager.default.fileExists(atPath: cwd.path) else {

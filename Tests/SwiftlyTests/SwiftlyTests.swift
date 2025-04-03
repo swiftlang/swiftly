@@ -1,10 +1,11 @@
 import _StringProcessing
 import ArgumentParser
 import AsyncHTTPClient
+import Foundation
 import NIO
 @testable import Swiftly
 @testable import SwiftlyCore
-import XCTest
+import Testing
 
 #if os(macOS)
 import MacOSPlatform
@@ -17,23 +18,26 @@ struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
-public class SwiftlyTests: XCTestCase {
-    override public class func tearDown() {
-#if os(Linux)
-        let deleteTestGPGKeys = Process()
-        deleteTestGPGKeys.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        deleteTestGPGKeys.arguments = [
-            "bash",
-            "-c",
-            """
-            gpg --batch --yes --delete-secret-keys --fingerprint "A2A645E5249D25845C43954E7D210032D2F670B7" >/dev/null 2>&1
-            gpg --batch --yes --delete-keys --fingerprint "A2A645E5249D25845C43954E7D210032D2F670B7" >/dev/null 2>&1
-            """,
-        ]
-        try? deleteTestGPGKeys.run()
-        deleteTestGPGKeys.waitUntilExit()
-#endif
+struct OutputHandlerFail: OutputHandler {
+    func handleOutputLine(_: String) {
+        fatalError("core context was not mocked. put the test case in a SwiftlyTests.with() before running it.")
     }
+}
+
+struct InputProviderFail: InputProvider {
+    func readLine() -> String? {
+        fatalError("core context was not mocked. put the test case in a SwiftlyTests.with() before running it.")
+    }
+}
+
+public enum SwiftlyTests {
+    @TaskLocal static var ctx: SwiftlyCoreContext = .init(
+        mockedHomeDir: URL(fileURLWithPath: "/does/not/exist"),
+        // FIXME: place a request executor that fails on each request here
+        httpClient: SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl()),
+        outputHandler: OutputHandlerFail(),
+        inputProvider: InputProviderFail()
+    )
 
     // Below are some constants that can be used to write test cases.
     public static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
@@ -54,8 +58,8 @@ public class SwiftlyTests: XCTestCase {
         newReleaseSnapshot,
     ]
 
-    func baseTestConfig() async throws -> Config {
-        guard let pd = try? await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil) else {
+    static func baseTestConfig() async throws -> Config {
+        guard let pd = try? await Swiftly.currentPlatform.detectPlatform(Self.ctx, disableConfirmation: true, platform: nil) else {
             throw SwiftlyTestError(message: "Unable to detect the current platform.")
         }
 
@@ -66,19 +70,49 @@ public class SwiftlyTests: XCTestCase {
         )
     }
 
-    func parseCommand<T: ParsableCommand>(_ commandType: T.Type, _ arguments: [String]) throws -> T {
+    static func runCommand<T: SwiftlyCommand>(_ commandType: T.Type, _ arguments: [String]) async throws {
         let rawCmd = try Swiftly.parseAsRoot(arguments)
 
-        guard let cmd = rawCmd as? T else {
+        guard var cmd = rawCmd as? T else {
             throw SwiftlyTestError(
                 message: "expected \(arguments) to parse as \(commandType) but got \(rawCmd) instead"
             )
         }
 
-        return cmd
+        try await cmd.run(Self.ctx)
     }
 
-    class func getTestHomePath(name: String) -> URL {
+    /// Run this command, using the provided input as the stdin (in lines). Returns an array of captured
+    /// output lines.
+    static func runWithMockedIO<T: SwiftlyCommand>(_ commandType: T.Type, _ arguments: [String], quiet: Bool = false, input: [String]? = nil) async throws -> [String] {
+        let handler = TestOutputHandler(quiet: quiet)
+        let provider: (any InputProvider)? = if let input {
+            TestInputProvider(lines: input)
+        } else {
+            nil
+        }
+
+        let ctx = SwiftlyCoreContext(
+            mockedHomeDir: SwiftlyTests.ctx.mockedHomeDir,
+            httpClient: SwiftlyTests.ctx.httpClient,
+            outputHandler: handler,
+            inputProvider: provider
+        )
+
+        let rawCmd = try Swiftly.parseAsRoot(arguments)
+
+        guard var cmd = rawCmd as? T else {
+            throw SwiftlyTestError(
+                message: "expected \(arguments) to parse as \(commandType) but got \(rawCmd) instead"
+            )
+        }
+
+        try await cmd.run(ctx)
+
+        return handler.lines
+    }
+
+    static func getTestHomePath(name: String) -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-tests-\(name)-\(UUID())")
     }
 
@@ -86,51 +120,54 @@ public class SwiftlyTests: XCTestCase {
     /// Any swiftly commands executed in the closure will use this new home directory.
     ///
     /// The home directory will be deleted after the provided closure has been executed.
-    func withTestHome(
+    static func withTestHome(
         name: String = "testHome",
         _ f: () async throws -> Void
     ) async throws {
         let testHome = Self.getTestHomePath(name: name)
-        SwiftlyCore.mockedHomeDir = testHome
+
         defer {
-            SwiftlyCore.mockedHomeDir = nil
             try? testHome.deleteIfExists()
         }
-        for dir in Swiftly.requiredDirectories {
+
+        let ctx = SwiftlyCoreContext(
+            mockedHomeDir: testHome,
+            httpClient: SwiftlyTests.ctx.httpClient,
+            outputHandler: nil,
+            inputProvider: nil
+        )
+
+        for dir in Swiftly.requiredDirectories(ctx) {
             try dir.deleteIfExists()
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
         }
 
-        let config = try await self.baseTestConfig()
-        try config.save()
+        let config = try await Self.baseTestConfig()
+        try config.save(ctx)
 
-        let cwd = FileManager.default.currentDirectoryPath
-        defer {
-            FileManager.default.changeCurrentDirectoryPath(cwd)
+        try await Self.$ctx.withValue(ctx) {
+            try await f()
         }
-
-        FileManager.default.changeCurrentDirectoryPath(testHome.path)
-
-        try await f()
     }
 
-    func withMockedHome(
+    /// Creates a mocked home directory with the supplied toolchains pre-installed as mocks,
+    /// and the provided inUse is the global default toolchain.
+    static func withMockedHome(
         homeName: String,
         toolchains: Set<ToolchainVersion>,
         inUse: ToolchainVersion? = nil,
         f: () async throws -> Void
     ) async throws {
-        try await self.withTestHome(name: homeName) {
+        try await Self.withTestHome(name: homeName) {
             for toolchain in toolchains {
-                try await self.installMockedToolchain(toolchain: toolchain)
+                try await Self.installMockedToolchain(toolchain: toolchain)
             }
 
             if !toolchains.isEmpty {
-                var use = try self.parseCommand(Use.self, ["use", inUse?.name ?? "latest"])
-                try await use.run()
+                try await Self.runCommand(Use.self, ["use", inUse?.name ?? "latest"])
             } else {
                 try FileManager.default.createDirectory(
-                    at: Swiftly.currentPlatform.swiftlyBinDir,
+                    at: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx),
                     withIntermediateDirectories: true
                 )
             }
@@ -139,133 +176,79 @@ public class SwiftlyTests: XCTestCase {
         }
     }
 
-    func withMockedSwiftlyVersion(latestSwiftlyVersion: SwiftlyVersion = SwiftlyCore.version, _ f: () async throws -> Void) async throws {
-        let prevExecutor = SwiftlyCore.httpRequestExecutor
+    /// Operate with a mocked swiftly version available when requested with the HTTP request executor.
+    static func withMockedSwiftlyVersion(latestSwiftlyVersion: SwiftlyVersion = SwiftlyCore.version, _ f: () async throws -> Void) async throws {
+        let prevExecutor = Self.ctx.httpClient.httpRequestExecutor
         let mockDownloader = MockToolchainDownloader(executables: ["swift"], latestSwiftlyVersion: latestSwiftlyVersion, delegate: prevExecutor)
-        SwiftlyCore.httpRequestExecutor = mockDownloader
-        defer {
-            SwiftlyCore.httpRequestExecutor = prevExecutor
-        }
 
-        try await f()
+        let ctx = SwiftlyCoreContext(
+            mockedHomeDir: SwiftlyTests.ctx.mockedHomeDir,
+            httpClient: SwiftlyHTTPClient(httpRequestExecutor: mockDownloader),
+            outputHandler: SwiftlyTests.ctx.outputHandler,
+            inputProvider: SwiftlyTests.ctx.inputProvider
+        )
+
+        try await SwiftlyTests.$ctx.withValue(ctx) {
+            try await f()
+        }
     }
 
-    func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
-        let prevExecutor = SwiftlyCore.httpRequestExecutor
+    /// Operate with a mocked toolchain that has the provided list of executables in its bin directory.
+    static func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
+        let prevExecutor = SwiftlyTests.ctx.httpClient.httpRequestExecutor
         let mockDownloader = MockToolchainDownloader(executables: executables, delegate: prevExecutor)
-        SwiftlyCore.httpRequestExecutor = mockDownloader
-        defer {
-            SwiftlyCore.httpRequestExecutor = prevExecutor
-        }
 
-        try await f()
+        let ctx = SwiftlyCoreContext(
+            mockedHomeDir: SwiftlyTests.ctx.mockedHomeDir,
+            httpClient: SwiftlyHTTPClient(httpRequestExecutor: mockDownloader),
+            outputHandler: SwiftlyTests.ctx.outputHandler,
+            inputProvider: SwiftlyTests.ctx.inputProvider
+        )
+
+        try await SwiftlyTests.$ctx.withValue(ctx) {
+            try await f()
+        }
     }
 
-    func withMockedHTTPRequests(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse, _ f: () async throws -> Void) async throws {
-        let prevExecutor = SwiftlyCore.httpRequestExecutor
+    /// Operate with a mocked HTTP request executor that calls the provided handler to handle the requests.
+    static func withMockedHTTPRequests(_ handler: @escaping (HTTPClientRequest) async throws -> HTTPClientResponse, _ f: () async throws -> Void) async throws {
         let mockedRequestExecutor = MockHTTPRequestExecutor(handler: handler)
-        SwiftlyCore.httpRequestExecutor = mockedRequestExecutor
-        defer {
-            SwiftlyCore.httpRequestExecutor = prevExecutor
+
+        let ctx = SwiftlyCoreContext(
+            mockedHomeDir: SwiftlyTests.ctx.mockedHomeDir,
+            httpClient: SwiftlyHTTPClient(httpRequestExecutor: mockedRequestExecutor),
+            outputHandler: SwiftlyTests.ctx.outputHandler,
+            inputProvider: SwiftlyTests.ctx.inputProvider
+        )
+
+        try await SwiftlyTests.$ctx.withValue(ctx) {
+            try await f()
         }
-
-        try await f()
-    }
-
-    /// Backup and rollback local changes to the user's installation.
-    ///
-    /// Backup the user's swiftly installation before running the provided
-    /// function and roll it all back afterwards.
-    func rollbackLocalChanges(_ f: () async throws -> Void) async throws {
-        let userHome = FileManager.default.homeDirectoryForCurrentUser
-
-        // Backup user profile changes in case of init tests
-        let profiles = [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"]
-        for profile in profiles {
-            let config = userHome.appendingPathComponent(profile)
-            let backupConfig = config.appendingPathExtension("swiftly-test-backup")
-            _ = try? FileManager.default.copyItem(at: config, to: backupConfig)
-        }
-        defer {
-            for profile in profiles.reversed() {
-                let config = userHome.appendingPathComponent(profile)
-                let backupConfig = config.appendingPathExtension("swiftly-test-backup")
-                if backupConfig.fileExists() {
-                    if config.fileExists() {
-                        try? FileManager.default.removeItem(at: config)
-                    }
-                    try? FileManager.default.moveItem(at: backupConfig, to: config)
-                } else if config.fileExists() {
-                    try? FileManager.default.removeItem(at: config)
-                }
-            }
-        }
-
-#if os(macOS)
-        // In some environments, such as CI, we can't install directly to the user's home directory
-        try await self.withTestHome(name: "e2eHome") { try await f() }
-        return
-#endif
-
-        // Backup config, toolchain, and bin directory
-        let swiftlyFiles = [Swiftly.currentPlatform.swiftlyHomeDir, Swiftly.currentPlatform.swiftlyToolchainsDir, Swiftly.currentPlatform.swiftlyBinDir]
-        for file in swiftlyFiles {
-            let backupFile = file.appendingPathExtension("swiftly-test-backup")
-            _ = try? FileManager.default.moveItem(at: file, to: backupFile)
-
-            if file == Swiftly.currentPlatform.swiftlyConfigFile {
-                _ = try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-            } else {
-                _ = try? FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
-            }
-        }
-        defer {
-            for file in swiftlyFiles.reversed() {
-                let backupFile = file.appendingPathExtension("swiftly-test-backup")
-                if backupFile.fileExists() {
-                    if file.fileExists() {
-                        try? FileManager.default.removeItem(at: file)
-                    }
-                    try? FileManager.default.moveItem(at: backupFile, to: file)
-                } else if file.fileExists() {
-                    try? FileManager.default.removeItem(at: file)
-                }
-            }
-        }
-
-        // create an empty config file and toolchains directory for the test
-        let c = try await self.baseTestConfig()
-        try c.save()
-
-        try await f()
     }
 
     /// Validates that the provided toolchain is the one currently marked as "in use", both by checking the
     /// configuration file and by executing `swift --version` using the swift executable in the `bin` directory.
     /// If nil is provided, this validates that no toolchain is currently in use.
-    func validateInUse(expected: ToolchainVersion?) async throws {
-        let config = try Config.load()
-        XCTAssertEqual(config.inUse, expected)
+    static func validateInUse(expected: ToolchainVersion?) async throws {
+        let config = try Config.load(Self.ctx)
+        #expect(config.inUse == expected)
     }
 
     /// Validate that all of the provided toolchains have been installed.
     ///
     /// This method ensures that config.json reflects the expected installed toolchains and also
     /// validates that the toolchains on disk match their expected versions via `swift --version`.
-    func validateInstalledToolchains(_ toolchains: Set<ToolchainVersion>, description: String) async throws {
-        let config = try Config.load()
+    static func validateInstalledToolchains(_ toolchains: Set<ToolchainVersion>, description: String) async throws {
+        let config = try Config.load(Self.ctx)
 
         guard config.installedToolchains == toolchains else {
             throw SwiftlyTestError(message: "\(description): expected \(toolchains) but got \(config.installedToolchains)")
         }
 
-#if os(Linux)
-        // Verify that the toolchains on disk correspond to those in the config.
+#if os(macOS)
         for toolchain in toolchains {
-            let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir
-                .appendingPathComponent("toolchains")
-                .appendingPathComponent(toolchain.name)
-            XCTAssertTrue(toolchainDir.fileExists())
+            let toolchainDir = Self.ctx.mockedHomeDir!.appendingPathComponent("Toolchains/\(toolchain.identifier).xctoolchain")
+            #expect(toolchainDir.fileExists())
 
             let swiftBinary = toolchainDir
                 .appendingPathComponent("usr")
@@ -274,7 +257,23 @@ public class SwiftlyTests: XCTestCase {
 
             let executable = SwiftExecutable(path: swiftBinary)
             let actualVersion = try await executable.version()
-            XCTAssertEqual(actualVersion, toolchain)
+            #expect(actualVersion == toolchain)
+        }
+#elseif os(Linux)
+        // Verify that the toolchains on disk correspond to those in the config.
+        for toolchain in toolchains {
+            let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir(Self.ctx)
+                .appendingPathComponent("toolchains/\(toolchain.name)")
+            #expect(toolchainDir.fileExists())
+
+            let swiftBinary = toolchainDir
+                .appendingPathComponent("usr")
+                .appendingPathComponent("bin")
+                .appendingPathComponent("swift")
+
+            let executable = SwiftExecutable(path: swiftBinary)
+            let actualVersion = try await executable.version()
+            #expect(actualVersion == toolchain)
         }
 #endif
     }
@@ -283,11 +282,9 @@ public class SwiftlyTests: XCTestCase {
     /// in its bin directory.
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
-    func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
-        var install = try self.parseCommand(Install.self, ["install", "\(selector)", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"] + args)
-
-        try await self.withMockedToolchain(executables: executables) {
-            try await install.run()
+    static func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
+        try await Self.withMockedToolchain(executables: executables) {
+            try await Self.runCommand(Install.self, ["install", "\(selector)", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"] + args)
         }
     }
 
@@ -295,20 +292,20 @@ public class SwiftlyTests: XCTestCase {
     /// in its bin directory.
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
-    func installMockedToolchain(toolchain: ToolchainVersion, executables: [String]? = nil) async throws {
-        try await self.installMockedToolchain(selector: "\(toolchain.name)", executables: executables)
+    static func installMockedToolchain(toolchain: ToolchainVersion, executables: [String]? = nil) async throws {
+        try await Self.installMockedToolchain(selector: "\(toolchain.name)", executables: executables)
     }
 
     /// Install a mocked toolchain associated with the given version that includes the provided list of executables
     /// in its bin directory.
     ///
     /// When executed, the mocked executables will simply print the toolchain version and return.
-    func installMockedToolchain(selector: ToolchainSelector, executables: [String]? = nil) async throws {
-        try await self.installMockedToolchain(selector: "\(selector)", executables: executables)
+    static func installMockedToolchain(selector: ToolchainSelector, executables: [String]? = nil) async throws {
+        try await Self.installMockedToolchain(selector: "\(selector)", executables: executables)
     }
 
     /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given URL.
-    func getMockedToolchainVersion(at url: URL) throws -> ToolchainVersion {
+    static func getMockedToolchainVersion(at url: URL) throws -> ToolchainVersion {
         let process = Process()
         process.executableURL = url
 
@@ -324,20 +321,6 @@ public class SwiftlyTests: XCTestCase {
 
         let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
         return try ToolchainVersion(parsing: toolchainVersion)
-    }
-
-    func snapshotsAvailable() async throws -> Bool {
-        let pd = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
-
-        // Snapshots are currently unavailable for these platforms on swift.org
-        // TODO: remove these once snapshots are available for them
-        let snapshotsUnavailable: [PlatformDefinition] = [
-            .ubuntu2404,
-            .fedora39,
-            .debian12,
-        ]
-
-        return !snapshotsUnavailable.contains(pd)
     }
 }
 
@@ -368,28 +351,6 @@ public class TestInputProvider: SwiftlyCore.InputProvider {
 
     public func readLine() -> String? {
         self.lines.removeFirst()
-    }
-}
-
-extension SwiftlyCommand {
-    /// Run this command, using the provided input as the stdin (in lines). Returns an array of captured
-    /// output lines.
-    mutating func runWithMockedIO(quiet: Bool = false, input: [String]? = nil) async throws -> [String] {
-        let handler = TestOutputHandler(quiet: quiet)
-        SwiftlyCore.outputHandler = handler
-        defer {
-            SwiftlyCore.outputHandler = nil
-        }
-
-        if let input {
-            SwiftlyCore.inputProvider = TestInputProvider(lines: input)
-        }
-        defer {
-            SwiftlyCore.inputProvider = nil
-        }
-
-        try await self.run()
-        return handler.lines
     }
 }
 
@@ -542,7 +503,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
     }
 
     public func getReleaseToolchains() async throws -> [Components.Schemas.Release] {
-        let currentPlatform = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
+        let currentPlatform = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil)
 
         let platformName = switch currentPlatform {
         case PlatformDefinition.ubuntu2004:
@@ -586,7 +547,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
     }
 
     public func getSnapshotToolchains(branch: Components.Schemas.SourceBranch, platform _: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
-        let currentPlatform = try await Swiftly.currentPlatform.detectPlatform(disableConfirmation: true, platform: nil)
+        let currentPlatform = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil)
 
         let releasesForBranch = self.snapshotToolchains.filter { snapshotVersion in
             switch snapshotVersion.branch {
@@ -721,8 +682,10 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         let importKey = Process()
         importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         importKey.arguments = ["bash", "-c", """
-        mkdir -p $HOME/.gnupg
-        touch $HOME/.gnupg/gpg.conf
+        export GNUPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
+        export GPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
+        mkdir -p "$GNUPG_HOME"/.gnupg
+        touch "$GNUPS_HOME"/.gnupg/gpg.conf
         gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
         """]
         try importKey.run()
@@ -735,6 +698,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         detachSign.arguments = ["bash", "-c", """
         export GPG_TTY=$(tty)
+        export GNUPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
+        export GPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
         gpg --version | grep '2.0.' > /dev/null
         if [ "$?" == "0" ]; then
             gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
@@ -808,8 +773,10 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         let importKey = Process()
         importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         importKey.arguments = ["bash", "-c", """
-        mkdir -p $HOME/.gnupg
-        touch $HOME/.gnupg/gpg.conf
+        export GNUPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
+        export GPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
+        mkdir -p "$GNUPG_HOME"/.gnupg
+        touch "$GNUPG_HOME"/.gnupg/gpg.conf
         gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
         """]
         try importKey.run()
@@ -822,6 +789,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         detachSign.arguments = ["bash", "-c", """
         export GPG_TTY=$(tty)
+        export GNUPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
+        export GPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
         gpg --version | grep '2.0.' > /dev/null
         if [ "$?" == "0" ]; then
             gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"

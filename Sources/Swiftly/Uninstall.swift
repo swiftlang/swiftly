@@ -44,8 +44,12 @@ struct Uninstall: SwiftlyCommand {
     @OptionGroup var root: GlobalOptions
 
     mutating func run() async throws {
-        try validateSwiftly()
-        let startingConfig = try Config.load()
+        try await self.run(Swiftly.createDefaultContext())
+    }
+
+    mutating func run(_ ctx: SwiftlyCoreContext) async throws {
+        try validateSwiftly(ctx)
+        let startingConfig = try Config.load(ctx)
 
         let toolchains: [ToolchainVersion]
         if self.toolchain == "all" {
@@ -65,27 +69,27 @@ struct Uninstall: SwiftlyCommand {
         }
 
         guard !toolchains.isEmpty else {
-            SwiftlyCore.print("No toolchains matched \"\(self.toolchain)\"")
+            SwiftlyCore.print(ctx, "No toolchains matched \"\(self.toolchain)\"")
             return
         }
 
         if !self.root.assumeYes {
-            SwiftlyCore.print("The following toolchains will be uninstalled:")
+            SwiftlyCore.print(ctx, "The following toolchains will be uninstalled:")
 
             for toolchain in toolchains {
-                SwiftlyCore.print("  \(toolchain)")
+                SwiftlyCore.print(ctx, "  \(toolchain)")
             }
 
-            guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
-                SwiftlyCore.print("Aborting uninstall")
+            guard SwiftlyCore.promptForConfirmation(ctx, defaultBehavior: true) else {
+                SwiftlyCore.print(ctx, "Aborting uninstall")
                 return
             }
         }
 
-        SwiftlyCore.print()
+        SwiftlyCore.print(ctx)
 
         for toolchain in toolchains {
-            var config = try Config.load()
+            var config = try Config.load(ctx)
 
             // If the in-use toolchain was one of the uninstalled toolchains, use a new toolchain.
             if toolchain == config.inUse {
@@ -105,31 +109,31 @@ struct Uninstall: SwiftlyCommand {
                     ?? config.listInstalledToolchains(selector: .latest).filter({ !toolchains.contains($0) }).max()
                     ?? config.installedToolchains.filter({ !toolchains.contains($0) }).max()
                 {
-                    try await Use.execute(toUse, globalDefault: true, &config)
+                    try await Use.execute(ctx, toUse, globalDefault: true, &config)
                 } else {
                     // If there are no more toolchains installed, just unuse the currently active toolchain.
                     config.inUse = nil
-                    try config.save()
+                    try config.save(ctx)
                 }
             }
 
-            try await Self.execute(toolchain, &config, verbose: self.root.verbose)
+            try await Self.execute(ctx, toolchain, &config, verbose: self.root.verbose)
         }
 
-        SwiftlyCore.print()
-        SwiftlyCore.print("\(toolchains.count) toolchain(s) successfully uninstalled")
+        SwiftlyCore.print(ctx)
+        SwiftlyCore.print(ctx, "\(toolchains.count) toolchain(s) successfully uninstalled")
     }
 
-    static func execute(_ toolchain: ToolchainVersion, _ config: inout Config, verbose: Bool) async throws {
-        SwiftlyCore.print("Uninstalling \(toolchain)...", terminator: "")
+    static func execute(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ config: inout Config, verbose: Bool) async throws {
+        SwiftlyCore.print(ctx, "Uninstalling \(toolchain)...", terminator: "")
         config.installedToolchains.remove(toolchain)
         // This is here to prevent the inUse from referencing a toolchain that is not installed
         if config.inUse == toolchain {
             config.inUse = nil
         }
-        try config.save()
+        try config.save(ctx)
 
-        try Swiftly.currentPlatform.uninstall(toolchain, verbose: verbose)
-        SwiftlyCore.print("done")
+        try Swiftly.currentPlatform.uninstall(ctx, toolchain, verbose: verbose)
+        SwiftlyCore.print(ctx, "done")
     }
 }

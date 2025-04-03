@@ -36,17 +36,23 @@ public struct Swiftly: SwiftlyCommand {
         ]
     )
 
+    public static func createDefaultContext() -> SwiftlyCoreContext {
+        SwiftlyCoreContext(httpClient: SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl()))
+    }
+
     /// The list of directories that swiftly needs to exist in order to execute.
     /// If they do not exist when a swiftly command is invoked, they will be created.
-    public static var requiredDirectories: [URL] {
+    public static func requiredDirectories(_ ctx: SwiftlyCoreContext) -> [URL] {
         [
-            Swiftly.currentPlatform.swiftlyHomeDir,
-            Swiftly.currentPlatform.swiftlyBinDir,
-            Swiftly.currentPlatform.swiftlyToolchainsDir,
+            Swiftly.currentPlatform.swiftlyHomeDir(ctx),
+            Swiftly.currentPlatform.swiftlyBinDir(ctx),
+            Swiftly.currentPlatform.swiftlyToolchainsDir(ctx),
         ]
     }
 
     public init() {}
+
+    public mutating func run(_: SwiftlyCoreContext) async throws {}
 
 #if os(Linux)
     static let currentPlatform = Linux.currentPlatform
@@ -55,7 +61,9 @@ public struct Swiftly: SwiftlyCommand {
 #endif
 }
 
-public protocol SwiftlyCommand: AsyncParsableCommand {}
+public protocol SwiftlyCommand: AsyncParsableCommand {
+    mutating func run(_ ctx: SwiftlyCoreContext) async throws
+}
 
 extension Data {
     func append(to file: URL) throws {
@@ -72,8 +80,8 @@ extension Data {
 }
 
 extension SwiftlyCommand {
-    public mutating func validateSwiftly() throws {
-        for requiredDir in Swiftly.requiredDirectories {
+    public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) throws {
+        for requiredDir in Swiftly.requiredDirectories(ctx) {
             guard requiredDir.fileExists() else {
                 do {
                     try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
@@ -85,6 +93,6 @@ extension SwiftlyCommand {
         }
 
         // Verify that the configuration exists and can be loaded
-        _ = try Config.load()
+        _ = try Config.load(ctx)
     }
 }

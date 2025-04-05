@@ -153,20 +153,18 @@ import Testing
         }
     }
 
-    /// Tests that `list` properly handles the case where no toolchains been installed yet.
-    @Test func listEmpty() async throws {
-        try await SwiftlyTests.withTestHome {
-            var toolchains = try await self.runList(selector: nil)
-            #expect(toolchains == [])
+    /// Tests that `list` properly handles the case where no toolchains have been installed yet.
+    @Test(.testHome) func listEmpty() async throws {
+        var toolchains = try await self.runList(selector: nil)
+        #expect(toolchains == [])
 
-            toolchains = try await self.runList(selector: "5")
-            #expect(toolchains == [])
+        toolchains = try await self.runList(selector: "5")
+        #expect(toolchains == [])
 
-            toolchains = try await self.runList(selector: "main-snapshot")
-            #expect(toolchains == [])
+        toolchains = try await self.runList(selector: "main-snapshot")
+        #expect(toolchains == [])
 
-            toolchains = try await self.runList(selector: "5.7-snapshot")
-            #expect(toolchains == [])
-        }
+        toolchains = try await self.runList(selector: "5.7-snapshot")
+        #expect(toolchains == [])
     }
 }

@@ -18,23 +18,25 @@ struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
+let unmockedMsg = "All swiftly test case logic must be mocked in order to prevent mutation of the system running the test. This test must either run swiftly components inside a SwiftlyTests.with... closure, or it must have one of the @Test traits, such as @Test(.testHome), or @Test(.mock...)"
+
 struct OutputHandlerFail: OutputHandler {
     func handleOutputLine(_: String) {
-        fatalError("core context was not mocked. put the test case in a SwiftlyTests.with() before running it.")
+        fatalError(unmockedMsg)
     }
 }
 
 struct InputProviderFail: InputProvider {
     func readLine() -> String? {
-        fatalError("core context was not mocked. put the test case in a SwiftlyTests.with() before running it.")
+        fatalError(unmockedMsg)
     }
 }
 
 struct HTTPRequestExecutorFail: HTTPRequestExecutor {
-    func execute(_: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse { fatalError("http request executor was not mocked. put test case in a SwiftlyTests.withMocked() before running it.") }
-    func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease { fatalError("http request executor was not mocked. put test case in a SwiftlyTests.withMocked() before running it.") }
-    func getReleaseToolchains() async throws -> [Components.Schemas.Release] { fatalError("http request executor was not mocked. put test case in a SwiftlyTests.withMocked() before running it.") }
-    func getSnapshotToolchains(branch _: Components.Schemas.SourceBranch, platform _: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains { fatalError("http request executor was not mocked. put test case in a SwiftlyTests.withMocked() before running it.") }
+    func execute(_: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse { fatalError(unmockedMsg) }
+    func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease { fatalError(unmockedMsg) }
+    func getReleaseToolchains() async throws -> [Components.Schemas.Release] { fatalError(unmockedMsg) }
+    func getSnapshotToolchains(branch _: Components.Schemas.SourceBranch, platform _: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains { fatalError(unmockedMsg) }
 }
 
 // Convenience extensions to common Swiftly and SwiftlyCore types to set the correct context
@@ -64,6 +66,63 @@ extension SwiftlyCoreContext {
         self.outputHandler = outputHandler
         self.inputProvider = inputProvider
     }
+}
+
+// Convenience test scoping traits
+
+struct TestHomeTrait: TestTrait, TestScoping {
+    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
+        try await SwiftlyTests.withTestHome {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == TestHomeTrait {
+    /// Run the test with a test home directory.
+    static var testHome: Self { Self() }
+}
+
+struct MockHomeAllToolchainsTrait: TestTrait, TestScoping {
+    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
+        try await SwiftlyTests.withMockedHome(homeName: "testHome", toolchains: SwiftlyTests.allToolchains) {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == MockHomeAllToolchainsTrait {
+    /// Run the test with this trait to get a mocked home directory with a predefined collection of toolchains already installed.
+    static var mockHomeAllToolchains: Self { Self() }
+}
+
+struct MockHomeNoToolchainsTrait: TestTrait, TestScoping {
+    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
+        try await SwiftlyTests.withMockedHome(homeName: UseTests.homeName, toolchains: []) {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == MockHomeNoToolchainsTrait {
+    /// Run the test with this trait to get a mocked home directory without any toolchains installed there yet.
+    static var mockHomeNoToolchains: Self { Self() }
+}
+
+struct TestHomeMockedToolchainTrait: TestTrait, TestScoping {
+    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedToolchain {
+                try await function()
+            }
+        }
+    }
+}
+
+extension Trait where Self == TestHomeMockedToolchainTrait {
+    /// Run the test with this trait to get a test home directory and a mocked
+    /// toolchain can be installed by request, at any version.
+    static var testHomeMockedToolchain: Self { Self() }
 }
 
 public enum SwiftlyTests {

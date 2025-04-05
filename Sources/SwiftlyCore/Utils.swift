@@ -15,27 +15,3 @@ extension URL {
         }
     }
 }
-
-public func promptForConfirmation(defaultBehavior: Bool) -> Bool {
-    let options: String
-    if defaultBehavior {
-        options = "(Y/n)"
-    } else {
-        options = "(y/N)"
-    }
-
-    while true {
-        let answer = (SwiftlyCore.readLine(prompt: "Proceed? \(options)") ?? (defaultBehavior ? "y" : "n")).lowercased()
-
-        guard ["y", "n", ""].contains(answer) else {
-            SwiftlyCore.print("Please input either \"y\" or \"n\", or press ENTER to use the default.")
-            continue
-        }
-
-        if answer.isEmpty {
-            return defaultBehavior
-        } else {
-            return answer == "y"
-        }
-    }
-}

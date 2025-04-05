@@ -78,8 +78,8 @@ struct SwiftlyUserAgentMiddleware: ClientMiddleware {
     }
 }
 
-/// An `HTTPRequestExecutor` backed by the shared `HTTPClient`.
-class HTTPRequestExecutorImpl: HTTPRequestExecutor {
+/// An `HTTPRequestExecutor` backed by a shared `HTTPClient`. This makes actual network requests.
+public class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     let httpClient: HTTPClient
 
     public init() {
@@ -216,8 +216,8 @@ extension Components.Schemas.SourceBranch {
 }
 
 extension Components.Schemas.Architecture {
-    static var x8664: Components.Schemas.Architecture = .init(Components.Schemas.KnownArchitecture.x8664)
-    static var aarch64: Components.Schemas.Architecture = .init(Components.Schemas.KnownArchitecture.aarch64)
+    static let x8664: Components.Schemas.Architecture = .init(Components.Schemas.KnownArchitecture.x8664)
+    static let aarch64: Components.Schemas.Architecture = .init(Components.Schemas.KnownArchitecture.aarch64)
 }
 
 extension Components.Schemas.Platform {
@@ -295,55 +295,24 @@ extension Components.Schemas.DevToolchainForArch {
 
 /// HTTPClient wrapper used for interfacing with various REST APIs and downloading things.
 public struct SwiftlyHTTPClient {
+    public let httpRequestExecutor: HTTPRequestExecutor
+
+    public init(httpRequestExecutor: HTTPRequestExecutor) {
+        self.httpRequestExecutor = httpRequestExecutor
+    }
+
     private struct Response {
         let status: HTTPResponseStatus
         let buffer: ByteBuffer
-    }
-
-    public init() {}
-
-    private func get(url: String, headers: [String: String], maxBytes: Int) async throws -> Response {
-        var request = makeRequest(url: url)
-
-        for (k, v) in headers {
-            request.headers.add(name: k, value: v)
-        }
-
-        let response = try await SwiftlyCore.httpRequestExecutor.execute(request, timeout: .seconds(30))
-
-        return Response(status: response.status, buffer: try await response.body.collect(upTo: maxBytes))
     }
 
     public struct JSONNotFoundError: LocalizedError {
         public var url: String
     }
 
-    /// Decode the provided type `T` from the JSON body of the response from a GET request
-    /// to the given URL.
-    public func getFromJSON<T: Decodable>(
-        url: String,
-        type: T.Type,
-        headers: [String: String] = [:]
-    ) async throws -> T {
-        // Maximum expected size for a JSON payload for an API is 1MB
-        let response = try await self.get(url: url, headers: headers, maxBytes: 1024 * 1024)
-
-        switch response.status {
-        case .ok:
-            break
-        case .notFound:
-            throw SwiftlyHTTPClient.JSONNotFoundError(url: url)
-        default:
-            let json = String(buffer: response.buffer)
-            throw SwiftlyError(message: "Received \(response.status) when reaching \(url) for JSON: \(json)")
-        }
-
-        return try JSONDecoder().decode(type.self, from: response.buffer)
-    }
-
     /// Return the current Swiftly release using the swift.org API.
     public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
-        try await SwiftlyCore.httpRequestExecutor.getCurrentSwiftlyRelease()
+        try await self.httpRequestExecutor.getCurrentSwiftlyRelease()
     }
 
     /// Return an array of released Swift versions that match the given filter, up to the provided
@@ -356,7 +325,7 @@ public struct SwiftlyHTTPClient {
     ) async throws -> [ToolchainVersion.StableRelease] {
         let arch = a ?? cpuArch
 
-        let releases = try await SwiftlyCore.httpRequestExecutor.getReleaseToolchains()
+        let releases = try await self.httpRequestExecutor.getReleaseToolchains()
 
         var swiftOrgFiltered: [ToolchainVersion.StableRelease] = try releases.compactMap { swiftOrgRelease in
             if platform.name != PlatformDefinition.macOS.name {
@@ -433,7 +402,7 @@ public struct SwiftlyHTTPClient {
             .init("\(major).\(minor)")
         }
 
-        let devToolchains = try await SwiftlyCore.httpRequestExecutor.getSnapshotToolchains(branch: sourceBranch, platform: platformId)
+        let devToolchains = try await self.httpRequestExecutor.getSnapshotToolchains(branch: sourceBranch, platform: platformId)
 
         let arch = a ?? cpuArch.value2
 
@@ -488,7 +457,7 @@ public struct SwiftlyHTTPClient {
         }
 
         let request = makeRequest(url: url.absoluteString)
-        let response = try await SwiftlyCore.httpRequestExecutor.execute(request, timeout: .seconds(30))
+        let response = try await self.httpRequestExecutor.execute(request, timeout: .seconds(30))
 
         switch response.status {
         case .ok:

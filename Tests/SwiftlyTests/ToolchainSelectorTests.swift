@@ -1,25 +1,25 @@
 import Foundation
 import SwiftlyCore
-import XCTest
+import Testing
 
-final class ToolchainSelectorTests: SwiftlyTests {
+@Suite struct ToolchainSelectorTests {
     func runTest(_ expected: ToolchainSelector, _ parses: [String]) throws {
         for string in parses {
-            XCTAssertEqual(try ToolchainSelector(parsing: string), expected)
+            #expect(try ToolchainSelector(parsing: string) == expected)
         }
     }
 
-    func testParseLatest() throws {
+    @Test func parseLatest() throws {
         try self.runTest(.latest, ["latest"])
     }
 
-    func testParseRelease() throws {
+    @Test func parseRelease() throws {
         try self.runTest(.stable(major: 5, minor: 7, patch: 3), ["5.7.3"])
         try self.runTest(.stable(major: 5, minor: 7, patch: nil), ["5.7"])
         try self.runTest(.stable(major: 5, minor: nil, patch: nil), ["5"])
     }
 
-    func testParseMainSnapshot() throws {
+    @Test func parseMainSnapshot() throws {
         let parses = [
             "main-snapshot",
             "main-SNAPSHOT",
@@ -28,7 +28,7 @@ final class ToolchainSelectorTests: SwiftlyTests {
         try runTest(.snapshot(branch: .main, date: nil), parses)
     }
 
-    func testParseMainSnapshotWithDate() throws {
+    @Test func parseMainSnapshotWithDate() throws {
         let parses = [
             "main-snapshot-2023-06-05",
             "main-SNAPSHOT-2023-06-05",
@@ -39,7 +39,7 @@ final class ToolchainSelectorTests: SwiftlyTests {
         try runTest(.snapshot(branch: .main, date: "2023-06-05"), parses)
     }
 
-    func testParseReleaseSnapshot() throws {
+    @Test func parseReleaseSnapshot() throws {
         let parses = [
             "5.7-snapshot",
             "5.7-SNAPSHOT",
@@ -51,7 +51,7 @@ final class ToolchainSelectorTests: SwiftlyTests {
         try runTest(.snapshot(branch: .release(major: 5, minor: 7), date: nil), parses)
     }
 
-    func testParseReleaseSnapshotWithDate() throws {
+    @Test func parseReleaseSnapshotWithDate() throws {
         let parses = [
             "5.7-snapshot-2023-06-05",
             "5.7-SNAPSHOT-2023-06-05",

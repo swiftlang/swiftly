@@ -685,7 +685,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         export GNUPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
         export GPG_HOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)"
         mkdir -p "$GNUPG_HOME"/.gnupg
-        touch "$GNUPS_HOME"/.gnupg/gpg.conf
+        touch "$GNUPG_HOME"/.gnupg/gpg.conf
         gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
         """]
         try importKey.run()

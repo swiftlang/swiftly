@@ -80,7 +80,7 @@ struct ListAvailable: SwiftlyCommand {
             } else if installedToolchains.contains(toolchain) {
                 message += " (installed)"
             }
-            SwiftlyCore.print(ctx, message)
+            ctx.print(message)
         }
 
         if let selector {
@@ -100,8 +100,8 @@ struct ListAvailable: SwiftlyCommand {
             }
 
             let message = "Available \(modifier) toolchains"
-            SwiftlyCore.print(ctx, message)
-            SwiftlyCore.print(ctx, String(repeating: "-", count: message.count))
+            ctx.print(message)
+            ctx.print(String(repeating: "-", count: message.count))
             for toolchain in toolchains {
                 printToolchain(toolchain)
             }

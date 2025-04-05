@@ -10,11 +10,11 @@ import Testing
             try await SwiftlyTests.withMockedToolchain {
                 try await SwiftlyTests.installMockedToolchain(selector: .latest)
 
-                let beforeUpdateConfig = try Config.load(SwiftlyTests.ctx)
+                let beforeUpdateConfig = try Config.load()
 
                 try await SwiftlyTests.runCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                #expect(try Config.load(SwiftlyTests.ctx) == beforeUpdateConfig)
+                #expect(try Config.load() == beforeUpdateConfig)
                 try await SwiftlyTests.validateInstalledToolchains(
                     beforeUpdateConfig.installedToolchains,
                     description: "Updating latest toolchain should have no effect"
@@ -44,7 +44,7 @@ import Testing
                 try await SwiftlyTests.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
                 try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
 
                 #expect(inUse > .init(major: 5, minor: 9, patch: 0))
@@ -64,7 +64,7 @@ import Testing
                 try await SwiftlyTests.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
                 try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
 
                 #expect(inUse.major == 5)
@@ -86,7 +86,7 @@ import Testing
 
                 try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5.9.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
 
                 #expect(inUse.major == 5)
@@ -110,7 +110,7 @@ import Testing
 
                 try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
                 #expect(inUse > .init(major: 6, minor: 0, patch: 0))
                 #expect(inUse.major == 6)
@@ -145,7 +145,7 @@ import Testing
 
                 // Since the global default was set to 6.0.0, and that toolchain is no longer installed
                 // the update should have unset it to prevent the config from going into a bad state.
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
                 #expect(config.inUse == nil)
 
                 // The new toolchain should be installed
@@ -171,7 +171,7 @@ import Testing
                         Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
                     )
 
-                    let config = try Config.load(SwiftlyTests.ctx)
+                    let config = try Config.load()
                     let inUse = config.inUse!.asSnapshot!
                     #expect(inUse > .init(branch: branch, date: date))
                     #expect(inUse.branch == branch)
@@ -195,7 +195,7 @@ import Testing
 
                 try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "6.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
                 let inUse = config.inUse!.asStableRelease!
                 #expect(inUse.major == 6)
                 #expect(inUse.minor == 0)
@@ -226,7 +226,7 @@ import Testing
                         Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
                     )
 
-                    let config = try Config.load(SwiftlyTests.ctx)
+                    let config = try Config.load()
                     let inUse = config.inUse!.asSnapshot!
 
                     #expect(inUse.branch == branch)

@@ -1,8 +1,6 @@
 import Foundation
 import SwiftlyCore
 
-var swiftGPGKeysRefreshed = false
-
 /// `Platform` implementation for Linux systems.
 /// This implementation can be reused for any supported Linux platform.
 /// TODO: replace dummy implementations
@@ -69,7 +67,7 @@ public struct Linux: Platform {
         }
     }
 
-    public func verifySystemPrerequisitesForInstall(httpClient: SwiftlyHTTPClient, platformName: String, version _: ToolchainVersion, requireSignatureValidation: Bool) async throws -> String? {
+    public func verifySystemPrerequisitesForInstall(_ ctx: SwiftlyCoreContext, platformName: String, version _: ToolchainVersion, requireSignatureValidation: Bool) async throws -> String? {
         // TODO: these are hard-coded until we have a place to query for these based on the toolchain version
         // These lists were copied from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
         let packages: [String] = switch platformName {
@@ -260,22 +258,21 @@ public struct Linux: Platform {
                 throw SwiftlyError(message: msg)
             }
 
-            // Import the latest swift keys, but only once per session, which will help with the performance in tests
-            if !swiftGPGKeysRefreshed {
-                let tmpFile = self.getTempFilePath()
-                let _ = FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600])
-                defer {
-                    try? FileManager.default.removeItem(at: tmpFile)
-                }
+            let tmpFile = self.getTempFilePath()
+            let _ = FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600])
+            defer {
+                try? FileManager.default.removeItem(at: tmpFile)
+            }
 
-                guard let url = URL(string: "https://www.swift.org/keys/all-keys.asc") else {
-                    throw SwiftlyError(message: "malformed URL to the swift gpg keys")
-                }
+            guard let url = URL(string: "https://www.swift.org/keys/all-keys.asc") else {
+                throw SwiftlyError(message: "malformed URL to the swift gpg keys")
+            }
 
-                try await httpClient.downloadFile(url: url, to: tmpFile)
+            try await ctx.httpClient.downloadFile(url: url, to: tmpFile)
+            if let mockedHomeDir = ctx.mockedHomeDir {
+                try self.runProgram("gpg", "--import", tmpFile.path, quiet: true, env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path])
+            } else {
                 try self.runProgram("gpg", "--import", tmpFile.path, quiet: true)
-
-                swiftGPGKeysRefreshed = true
             }
         }
 
@@ -335,7 +332,7 @@ public struct Linux: Platform {
             try FileManager.default.createDirectory(at: self.swiftlyToolchainsDir(ctx), withIntermediateDirectories: false)
         }
 
-        SwiftlyCore.print(ctx, "Extracting toolchain...")
+        ctx.print("Extracting toolchain...")
         let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent(version.name)
 
         if toolchainDir.fileExists() {
@@ -350,7 +347,7 @@ public struct Linux: Platform {
             let destination = toolchainDir.appendingPathComponent(String(relativePath))
 
             if verbose {
-                SwiftlyCore.print(ctx, "\(destination.path)")
+                ctx.print("\(destination.path)")
             }
 
             // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
@@ -366,7 +363,7 @@ public struct Linux: Platform {
         let tmpDir = self.getTempFilePath()
         try FileManager.default.createDirectory(atPath: tmpDir.path, withIntermediateDirectories: true)
 
-        SwiftlyCore.print(ctx, "Extracting new swiftly...")
+        ctx.print("Extracting new swiftly...")
         try extractArchive(atPath: archive) { name in
             // Extract to the temporary directory
             tmpDir.appendingPathComponent(String(name))
@@ -392,7 +389,7 @@ public struct Linux: Platform {
 
     public func verifySignature(_ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: URL, verbose: Bool) async throws {
         if verbose {
-            SwiftlyCore.print(ctx, "Downloading toolchain signature...")
+            ctx.print("Downloading toolchain signature...")
         }
 
         let sigFile = self.getTempFilePath()
@@ -406,9 +403,13 @@ public struct Linux: Platform {
             to: sigFile
         )
 
-        SwiftlyCore.print(ctx, "Verifying toolchain signature...")
+        ctx.print("Verifying toolchain signature...")
         do {
-            try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
+            if let mockedHomeDir = ctx.mockedHomeDir {
+                try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: false, env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path])
+            } else {
+                try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
+            }
         } catch {
             throw SwiftlyError(message: "Signature verification failed: \(error).")
         }
@@ -430,7 +431,7 @@ public struct Linux: Platform {
         \(selections)
         """)
 
-        let choice = SwiftlyCore.readLine(ctx, prompt: "Pick one of the available selections [0-\(self.linuxPlatforms.count)] ") ?? "0"
+        let choice = ctx.readLine(prompt: "Pick one of the available selections [0-\(self.linuxPlatforms.count)] ") ?? "0"
 
         guard let choiceNum = Int(choice) else {
             fatalError("Installation canceled")

@@ -37,7 +37,7 @@ public struct Swiftly: SwiftlyCommand {
     )
 
     public static func createDefaultContext() -> SwiftlyCoreContext {
-        SwiftlyCoreContext(httpClient: SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl()))
+        SwiftlyCoreContext()
     }
 
     /// The list of directories that swiftly needs to exist in order to execute.

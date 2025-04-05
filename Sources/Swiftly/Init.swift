@@ -113,9 +113,9 @@ struct Init: SwiftlyCommand {
                 """
             }
 
-            SwiftlyCore.print(ctx, msg)
+            ctx.print(msg)
 
-            guard SwiftlyCore.promptForConfirmation(ctx, defaultBehavior: true) else {
+            guard ctx.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "swiftly installation has been cancelled")
             }
         }
@@ -180,7 +180,7 @@ struct Init: SwiftlyCommand {
         try Swiftly.currentPlatform.installSwiftlyBin(ctx)
 
         if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {
-            SwiftlyCore.print(ctx, "Creating shell environment file for the user...")
+            ctx.print("Creating shell environment file for the user...")
             var env = ""
             if shell.hasSuffix("fish") {
                 env = """
@@ -206,7 +206,7 @@ struct Init: SwiftlyCommand {
         }
 
         if !noModifyProfile {
-            SwiftlyCore.print(ctx, "Updating profile...")
+            ctx.print("Updating profile...")
 
             let userHome = ctx.mockedHomeDir ?? FileManager.default.homeDirectoryForCurrentUser
 
@@ -262,7 +262,7 @@ struct Init: SwiftlyCommand {
                 try Data(sourceLine.utf8).append(to: profileHome)
 
                 if !quietShellFollowup {
-                    SwiftlyCore.print(ctx, """
+                    ctx.print("""
                     To begin using installed swiftly from your current shell, first run the following command:
                         \(sourceLine)
 
@@ -272,7 +272,7 @@ struct Init: SwiftlyCommand {
 
             // Fish doesn't have path caching, so this might only be needed for bash/zsh
             if pathChanged && !quietShellFollowup && !shell.hasSuffix("fish") {
-                SwiftlyCore.print(ctx, """
+                ctx.print("""
                 Your shell caches items on your path for better performance. Swiftly has added
                 items to your path that may not get picked up right away. You can update your
                 shell's environment by running
@@ -285,7 +285,7 @@ struct Init: SwiftlyCommand {
             }
 
             if let postInstall {
-                SwiftlyCore.print(ctx, """
+                ctx.print("""
                 There are some dependencies that should be installed before using this toolchain.
                 You can run the following script as the system administrator (e.g. root) to prepare
                 your system:

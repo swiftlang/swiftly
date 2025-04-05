@@ -4,7 +4,7 @@ import SwiftlyCore
 @main
 public enum Proxy {
     static func main() async throws {
-        let ctx = SwiftlyCoreContext(httpClient: SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl()))
+        let ctx = SwiftlyCoreContext()
 
         do {
             let zero = CommandLine.arguments[0]
@@ -13,8 +13,6 @@ public enum Proxy {
             }
 
             guard binName != "swiftly" else {
-                let ctx = SwiftlyCoreContext(httpClient: SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl()))
-
                 // Treat this as a swiftly invocation, but first check that we are installed, bootstrapping
                 //  the installation process if we aren't.
                 let configResult = Result { try Config.load(ctx) }
@@ -70,10 +68,10 @@ public enum Proxy {
         } catch let terminated as RunProgramError {
             exit(terminated.exitCode)
         } catch let error as SwiftlyError {
-            SwiftlyCore.print(ctx, error.message)
+            ctx.print(error.message)
             exit(1)
         } catch {
-            SwiftlyCore.print(ctx, "\(error)")
+            ctx.print("\(error)")
             exit(1)
         }
     }

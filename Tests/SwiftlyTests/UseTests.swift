@@ -11,7 +11,7 @@ import Testing
     func useAndValidate(argument: String, expectedVersion: ToolchainVersion) async throws {
         try await SwiftlyTests.runCommand(Use.self, ["use", "-g", argument])
 
-        #expect(try Config.load(SwiftlyTests.ctx).inUse == expectedVersion)
+        #expect(try Config.load().inUse == expectedVersion)
     }
 
     /// Tests that the `use` command can switch between installed stable release toolchains.
@@ -167,12 +167,12 @@ import Testing
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: []) {
             try await SwiftlyTests.runCommand(Use.self, ["use", "-g", "latest"])
 
-            var config = try Config.load(SwiftlyTests.ctx)
+            var config = try Config.load()
             #expect(config.inUse == nil)
 
             try await SwiftlyTests.runCommand(Use.self, ["use", "-g", "5.6.0"])
 
-            config = try Config.load(SwiftlyTests.ctx)
+            config = try Config.load()
             #expect(config.inUse == nil)
         }
     }
@@ -194,7 +194,7 @@ import Testing
     /// Tests that the `use` command works with all the installed toolchains in this test harness.
     @Test func useAll() async throws {
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: SwiftlyTests.allToolchains) {
-            let config = try Config.load(SwiftlyTests.ctx)
+            let config = try Config.load()
 
             for toolchain in config.installedToolchains {
                 try await self.useAndValidate(

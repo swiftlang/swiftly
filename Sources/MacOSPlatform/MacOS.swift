@@ -39,7 +39,7 @@ public struct MacOS: Platform {
         // All system prerequisites are there for swiftly on macOS
     }
 
-    public func verifySystemPrerequisitesForInstall(httpClient _: SwiftlyHTTPClient, platformName _: String, version _: ToolchainVersion, requireSignatureValidation _: Bool) async throws -> String? {
+    public func verifySystemPrerequisitesForInstall(_: SwiftlyCoreContext, platformName _: String, version _: ToolchainVersion, requireSignatureValidation _: Bool) async throws -> String? {
         // All system prerequisites should be there for macOS
         nil
     }
@@ -54,12 +54,12 @@ public struct MacOS: Platform {
         }
 
         if ctx.mockedHomeDir == nil {
-            SwiftlyCore.print(ctx, "Installing package in user home directory...")
+            ctx.print("Installing package in user home directory...")
             try runProgram("installer", "-verbose", "-pkg", tmpFile.path, "-target", "CurrentUserHomeDirectory", quiet: !verbose)
         } else {
             // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
             //  the installer will not install to an arbitrary path, only a volume or user home directory.
-            SwiftlyCore.print(ctx, "Expanding pkg...")
+            ctx.print("Expanding pkg...")
             let tmpDir = self.getTempFilePath()
             let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent("\(version.identifier).xctoolchain", isDirectory: true)
             if !toolchainDir.fileExists() {
@@ -73,7 +73,7 @@ public struct MacOS: Platform {
                 payload = tmpDir.appendingPathComponent("\(version.identifier)-osx-package.pkg/Payload")
             }
 
-            SwiftlyCore.print(ctx, "Untarring pkg Payload...")
+            ctx.print("Untarring pkg Payload...")
             try runProgram("tar", "-C", toolchainDir.path, "-xvf", payload.path, quiet: !verbose)
         }
     }
@@ -88,7 +88,7 @@ public struct MacOS: Platform {
         if ctx.mockedHomeDir == nil {
             homeDir = FileManager.default.homeDirectoryForCurrentUser
 
-            SwiftlyCore.print(ctx, "Extracting the swiftly package...")
+            ctx.print("Extracting the swiftly package...")
             try runProgram("installer", "-pkg", archive.path, "-target", "CurrentUserHomeDirectory")
             try? runProgram("pkgutil", "--volume", homeDir.path, "--forget", "org.swift.swiftly")
         } else {
@@ -109,7 +109,7 @@ public struct MacOS: Platform {
                 throw SwiftlyError(message: "Payload file could not be found at \(tmpDir).")
             }
 
-            SwiftlyCore.print(ctx, "Extracting the swiftly package into \(installDir.path)...")
+            ctx.print("Extracting the swiftly package into \(installDir.path)...")
             try runProgram("tar", "-C", installDir.path, "-xvf", payload.path, quiet: false)
         }
 
@@ -117,7 +117,7 @@ public struct MacOS: Platform {
     }
 
     public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose: Bool) throws {
-        SwiftlyCore.print(ctx, "Uninstalling package in user home directory...")
+        ctx.print("Uninstalling package in user home directory...")
 
         let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent("\(toolchain.identifier).xctoolchain", isDirectory: true)
 

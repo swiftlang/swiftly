@@ -38,45 +38,56 @@ public struct SwiftlyCoreContext {
     /// The input probider to use, if any
     public var inputProvider: (any InputProvider)?
 
-    public init(httpClient: SwiftlyHTTPClient) {
-        self.httpClient = httpClient
+    public init() {
+        self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
         self.currentDirectory = URL.currentDirectory()
     }
 
-    public init(
-        mockedHomeDir: URL?,
-        httpClient: SwiftlyHTTPClient,
-        outputHandler: (any OutputHandler)?,
-        inputProvider: (any InputProvider)?
-    ) {
-        self.mockedHomeDir = mockedHomeDir
-        self.currentDirectory = mockedHomeDir ?? URL.currentDirectory()
-        self.httpClient = httpClient
-        self.outputHandler = outputHandler
-        self.inputProvider = inputProvider
-    }
-}
-
-/// Pass the provided string to the set output handler if any.
-/// If no output handler has been set, just print to stdout.
-public func print(_ ctx: SwiftlyCoreContext, _ string: String = "", terminator: String? = nil) {
-    guard let handler = ctx.outputHandler else {
-        if let terminator {
-            Swift.print(string, terminator: terminator)
-        } else {
-            Swift.print(string)
+    /// Pass the provided string to the set output handler if any.
+    /// If no output handler has been set, just print to stdout.
+    public func print(_ string: String = "", terminator: String? = nil) {
+        guard let handler = self.outputHandler else {
+            if let terminator {
+                Swift.print(string, terminator: terminator)
+            } else {
+                Swift.print(string)
+            }
+            return
         }
-        return
+        handler.handleOutputLine(string + (terminator ?? ""))
     }
-    handler.handleOutputLine(string + (terminator ?? ""))
-}
 
-public func readLine(_ ctx: SwiftlyCoreContext, prompt: String) -> String? {
-    print(prompt, terminator: ": \n")
-    guard let provider = ctx.inputProvider else {
-        return Swift.readLine(strippingNewline: true)
+    public func readLine(prompt: String) -> String? {
+        self.print(prompt, terminator: ": \n")
+        guard let provider = self.inputProvider else {
+            return Swift.readLine(strippingNewline: true)
+        }
+        return provider.readLine()
     }
-    return provider.readLine()
+
+    public func promptForConfirmation(defaultBehavior: Bool) -> Bool {
+        let options: String
+        if defaultBehavior {
+            options = "(Y/n)"
+        } else {
+            options = "(y/N)"
+        }
+
+        while true {
+            let answer = (self.readLine(prompt: "Proceed? \(options)") ?? (defaultBehavior ? "y" : "n")).lowercased()
+
+            guard ["y", "n", ""].contains(answer) else {
+                self.print("Please input either \"y\" or \"n\", or press ENTER to use the default.")
+                continue
+            }
+
+            if answer.isEmpty {
+                return defaultBehavior
+            } else {
+                return answer == "y"
+            }
+        }
+    }
 }
 
 #if arch(x86_64)

@@ -69,24 +69,24 @@ struct Uninstall: SwiftlyCommand {
         }
 
         guard !toolchains.isEmpty else {
-            SwiftlyCore.print(ctx, "No toolchains matched \"\(self.toolchain)\"")
+            ctx.print("No toolchains matched \"\(self.toolchain)\"")
             return
         }
 
         if !self.root.assumeYes {
-            SwiftlyCore.print(ctx, "The following toolchains will be uninstalled:")
+            ctx.print("The following toolchains will be uninstalled:")
 
             for toolchain in toolchains {
-                SwiftlyCore.print(ctx, "  \(toolchain)")
+                ctx.print("  \(toolchain)")
             }
 
-            guard SwiftlyCore.promptForConfirmation(ctx, defaultBehavior: true) else {
-                SwiftlyCore.print(ctx, "Aborting uninstall")
+            guard ctx.promptForConfirmation(defaultBehavior: true) else {
+                ctx.print("Aborting uninstall")
                 return
             }
         }
 
-        SwiftlyCore.print(ctx)
+        ctx.print()
 
         for toolchain in toolchains {
             var config = try Config.load(ctx)
@@ -120,12 +120,12 @@ struct Uninstall: SwiftlyCommand {
             try await Self.execute(ctx, toolchain, &config, verbose: self.root.verbose)
         }
 
-        SwiftlyCore.print(ctx)
-        SwiftlyCore.print(ctx, "\(toolchains.count) toolchain(s) successfully uninstalled")
+        ctx.print()
+        ctx.print("\(toolchains.count) toolchain(s) successfully uninstalled")
     }
 
     static func execute(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ config: inout Config, verbose: Bool) async throws {
-        SwiftlyCore.print(ctx, "Uninstalling \(toolchain)...", terminator: "")
+        ctx.print("Uninstalling \(toolchain)...", terminator: "")
         config.installedToolchains.remove(toolchain)
         // This is here to prevent the inUse from referencing a toolchain that is not installed
         if config.inUse == toolchain {
@@ -134,6 +134,6 @@ struct Uninstall: SwiftlyCommand {
         try config.save(ctx)
 
         try Swiftly.currentPlatform.uninstall(ctx, toolchain, verbose: verbose)
-        SwiftlyCore.print(ctx, "done")
+        ctx.print("done")
     }
 }

@@ -90,7 +90,7 @@ public protocol Platform {
     /// can run to install these dependencies, possibly with super user permissions.
     ///
     /// Throws if system does not meet the requirements to perform the install.
-    func verifySystemPrerequisitesForInstall(httpClient: SwiftlyHTTPClient, platformName: String, version: ToolchainVersion, requireSignatureValidation: Bool) async throws -> String?
+    func verifySystemPrerequisitesForInstall(_ ctx: SwiftlyCoreContext, platformName: String, version: ToolchainVersion, requireSignatureValidation: Bool) async throws -> String?
 
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.
@@ -311,7 +311,7 @@ extension Platform {
             return
         }
 
-        SwiftlyCore.print(ctx, "Installing swiftly in \(swiftlyHomeBin)...")
+        ctx.print("Installing swiftly in \(swiftlyHomeBin)...")
 
         if FileManager.default.fileExists(atPath: swiftlyHomeBin) {
             try FileManager.default.removeItem(atPath: swiftlyHomeBin)
@@ -321,7 +321,7 @@ extension Platform {
             try FileManager.default.moveItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
         } catch {
             try FileManager.default.copyItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
-            SwiftlyCore.print(ctx, "Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed.")
+            ctx.print("Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed.")
         }
     }
 

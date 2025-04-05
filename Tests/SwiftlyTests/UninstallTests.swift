@@ -233,7 +233,7 @@ import Testing
     @Test func uninstallLastToolchain() async throws {
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: [SwiftlyTests.oldStable], inUse: SwiftlyTests.oldStable) {
             _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", SwiftlyTests.oldStable.name], input: ["y"])
-            let config = try Config.load(SwiftlyTests.ctx)
+            let config = try Config.load()
             #expect(config.inUse == nil)
 
             // Ensure all symlinks have been cleaned up.
@@ -247,7 +247,7 @@ import Testing
     /// Tests that aborting an uninstall works correctly.
     @Test func uninstallAbort() async throws {
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: SwiftlyTests.allToolchains, inUse: SwiftlyTests.oldStable) {
-            let preConfig = try Config.load(SwiftlyTests.ctx)
+            let preConfig = try Config.load()
             _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", SwiftlyTests.oldStable.name], input: ["n"])
             try await SwiftlyTests.validateInstalledToolchains(
                 SwiftlyTests.allToolchains,
@@ -255,7 +255,7 @@ import Testing
             )
 
             // Ensure config did not change.
-            #expect(try Config.load(SwiftlyTests.ctx) == preConfig)
+            #expect(try Config.load() == preConfig)
         }
     }
 
@@ -286,10 +286,10 @@ import Testing
     @Test func uninstallNotInstalled() async throws {
         let toolchains = Set([SwiftlyTests.oldStable, SwiftlyTests.newStable, SwiftlyTests.newMainSnapshot, SwiftlyTests.oldReleaseSnapshot])
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: toolchains, inUse: SwiftlyTests.newMainSnapshot) {
-            var config = try Config.load(SwiftlyTests.ctx)
+            var config = try Config.load()
             config.inUse = SwiftlyTests.newMainSnapshot
             config.installedToolchains.remove(SwiftlyTests.newMainSnapshot)
-            try config.save(SwiftlyTests.ctx)
+            try config.save()
 
             try await SwiftlyTests.runCommand(Uninstall.self, ["uninstall", "-y", SwiftlyTests.newMainSnapshot.name])
             try await SwiftlyTests.validateInstalledToolchains(

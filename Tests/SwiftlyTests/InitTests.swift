@@ -32,7 +32,7 @@ import Testing
                 try await SwiftlyTests.runCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
 
                 // THEN: it creates a valid configuration at the correct version
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
                 #expect(SwiftlyCore.version == config.version)
 
                 // AND: it creates an environment script suited for the type of shell
@@ -72,9 +72,9 @@ import Testing
             try await SwiftlyTests.runCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
 
             // Add some customizations to files and directories
-            var config = try Config.load(SwiftlyTests.ctx)
+            var config = try Config.load()
             config.version = try SwiftlyVersion(parsing: "100.0.0")
-            try config.save(SwiftlyTests.ctx)
+            try config.save()
 
             try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt"))
             try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt"))
@@ -83,7 +83,7 @@ import Testing
             try await SwiftlyTests.runCommand(Init.self, ["init", "--assume-yes", "--skip-install", "--overwrite"])
 
             // THEN: everything is overwritten in initialization
-            config = try Config.load(SwiftlyTests.ctx)
+            config = try Config.load()
             #expect(SwiftlyCore.version == config.version)
             #expect(!Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt").fileExists())
             #expect(!Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt").fileExists())
@@ -98,9 +98,9 @@ import Testing
             try await SwiftlyTests.runCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
 
             // Add some customizations to files and directories
-            var config = try Config.load(SwiftlyTests.ctx)
+            var config = try Config.load()
             config.version = try SwiftlyVersion(parsing: "100.0.0")
-            try config.save(SwiftlyTests.ctx)
+            try config.save()
 
             try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt"))
             try Data("".utf8).append(to: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt"))
@@ -117,7 +117,7 @@ import Testing
             #expect(threw)
 
             // AND: files were left intact
-            config = try Config.load(SwiftlyTests.ctx)
+            config = try Config.load()
             #expect(try SwiftlyVersion(parsing: "100.0.0") == config.version)
             #expect(Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt").fileExists())
             #expect(Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt").fileExists())

@@ -32,12 +32,12 @@ struct SelfUpdate: SwiftlyCommand {
     }
 
     public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool) async throws -> SwiftlyVersion {
-        SwiftlyCore.print(ctx, "Checking for swiftly updates...")
+        ctx.print("Checking for swiftly updates...")
 
         let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
 
         guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
-            SwiftlyCore.print(ctx, "Already up to date.")
+            ctx.print("Already up to date.")
             return SwiftlyCore.version
         }
 
@@ -66,7 +66,7 @@ struct SelfUpdate: SwiftlyCommand {
 
         let version = try swiftlyRelease.swiftlyVersion
 
-        SwiftlyCore.print(ctx, "A new version is available: \(version)")
+        ctx.print("A new version is available: \(version)")
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
@@ -102,7 +102,7 @@ struct SelfUpdate: SwiftlyCommand {
         try await Swiftly.currentPlatform.verifySignature(ctx, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
         try Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
 
-        SwiftlyCore.print(ctx, "Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
+        ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
         return version
     }
 }

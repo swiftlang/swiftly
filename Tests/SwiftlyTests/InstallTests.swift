@@ -14,7 +14,7 @@ import Testing
             try await SwiftlyTests.withMockedToolchain {
                 try await SwiftlyTests.runCommand(Install.self, ["install", "latest", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
 
                 guard !config.installedToolchains.isEmpty else {
                     Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
@@ -47,7 +47,7 @@ import Testing
             try await SwiftlyTests.withMockedToolchain {
                 try await SwiftlyTests.runCommand(Install.self, ["install", "5.7", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
 
                 guard !config.installedToolchains.isEmpty else {
                     Issue.record("expected swiftly install latest to install release toolchain but installed toolchains is empty in config")
@@ -131,7 +131,7 @@ import Testing
             try await SwiftlyTests.withMockedToolchain {
                 try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
 
                 guard !config.installedToolchains.isEmpty else {
                     Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
@@ -162,7 +162,7 @@ import Testing
             try await SwiftlyTests.withMockedToolchain {
                 try await SwiftlyTests.runCommand(Install.self, ["install", "6.0-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
 
                 guard !config.installedToolchains.isEmpty else {
                     Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
@@ -214,7 +214,7 @@ import Testing
             try await SwiftlyTests.withMockedToolchain {
                 try await SwiftlyTests.runCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
-                let before = try Config.load(SwiftlyTests.ctx)
+                let before = try Config.load()
 
                 let startTime = Date()
                 try await SwiftlyTests.runCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
@@ -222,7 +222,7 @@ import Testing
                 // Assert that swiftly didn't attempt to download a new toolchain.
                 #expect(startTime.timeIntervalSinceNow.magnitude < 10)
 
-                let after = try Config.load(SwiftlyTests.ctx)
+                let after = try Config.load()
                 #expect(before == after)
             }
         }
@@ -255,7 +255,7 @@ import Testing
 
         try await SwiftlyTests.withTestHome {
             try await SwiftlyTests.withMockedToolchain {
-                let config = try Config.load(SwiftlyTests.ctx)
+                let config = try Config.load()
                 #expect(config.inUse == nil)
                 try await SwiftlyTests.validateInUse(expected: nil)
 

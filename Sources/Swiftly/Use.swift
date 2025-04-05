@@ -78,7 +78,7 @@ struct Use: SwiftlyCommand {
 
             if self.printLocation {
                 // Print the toolchain location and exit
-                SwiftlyCore.print(ctx, "\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion).path)")
+                ctx.print("\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion).path)")
                 return
             }
 
@@ -91,7 +91,7 @@ struct Use: SwiftlyCommand {
                 message += " (default)"
             }
 
-            SwiftlyCore.print(ctx, message)
+            ctx.print(message)
 
             return
         }
@@ -103,7 +103,7 @@ struct Use: SwiftlyCommand {
         let selector = try ToolchainSelector(parsing: toolchain)
 
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
-            SwiftlyCore.print(ctx, "No installed toolchains match \"\(toolchain)\"")
+            ctx.print("No installed toolchains match \"\(toolchain)\"")
             return
         }
 
@@ -123,10 +123,10 @@ struct Use: SwiftlyCommand {
             message = "The file `\(versionFile.path)` has been set to `\(toolchain)`"
         } else if let newVersionFile = findNewVersionFile(ctx), !globalDefault {
             if !assumeYes {
-                SwiftlyCore.print(ctx, "A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
+                ctx.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
 
-                guard SwiftlyCore.promptForConfirmation(ctx, defaultBehavior: true) else {
-                    SwiftlyCore.print(ctx, "Aborting setting in-use toolchain")
+                guard ctx.promptForConfirmation(defaultBehavior: true) else {
+                    ctx.print("Aborting setting in-use toolchain")
                     return
                 }
             }
@@ -144,7 +144,7 @@ struct Use: SwiftlyCommand {
             message += " (was \(selectedVersion.name))"
         }
 
-        SwiftlyCore.print(ctx, message)
+        ctx.print(message)
     }
 
     static func findNewVersionFile(_ ctx: SwiftlyCoreContext) -> URL? {

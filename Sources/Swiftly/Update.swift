@@ -87,27 +87,27 @@ struct Update: SwiftlyCommand {
 
         guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {
             if let toolchain = self.toolchain {
-                SwiftlyCore.print(ctx, "No installed toolchain matched \"\(toolchain)\"")
+                ctx.print("No installed toolchain matched \"\(toolchain)\"")
             } else {
-                SwiftlyCore.print(ctx, "No toolchains are currently installed")
+                ctx.print("No toolchains are currently installed")
             }
             return
         }
 
         guard let newToolchain = try await self.lookupNewToolchain(ctx, config, parameters) else {
-            SwiftlyCore.print(ctx, "\(parameters.oldToolchain) is already up to date")
+            ctx.print("\(parameters.oldToolchain) is already up to date")
             return
         }
 
         guard !config.installedToolchains.contains(newToolchain) else {
-            SwiftlyCore.print(ctx, "The newest version of \(parameters.oldToolchain) (\(newToolchain)) is already installed")
+            ctx.print("The newest version of \(parameters.oldToolchain) (\(newToolchain)) is already installed")
             return
         }
 
         if !self.root.assumeYes {
-            SwiftlyCore.print(ctx, "Update \(parameters.oldToolchain) -> \(newToolchain)?")
-            guard SwiftlyCore.promptForConfirmation(ctx, defaultBehavior: true) else {
-                SwiftlyCore.print(ctx, "Aborting")
+            ctx.print("Update \(parameters.oldToolchain) -> \(newToolchain)?")
+            guard ctx.promptForConfirmation(defaultBehavior: true) else {
+                ctx.print("Aborting")
                 return
             }
         }
@@ -123,7 +123,7 @@ struct Update: SwiftlyCommand {
         )
 
         try await Uninstall.execute(ctx, parameters.oldToolchain, &config, verbose: self.root.verbose)
-        SwiftlyCore.print(ctx, "Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
+        ctx.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
@@ -141,7 +141,7 @@ struct Update: SwiftlyCommand {
         }
 
         if pathChanged {
-            SwiftlyCore.print(ctx, """
+            ctx.print("""
             NOTE: Swiftly has updated some elements in your path and your shell may not yet be
             aware of the changes. You can update your shell's environment by running
 

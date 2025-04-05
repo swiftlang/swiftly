@@ -1,8 +1,36 @@
+import AsyncHTTPClient
+import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
 import Testing
 
 @Suite struct HTTPClientTests {
+    @Test func getSwiftOrgGPGKeys() async throws {
+        let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
+
+        let tmpFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        _ = FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
+        defer {
+            try? FileManager.default.removeItem(at: tmpFile)
+        }
+
+        let gpgKeysUrl = URL(string: "https://www.swift.org/keys/all-keys.asc")!
+
+        try await httpClient.downloadFile(url: gpgKeysUrl, to: tmpFile)
+
+#if os(Linux)
+        // With linux, we can ask gpg to try an import to see if the file is valid
+        // in a sandbox home directory to avoid contaminating the system
+        let gpgHome = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        try FileManager.default.createDirectory(atPath: gpgHome.path, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: gpgHome)
+        }
+
+        try Swiftly.currentPlatform.runProgram("gpg", "--import", tmpFile.path, quiet: false, env: ["GNUPGHOME": gpgHome.path])
+#endif
+    }
+
     @Test func getSwiftlyReleaseMetadataFromSwiftOrg() async throws {
         let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
         let currentRelease = try await httpClient.getCurrentSwiftlyRelease()
@@ -24,15 +52,9 @@ import Testing
             .debian12,
         ]
 
-        let newPlatforms: [PlatformDefinition] = [
-            .ubuntu2404,
-            .fedora39,
-            .debian12,
-        ]
-
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
-            .release(major: 6, minor: 0), // This is available in swift.org API
+            .release(major: 6, minor: 1), // This is available in swift.org API
         ]
 
         for arch in [Components.Schemas.Architecture.x8664, Components.Schemas.Architecture.aarch64] {
@@ -42,8 +64,6 @@ import Testing
                 let releases = try await httpClient.getReleaseToolchains(platform: platform, arch: arch, limit: 5)
                 // THEN: we get at least 1 release
                 #expect(1 <= releases.count)
-
-                if newPlatforms.contains(platform) { continue } // Newer distros don't have main snapshots yet
 
                 for branch in branches {
                     // GIVEN: we have a swiftly http client with swift.org metadata capability

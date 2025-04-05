@@ -136,7 +136,7 @@ import Testing
         for branch in branches {
             try await SwiftlyTests.withTestHome {
                 try await SwiftlyTests.withMockedToolchain {
-                    let date = branch == .main ? SwiftlyTests.oldMainSnapshot.asSnapshot!.date : SwiftlyTests.oldReleaseSnapshot.asSnapshot!.date
+                    let date = branch == .main ? ToolchainVersion.oldMainSnapshot.asSnapshot!.date : ToolchainVersion.oldReleaseSnapshot.asSnapshot!.date
                     try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
                     try await SwiftlyTests.runCommand(

@@ -7,23 +7,23 @@ import Testing
     static let homeName = "useTests"
 
     static let sortedReleaseToolchains: [ToolchainVersion] = [
-        SwiftlyTests.newStable,
-        SwiftlyTests.oldStableNewPatch,
-        SwiftlyTests.oldStable,
+        .newStable,
+        .oldStableNewPatch,
+        .oldStable,
     ]
 
     static let sortedSnapshotToolchains: [ToolchainVersion] = [
-        SwiftlyTests.newMainSnapshot,
-        SwiftlyTests.oldMainSnapshot,
-        SwiftlyTests.newReleaseSnapshot,
-        SwiftlyTests.oldReleaseSnapshot,
+        .newMainSnapshot,
+        .oldMainSnapshot,
+        .newReleaseSnapshot,
+        .oldReleaseSnapshot,
     ]
 
     /// Constructs a mock home directory with the toolchains listed above installed and runs the provided closure within
     /// the context of that home.
     func runListTest(f: () async throws -> Void) async throws {
         try await SwiftlyTests.withTestHome(name: Self.homeName) {
-            for toolchain in SwiftlyTests.allToolchains {
+            for toolchain in Set<ToolchainVersion>.allToolchains() {
                 try await SwiftlyTests.installMockedToolchain(toolchain: toolchain)
             }
 
@@ -44,7 +44,7 @@ import Testing
         let output = try await SwiftlyTests.runWithMockedIO(List.self, args)
 
         let parsedToolchains = output.compactMap { outputLine in
-            SwiftlyTests.allToolchains.first {
+            Set<ToolchainVersion>.allToolchains().first {
                 outputLine.contains(String(describing: $0))
             }
         }
@@ -73,13 +73,13 @@ import Testing
             var toolchains = try await self.runList(selector: "5")
             #expect(toolchains == Self.sortedReleaseToolchains)
 
-            var selector = "\(SwiftlyTests.newStable.asStableRelease!.major).\(SwiftlyTests.newStable.asStableRelease!.minor)"
+            var selector = "\(ToolchainVersion.newStable.asStableRelease!.major).\(ToolchainVersion.newStable.asStableRelease!.minor)"
             toolchains = try await self.runList(selector: selector)
-            #expect(toolchains == [SwiftlyTests.newStable])
+            #expect(toolchains == [ToolchainVersion.newStable])
 
-            selector = "\(SwiftlyTests.oldStable.asStableRelease!.major).\(SwiftlyTests.oldStable.asStableRelease!.minor)"
+            selector = "\(ToolchainVersion.oldStable.asStableRelease!.major).\(ToolchainVersion.oldStable.asStableRelease!.minor)"
             toolchains = try await self.runList(selector: selector)
-            #expect(toolchains == [SwiftlyTests.oldStableNewPatch, SwiftlyTests.oldStable])
+            #expect(toolchains == [ToolchainVersion.oldStableNewPatch, ToolchainVersion.oldStable])
 
             for toolchain in Self.sortedReleaseToolchains {
                 toolchains = try await self.runList(selector: toolchain.name)
@@ -96,11 +96,11 @@ import Testing
     @Test func listSnapshotToolchains() async throws {
         try await self.runListTest {
             var toolchains = try await self.runList(selector: "main-snapshot")
-            #expect(toolchains == [SwiftlyTests.newMainSnapshot, SwiftlyTests.oldMainSnapshot])
+            #expect(toolchains == [ToolchainVersion.newMainSnapshot, ToolchainVersion.oldMainSnapshot])
 
-            let snapshotBranch = SwiftlyTests.newReleaseSnapshot.asSnapshot!.branch
+            let snapshotBranch = ToolchainVersion.newReleaseSnapshot.asSnapshot!.branch
             toolchains = try await self.runList(selector: "\(snapshotBranch.major!).\(snapshotBranch.minor!)-snapshot")
-            #expect(toolchains == [SwiftlyTests.newReleaseSnapshot, SwiftlyTests.oldReleaseSnapshot])
+            #expect(toolchains == [ToolchainVersion.newReleaseSnapshot, ToolchainVersion.oldReleaseSnapshot])
 
             for toolchain in Self.sortedSnapshotToolchains {
                 toolchains = try await self.runList(selector: toolchain.name)
@@ -129,22 +129,22 @@ import Testing
         }
 
         try await self.runListTest {
-            for toolchain in SwiftlyTests.allToolchains {
+            for toolchain in Set<ToolchainVersion>.allToolchains() {
                 try await inUseTest(toolchain: toolchain, selector: nil)
                 try await inUseTest(toolchain: toolchain, selector: toolchain.name)
             }
 
-            let major = SwiftlyTests.oldStable.asStableRelease!.major
+            let major = ToolchainVersion.oldStable.asStableRelease!.major
             for toolchain in Self.sortedReleaseToolchains.filter({ $0.asStableRelease?.major == major }) {
                 try await inUseTest(toolchain: toolchain, selector: "\(major)")
             }
 
-            for toolchain in SwiftlyTests.allToolchains.filter({ $0.asSnapshot?.branch == .main }) {
+            for toolchain in Set<ToolchainVersion>.allToolchains().filter({ $0.asSnapshot?.branch == .main }) {
                 try await inUseTest(toolchain: toolchain, selector: "main-snapshot")
             }
 
-            let branch = SwiftlyTests.oldReleaseSnapshot.asSnapshot!.branch
-            let releaseSnapshots = SwiftlyTests.allToolchains.filter {
+            let branch = ToolchainVersion.oldReleaseSnapshot.asSnapshot!.branch
+            let releaseSnapshots = Set<ToolchainVersion>.allToolchains().filter {
                 $0.asSnapshot?.branch == branch
             }
             for toolchain in releaseSnapshots {

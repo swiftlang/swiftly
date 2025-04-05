@@ -10,17 +10,17 @@ import Testing
     @Test(.mockHomeToolchains()) func runSelection() async throws {
         // GIVEN: a set of installed toolchains
         // WHEN: invoking the run command with a selector argument for that toolchain
-        var output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", "swift", "--version", "+\(SwiftlyTests.newStable.name)"])
+        var output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", "swift", "--version", "+\(ToolchainVersion.newStable.name)"])
         // THEN: the output confirms that it ran with the selected toolchain
-        #expect(output.contains(SwiftlyTests.newStable.name))
+        #expect(output.contains(ToolchainVersion.newStable.name))
 
         // GIVEN: a set of installed toolchains and one is selected with a .swift-version file
         let versionFile = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".swift-version")
-        try SwiftlyTests.oldStable.name.write(to: versionFile, atomically: true, encoding: .utf8)
+        try ToolchainVersion.oldStable.name.write(to: versionFile, atomically: true, encoding: .utf8)
         // WHEN: invoking the run command without any selector arguments for toolchains
         output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", "swift", "--version"])
         // THEN: the output confirms that it ran with the selected toolchain
-        #expect(output.contains(SwiftlyTests.oldStable.name))
+        #expect(output.contains(ToolchainVersion.oldStable.name))
 
         // GIVEN: a set of installed toolchains
         // WHEN: invoking the run command with a selector argument for a toolchain that isn't installed

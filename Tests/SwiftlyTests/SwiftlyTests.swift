@@ -68,6 +68,28 @@ extension SwiftlyCoreContext {
     }
 }
 
+extension ToolchainVersion {
+    public static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
+    public static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
+    public static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
+    public static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2025-03-10")
+    public static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2025-03-14")
+    public static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 6, minor: 0), date: "2025-02-09")
+    public static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 6, minor: 0), date: "2025-02-11")
+}
+
+extension Set where Element == ToolchainVersion {
+    static func allToolchains() -> Set<ToolchainVersion> { [
+        .oldStable,
+        .oldStableNewPatch,
+        .newStable,
+        .oldMainSnapshot,
+        .newMainSnapshot,
+        .oldReleaseSnapshot,
+        .newReleaseSnapshot,
+    ] }
+}
+
 // Convenience test scoping traits
 
 struct TestHomeTrait: TestTrait, TestScoping {
@@ -89,7 +111,7 @@ extension Trait where Self == TestHomeTrait {
 
 struct MockHomeToolchainsTrait: TestTrait, TestScoping {
     var name: String = "testHome"
-    var toolchains: Set<ToolchainVersion> = SwiftlyTests.allToolchains
+    var toolchains: Set<ToolchainVersion> = .allToolchains()
 
     init(_ name: String, toolchains: Set<ToolchainVersion>) {
         self.name = name
@@ -105,7 +127,7 @@ struct MockHomeToolchainsTrait: TestTrait, TestScoping {
 
 extension Trait where Self == MockHomeToolchainsTrait {
     /// Run the test with this trait to get a mocked home directory with a predefined collection of toolchains already installed.
-    static func mockHomeToolchains(_ homeName: String = "testHome", toolchains: Set<ToolchainVersion> = SwiftlyTests.allToolchains) -> Self { Self(homeName, toolchains: toolchains) }
+    static func mockHomeToolchains(_ homeName: String = "testHome", toolchains: Set<ToolchainVersion> = .allToolchains()) -> Self { Self(homeName, toolchains: toolchains) }
 }
 
 struct TestHomeMockedToolchainTrait: TestTrait, TestScoping {
@@ -135,25 +157,6 @@ public enum SwiftlyTests {
         outputHandler: OutputHandlerFail(),
         inputProvider: InputProviderFail()
     )
-
-    // Below are some constants that can be used to write test cases.
-    public static let oldStable = ToolchainVersion(major: 5, minor: 6, patch: 0)
-    public static let oldStableNewPatch = ToolchainVersion(major: 5, minor: 6, patch: 3)
-    public static let newStable = ToolchainVersion(major: 5, minor: 7, patch: 0)
-    public static let oldMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2025-03-10")
-    public static let newMainSnapshot = ToolchainVersion(snapshotBranch: .main, date: "2025-03-14")
-    public static let oldReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 6, minor: 0), date: "2025-02-09")
-    public static let newReleaseSnapshot = ToolchainVersion(snapshotBranch: .release(major: 6, minor: 0), date: "2025-02-11")
-
-    static let allToolchains: Set<ToolchainVersion> = [
-        oldStable,
-        oldStableNewPatch,
-        newStable,
-        oldMainSnapshot,
-        newMainSnapshot,
-        oldReleaseSnapshot,
-        newReleaseSnapshot,
-    ]
 
     static func baseTestConfig() async throws -> Config {
         guard let pd = try? await Swiftly.currentPlatform.detectPlatform(Self.ctx, disableConfirmation: true, platform: nil) else {
@@ -515,9 +518,9 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         executables: [String]? = nil,
         latestSwiftlyVersion: SwiftlyVersion = SwiftlyCore.version,
         releaseToolchains: [ToolchainVersion.StableRelease] = [
-            SwiftlyTests.oldStable.asStableRelease!,
-            SwiftlyTests.newStable.asStableRelease!,
-            SwiftlyTests.oldStableNewPatch.asStableRelease!,
+            ToolchainVersion.oldStable.asStableRelease!,
+            ToolchainVersion.newStable.asStableRelease!,
+            ToolchainVersion.oldStableNewPatch.asStableRelease!,
             ToolchainVersion.StableRelease(major: 5, minor: 7, patch: 4), // Some tests look for a patch in the 5.7.x series larger than 5.0.3
             ToolchainVersion.StableRelease(major: 5, minor: 9, patch: 0), // Some tests try to update from 5.9.0
             ToolchainVersion.StableRelease(major: 5, minor: 9, patch: 1),
@@ -526,10 +529,10 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             ToolchainVersion.StableRelease(major: 6, minor: 0, patch: 2), // Some tests try to update from 6.0.1
         ],
         snapshotToolchains: [ToolchainVersion.Snapshot] = [
-            SwiftlyTests.oldMainSnapshot.asSnapshot!,
-            SwiftlyTests.newMainSnapshot.asSnapshot!,
-            SwiftlyTests.oldReleaseSnapshot.asSnapshot!,
-            SwiftlyTests.newReleaseSnapshot.asSnapshot!,
+            ToolchainVersion.oldMainSnapshot.asSnapshot!,
+            ToolchainVersion.newMainSnapshot.asSnapshot!,
+            ToolchainVersion.oldReleaseSnapshot.asSnapshot!,
+            ToolchainVersion.newReleaseSnapshot.asSnapshot!,
         ]
     ) {
         self.executables = executables ?? ["swift"]

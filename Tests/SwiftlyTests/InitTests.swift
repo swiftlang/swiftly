@@ -4,7 +4,7 @@ import Foundation
 import Testing
 
 @Suite struct InitTests {
-    @Test(.testHome) func initFresh() async throws {
+    @Test(.testHome()) func initFresh() async throws {
         // GIVEN: a fresh user account without Swiftly installed
         try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
 
@@ -62,7 +62,7 @@ import Testing
         }
     }
 
-    @Test(.testHome) func initOverwrite() async throws {
+    @Test(.testHome()) func initOverwrite() async throws {
         // GIVEN: a user account with swiftly already installed
         try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
 
@@ -86,7 +86,7 @@ import Testing
         #expect(!Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).appendingPathComponent("foo.txt").fileExists())
     }
 
-    @Test(.testHome) func initTwice() async throws {
+    @Test(.testHome()) func initTwice() async throws {
         // GIVEN: a user account with swiftly already installed
         try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
 

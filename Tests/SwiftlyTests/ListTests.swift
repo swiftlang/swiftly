@@ -154,7 +154,7 @@ import Testing
     }
 
     /// Tests that `list` properly handles the case where no toolchains have been installed yet.
-    @Test(.testHome) func listEmpty() async throws {
+    @Test(.testHome(Self.homeName)) func listEmpty() async throws {
         var toolchains = try await self.runList(selector: nil)
         #expect(toolchains == [])
 

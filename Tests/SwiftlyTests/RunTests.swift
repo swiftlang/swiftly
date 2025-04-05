@@ -7,7 +7,7 @@ import Testing
     static let homeName = "runTests"
 
     /// Tests that the `run` command can switch between installed toolchains.
-    @Test(.mockHomeAllToolchains) func runSelection() async throws {
+    @Test(.mockHomeToolchains()) func runSelection() async throws {
         // GIVEN: a set of installed toolchains
         // WHEN: invoking the run command with a selector argument for that toolchain
         var output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", "swift", "--version", "+\(SwiftlyTests.newStable.name)"])
@@ -34,7 +34,7 @@ import Testing
     }
 
     /// Tests the `run` command verifying that the environment is as expected
-    @Test(.mockHomeAllToolchains) func runEnvironment() async throws {
+    @Test(.mockHomeToolchains()) func runEnvironment() async throws {
         // The toolchains directory should be the fist entry on the path
         let output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $PATH"])
         #expect(output.count == 1)

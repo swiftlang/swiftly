@@ -71,8 +71,12 @@ extension SwiftlyCoreContext {
 // Convenience test scoping traits
 
 struct TestHomeTrait: TestTrait, TestScoping {
+    var name: String = "testHome"
+
+    init(_ name: String) { self.name = name }
+
     func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
-        try await SwiftlyTests.withTestHome {
+        try await SwiftlyTests.withTestHome(name: self.name) {
             try await function()
         }
     }
@@ -80,38 +84,37 @@ struct TestHomeTrait: TestTrait, TestScoping {
 
 extension Trait where Self == TestHomeTrait {
     /// Run the test with a test home directory.
-    static var testHome: Self { Self() }
+    static func testHome(_ name: String = "testHome") -> Self { Self(name) }
 }
 
-struct MockHomeAllToolchainsTrait: TestTrait, TestScoping {
+struct MockHomeToolchainsTrait: TestTrait, TestScoping {
+    var name: String = "testHome"
+    var toolchains: Set<ToolchainVersion> = SwiftlyTests.allToolchains
+
+    init(_ name: String, toolchains: Set<ToolchainVersion>) {
+        self.name = name
+        self.toolchains = toolchains
+    }
+
     func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
-        try await SwiftlyTests.withMockedHome(homeName: "testHome", toolchains: SwiftlyTests.allToolchains) {
+        try await SwiftlyTests.withMockedHome(homeName: self.name, toolchains: self.toolchains) {
             try await function()
         }
     }
 }
 
-extension Trait where Self == MockHomeAllToolchainsTrait {
+extension Trait where Self == MockHomeToolchainsTrait {
     /// Run the test with this trait to get a mocked home directory with a predefined collection of toolchains already installed.
-    static var mockHomeAllToolchains: Self { Self() }
-}
-
-struct MockHomeNoToolchainsTrait: TestTrait, TestScoping {
-    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
-        try await SwiftlyTests.withMockedHome(homeName: UseTests.homeName, toolchains: []) {
-            try await function()
-        }
-    }
-}
-
-extension Trait where Self == MockHomeNoToolchainsTrait {
-    /// Run the test with this trait to get a mocked home directory without any toolchains installed there yet.
-    static var mockHomeNoToolchains: Self { Self() }
+    static func mockHomeToolchains(_ homeName: String = "testHome", toolchains: Set<ToolchainVersion> = SwiftlyTests.allToolchains) -> Self { Self(homeName, toolchains: toolchains) }
 }
 
 struct TestHomeMockedToolchainTrait: TestTrait, TestScoping {
+    var name: String = "testHome"
+
+    init(_ name: String) { self.name = name }
+
     func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
-        try await SwiftlyTests.withTestHome {
+        try await SwiftlyTests.withTestHome(name: self.name) {
             try await SwiftlyTests.withMockedToolchain {
                 try await function()
             }
@@ -122,7 +125,7 @@ struct TestHomeMockedToolchainTrait: TestTrait, TestScoping {
 extension Trait where Self == TestHomeMockedToolchainTrait {
     /// Run the test with this trait to get a test home directory and a mocked
     /// toolchain can be installed by request, at any version.
-    static var testHomeMockedToolchain: Self { Self() }
+    static func testHomeMockedToolchain(_ name: String = "testHome") -> Self { Self(name) }
 }
 
 public enum SwiftlyTests {

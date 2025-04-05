@@ -17,7 +17,7 @@ import Testing
         return (mockedToolchainFile, version)
     }
 
-    @Test(.testHome) func install() async throws {
+    @Test(.testHome()) func install() async throws {
         // GIVEN: a toolchain has been downloaded
         var (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.7.1")
         // WHEN: the platform installs the toolchain
@@ -43,7 +43,7 @@ import Testing
         #expect(2 == toolchains.count)
     }
 
-    @Test(.testHome) func uninstall() async throws {
+    @Test(.testHome()) func uninstall() async throws {
         // GIVEN: toolchains have been downloaded, and installed
         var (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.8.0")
         try Swiftly.currentPlatform.install(SwiftlyTests.ctx, from: mockedToolchainFile, version: version, verbose: true)

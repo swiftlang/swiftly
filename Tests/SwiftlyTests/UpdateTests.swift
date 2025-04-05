@@ -5,7 +5,7 @@ import Testing
 
 @Suite struct UpdateTests {
     /// Verify updating the most up-to-date toolchain has no effect.
-    @Test(.testHomeMockedToolchain) func updateLatest() async throws {
+    @Test(.testHomeMockedToolchain()) func updateLatest() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: .latest)
 
         let beforeUpdateConfig = try Config.load()
@@ -20,7 +20,7 @@ import Testing
     }
 
     /// Verify that attempting to update when no toolchains are installed has no effect.
-    @Test(.testHomeMockedToolchain) func updateLatestWithNoToolchains() async throws {
+    @Test(.testHomeMockedToolchain()) func updateLatestWithNoToolchains() async throws {
         try await SwiftlyTests.runCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
         try await SwiftlyTests.validateInstalledToolchains(
@@ -30,7 +30,7 @@ import Testing
     }
 
     /// Verify that updating the latest installed toolchain updates it to the latest available toolchain.
-    @Test(.testHomeMockedToolchain) func updateLatestToLatest() async throws {
+    @Test(.testHomeMockedToolchain()) func updateLatestToLatest() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
         try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "latest", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
@@ -46,7 +46,7 @@ import Testing
 
     /// Verify that the latest installed toolchain for a given major version can be updated to the latest
     /// released minor version.
-    @Test(.testHomeMockedToolchain) func updateToLatestMinor() async throws {
+    @Test(.testHomeMockedToolchain()) func updateToLatestMinor() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
         try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
 
@@ -63,7 +63,7 @@ import Testing
     }
 
     /// Verify that a toolchain can be updated to the latest patch version of that toolchain's minor version.
-    @Test(.testHomeMockedToolchain) func updateToLatestPatch() async throws {
+    @Test(.testHomeMockedToolchain()) func updateToLatestPatch() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: "5.9.0")
 
         try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5.9.0", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
@@ -83,7 +83,7 @@ import Testing
 
     /// Verifies that updating the currently global default toolchain can be updated, and that after update the new toolchain
     /// will be the global default instead.
-    @Test(.testHomeMockedToolchain) func updateGlobalDefault() async throws {
+    @Test(.testHomeMockedToolchain()) func updateGlobalDefault() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: "6.0.0")
 
         try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
@@ -105,7 +105,7 @@ import Testing
 
     /// Verifies that updating the currently in-use toolchain can be updated, and that after update the new toolchain
     /// will be in-use with the swift version file updated.
-    @Test(.testHomeMockedToolchain) func updateInUse() async throws {
+    @Test(.testHomeMockedToolchain()) func updateInUse() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: "6.0.0")
 
         let versionFile = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".swift-version")
@@ -159,7 +159,7 @@ import Testing
     }
 
     /// Verify that the latest of all the matching release toolchains is updated.
-    @Test(.testHomeMockedToolchain) func updateSelectsLatestMatchingStableRelease() async throws {
+    @Test(.testHomeMockedToolchain()) func updateSelectsLatestMatchingStableRelease() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: "6.0.1")
         try await SwiftlyTests.installMockedToolchain(selector: "6.0.0")
 

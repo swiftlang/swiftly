@@ -123,47 +123,32 @@ public class HTTPRequestExecutorImpl: HTTPRequestExecutor {
         try await self.httpClient.execute(request, timeout: timeout)
     }
 
-    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(60))
+    private func client() throws -> Client {
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
+        let transport: ClientTransport
 
-        let client = Client(
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(30))
+        transport = AsyncHTTPClientTransport(configuration: config)
+
+        return Client(
             serverURL: try Servers.Server1.url(),
-            transport: AsyncHTTPClientTransport(configuration: config),
+            transport: transport,
             middlewares: [swiftlyUserAgent]
         )
+    }
 
-        let response = try await client.getCurrentSwiftlyRelease()
+    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
+        let response = try await self.client().getCurrentSwiftlyRelease()
         return try response.ok.body.json
     }
 
     public func getReleaseToolchains() async throws -> [Components.Schemas.Release] {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(60))
-        let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
-
-        let client = Client(
-            serverURL: try Servers.Server1.url(),
-            transport: AsyncHTTPClientTransport(configuration: config),
-            middlewares: [swiftlyUserAgent]
-        )
-
-        let response = try await client.listReleases()
-
+        let response = try await self.client().listReleases()
         return try response.ok.body.json
     }
 
     public func getSnapshotToolchains(branch: Components.Schemas.SourceBranch, platform: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(60))
-        let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
-
-        let client = Client(
-            serverURL: try Servers.Server1.url(),
-            transport: AsyncHTTPClientTransport(configuration: config),
-            middlewares: [swiftlyUserAgent]
-        )
-
-        let response = try await client.listDevToolchains(.init(path: .init(branch: branch, platform: platform)))
-
+        let response = try await self.client().listDevToolchains(.init(path: .init(branch: branch, platform: platform)))
         return try response.ok.body.json
     }
 }
@@ -299,11 +284,6 @@ public struct SwiftlyHTTPClient {
 
     public init(httpRequestExecutor: HTTPRequestExecutor) {
         self.httpRequestExecutor = httpRequestExecutor
-    }
-
-    private struct Response {
-        let status: HTTPResponseStatus
-        let buffer: ByteBuffer
     }
 
     public struct JSONNotFoundError: LocalizedError {

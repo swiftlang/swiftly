@@ -361,6 +361,9 @@ public struct Linux: Platform {
         }
 
         let tmpDir = self.getTempFilePath()
+        defer {
+            try? FileManager.default.removeItem(at: tmpDir)
+        }
         try FileManager.default.createDirectory(atPath: tmpDir.path, withIntermediateDirectories: true)
 
         ctx.print("Extracting new swiftly...")

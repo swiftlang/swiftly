@@ -4,7 +4,7 @@ import Foundation
 import Testing
 
 @Suite struct PlatformTests {
-    func mockToolchainDownload(version: String) async throws -> (URL, ToolchainVersion) {
+    func mockToolchainDownload(version: String) async throws -> (URL, ToolchainVersion, URL) {
         let mockDownloader = MockToolchainDownloader(executables: ["swift"])
         let version = try! ToolchainVersion(parsing: version)
         let ext = Swiftly.currentPlatform.toolchainFileExtension
@@ -14,12 +14,19 @@ import Testing
         let mockedToolchain = try mockDownloader.makeMockedToolchain(toolchain: version, name: tmpDir.path)
         try mockedToolchain.write(to: mockedToolchainFile)
 
-        return (mockedToolchainFile, version)
+        return (mockedToolchainFile, version, tmpDir)
     }
 
     @Test(.testHome()) func install() async throws {
         // GIVEN: a toolchain has been downloaded
-        var (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.7.1")
+        var (mockedToolchainFile, version, tmpDir) = try await self.mockToolchainDownload(version: "5.7.1")
+        var cleanup = [tmpDir]
+        defer {
+            for dir in cleanup {
+                try? FileManager.default.removeItem(at: dir)
+            }
+        }
+
         // WHEN: the platform installs the toolchain
         try Swiftly.currentPlatform.install(SwiftlyTests.ctx, from: mockedToolchainFile, version: version, verbose: true)
         // THEN: the toolchain is extracted in the toolchains directory
@@ -27,7 +34,8 @@ import Testing
         #expect(1 == toolchains.count)
 
         // GIVEN: a second toolchain has been downloaded
-        (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.8.0")
+        (mockedToolchainFile, version, tmpDir) = try await self.mockToolchainDownload(version: "5.8.0")
+        cleanup += [tmpDir]
         // WHEN: the platform installs the toolchain
         try Swiftly.currentPlatform.install(SwiftlyTests.ctx, from: mockedToolchainFile, version: version, verbose: true)
         // THEN: the toolchain is added to the toolchains directory
@@ -35,7 +43,8 @@ import Testing
         #expect(2 == toolchains.count)
 
         // GIVEN: an identical toolchain has been downloaded
-        (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.8.0")
+        (mockedToolchainFile, version, tmpDir) = try await self.mockToolchainDownload(version: "5.8.0")
+        cleanup += [tmpDir]
         // WHEN: the platform installs the toolchain
         try Swiftly.currentPlatform.install(SwiftlyTests.ctx, from: mockedToolchainFile, version: version, verbose: true)
         // THEN: the toolchains directory remains the same
@@ -45,9 +54,16 @@ import Testing
 
     @Test(.testHome()) func uninstall() async throws {
         // GIVEN: toolchains have been downloaded, and installed
-        var (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.8.0")
+        var (mockedToolchainFile, version, tmpDir) = try await self.mockToolchainDownload(version: "5.8.0")
+        var cleanup = [tmpDir]
+        defer {
+            for dir in cleanup {
+                try? FileManager.default.removeItem(at: dir)
+            }
+        }
         try Swiftly.currentPlatform.install(SwiftlyTests.ctx, from: mockedToolchainFile, version: version, verbose: true)
-        (mockedToolchainFile, version) = try await self.mockToolchainDownload(version: "5.6.3")
+        (mockedToolchainFile, version, tmpDir) = try await self.mockToolchainDownload(version: "5.6.3")
+        cleanup += [tmpDir]
         try Swiftly.currentPlatform.install(SwiftlyTests.ctx, from: mockedToolchainFile, version: version, verbose: true)
         // WHEN: one of the toolchains is uninstalled
         try Swiftly.currentPlatform.uninstall(SwiftlyTests.ctx, version, verbose: true)

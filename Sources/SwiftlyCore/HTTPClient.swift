@@ -124,7 +124,7 @@ public class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     }
 
     public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(45))
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(60))
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
 
         let client = Client(
@@ -138,7 +138,7 @@ public class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     }
 
     public func getReleaseToolchains() async throws -> [Components.Schemas.Release] {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(45))
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(60))
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
 
         let client = Client(
@@ -153,7 +153,7 @@ public class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     }
 
     public func getSnapshotToolchains(branch: Components.Schemas.SourceBranch, platform: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
-        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(45))
+        let config = AsyncHTTPClientTransport.Configuration(client: self.httpClient, timeout: .seconds(60))
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
 
         let client = Client(
@@ -457,7 +457,7 @@ public struct SwiftlyHTTPClient {
         }
 
         let request = makeRequest(url: url.absoluteString)
-        let response = try await self.httpRequestExecutor.execute(request, timeout: .seconds(45))
+        let response = try await self.httpRequestExecutor.execute(request, timeout: .seconds(60))
 
         switch response.status {
         case .ok:

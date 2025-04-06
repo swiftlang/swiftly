@@ -67,22 +67,22 @@ jobs:
           retention-days: 1
 
   releasetest:
-    name: Test Release / ${{matrix.shell-pkg}}
+    name: Test Release / ${{matrix.shell.pkg}}
     needs: releasebuildcheck
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         shell: [
-          {"shell-pkg": "bash", "shell-bin": "/bin/bash"},
-          {"shell-pkg": "zsh", "shell-bin": "/bin/zsh"},
-          {"shell-pkg": "fish", "shell-bin": "/bin/fish"}
+          {"pkg": "bash", "bin": "/bin/bash"},
+          {"pkg": "zsh", "bin": "/bin/zsh"},
+          {"pkg": "fish", "bin": "/bin/fish"}
         ]
     container:
       image: "ubuntu:24.04"
     steps:
       - name: Prepare System
-        run: apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install ca-certificates gpg tzdata ${{matrix.shell-pkg}} && chsh -s ${{matrix.shell-bin}}
+        run: apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install ca-certificates gpg tzdata ${{matrix.shell.pkg}} && chsh -s ${{matrix.shell.bin}}
       - name: Download Release
         uses: actions/download-artifact@v4
         with:

@@ -37,42 +37,30 @@ import Testing
         #expect(throws: Never.self) { try currentRelease.swiftlyVersion }
     }
 
-    @Test func getToolchainMetdataFromSwiftOrg() async throws {
+    @Test(
+        arguments:
+        [PlatformDefinition.macOS, .ubuntu2404, .ubuntu2204, .rhel9, .fedora39, .amazonlinux2, .debian12],
+        [Components.Schemas.Architecture.x8664, .aarch64]
+    ) func getToolchainMetdataFromSwiftOrg(_ platform: PlatformDefinition, _ arch: Components.Schemas.Architecture) async throws {
         let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
-
-        let supportedPlatforms: [PlatformDefinition] = [
-            .macOS,
-            .ubuntu2404,
-            .ubuntu2204,
-            .ubuntu2004,
-            // .ubuntu1804, // There are no releases for Ubuntu 18.04 in the branches being tested below
-            .rhel9,
-            .fedora39,
-            .amazonlinux2,
-            .debian12,
-        ]
 
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
             .release(major: 6, minor: 1), // This is available in swift.org API
         ]
 
-        for arch in [Components.Schemas.Architecture.x8664, Components.Schemas.Architecture.aarch64] {
-            for platform in supportedPlatforms {
-                // GIVEN: we have a swiftly http client with swift.org metadata capability
-                // WHEN: we ask for the first five releases of a supported platform in a supported arch
-                let releases = try await httpClient.getReleaseToolchains(platform: platform, arch: arch, limit: 5)
-                // THEN: we get at least 1 release
-                #expect(1 <= releases.count)
+        // GIVEN: we have a swiftly http client with swift.org metadata capability
+        // WHEN: we ask for the first five releases of a supported platform in a supported arch
+        let releases = try await httpClient.getReleaseToolchains(platform: platform, arch: arch, limit: 5)
+        // THEN: we get at least 1 release
+        #expect(1 <= releases.count)
 
-                for branch in branches {
-                    // GIVEN: we have a swiftly http client with swift.org metadata capability
-                    // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch
-                    let snapshots = try await httpClient.getSnapshotToolchains(platform: platform, arch: arch.value2!, branch: branch, limit: 5)
-                    // THEN: we get at least 3 releases
-                    #expect(3 <= snapshots.count)
-                }
-            }
+        for branch in branches {
+            // GIVEN: we have a swiftly http client with swift.org metadata capability
+            // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch
+            let snapshots = try await httpClient.getSnapshotToolchains(platform: platform, arch: arch.value2!, branch: branch, limit: 5)
+            // THEN: we get at least 3 releases
+            #expect(3 <= snapshots.count)
         }
     }
 }

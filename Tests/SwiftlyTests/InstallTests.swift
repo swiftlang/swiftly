@@ -191,21 +191,51 @@ import Testing
     }
 
     /// Tests that attempting to install stable releases that are already installed doesn't result in an error.
-    @Test func installDuplicateReleases() async throws {
-        try await self.duplicateTest("5.8.0")
-        try await self.duplicateTest("latest")
+    @Test(.testHomeMockedToolchain(), arguments: ["5.8.0", "latest"]) func installDuplicateReleases(_ installVersion: String) async throws {
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+
+        let before = try Config.load()
+
+        let startTime = Date()
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+
+        // Assert that swiftly didn't attempt to download a new toolchain.
+        #expect(startTime.timeIntervalSinceNow.magnitude < 10)
+
+        let after = try Config.load()
+        #expect(before == after)
     }
 
     /// Tests that attempting to install main snapshots that are already installed doesn't result in an error.
-    @Test func installDuplicateMainSnapshots() async throws {
-        try await self.duplicateTest("main-snapshot-2023-04-01")
-        try await self.duplicateTest("main-snapshot")
+    @Test(.testHomeMockedToolchain(), arguments: ["main-snapshot-2023-04-01", "main-snapshot"]) func installDuplicateMainSnapshots(_ installVersion: String) async throws {
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+
+        let before = try Config.load()
+
+        let startTime = Date()
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+
+        // Assert that swiftly didn't attempt to download a new toolchain.
+        #expect(startTime.timeIntervalSinceNow.magnitude < 10)
+
+        let after = try Config.load()
+        #expect(before == after)
     }
 
     /// Tests that attempting to install release snapshots that are already installed doesn't result in an error.
-    @Test func installDuplicateReleaseSnapshots() async throws {
-        try await self.duplicateTest("6.0-snapshot-2024-06-18")
-        try await self.duplicateTest("6.0-snapshot")
+    @Test(.testHomeMockedToolchain(), arguments: ["6.0-snapshot-2024-06-18", "6.0-snapshot"]) func installDuplicateReleaseSnapshots(_ installVersion: String) async throws {
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+
+        let before = try Config.load()
+
+        let startTime = Date()
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+
+        // Assert that swiftly didn't attempt to download a new toolchain.
+        #expect(startTime.timeIntervalSinceNow.magnitude < 10)
+
+        let after = try Config.load()
+        #expect(before == after)
     }
 
     /// Verify that the installed toolchain will be used if no toolchains currently are installed.

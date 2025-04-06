@@ -189,8 +189,8 @@ import Testing
     @Test func printInUse() async throws {
         let toolchains = [
             ToolchainVersion.newStable,
-            ToolchainVersion.newMainSnapshot,
-            ToolchainVersion.newReleaseSnapshot,
+            .newMainSnapshot,
+            .newReleaseSnapshot,
         ]
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: Set(toolchains)) {
             for toolchain in toolchains {
@@ -211,8 +211,8 @@ import Testing
     @Test func swiftVersionFile() async throws {
         let toolchains = [
             ToolchainVersion.newStable,
-            ToolchainVersion.newMainSnapshot,
-            ToolchainVersion.newReleaseSnapshot,
+            .newMainSnapshot,
+            .newReleaseSnapshot,
         ]
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: Set(toolchains)) {
             let versionFile = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".swift-version")

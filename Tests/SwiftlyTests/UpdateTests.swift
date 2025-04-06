@@ -127,35 +127,30 @@ import Testing
     }
 
     /// Verifies that snapshots, both from the main branch and from development branches, can be updated.
-    @Test func updateSnapshot() async throws {
-        let branches: [ToolchainVersion.Snapshot.Branch] = [
-            .main,
+    @Test(
+        .testHomeMockedToolchain(),
+        arguments: [
+            ToolchainVersion.Snapshot.Branch.main,
             .release(major: 6, minor: 0),
         ]
+    ) func updateSnapshot(_ branch: ToolchainVersion.Snapshot.Branch) async throws {
+        let date = branch == .main ? ToolchainVersion.oldMainSnapshot.asSnapshot!.date : ToolchainVersion.oldReleaseSnapshot.asSnapshot!.date
+        try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
-        for branch in branches {
-            try await SwiftlyTests.withTestHome {
-                try await SwiftlyTests.withMockedToolchain {
-                    let date = branch == .main ? ToolchainVersion.oldMainSnapshot.asSnapshot!.date : ToolchainVersion.oldReleaseSnapshot.asSnapshot!.date
-                    try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
+        try await SwiftlyTests.runCommand(
+            Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
+        )
 
-                    try await SwiftlyTests.runCommand(
-                        Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
-                    )
+        let config = try Config.load()
+        let inUse = config.inUse!.asSnapshot!
+        #expect(inUse > .init(branch: branch, date: date))
+        #expect(inUse.branch == branch)
+        #expect(inUse.date > date)
 
-                    let config = try Config.load()
-                    let inUse = config.inUse!.asSnapshot!
-                    #expect(inUse > .init(branch: branch, date: date))
-                    #expect(inUse.branch == branch)
-                    #expect(inUse.date > date)
-
-                    try await SwiftlyTests.validateInstalledToolchains(
-                        [config.inUse!],
-                        description: "update should work with snapshots"
-                    )
-                }
-            }
-        }
+        try await SwiftlyTests.validateInstalledToolchains(
+            [config.inUse!],
+            description: "update should work with snapshots"
+        )
     }
 
     /// Verify that the latest of all the matching release toolchains is updated.
@@ -178,34 +173,31 @@ import Testing
     }
 
     /// Verify that the latest of all the matching snapshot toolchains is updated.
-    @Test func updateSelectsLatestMatchingSnapshotRelease() async throws {
-        let branches: [ToolchainVersion.Snapshot.Branch] = [
-            .main,
+    @Test(
+        .testHomeMockedToolchain(),
+        arguments: [
+            ToolchainVersion.Snapshot.Branch.main,
             .release(major: 6, minor: 0),
         ]
+    ) func updateSelectsLatestMatchingSnapshotRelease(_ branch: ToolchainVersion.Snapshot.Branch) async throws {
+        try await SwiftlyTests.withMockedToolchain {
+            try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-19"))
+            try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-18"))
 
-        for branch in branches {
-            try await SwiftlyTests.withTestHome {
-                try await SwiftlyTests.withMockedToolchain {
-                    try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-19"))
-                    try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-18"))
+            try await SwiftlyTests.runCommand(
+                Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
+            )
 
-                    try await SwiftlyTests.runCommand(
-                        Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"]
-                    )
+            let config = try Config.load()
+            let inUse = config.inUse!.asSnapshot!
 
-                    let config = try Config.load()
-                    let inUse = config.inUse!.asSnapshot!
+            #expect(inUse.branch == branch)
+            #expect(inUse.date > "2024-06-18")
 
-                    #expect(inUse.branch == branch)
-                    #expect(inUse.date > "2024-06-18")
-
-                    try await SwiftlyTests.validateInstalledToolchains(
-                        [config.inUse!, .init(snapshotBranch: branch, date: "2024-06-18")],
-                        description: "update with ambiguous selector should update the latest matching toolchain"
-                    )
-                }
-            }
+            try await SwiftlyTests.validateInstalledToolchains(
+                [config.inUse!, .init(snapshotBranch: branch, date: "2024-06-18")],
+                description: "update with ambiguous selector should update the latest matching toolchain"
+            )
         }
     }
 }

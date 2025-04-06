@@ -237,18 +237,16 @@ import Testing
     }
 
     /// Tests that aborting an uninstall works correctly.
-    @Test func uninstallAbort() async throws {
-        try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: .allToolchains(), inUse: .oldStable) {
-            let preConfig = try Config.load()
-            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["n"])
-            try await SwiftlyTests.validateInstalledToolchains(
-                .allToolchains(),
-                description: "abort uninstall"
-            )
+    @Test(.mockHomeToolchains(Self.homeName, toolchains: .allToolchains(), inUse: .oldStable)) func uninstallAbort() async throws {
+        let preConfig = try Config.load()
+        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["n"])
+        try await SwiftlyTests.validateInstalledToolchains(
+            .allToolchains(),
+            description: "abort uninstall"
+        )
 
-            // Ensure config did not change.
-            #expect(try Config.load() == preConfig)
-        }
+        // Ensure config did not change.
+        #expect(try Config.load() == preConfig)
     }
 
     /// Tests that providing the `-y` argument skips the confirmation prompt.

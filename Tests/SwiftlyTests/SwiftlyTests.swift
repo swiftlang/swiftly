@@ -112,14 +112,16 @@ extension Trait where Self == TestHomeTrait {
 struct MockHomeToolchainsTrait: TestTrait, TestScoping {
     var name: String = "testHome"
     var toolchains: Set<ToolchainVersion> = .allToolchains()
+    var inUse: ToolchainVersion?
 
-    init(_ name: String, toolchains: Set<ToolchainVersion>) {
+    init(_ name: String, toolchains: Set<ToolchainVersion>, inUse: ToolchainVersion?) {
         self.name = name
         self.toolchains = toolchains
+        self.inUse = inUse
     }
 
     func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
-        try await SwiftlyTests.withMockedHome(homeName: self.name, toolchains: self.toolchains) {
+        try await SwiftlyTests.withMockedHome(homeName: self.name, toolchains: self.toolchains, inUse: self.inUse) {
             try await function()
         }
     }
@@ -127,7 +129,7 @@ struct MockHomeToolchainsTrait: TestTrait, TestScoping {
 
 extension Trait where Self == MockHomeToolchainsTrait {
     /// Run the test with this trait to get a mocked home directory with a predefined collection of toolchains already installed.
-    static func mockHomeToolchains(_ homeName: String = "testHome", toolchains: Set<ToolchainVersion> = .allToolchains()) -> Self { Self(homeName, toolchains: toolchains) }
+    static func mockHomeToolchains(_ homeName: String = "testHome", toolchains: Set<ToolchainVersion> = .allToolchains(), inUse: ToolchainVersion? = nil) -> Self { Self(homeName, toolchains: toolchains, inUse: inUse) }
 }
 
 struct TestHomeMockedToolchainTrait: TestTrait, TestScoping {
@@ -146,7 +148,7 @@ struct TestHomeMockedToolchainTrait: TestTrait, TestScoping {
 
 extension Trait where Self == TestHomeMockedToolchainTrait {
     /// Run the test with this trait to get a test home directory and a mocked
-    /// toolchain can be installed by request, at any version.
+    /// toolchain.
     static func testHomeMockedToolchain(_ name: String = "testHome") -> Self { Self(name) }
 }
 

@@ -4,12 +4,11 @@ import Foundation
 import Testing
 
 @Suite struct InitTests {
-    @Test(.testHome()) func initFresh() async throws {
-        // GIVEN: a fresh user account without Swiftly installed
+    @Test(.testHome(), arguments: ["/bin/bash", "/bin/zsh", "/bin/fish"]) func initFresh(_ shell: String) async throws {
+        // GIVEN: a fresh user account without swiftly installed
         try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
 
         // AND: the user is using the bash shell
-        let shell = "/bin/bash"
         var ctx = SwiftlyTests.ctx
         ctx.mockedShell = shell
 

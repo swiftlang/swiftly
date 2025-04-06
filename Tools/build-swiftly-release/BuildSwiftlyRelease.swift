@@ -103,7 +103,7 @@ public func runProgramOutput(_ program: String, _ args: String...) async throws 
         throw Error(message: "\(args.first!) exited with non-zero status: \(process.terminationStatus)")
     }
 
-    if let outData = outData {
+    if let outData {
         return String(data: outData, encoding: .utf8)
     } else {
         return nil
@@ -203,7 +203,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
             if FileManager.default.fileExists(atPath: svFile.path) {
                 let selector = try? String(contentsOf: svFile, encoding: .utf8)
-                if let selector = selector {
+                if let selector {
                     return selector.replacingOccurrences(of: "\n", with: "")
                 }
                 return selector
@@ -220,8 +220,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             return try await self.assertTool("swift", message: "Please install swift and make sure that it is added to your path.")
         }
 
-        guard let requiredSwiftVersion = try? self.findSwiftVersion() else {
+        guard var requiredSwiftVersion = try? self.findSwiftVersion() else {
             throw Error(message: "Unable to determine the required swift version for this version of swiftly. Please make sure that you `cd <swiftly_git_dir>` and there is a .swift-version file there.")
+        }
+
+        if requiredSwiftVersion.hasSuffix(".0") {
+            requiredSwiftVersion = String(requiredSwiftVersion.dropLast(2))
         }
 
         let swift = try await self.assertTool("swift", message: "Please install swift \(requiredSwiftVersion) and make sure that it is added to your path.")
@@ -287,7 +291,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? FileManager.default.createDirectory(atPath: pkgConfigPath, withIntermediateDirectories: true)
 
         try? FileManager.default.removeItem(atPath: libArchivePath)
-        try runProgram(curl, "-o", "\(buildCheckoutsDir + "/libarchive-\(libArchiveVersion).tar.gz")", "--remote-name", "--location", "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
+        try runProgram(curl, "-L", "-o", "\(buildCheckoutsDir + "/libarchive-\(libArchiveVersion).tar.gz")", "--remote-name", "--location", "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
         let libArchiveTarShaActual = try await runProgramOutput(sha256sum, "\(buildCheckoutsDir)/libarchive-\(libArchiveVersion).tar.gz")
         guard let libArchiveTarShaActual, libArchiveTarShaActual.starts(with: libArchiveTarSha) else {
             let shaActual = libArchiveTarShaActual ?? "none"
@@ -298,7 +302,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let cwd = FileManager.default.currentDirectoryPath
         FileManager.default.changeCurrentDirectoryPath(libArchivePath)
 
-        let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.\\d+) ")
+        let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.?\\d*) ")
+
         let swiftVerOutput = (try await runProgramOutput(swift, "--version")) ?? ""
         guard let swiftVerMatch = try swiftVerRegex.firstMatch(in: swiftVerOutput) else {
             throw Error(message: "Unable to detect swift version")

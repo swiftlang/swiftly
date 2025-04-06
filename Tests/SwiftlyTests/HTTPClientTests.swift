@@ -38,6 +38,7 @@ import Testing
     }
 
     @Test(
+        .serialized,
         arguments:
         [PlatformDefinition.macOS, .ubuntu2404, .ubuntu2204, .rhel9, .fedora39, .amazonlinux2, .debian12],
         [Components.Schemas.Architecture.x8664, .aarch64]

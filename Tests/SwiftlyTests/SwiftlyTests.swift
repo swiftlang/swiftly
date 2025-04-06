@@ -229,7 +229,7 @@ public enum SwiftlyTests {
         let testHome = Self.getTestHomePath(name: name)
 
         defer {
-            try? testHome.deleteIfExists()
+            try? FileManager.default.removeItem(atPath: testHome.path)
         }
 
         let ctx = SwiftlyCoreContext(
@@ -242,6 +242,12 @@ public enum SwiftlyTests {
         for dir in Swiftly.requiredDirectories(ctx) {
             try dir.deleteIfExists()
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
+        }
+
+        defer {
+            for dir in Swiftly.requiredDirectories(ctx) {
+                try? FileManager.default.removeItem(at: dir)
+            }
         }
 
         let config = try await Self.baseTestConfig()
@@ -272,6 +278,10 @@ public enum SwiftlyTests {
                     at: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx),
                     withIntermediateDirectories: true
                 )
+
+                defer {
+                    try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
+                }
             }
 
             try await f()
@@ -507,7 +517,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
     private let executables: [String]
 #if os(Linux)
-    private var signatures: [String: URL]
+    private var signatures: [String: Data]
 #endif
 
     private let latestSwiftlyVersion: SwiftlyVersion
@@ -699,10 +709,13 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                 throw SwiftlyTestError(message: "swiftly signature wasn't found in the cache")
             }
 
-            return try Data(contentsOf: signature)
+            return signature
         }
 
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        defer {
+            try? FileManager.default.removeItem(at: tmp)
+        }
         let swiftlyDir = tmp.appendingPathComponent("swiftly", isDirectory: true)
 
         try FileManager.default.createDirectory(
@@ -738,7 +751,12 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         // Extra step involves generating a gpg signature and putting that in a cache for a later request. We will
         // use a local key for this to avoid running into entropy problems in CI.
         let gpgKeyFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+
         try Data(PackageResources.mock_signing_key_private_pgp).write(to: gpgKeyFile)
+        defer {
+            try? FileManager.default.removeItem(at: gpgKeyFile)
+        }
+
         let importKey = Process()
         importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         importKey.arguments = ["bash", "-c", """
@@ -770,7 +788,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
         }
 
-        self.signatures["swiftly"] = archive.appendingPathExtension("sig")
+        self.signatures["swiftly"] = try Data(contentsOf: archive.appendingPathExtension("sig"))
 
         return try Data(contentsOf: archive)
     }
@@ -783,10 +801,14 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                 throw SwiftlyTestError(message: "signature wasn't found in the cache")
             }
 
-            return try Data(contentsOf: signature)
+            return signature
         }
 
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        defer {
+            try? FileManager.default.removeItem(at: tmp)
+        }
+
         let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
         let toolchainBinDir = toolchainDir
             .appendingPathComponent("usr", isDirectory: true)
@@ -826,6 +848,10 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         // use a local key for this to avoid running into entropy problems in CI.
         let gpgKeyFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
         try Data(PackageResources.mock_signing_key_private_pgp).write(to: gpgKeyFile)
+        defer {
+            try? FileManager.default.removeItem(at: gpgKeyFile)
+        }
+
         let importKey = Process()
         importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         importKey.arguments = ["bash", "-c", """
@@ -857,7 +883,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
         }
 
-        self.signatures[toolchain.name] = archive.appendingPathExtension("sig")
+        self.signatures[toolchain.name] = try Data(contentsOf: archive.appendingPathExtension("sig"))
 
         return try Data(contentsOf: archive)
     }
@@ -865,6 +891,10 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 #elseif os(macOS)
     public func makeMockedSwiftly(from _: URL) throws -> Data {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        defer {
+            try? FileManager.default.removeItem(at: tmp)
+        }
+
         let swiftlyDir = tmp.appendingPathComponent(".swiftly", isDirectory: true)
         let swiftlyBinDir = swiftlyDir.appendingPathComponent("bin")
 
@@ -872,10 +902,6 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             at: swiftlyBinDir,
             withIntermediateDirectories: true
         )
-
-        defer {
-            try? FileManager.default.removeItem(at: tmp)
-        }
 
         for executable in ["swiftly"] {
             let executablePath = swiftlyBinDir.appendingPathComponent(executable)
@@ -917,6 +943,10 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
     public func makeMockedToolchain(toolchain: ToolchainVersion, name _: String) throws -> Data {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        defer {
+            try? FileManager.default.removeItem(at: tmp)
+        }
+
         let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
         let toolchainBinDir = toolchainDir.appendingPathComponent("usr/bin", isDirectory: true)
 
@@ -924,10 +954,6 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
             at: toolchainBinDir,
             withIntermediateDirectories: true
         )
-
-        defer {
-            try? FileManager.default.removeItem(at: tmp)
-        }
 
         for executable in self.executables {
             let executablePath = toolchainBinDir.appendingPathComponent(executable)

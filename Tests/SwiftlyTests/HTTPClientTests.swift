@@ -16,7 +16,12 @@ import Testing
 
         let gpgKeysUrl = URL(string: "https://www.swift.org/keys/all-keys.asc")!
 
-        try await httpClient.downloadFile(url: gpgKeysUrl, to: tmpFile)
+        do {
+            try await httpClient.downloadFile(url: gpgKeysUrl, to: tmpFile)
+        } catch {
+            // Retry once to improve CI resiliency
+            try await httpClient.downloadFile(url: gpgKeysUrl, to: tmpFile)
+        }
 
 #if os(Linux)
         // With linux, we can ask gpg to try an import to see if the file is valid
@@ -33,8 +38,13 @@ import Testing
 
     @Test func getSwiftlyReleaseMetadataFromSwiftOrg() async throws {
         let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
-        let currentRelease = try await httpClient.getCurrentSwiftlyRelease()
-        #expect(throws: Never.self) { try currentRelease.swiftlyVersion }
+        do {
+            let currentRelease = try await httpClient.getCurrentSwiftlyRelease()
+            #expect(throws: Never.self) { try currentRelease.swiftlyVersion }
+        } catch {
+            let currentRelease = try await httpClient.getCurrentSwiftlyRelease()
+            #expect(throws: Never.self) { try currentRelease.swiftlyVersion }
+        }
     }
 
     @Test(

@@ -3,9 +3,9 @@ import Foundation
 import NIO
 @testable import Swiftly
 @testable import SwiftlyCore
-import XCTest
+import Testing
 
-final class SelfUpdateTests: SwiftlyTests {
+@Suite struct SelfUpdateTests {
     private static var newMajorVersion: SwiftlyVersion {
         SwiftlyVersion(major: SwiftlyCore.version.major + 1, minor: 0, patch: 0)
     }
@@ -19,22 +19,22 @@ final class SelfUpdateTests: SwiftlyTests {
     }
 
     func runSelfUpdateTest(latestVersion: SwiftlyVersion) async throws {
-        try await self.withTestHome {
-            try await self.withMockedSwiftlyVersion(latestSwiftlyVersion: latestVersion) {
-                let updatedVersion = try await SelfUpdate.execute(verbose: true)
-                XCTAssertEqual(latestVersion, updatedVersion)
+        try await SwiftlyTests.withTestHome {
+            try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: latestVersion) {
+                let updatedVersion = try await SelfUpdate.execute(SwiftlyTests.ctx, verbose: true)
+                #expect(latestVersion == updatedVersion)
             }
         }
     }
 
-    func testSelfUpdate() async throws {
+    @Test func selfUpdate() async throws {
         try await self.runSelfUpdateTest(latestVersion: Self.newPatchVersion)
         try await self.runSelfUpdateTest(latestVersion: Self.newMinorVersion)
         try await self.runSelfUpdateTest(latestVersion: Self.newMajorVersion)
     }
 
     /// Verify updating the most up-to-date toolchain has no effect.
-    func testSelfUpdateAlreadyUpToDate() async throws {
+    @Test func selfUpdateAlreadyUpToDate() async throws {
         try await self.runSelfUpdateTest(latestVersion: SwiftlyCore.version)
     }
 }

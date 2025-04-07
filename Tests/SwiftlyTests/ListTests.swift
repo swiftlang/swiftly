@@ -1,34 +1,33 @@
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
-import XCTest
+import Testing
 
-final class ListTests: SwiftlyTests {
+@Suite struct ListTests {
     static let homeName = "useTests"
 
     static let sortedReleaseToolchains: [ToolchainVersion] = [
-        ListTests.newStable,
-        ListTests.oldStableNewPatch,
-        ListTests.oldStable,
+        .newStable,
+        .oldStableNewPatch,
+        .oldStable,
     ]
 
     static let sortedSnapshotToolchains: [ToolchainVersion] = [
-        ListTests.newMainSnapshot,
-        ListTests.oldMainSnapshot,
-        ListTests.newReleaseSnapshot,
-        ListTests.oldReleaseSnapshot,
+        .newMainSnapshot,
+        .oldMainSnapshot,
+        .newReleaseSnapshot,
+        .oldReleaseSnapshot,
     ]
 
     /// Constructs a mock home directory with the toolchains listed above installed and runs the provided closure within
     /// the context of that home.
     func runListTest(f: () async throws -> Void) async throws {
-        try await self.withTestHome(name: Self.homeName) {
-            for toolchain in Self.allToolchains {
-                try await self.installMockedToolchain(toolchain: toolchain)
+        try await SwiftlyTests.withTestHome(name: Self.homeName) {
+            for toolchain in Set<ToolchainVersion>.allToolchains() {
+                try await SwiftlyTests.installMockedToolchain(toolchain: toolchain)
             }
 
-            var use = try self.parseCommand(Use.self, ["use", "latest"])
-            try await use.run()
+            try await SwiftlyTests.runCommand(Use.self, ["use", "latest"])
 
             try await f()
         }
@@ -42,11 +41,10 @@ final class ListTests: SwiftlyTests {
             args.append(selector)
         }
 
-        var list = try self.parseCommand(List.self, args)
-        let output = try await list.runWithMockedIO()
+        let output = try await SwiftlyTests.runWithMockedIO(List.self, args)
 
         let parsedToolchains = output.compactMap { outputLine in
-            Self.allToolchains.first {
+            Set<ToolchainVersion>.allToolchains().first {
                 outputLine.contains(String(describing: $0))
             }
         }
@@ -61,93 +59,92 @@ final class ListTests: SwiftlyTests {
 
     /// Tests that running `swiftly list` without a selector prints all installed toolchains, sorted in descending
     /// order with release toolchains listed first.
-    func testList() async throws {
+    @Test func list() async throws {
         try await self.runListTest {
             let toolchains = try await self.runList(selector: nil)
-            XCTAssertEqual(toolchains, Self.sortedReleaseToolchains + Self.sortedSnapshotToolchains)
+            #expect(toolchains == Self.sortedReleaseToolchains + Self.sortedSnapshotToolchains)
         }
     }
 
     /// Tests that running `swiftly list` with a release version selector filters out unmatching toolchains and prints
     /// in descending order.
-    func testListReleaseToolchains() async throws {
+    @Test func listReleaseToolchains() async throws {
         try await self.runListTest {
             var toolchains = try await self.runList(selector: "5")
-            XCTAssertEqual(toolchains, Self.sortedReleaseToolchains)
+            #expect(toolchains == Self.sortedReleaseToolchains)
 
-            var selector = "\(Self.newStable.asStableRelease!.major).\(Self.newStable.asStableRelease!.minor)"
+            var selector = "\(ToolchainVersion.newStable.asStableRelease!.major).\(ToolchainVersion.newStable.asStableRelease!.minor)"
             toolchains = try await self.runList(selector: selector)
-            XCTAssertEqual(toolchains, [Self.newStable])
+            #expect(toolchains == [ToolchainVersion.newStable])
 
-            selector = "\(Self.oldStable.asStableRelease!.major).\(Self.oldStable.asStableRelease!.minor)"
+            selector = "\(ToolchainVersion.oldStable.asStableRelease!.major).\(ToolchainVersion.oldStable.asStableRelease!.minor)"
             toolchains = try await self.runList(selector: selector)
-            XCTAssertEqual(toolchains, [Self.oldStableNewPatch, Self.oldStable])
+            #expect(toolchains == [ToolchainVersion.oldStableNewPatch, ToolchainVersion.oldStable])
 
             for toolchain in Self.sortedReleaseToolchains {
                 toolchains = try await self.runList(selector: toolchain.name)
-                XCTAssertEqual(toolchains, [toolchain])
+                #expect(toolchains == [toolchain])
             }
 
             toolchains = try await self.runList(selector: "4")
-            XCTAssertEqual(toolchains, [])
+            #expect(toolchains == [])
         }
     }
 
     /// Tests that running `swiftly list` with a snapshot selector filters out unmatching toolchains and prints
     /// in descending order.
-    func testListSnapshotToolchains() async throws {
+    @Test func listSnapshotToolchains() async throws {
         try await self.runListTest {
             var toolchains = try await self.runList(selector: "main-snapshot")
-            XCTAssertEqual(toolchains, [Self.newMainSnapshot, Self.oldMainSnapshot])
+            #expect(toolchains == [ToolchainVersion.newMainSnapshot, ToolchainVersion.oldMainSnapshot])
 
-            let snapshotBranch = Self.newReleaseSnapshot.asSnapshot!.branch
+            let snapshotBranch = ToolchainVersion.newReleaseSnapshot.asSnapshot!.branch
             toolchains = try await self.runList(selector: "\(snapshotBranch.major!).\(snapshotBranch.minor!)-snapshot")
-            XCTAssertEqual(toolchains, [Self.newReleaseSnapshot, Self.oldReleaseSnapshot])
+            #expect(toolchains == [ToolchainVersion.newReleaseSnapshot, ToolchainVersion.oldReleaseSnapshot])
 
             for toolchain in Self.sortedSnapshotToolchains {
                 toolchains = try await self.runList(selector: toolchain.name)
-                XCTAssertEqual(toolchains, [toolchain])
+                #expect(toolchains == [toolchain])
             }
 
             toolchains = try await self.runList(selector: "1.2-snapshot")
-            XCTAssertEqual(toolchains, [])
+            #expect(toolchains == [])
         }
     }
 
     /// Tests that the "(in use)" marker is correctly printed when listing installed toolchains.
-    func testListInUse() async throws {
+    @Test func listInUse() async throws {
         func inUseTest(toolchain: ToolchainVersion, selector: String?) async throws {
-            var use = try self.parseCommand(Use.self, ["use", toolchain.name])
-            try await use.run()
+            try await SwiftlyTests.runCommand(Use.self, ["use", toolchain.name])
 
             var listArgs = ["list"]
             if let selector {
                 listArgs.append(selector)
             }
-            var list = try self.parseCommand(List.self, listArgs)
-            let output = try await list.runWithMockedIO()
+
+            let output = try await SwiftlyTests.runWithMockedIO(List.self, listArgs)
 
             let inUse = output.filter { $0.contains("in use") }
-            XCTAssertEqual(inUse, ["\(toolchain) (in use) (default)"])
+            #expect(inUse == ["\(toolchain) (in use) (default)"])
         }
 
         try await self.runListTest {
-            for toolchain in Self.allToolchains {
+            for toolchain in Set<ToolchainVersion>.allToolchains() {
                 try await inUseTest(toolchain: toolchain, selector: nil)
                 try await inUseTest(toolchain: toolchain, selector: toolchain.name)
             }
 
-            let major = Self.oldStable.asStableRelease!.major
+            let major = ToolchainVersion.oldStable.asStableRelease!.major
             for toolchain in Self.sortedReleaseToolchains.filter({ $0.asStableRelease?.major == major }) {
                 try await inUseTest(toolchain: toolchain, selector: "\(major)")
             }
 
-            for toolchain in Self.allToolchains.filter({ $0.asSnapshot?.branch == .main }) {
+            for toolchain in Set<ToolchainVersion>.allToolchains().filter({ $0.asSnapshot?.branch == .main }) {
                 try await inUseTest(toolchain: toolchain, selector: "main-snapshot")
             }
 
-            let branch = Self.oldReleaseSnapshot.asSnapshot!.branch
-            let releaseSnapshots = Self.allToolchains.filter {
+            let branch = ToolchainVersion.oldReleaseSnapshot.asSnapshot!.branch
+            let releaseSnapshots = Set<ToolchainVersion>.allToolchains().filter {
                 $0.asSnapshot?.branch == branch
             }
             for toolchain in releaseSnapshots {
@@ -156,20 +153,18 @@ final class ListTests: SwiftlyTests {
         }
     }
 
-    /// Tests that `list` properly handles the case where no toolchains been installed yet.
-    func testListEmpty() async throws {
-        try await self.withTestHome {
-            var toolchains = try await self.runList(selector: nil)
-            XCTAssertEqual(toolchains, [])
+    /// Tests that `list` properly handles the case where no toolchains have been installed yet.
+    @Test(.testHome(Self.homeName)) func listEmpty() async throws {
+        var toolchains = try await self.runList(selector: nil)
+        #expect(toolchains == [])
 
-            toolchains = try await self.runList(selector: "5")
-            XCTAssertEqual(toolchains, [])
+        toolchains = try await self.runList(selector: "5")
+        #expect(toolchains == [])
 
-            toolchains = try await self.runList(selector: "main-snapshot")
-            XCTAssertEqual(toolchains, [])
+        toolchains = try await self.runList(selector: "main-snapshot")
+        #expect(toolchains == [])
 
-            toolchains = try await self.runList(selector: "5.7-snapshot")
-            XCTAssertEqual(toolchains, [])
-        }
+        toolchains = try await self.runList(selector: "5.7-snapshot")
+        #expect(toolchains == [])
     }
 }

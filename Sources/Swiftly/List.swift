@@ -34,15 +34,19 @@ struct List: SwiftlyCommand {
     var toolchainSelector: String?
 
     mutating func run() async throws {
-        try validateSwiftly()
+        try await self.run(Swiftly.createDefaultContext())
+    }
+
+    mutating func run(_ ctx: SwiftlyCoreContext) async throws {
+        try validateSwiftly(ctx)
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
 
-        var config = try Config.load()
+        var config = try Config.load(ctx)
 
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
-        let (inUse, _) = try await selectToolchain(config: &config)
+        let (inUse, _) = try await selectToolchain(ctx, config: &config)
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"
@@ -52,7 +56,7 @@ struct List: SwiftlyCommand {
             if toolchain == config.inUse {
                 message += " (default)"
             }
-            SwiftlyCore.print(message)
+            ctx.print(message)
         }
 
         if let selector {
@@ -72,14 +76,14 @@ struct List: SwiftlyCommand {
             }
 
             let message = "Installed \(modifier) toolchains"
-            SwiftlyCore.print(message)
-            SwiftlyCore.print(String(repeating: "-", count: message.count))
+            ctx.print(message)
+            ctx.print(String(repeating: "-", count: message.count))
             for toolchain in toolchains {
                 printToolchain(toolchain)
             }
         } else {
-            SwiftlyCore.print("Installed release toolchains")
-            SwiftlyCore.print("----------------------------")
+            ctx.print("Installed release toolchains")
+            ctx.print("----------------------------")
             for toolchain in toolchains {
                 guard toolchain.isStableRelease() else {
                     continue
@@ -87,9 +91,9 @@ struct List: SwiftlyCommand {
                 printToolchain(toolchain)
             }
 
-            SwiftlyCore.print("")
-            SwiftlyCore.print("Installed snapshot toolchains")
-            SwiftlyCore.print("-----------------------------")
+            ctx.print("")
+            ctx.print("Installed snapshot toolchains")
+            ctx.print("-----------------------------")
             for toolchain in toolchains where toolchain.isSnapshot() {
                 printToolchain(toolchain)
             }

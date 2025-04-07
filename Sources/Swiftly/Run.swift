@@ -54,16 +54,20 @@ struct Run: SwiftlyCommand {
     var command: [String]
 
     mutating func run() async throws {
-        try validateSwiftly()
+        try await self.run(Swiftly.createDefaultContext())
+    }
+
+    mutating func run(_ ctx: SwiftlyCoreContext) async throws {
+        try validateSwiftly(ctx)
 
         // Handle the specific case where help is requested of the run subcommand
         if command == ["--help"] {
             throw CleanExit.helpRequest(self)
         }
 
-        var config = try Config.load()
+        var config = try Config.load(ctx)
 
-        let (command, selector) = try extractProxyArguments(command: self.command)
+        let (command, selector) = try Self.extractProxyArguments(command: self.command)
 
         let toolchain: ToolchainVersion?
 
@@ -75,7 +79,7 @@ struct Run: SwiftlyCommand {
 
             toolchain = matchedToolchain
         } else {
-            let (version, result) = try await selectToolchain(config: &config)
+            let (version, result) = try await selectToolchain(ctx, config: &config)
 
             // Abort on any errors relating to swift version files
             if case let .swiftVersionFile(_, _, error) = result, let error {
@@ -90,8 +94,8 @@ struct Run: SwiftlyCommand {
         }
 
         do {
-            if let outputHandler = SwiftlyCore.outputHandler {
-                if let output = try await Swiftly.currentPlatform.proxyOutput(toolchain, command[0], [String](command[1...])) {
+            if let outputHandler = ctx.outputHandler {
+                if let output = try await Swiftly.currentPlatform.proxyOutput(ctx, toolchain, command[0], [String](command[1...])) {
                     for line in output.split(separator: "\n") {
                         outputHandler.handleOutputLine(String(line))
                     }
@@ -99,42 +103,42 @@ struct Run: SwiftlyCommand {
                 return
             }
 
-            try await Swiftly.currentPlatform.proxy(toolchain, command[0], [String](command[1...]))
+            try await Swiftly.currentPlatform.proxy(ctx, toolchain, command[0], [String](command[1...]))
         } catch let terminated as RunProgramError {
             Foundation.exit(terminated.exitCode)
         } catch {
             throw error
         }
     }
-}
 
-public func extractProxyArguments(command: [String]) throws -> (command: [String], selector: ToolchainSelector?) {
-    var args: (command: [String], selector: ToolchainSelector?) = (command: [], nil)
+    public static func extractProxyArguments(command: [String]) throws -> (command: [String], selector: ToolchainSelector?) {
+        var args: (command: [String], selector: ToolchainSelector?) = (command: [], nil)
 
-    var disableEscaping = false
+        var disableEscaping = false
 
-    for c in command {
-        if !disableEscaping && c == "++" {
-            disableEscaping = true
-            continue
+        for c in command {
+            if !disableEscaping && c == "++" {
+                disableEscaping = true
+                continue
+            }
+
+            if !disableEscaping && c.hasPrefix("++") {
+                args.command.append("+\(String(c.dropFirst(2)))")
+                continue
+            }
+
+            if !disableEscaping && c.hasPrefix("+") {
+                args.selector = try ToolchainSelector(parsing: String(c.dropFirst()))
+                continue
+            }
+
+            args.command.append(c)
         }
 
-        if !disableEscaping && c.hasPrefix("++") {
-            args.command.append("+\(String(c.dropFirst(2)))")
-            continue
+        guard args.command.count > 0 else {
+            throw SwiftlyError(message: "Provide at least one command to run.")
         }
 
-        if !disableEscaping && c.hasPrefix("+") {
-            args.selector = try ToolchainSelector(parsing: String(c.dropFirst()))
-            continue
-        }
-
-        args.command.append(c)
+        return args
     }
-
-    guard args.command.count > 0 else {
-        throw SwiftlyError(message: "Provide at least one command to run.")
-    }
-
-    return args
 }

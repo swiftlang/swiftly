@@ -77,38 +77,43 @@ struct Update: SwiftlyCommand {
         case toolchain, root, verify, postInstallFile
     }
 
-    public mutating func run() async throws {
-        try validateSwiftly()
-        var config = try Config.load()
+    mutating func run() async throws {
+        try await self.run(Swiftly.createDefaultContext())
+    }
 
-        guard let parameters = try await self.resolveUpdateParameters(&config) else {
+    public mutating func run(_ ctx: SwiftlyCoreContext) async throws {
+        try validateSwiftly(ctx)
+        var config = try Config.load(ctx)
+
+        guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {
             if let toolchain = self.toolchain {
-                SwiftlyCore.print("No installed toolchain matched \"\(toolchain)\"")
+                ctx.print("No installed toolchain matched \"\(toolchain)\"")
             } else {
-                SwiftlyCore.print("No toolchains are currently installed")
+                ctx.print("No toolchains are currently installed")
             }
             return
         }
 
-        guard let newToolchain = try await self.lookupNewToolchain(config, parameters) else {
-            SwiftlyCore.print("\(parameters.oldToolchain) is already up to date")
+        guard let newToolchain = try await self.lookupNewToolchain(ctx, config, parameters) else {
+            ctx.print("\(parameters.oldToolchain) is already up to date")
             return
         }
 
         guard !config.installedToolchains.contains(newToolchain) else {
-            SwiftlyCore.print("The newest version of \(parameters.oldToolchain) (\(newToolchain)) is already installed")
+            ctx.print("The newest version of \(parameters.oldToolchain) (\(newToolchain)) is already installed")
             return
         }
 
         if !self.root.assumeYes {
-            SwiftlyCore.print("Update \(parameters.oldToolchain) -> \(newToolchain)?")
-            guard SwiftlyCore.promptForConfirmation(defaultBehavior: true) else {
-                SwiftlyCore.print("Aborting")
+            ctx.print("Update \(parameters.oldToolchain) -> \(newToolchain)?")
+            guard ctx.promptForConfirmation(defaultBehavior: true) else {
+                ctx.print("Aborting")
                 return
             }
         }
 
         let (postInstallScript, pathChanged) = try await Install.execute(
+            ctx,
             version: newToolchain,
             &config,
             useInstalledToolchain: config.inUse == parameters.oldToolchain,
@@ -117,8 +122,8 @@ struct Update: SwiftlyCommand {
             assumeYes: self.root.assumeYes
         )
 
-        try await Uninstall.execute(parameters.oldToolchain, &config, verbose: self.root.verbose)
-        SwiftlyCore.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
+        try await Uninstall.execute(ctx, parameters.oldToolchain, &config, verbose: self.root.verbose)
+        ctx.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
@@ -136,7 +141,7 @@ struct Update: SwiftlyCommand {
         }
 
         if pathChanged {
-            SwiftlyCore.print("""
+            ctx.print("""
             NOTE: Swiftly has updated some elements in your path and your shell may not yet be
             aware of the changes. You can update your shell's environment by running
 
@@ -154,7 +159,7 @@ struct Update: SwiftlyCommand {
     /// If the selector does not match an installed toolchain, this returns nil.
     /// If no selector is provided, the currently in-use toolchain will be used as the basis for the returned
     /// parameters.
-    private func resolveUpdateParameters(_ config: inout Config) async throws -> UpdateParameters? {
+    private func resolveUpdateParameters(_ ctx: SwiftlyCoreContext, _ config: inout Config) async throws -> UpdateParameters? {
         let selector = try self.toolchain.map { try ToolchainSelector(parsing: $0) }
 
         let oldToolchain: ToolchainVersion?
@@ -165,7 +170,7 @@ struct Update: SwiftlyCommand {
             // 5.5.1 and 5.5.2 are installed (5.5.2 will be updated).
             oldToolchain = toolchains.max()
         } else {
-            (oldToolchain, _) = try await selectToolchain(config: &config)
+            (oldToolchain, _) = try await selectToolchain(ctx, config: &config)
         }
 
         guard let oldToolchain else {
@@ -195,10 +200,10 @@ struct Update: SwiftlyCommand {
 
     /// Tries to find a toolchain version that meets the provided parameters, if one exists.
     /// This does not download the toolchain, but it does query the swift.org API to find the suitable toolchain.
-    private func lookupNewToolchain(_ config: Config, _ bounds: UpdateParameters) async throws -> ToolchainVersion? {
+    private func lookupNewToolchain(_ ctx: SwiftlyCoreContext, _ config: Config, _ bounds: UpdateParameters) async throws -> ToolchainVersion? {
         switch bounds {
         case let .stable(old, range):
-            return try await SwiftlyCore.httpClient.getReleaseToolchains(platform: config.platform, limit: 1) { release in
+            return try await ctx.httpClient.getReleaseToolchains(platform: config.platform, limit: 1) { release in
                 switch range {
                 case .latest:
                     return release > old
@@ -211,7 +216,7 @@ struct Update: SwiftlyCommand {
         case let .snapshot(old):
             let newerSnapshotToolchains: [ToolchainVersion.Snapshot]
             do {
-                newerSnapshotToolchains = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: config.platform, branch: old.branch, limit: 1) { snapshot in
+                newerSnapshotToolchains = try await ctx.httpClient.getSnapshotToolchains(platform: config.platform, branch: old.branch, limit: 1) { snapshot in
                     snapshot.branch == old.branch && snapshot.date > old.date
                 }
             } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {

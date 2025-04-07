@@ -4,6 +4,8 @@ import SwiftlyCore
 @main
 public enum Proxy {
     static func main() async throws {
+        let ctx = SwiftlyCoreContext()
+
         do {
             let zero = CommandLine.arguments[0]
             guard let binName = zero.components(separatedBy: "/").last else {
@@ -13,7 +15,7 @@ public enum Proxy {
             guard binName != "swiftly" else {
                 // Treat this as a swiftly invocation, but first check that we are installed, bootstrapping
                 //  the installation process if we aren't.
-                let configResult = Result { try Config.load() }
+                let configResult = Result { try Config.load(ctx) }
 
                 switch configResult {
                 case .success:
@@ -25,7 +27,7 @@ public enum Proxy {
                     if CommandLine.arguments.count == 1 {
                         // User ran swiftly with no extra arguments in an uninstalled environment, so we jump directly into
                         //  an simple init.
-                        try await Init.execute(assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false, quietShellFollowup: false)
+                        try await Init.execute(ctx, assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false, quietShellFollowup: false)
                         return
                     } else if CommandLine.arguments.count >= 2 && CommandLine.arguments[1] == "init" {
                         // Let the user run the init command with their arguments, if any.
@@ -43,9 +45,9 @@ public enum Proxy {
                 }
             }
 
-            var config = try Config.load()
+            var config = try Config.load(ctx)
 
-            let (toolchain, result) = try await selectToolchain(config: &config)
+            let (toolchain, result) = try await selectToolchain(ctx, config: &config)
 
             // Abort on any errors relating to swift version files
             if case let .swiftVersionFile(_, _, error) = result, let error = error {
@@ -62,14 +64,14 @@ public enum Proxy {
             }
             let env = ["SWIFTLY_PROXY_IN_PROGRESS": "1"]
 
-            try await Swiftly.currentPlatform.proxy(toolchain, binName, Array(CommandLine.arguments[1...]), env)
+            try await Swiftly.currentPlatform.proxy(ctx, toolchain, binName, Array(CommandLine.arguments[1...]), env)
         } catch let terminated as RunProgramError {
             exit(terminated.exitCode)
         } catch let error as SwiftlyError {
-            SwiftlyCore.print(error.message)
+            ctx.print(error.message)
             exit(1)
         } catch {
-            SwiftlyCore.print("\(error)")
+            ctx.print("\(error)")
             exit(1)
         }
     }

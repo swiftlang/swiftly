@@ -75,6 +75,7 @@ If you want to install swiftly, or the binaries that it manages into different l
 
 - term `SWIFTLY_HOME_DIR`: The location of the swiftly configuration files, and environment scripts
 - term `SWIFTLY_BIN_DIR`: The location of the swiftly binary and toolchain symbolic links (for example swift, swiftc, and so on)
+- term `TMPDIR`: The temporary directory swiftly uses to hold large files, such as downloads, until it cleans them up.
 
 Sometimes swiftly can't automatically detect the system platform, or isn't supported by swift.
 You can provide the platform as an option to the `swiftly init` subcommand:

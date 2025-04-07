@@ -40,9 +40,15 @@ struct Install: SwiftlyCommand {
             $ swiftly install 5.7-snapshot
             $ swiftly install main-snapshot
 
-         Install whatever toolchain is currently selected, such as the the one in the .swift-version file:
+        Install whatever toolchain is currently selected, such as the the one in the .swift-version file:
 
             $ swiftly install
+
+        NOTE: Toolchains are downloaded to a temporary file that is later cleaned up by the installation \
+        process. If these files are too big for your usual temporary directory you can choose another location \
+        by setting the `TMPDIR` environment variable.
+
+            $ TMPDIR=/large/file/tmp/storage swiftly install latest
         """
     ))
     var version: String?

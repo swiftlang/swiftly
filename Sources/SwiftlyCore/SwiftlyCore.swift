@@ -1,4 +1,5 @@
 import Foundation
+import SwiftlyWebsiteAPI
 
 public let version = SwiftlyVersion(major: 1, minor: 1, patch: 0, suffix: "dev")
 
@@ -91,9 +92,9 @@ public struct SwiftlyCoreContext {
 }
 
 #if arch(x86_64)
-public let cpuArch = Components.Schemas.Architecture.x8664
+public let cpuArch = SwiftlyWebsiteAPI.Components.Schemas.Architecture.x8664
 #elseif arch(arm64)
-public let cpuArch = Components.Schemas.Architecture.aarch64
+public let cpuArch = SwiftlyWebsiteAPI.Components.Schemas.Architecture.aarch64
 #else
 #error("Unsupported processor architecture")
 #endif

@@ -44,7 +44,7 @@ struct Install: SwiftlyCommand {
 
             $ swiftly install
 
-        NOTE: Toolchains are downloaded to a temporary file that is later cleaned up by the installation \
+        NOTE: Swiftly downloads toolchains to a temporary file that it later cleans during its installation process. If these files are too big for your system temporary directory, set another location by setting the `TMPDIR` environment variable.
         process. If these files are too big for your usual temporary directory you can choose another location \
         by setting the `TMPDIR` environment variable.
 

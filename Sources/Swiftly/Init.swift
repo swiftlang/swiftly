@@ -200,8 +200,8 @@ struct Init: SwiftlyCommand {
                 """
             } else if shell.hasSuffix("/nu") {
                 env = """
-                $env.SWIFTLY_HOME_DIR = "\(Swiftly.currentPlatform.swiftlyHomeDir.path)"
-                $env.SWIFTLY_BIN_DIR = "\(Swiftly.currentPlatform.swiftlyBinDir.path)"
+                $env.SWIFTLY_HOME_DIR = "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx).path)"
+                $env.SWIFTLY_BIN_DIR = "\(Swiftly.currentPlatform.swiftlyBinDir(ctx).path)"
                 if "$SWIFTLY_BIN_DIR" not-in $env.PATH {
                     $env.PATH = ($env.PATH | split row (char esep) | prepend $env.SWIFTLY_BIN_DIR)
                 }

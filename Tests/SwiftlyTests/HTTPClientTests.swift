@@ -1,97 +1,76 @@
+import AsyncHTTPClient
+import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
-import XCTest
+import Testing
 
-final class HTTPClientTests: SwiftlyTests {
-    func testGet() async throws {
-        // GIVEN: we have a swiftly http client
-        // WHEN: we make get request for a particular type of JSON
-        var releases: [SwiftOrgRelease] = try await SwiftlyCore.httpClient.getFromJSON(
-            url: "https://www.swift.org/api/v1/install/releases.json",
-            type: [SwiftOrgRelease].self,
-            headers: [:]
-        )
-        // THEN: we get a decoded JSON response
-        XCTAssertTrue(releases.count > 0)
+@Suite(.serialized) struct HTTPClientTests {
+    @Test func getSwiftOrgGPGKeys() async throws {
+        let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
-        // GIVEN: we have a swiftly http client
-        // WHEN: we make a request to an invalid URL path
-        var exceptionThrown = false
-        do {
-            releases = try await SwiftlyCore.httpClient.getFromJSON(
-                url: "https://www.swift.org/api/v1/install/releases-invalid.json",
-                type: [SwiftOrgRelease].self,
-                headers: [:]
-            )
-        } catch {
-            exceptionThrown = true
+        let tmpFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        _ = FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
+        defer {
+            try? FileManager.default.removeItem(at: tmpFile)
         }
-        // THEN: we receive an exception
-        XCTAssertTrue(exceptionThrown)
 
-        // GIVEN: we have a swiftly http client
-        // WHEN: we make a request to an invalid host path
-        exceptionThrown = false
+        let gpgKeysUrl = URL(string: "https://www.swift.org/keys/all-keys.asc")!
+
         do {
-            releases = try await SwiftlyCore.httpClient.getFromJSON(
-                url: "https://invalid.swift.org/api/v1/install/releases.json",
-                type: [SwiftOrgRelease].self,
-                headers: [:]
-            )
+            try await httpClient.downloadFile(url: gpgKeysUrl, to: tmpFile)
         } catch {
-            exceptionThrown = true
+            // Retry once to improve CI resiliency
+            try await httpClient.downloadFile(url: gpgKeysUrl, to: tmpFile)
         }
-        // THEN: we receive an exception
-        XCTAssertTrue(exceptionThrown)
+
+#if os(Linux)
+        // With linux, we can ask gpg to try an import to see if the file is valid
+        // in a sandbox home directory to avoid contaminating the system
+        let gpgHome = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+        try FileManager.default.createDirectory(atPath: gpgHome.path, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: gpgHome)
+        }
+
+        try Swiftly.currentPlatform.runProgram("gpg", "--import", tmpFile.path, quiet: false, env: ["GNUPGHOME": gpgHome.path])
+#endif
     }
 
-    func testGetSwiftlyReleaseMetadataFromSwiftOrg() async throws {
-        let currentRelease = try await SwiftlyCore.httpClient.getCurrentSwiftlyRelease()
-        XCTAssertNoThrow(try currentRelease.swiftlyVersion)
+    @Test func getSwiftlyReleaseMetadataFromSwiftOrg() async throws {
+        let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
+        do {
+            let currentRelease = try await httpClient.getCurrentSwiftlyRelease()
+            #expect(throws: Never.self) { try currentRelease.swiftlyVersion }
+        } catch {
+            let currentRelease = try await httpClient.getCurrentSwiftlyRelease()
+            #expect(throws: Never.self) { try currentRelease.swiftlyVersion }
+        }
     }
 
-    func testGetToolchainMetdataFromSwiftOrg() async throws {
-        let supportedPlatforms: [PlatformDefinition] = [
-            .macOS,
-            .ubuntu2404,
-            .ubuntu2204,
-            .ubuntu2004,
-            // .ubuntu1804, // There are no releases for Ubuntu 18.04 in the branches being tested below
-            .rhel9,
-            .fedora39,
-            .amazonlinux2,
-            .debian12,
-        ]
-
-        let newPlatforms: [PlatformDefinition] = [
-            .ubuntu2404,
-            .fedora39,
-            .debian12,
-        ]
+    @Test(
+        arguments:
+        [PlatformDefinition.macOS, .ubuntu2404, .ubuntu2204, .rhel9, .fedora39, .amazonlinux2, .debian12],
+        [Components.Schemas.Architecture.x8664, .aarch64]
+    ) func getToolchainMetdataFromSwiftOrg(_ platform: PlatformDefinition, _ arch: Components.Schemas.Architecture) async throws {
+        let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
         let branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
-            .release(major: 6, minor: 0), // This is available in swift.org API
+            .release(major: 6, minor: 1), // This is available in swift.org API
         ]
 
-        for arch in ["x86_64", "aarch64"] {
-            for platform in supportedPlatforms {
-                // GIVEN: we have a swiftly http client with swift.org metadata capability
-                // WHEN: we ask for the first five releases of a supported platform in a supported arch
-                let releases = try await SwiftlyCore.httpClient.getReleaseToolchains(platform: platform, arch: arch, limit: 5)
-                // THEN: we get at least 1 release
-                XCTAssertTrue(1 <= releases.count)
+        // GIVEN: we have a swiftly http client with swift.org metadata capability
+        // WHEN: we ask for the first five releases of a supported platform in a supported arch
+        let releases = try await httpClient.getReleaseToolchains(platform: platform, arch: arch, limit: 5)
+        // THEN: we get at least 1 release
+        #expect(1 <= releases.count)
 
-                if newPlatforms.contains(platform) { continue } // Newer distros don't have main snapshots yet
-
-                for branch in branches {
-                    // GIVEN: we have a swiftly http client with swift.org metadata capability
-                    // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch
-                    let snapshots = try await SwiftlyCore.httpClient.getSnapshotToolchains(platform: platform, arch: arch, branch: branch, limit: 5)
-                    // THEN: we get at least 3 releases
-                    XCTAssertTrue(3 <= snapshots.count)
-                }
-            }
+        for branch in branches {
+            // GIVEN: we have a swiftly http client with swift.org metadata capability
+            // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch
+            let snapshots = try await httpClient.getSnapshotToolchains(platform: platform, arch: arch.value2!, branch: branch, limit: 5)
+            // THEN: we get at least 3 releases
+            #expect(3 <= snapshots.count)
         }
     }
 }

@@ -17,23 +17,27 @@ struct SelfUpdate: SwiftlyCommand {
     }
 
     mutating func run() async throws {
-        try validateSwiftly()
+        try await self.run(Swiftly.createDefaultContext())
+    }
 
-        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir.appendingPathComponent("swiftly")
+    mutating func run(_ ctx: SwiftlyCoreContext) async throws {
+        try validateSwiftly(ctx)
+
+        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx).appendingPathComponent("swiftly")
         guard FileManager.default.fileExists(atPath: swiftlyBin.path) else {
             throw SwiftlyError(message: "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place.")
         }
 
-        let _ = try await Self.execute(verbose: self.root.verbose)
+        let _ = try await Self.execute(ctx, verbose: self.root.verbose)
     }
 
-    public static func execute(verbose: Bool) async throws -> SwiftlyVersion {
-        SwiftlyCore.print("Checking for swiftly updates...")
+    public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool) async throws -> SwiftlyVersion {
+        ctx.print("Checking for swiftly updates...")
 
-        let swiftlyRelease = try await SwiftlyCore.httpClient.getCurrentSwiftlyRelease()
+        let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
 
         guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
-            SwiftlyCore.print("Already up to date.")
+            ctx.print("Already up to date.")
             return SwiftlyCore.version
         }
 
@@ -62,7 +66,7 @@ struct SelfUpdate: SwiftlyCommand {
 
         let version = try swiftlyRelease.swiftlyVersion
 
-        SwiftlyCore.print("A new version is available: \(version)")
+        ctx.print("A new version is available: \(version)")
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
@@ -75,7 +79,7 @@ struct SelfUpdate: SwiftlyCommand {
             header: "Downloading swiftly \(version)"
         )
         do {
-            try await SwiftlyCore.httpClient.downloadFile(
+            try await ctx.httpClient.downloadFile(
                 url: downloadURL,
                 to: tmpFile,
                 reportProgress: { progress in
@@ -95,10 +99,10 @@ struct SelfUpdate: SwiftlyCommand {
         }
         animation.complete(success: true)
 
-        try await Swiftly.currentPlatform.verifySignature(httpClient: SwiftlyCore.httpClient, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
-        try Swiftly.currentPlatform.extractSwiftlyAndInstall(from: tmpFile)
+        try await Swiftly.currentPlatform.verifySignature(ctx, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
+        try Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
 
-        SwiftlyCore.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
+        ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
         return version
     }
 }

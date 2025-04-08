@@ -1,6 +1,6 @@
-# Use Swift Toolchains
+# Use Swift toolchains
 
-Using installed swift toolchains.
+Choose an installed toolchain to use as default.
 
 Swiftly toolchains include a variety of compilers, linkers, debuggers, documentation generators, and other useful tools for working with Swift. Using a toolchain activates it so that when you run toolchain commands they are run with that version.
 
@@ -14,7 +14,8 @@ Target: aarch64-unknown-linux-gnu
 $ swift build    # Build with the current toolchain
 ```
 
-When you have more than one toolchain installed then you can choose to use one of them with `swiftly use` for all subsequent commands like this:
+When you have more than one toolchain installed, you can choose which one to use with the `swiftly use` command.
+The following example illustrates installing two toolchains and explicitly using one:
 
 ```
 $ swiftly install 5.10.1
@@ -27,14 +28,16 @@ $ swift build    # Builds with the latest snapshot toolchain on the main branch
 $ lldb           # Run the debugger from the latest snapshot toolchain
 ```
 
-The use command doesn't require a full version. It is sufficient to provide just a major version, or the major and minor versions. Swiftly will use the newest matching version that you have installed, if any.
+The `use` command doesn't require a full version.
+It is sufficient to provide just a major version, or the major and minor versions.
+Swiftly uses the newest matching version that you have installed, if any.
 
 ```
 $ swiftly use 5
 swift --version  # Version matches the 5.10.1 toolchain that was installed above
 ```
 
-If you're not certain which toolchain is in-use then use the bare `swiftly use` command to provide details:
+If you're not certain which toolchain is in-use, invoke the `swiftly use` command to provide details:
 
 ```
 $ swiftly use
@@ -77,7 +80,8 @@ $ cd path/to/git/repository
 $ swiftly install    # Installs the version of the toolchain in the .swift-version file
 ```
 
-If you want to temporarily use a toolchain version for one command you can try `swiftly run`. This will build your package with the latest snapshot toolchain:
+If you want to temporarily use a toolchain version for one command you can try `swiftly run`.
+The following command shows an example of using swiftly to build your package with the latest snapshot toolchain:
 
 ```
 $ swiftly run swift build +main-snapshot
@@ -85,17 +89,19 @@ $ swiftly run swift build +main-snapshot
 
 > Note: The toolchain must be installed on your system before you can run with it.
 
-The `.swift version` file, if it is present in your working directory (or parent) will select the toolchain that is in use. If you are working in a directory that doesn't have this file, then you can set a global default toolchain to use in these places.
+Swiftly uses the `.swift-version` file, if present in your working directory (or parent), to select the toolchain that is in use.
+If you are working in a directory that doesn't have this file, then you can set a global default toolchain to use in these places.
 
 ```
 $ swiftly use --global-default 6.0.1
 ```
 
-Here the `--global-default` flag ensures that the default is set globally to the "6.0.1" toolchain whenever there isn't a swift version file, and there isn't a version specified in the `swiftly run` command. Also, this flag doesn't attempt to create a swift version file, or update it if it already exists.
+Here the `--global-default` flag ensures that the default is set globally to the "6.0.1" toolchain whenever there isn't a `.swift-version` file, and there isn't a version specified in the `swiftly run` command.
+This flag doesn't attempt to create a `.swift-version` file, or update it if it already exists.
 
 ## In use toolchains and default toolchains
 
-When you list installed toolchains or use the `swiftly use` command to print the current in use toolchain there will be tags for both "in use" and "default." Sometimes the same toolchain will have both tags!
+When you list installed toolchains or use the `swiftly use` command to print the current in use toolchain, there will be tags for both "in use" and "default." Sometimes the same toolchain has both tags!
 
 ```
 $ swiftly list
@@ -108,6 +114,9 @@ Installed snapshot toolchains
 -----------------------------
 ```
 
-Whenever a toolchain is tagged as "in use" indicates the toolchain that will be used when running toolchain commands from your current working directory. The one that is selected is based either on what is in a `.swift-version` file or the global default if there is no such file there.
+Whenever a toolchain is tagged as "in use" indicates the toolchain that will be used when running toolchain commands from your current working directory.
+The one that is selected is based either on what is in a `.swift-version` file or the global default if there is no such file there.
 
-The default tag is used to show the global default toolchain, which is independent of any swift version file. The global default is there for cases where the file doesn't exist. It sets the toolchain that is in use in those cases.
+The default tag is used to show the global default toolchain, which is independent of any swift version file.
+The global default is there for cases where the file doesn't exist.
+It sets the toolchain that is in use in those cases.

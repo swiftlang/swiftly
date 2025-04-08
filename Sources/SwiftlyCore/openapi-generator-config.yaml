@@ -4,4 +4,4 @@ generate:
 namingStrategy: idiomatic
 accessModifier: public
 filter:
-  tags: ["Swiftly"]
+  tags: ["Swiftly", "Toolchains"]

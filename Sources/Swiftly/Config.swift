@@ -24,9 +24,9 @@ public struct Config: Codable, Equatable {
     }
 
     /// Read the config file from disk.
-    public static func load() throws -> Config {
+    public static func load(_ ctx: SwiftlyCoreContext) throws -> Config {
         do {
-            let data = try Data(contentsOf: Swiftly.currentPlatform.swiftlyConfigFile)
+            let data = try Data(contentsOf: Swiftly.currentPlatform.swiftlyConfigFile(ctx))
             var config = try JSONDecoder().decode(Config.self, from: data)
             if config.version == nil {
                 // Assume that the version of swiftly is 0.3.0 because that is the last
@@ -36,7 +36,7 @@ public struct Config: Codable, Equatable {
             return config
         } catch {
             let msg = """
-            Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile.path).
+            Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile(ctx).path).
 
             To begin using swiftly you can install it: '\(CommandLine.arguments[0]) init'.
             """
@@ -45,9 +45,9 @@ public struct Config: Codable, Equatable {
     }
 
     /// Write the contents of this `Config` struct to disk.
-    public func save() throws {
+    public func save(_ ctx: SwiftlyCoreContext) throws {
         let outData = try Self.makeEncoder().encode(self)
-        try outData.write(to: Swiftly.currentPlatform.swiftlyConfigFile, options: .atomic)
+        try outData.write(to: Swiftly.currentPlatform.swiftlyConfigFile(ctx), options: .atomic)
     }
 
     public func listInstalledToolchains(selector: ToolchainSelector?) -> [ToolchainVersion] {
@@ -70,11 +70,11 @@ public struct Config: Codable, Equatable {
 
     /// Load the config, pass it to the provided closure, and then
     /// save the modified config to disk.
-    public static func update(f: (inout Config) throws -> Void) throws {
-        var config = try Config.load()
+    public static func update(_ ctx: SwiftlyCoreContext, f: (inout Config) throws -> Void) throws {
+        var config = try Config.load(ctx)
         try f(&config)
         // only save the updates if the prior closure invocation succeeded
-        try config.save()
+        try config.save(ctx)
     }
 }
 

@@ -1,12 +1,12 @@
 import ArgumentParser
 import Foundation
-import TSCBasic
+@preconcurrency import TSCBasic
 import TSCUtility
 
 import SwiftlyCore
 
 struct SelfUpdate: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Update the version of swiftly itself."
     )
 
@@ -32,12 +32,12 @@ struct SelfUpdate: SwiftlyCommand {
     }
 
     public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool) async throws -> SwiftlyVersion {
-        ctx.print("Checking for swiftly updates...")
+        await ctx.print("Checking for swiftly updates...")
 
         let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
 
         guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
-            ctx.print("Already up to date.")
+            await ctx.print("Already up to date.")
             return SwiftlyCore.version
         }
 
@@ -66,7 +66,7 @@ struct SelfUpdate: SwiftlyCommand {
 
         let version = try swiftlyRelease.swiftlyVersion
 
-        ctx.print("A new version is available: \(version)")
+        await ctx.print("A new version is available: \(version)")
 
         let tmpFile = Swiftly.currentPlatform.getTempFilePath()
         FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
@@ -100,9 +100,9 @@ struct SelfUpdate: SwiftlyCommand {
         animation.complete(success: true)
 
         try await Swiftly.currentPlatform.verifySignature(ctx, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
-        try Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
+        try await Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
 
-        ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
+        await ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
         return version
     }
 }

@@ -3,7 +3,7 @@ import Foundation
 import SwiftlyCore
 
 struct Run: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Run a command while proxying to the selected toolchain commands."
     )
 
@@ -97,7 +97,7 @@ struct Run: SwiftlyCommand {
             if let outputHandler = ctx.outputHandler {
                 if let output = try await Swiftly.currentPlatform.proxyOutput(ctx, toolchain, command[0], [String](command[1...])) {
                     for line in output.split(separator: "\n") {
-                        outputHandler.handleOutputLine(String(line))
+                        await outputHandler.handleOutputLine(String(line))
                     }
                 }
                 return

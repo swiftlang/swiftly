@@ -3,7 +3,7 @@ import Foundation
 import SwiftlyCore
 
 struct Use: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Set the in-use or default toolchain. If no toolchain is provided, print the currently in-use toolchain, if any."
     )
 
@@ -78,7 +78,7 @@ struct Use: SwiftlyCommand {
 
             if self.printLocation {
                 // Print the toolchain location and exit
-                ctx.print("\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion).path)")
+                await ctx.print("\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion).path)")
                 return
             }
 
@@ -91,7 +91,7 @@ struct Use: SwiftlyCommand {
                 message += " (default)"
             }
 
-            ctx.print(message)
+            await ctx.print(message)
 
             return
         }
@@ -103,7 +103,7 @@ struct Use: SwiftlyCommand {
         let selector = try ToolchainSelector(parsing: toolchain)
 
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
-            ctx.print("No installed toolchains match \"\(toolchain)\"")
+            await ctx.print("No installed toolchains match \"\(toolchain)\"")
             return
         }
 
@@ -123,10 +123,10 @@ struct Use: SwiftlyCommand {
             message = "The file `\(versionFile.path)` has been set to `\(toolchain)`"
         } else if let newVersionFile = findNewVersionFile(ctx), !globalDefault {
             if !assumeYes {
-                ctx.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
+                await ctx.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
 
-                guard ctx.promptForConfirmation(defaultBehavior: true) else {
-                    ctx.print("Aborting setting in-use toolchain")
+                guard await ctx.promptForConfirmation(defaultBehavior: true) else {
+                    await ctx.print("Aborting setting in-use toolchain")
                     return
                 }
             }
@@ -144,7 +144,7 @@ struct Use: SwiftlyCommand {
             message += " (was \(selectedVersion.name))"
         }
 
-        ctx.print(message)
+        await ctx.print(message)
     }
 
     static func findNewVersionFile(_ ctx: SwiftlyCoreContext) -> URL? {
@@ -168,7 +168,7 @@ struct Use: SwiftlyCommand {
     }
 }
 
-public enum ToolchainSelectionResult {
+public enum ToolchainSelectionResult: Sendable {
     case globalDefault
     case swiftVersionFile(URL, ToolchainSelector?, Error?)
 }

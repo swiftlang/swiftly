@@ -1,6 +1,6 @@
 import Foundation
 
-public struct PlatformDefinition: Codable, Equatable {
+public struct PlatformDefinition: Codable, Equatable, Sendable {
     /// The name of the platform as it is used in the Swift download URLs.
     /// For instance, for Ubuntu 16.04 this would return “ubuntu1604”.
     /// For macOS / Xcode, this would return “xcode”.
@@ -38,7 +38,7 @@ public struct RunProgramError: Swift.Error {
     public let program: String
 }
 
-public protocol Platform {
+public protocol Platform: Sendable {
     /// The platform-specific default location on disk for swiftly's home
     /// directory.
     var defaultSwiftlyHomeDirectory: URL { get }
@@ -60,15 +60,15 @@ public protocol Platform {
 
     /// Installs a toolchain from a file on disk pointed to by the given URL.
     /// After this completes, a user can “use” the toolchain.
-    func install(_ ctx: SwiftlyCoreContext, from: URL, version: ToolchainVersion, verbose: Bool) throws
+    func install(_ ctx: SwiftlyCoreContext, from: URL, version: ToolchainVersion, verbose: Bool) async throws
 
     /// Extract swiftly from the provided downloaded archive and install
     /// ourselves from that.
-    func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: URL) throws
+    func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: URL) async throws
 
     /// Uninstalls a toolchain associated with the given version.
     /// If this version is in use, the next latest version will be used afterwards.
-    func uninstall(_ ctx: SwiftlyCoreContext, _ version: ToolchainVersion, verbose: Bool) throws
+    func uninstall(_ ctx: SwiftlyCoreContext, _ version: ToolchainVersion, verbose: Bool) async throws
 
     /// Get the name of the swiftly release binary.
     func getExecutableName() -> String
@@ -274,7 +274,7 @@ extension Platform {
     }
 
     // Install ourselves in the final location
-    public func installSwiftlyBin(_ ctx: SwiftlyCoreContext) throws {
+    public func installSwiftlyBin(_ ctx: SwiftlyCoreContext) async throws {
         // First, let's find out where we are.
         let cmd = CommandLine.arguments[0]
         let cmdAbsolute = if cmd.hasPrefix("/") {
@@ -311,7 +311,7 @@ extension Platform {
             return
         }
 
-        ctx.print("Installing swiftly in \(swiftlyHomeBin)...")
+        await ctx.print("Installing swiftly in \(swiftlyHomeBin)...")
 
         if FileManager.default.fileExists(atPath: swiftlyHomeBin) {
             try FileManager.default.removeItem(atPath: swiftlyHomeBin)
@@ -321,7 +321,7 @@ extension Platform {
             try FileManager.default.moveItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
         } catch {
             try FileManager.default.copyItem(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
-            ctx.print("Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed.")
+            await ctx.print("Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed.")
         }
     }
 

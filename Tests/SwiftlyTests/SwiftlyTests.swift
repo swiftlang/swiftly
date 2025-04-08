@@ -20,13 +20,13 @@ struct SwiftlyTestError: LocalizedError {
 
 let unmockedMsg = "All swiftly test case logic must be mocked in order to prevent mutation of the system running the test. This test must either run swiftly components inside a SwiftlyTests.with... closure, or it must have one of the @Test traits, such as @Test(.testHome), or @Test(.mock...)"
 
-struct OutputHandlerFail: OutputHandler {
+actor OutputHandlerFail: OutputHandler {
     func handleOutputLine(_: String) {
         fatalError(unmockedMsg)
     }
 }
 
-struct InputProviderFail: InputProvider {
+actor InputProviderFail: InputProvider {
     func readLine() -> String? {
         fatalError(unmockedMsg)
     }
@@ -211,7 +211,7 @@ public enum SwiftlyTests {
 
         try await cmd.run(ctx)
 
-        return handler.lines
+        return await handler.lines
     }
 
     static func getTestHomePath(name: String) -> URL {
@@ -418,7 +418,7 @@ public enum SwiftlyTests {
     }
 }
 
-public class TestOutputHandler: SwiftlyCore.OutputHandler {
+public actor TestOutputHandler: SwiftlyCore.OutputHandler {
     public var lines: [String]
     private let quiet: Bool
 
@@ -436,7 +436,7 @@ public class TestOutputHandler: SwiftlyCore.OutputHandler {
     }
 }
 
-public class TestInputProvider: SwiftlyCore.InputProvider {
+public actor TestInputProvider: SwiftlyCore.InputProvider {
     private var lines: [String]
 
     public init(lines: [String]) {
@@ -452,11 +452,9 @@ public class TestInputProvider: SwiftlyCore.InputProvider {
 public struct SwiftExecutable {
     public let path: URL
 
-    private static let stableRegex: Regex<(Substring, Substring)> =
+    private static func stableRegex() -> Regex<(Substring, Substring)> {
         try! Regex("swift-([^-]+)-RELEASE")
-
-    private static let snapshotRegex: Regex<(Substring, Substring)> =
-        try! Regex("\\(LLVM [a-z0-9]+, Swift ([a-z0-9]+)\\)")
+    }
 
     public func exists() -> Bool {
         self.path.fileExists()
@@ -484,7 +482,7 @@ public struct SwiftExecutable {
 
         let outputString = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
 
-        if let match = try Self.stableRegex.firstMatch(in: outputString) {
+        if let match = try Self.stableRegex().firstMatch(in: outputString) {
             let versions = match.output.1.split(separator: ".")
 
             let major = Int(versions[0])!
@@ -509,11 +507,14 @@ public struct SwiftExecutable {
 
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
 /// All other requests are performed using an actual HTTP client.
-public class MockToolchainDownloader: HTTPRequestExecutor {
-    private static let releaseURLRegex: Regex<(Substring, Substring, Substring, Substring?)> =
+public final class MockToolchainDownloader: HTTPRequestExecutor {
+    private static func releaseURLRegex() -> Regex<(Substring, Substring, Substring, Substring?)> {
         try! Regex("swift-(\\d+)\\.(\\d+)(?:\\.(\\d+))?-RELEASE")
-    private static let snapshotURLRegex: Regex<Substring> =
+    }
+
+    private static func snapshotURLRegex() -> Regex<Substring> {
         try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
+    }
 
     private let executables: [String]
 #if os(Linux)
@@ -668,7 +669,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
 
     private func makeToolchainDownloadResponse(from url: URL) throws -> HTTPClientResponse {
         let toolchain: ToolchainVersion
-        if let match = try Self.releaseURLRegex.firstMatch(in: url.path) {
+        if let match = try Self.releaseURLRegex().firstMatch(in: url.path) {
             var version = "\(match.output.1).\(match.output.2)."
             if let patch = match.output.3 {
                 version += patch
@@ -676,7 +677,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                 version += "0"
             }
             toolchain = try ToolchainVersion(parsing: version)
-        } else if let match = try Self.snapshotURLRegex.firstMatch(in: url.path) {
+        } else if let match = try Self.snapshotURLRegex().firstMatch(in: url.path) {
             let selector = try ToolchainSelector(parsing: String(match.output))
             guard case let .snapshot(branch, date) = selector else {
                 throw SwiftlyTestError(message: "unexpected selector: \(selector)")

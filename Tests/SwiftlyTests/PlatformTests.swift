@@ -11,7 +11,7 @@ import Testing
         let tmpDir = Swiftly.currentPlatform.getTempFilePath()
         try! FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         let mockedToolchainFile = tmpDir.appendingPathComponent("swift-\(version).\(ext)")
-        let mockedToolchain = try mockDownloader.makeMockedToolchain(toolchain: version, name: tmpDir.path)
+        let mockedToolchain = try await mockDownloader.makeMockedToolchain(toolchain: version, name: tmpDir.path)
         try mockedToolchain.write(to: mockedToolchainFile)
 
         return (mockedToolchainFile, version, tmpDir)

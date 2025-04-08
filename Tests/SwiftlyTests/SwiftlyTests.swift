@@ -507,7 +507,7 @@ public struct SwiftExecutable {
 
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
 /// All other requests are performed using an actual HTTP client.
-public final class MockToolchainDownloader: HTTPRequestExecutor {
+public final actor MockToolchainDownloader: HTTPRequestExecutor {
     private static func releaseURLRegex() -> Regex<(Substring, Substring, Substring, Substring?)> {
         try! Regex("swift-(\\d+)\\.(\\d+)(?:\\.(\\d+))?-RELEASE")
     }

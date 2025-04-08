@@ -165,11 +165,13 @@ extension Platform {
     /// the exit code and program information.
     ///
     public func proxy(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String], _ env: [String: String] = [:]) async throws {
+        let tcPath = self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
+
         var newEnv = try self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain)
         for (key, value) in env {
             newEnv[key] = value
         }
-        try self.runProgram([command] + arguments, env: newEnv)
+        try self.runProgram([tcPath.appendingPathComponent(command).path] + arguments, env: newEnv)
     }
 
     /// Proxy the invocation of the provided command to the chosen toolchain and capture the output.
@@ -178,7 +180,8 @@ extension Platform {
     /// the exit code and program information.
     ///
     public func proxyOutput(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws -> String? {
-        try await self.runProgramOutput(command, arguments, env: self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain))
+        let tcPath = self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
+        return try await self.runProgramOutput(tcPath.appendingPathComponent(command).path, arguments, env: self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain))
     }
 
     /// Run a program.

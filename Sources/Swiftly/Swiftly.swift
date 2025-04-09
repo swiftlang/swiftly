@@ -100,9 +100,16 @@ extension SwiftlyCommand {
         
         return {
             if shouldUpdateSwiftly {
-                ctx.print("----------------------------")
-                ctx.print("A new release of swiftly is available")
-                ctx.print("Please run `swiftly self-update` to update.")
+                let errorMessage = """
+                -----------------------------
+                A new release of swiftly is available
+                Please run `swiftly self-update` to update.
+                -----------------------------\n
+                """
+                
+                if let data = errorMessage.data(using: .utf8) {
+                    FileHandle.standardError.write(data)
+                }
             }
         }
     }

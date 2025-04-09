@@ -21,7 +21,10 @@ struct SelfUpdate: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx).appendingPathComponent("swiftly")
         guard FileManager.default.fileExists(atPath: swiftlyBin.path) else {

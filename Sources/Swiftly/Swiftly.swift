@@ -100,14 +100,14 @@ extension SwiftlyCommand {
         
         return {
             if shouldUpdateSwiftly {
-                let errorMessage = """
+                let updateMessage = """
                 -----------------------------
                 A new release of swiftly is available
                 Please run `swiftly self-update` to update.
                 -----------------------------\n
                 """
                 
-                if let data = errorMessage.data(using: .utf8) {
+                if let data = updateMessage.data(using: .utf8) {
                     FileHandle.standardError.write(data)
                 }
             }

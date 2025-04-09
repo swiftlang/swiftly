@@ -454,11 +454,6 @@ extension Platform {
             return cmdAbsolute
         }
 
-        // If we're running inside an xctest then we don't have a location for this swiftly.
-        guard let cmdAbsolute, !cmdAbsolute.string.hasSuffix("xctest") else {
-            return nil
-        }
-
         return try await fs.exists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil
     }
 

@@ -27,6 +27,7 @@ struct Unlink: SwiftlyCommand {
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
         try validateSwiftly(ctx)
 
+        var pathChanged = false
         if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin(ctx) {
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
             let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
@@ -43,8 +44,13 @@ struct Unlink: SwiftlyCommand {
 
                 if proxy.fileExists() {
                     try FileManager.default.removeItem(at: proxy)
+                    pathChanged = true
                 }
             }
+        }
+
+        if pathChanged {
+            await ctx.print(Messages.refreshShell)
         }
     }
 }

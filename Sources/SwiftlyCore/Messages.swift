@@ -1,4 +1,4 @@
-public struct Messages {
+public enum Messages {
     public static let refreshShell = """
     NOTE: Swiftly has updated some elements in your path and your shell may not yet be
     aware of the changes. You can update your shell's environment by running

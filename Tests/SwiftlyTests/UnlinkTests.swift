@@ -6,7 +6,7 @@ import Testing
 @Suite struct UnlinkTests {
     /// Tests that disabling swiftly results in swiftlyBinDir with no symlinks to toolchain binaries in it.
     @Test func testUnlink() async throws {
-    try await SwiftlyTests.withTestHome {
+        try await SwiftlyTests.withTestHome {
             let fm = FileManager.default
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx)
             let swiftlyBinaryPath = swiftlyBinDir.appendingPathComponent("swiftly")

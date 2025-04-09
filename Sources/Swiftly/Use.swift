@@ -60,6 +60,16 @@ struct Use: SwiftlyCommand {
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
         try validateSwiftly(ctx)
+
+        let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
+        let shouldUpdateSwiftly = try swiftlyRelease.swiftlyVersion > SwiftlyCore.version
+        defer {
+            if shouldUpdateSwiftly {
+                ctx.print("A new release of swiftly is available")
+                ctx.print("Please run `swiftly self-update` to update.")
+            }
+        }
+        
         var config = try Config.load(ctx)
 
         // This is the bare use command where we print the selected toolchain version (or the path to it)

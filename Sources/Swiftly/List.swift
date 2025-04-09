@@ -39,6 +39,16 @@ struct List: SwiftlyCommand {
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
         try validateSwiftly(ctx)
+
+        let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
+        let shouldUpdateSwiftly = try swiftlyRelease.swiftlyVersion > SwiftlyCore.version
+        defer {
+            if shouldUpdateSwiftly {
+                ctx.print("A new release of swiftly is available")
+                ctx.print("Please run `swiftly self-update` to update.")
+            }
+        }
+
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }

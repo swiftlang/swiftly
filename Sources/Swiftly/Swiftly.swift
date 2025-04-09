@@ -34,7 +34,7 @@ public struct Swiftly: SwiftlyCommand {
             SelfUpdate.self,
             Run.self,
             Link.self,
-            Unlink.self
+            Unlink.self,
         ]
     )
 

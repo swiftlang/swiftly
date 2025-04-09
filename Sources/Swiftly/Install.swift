@@ -199,7 +199,8 @@ struct Install: SwiftlyCommand {
             selector = try ToolchainSelector(parsing: version)
         } else {
             if case let (_, result) = try await selectToolchain(ctx, config: &config),
-               case let .swiftVersionFile(_, sel, error) = result {
+               case let .swiftVersionFile(_, sel, error) = result
+            {
                 if let sel = sel {
                     selector = sel
                 } else if let error = error {

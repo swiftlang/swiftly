@@ -1,6 +1,6 @@
 import ArgumentParser
-import SwiftlyCore
 import Foundation
+import SwiftlyCore
 
 struct Unlink: SwiftlyCommand {
     public static let configuration = CommandConfiguration(

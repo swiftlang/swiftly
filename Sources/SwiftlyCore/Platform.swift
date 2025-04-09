@@ -328,7 +328,6 @@ extension Platform {
     // Find the location where swiftly should be executed.
     public func findSwiftlyBin(_ ctx: SwiftlyCoreContext) throws -> String? {
         let swiftlyHomeBin = self.swiftlyBinDir(ctx).appendingPathComponent("swiftly", isDirectory: false).path
-
         // First, let's find out where we are.
         let cmd = CommandLine.arguments[0]
         let cmdAbsolute = if cmd.hasPrefix("/") {
@@ -351,11 +350,6 @@ extension Platform {
         let userHome = FileManager.default.homeDirectoryForCurrentUser
         if let cmdAbsolute, !cmdAbsolute.hasPrefix(userHome.path + "/") && (cmdAbsolute.hasPrefix("/usr/") || cmdAbsolute.hasPrefix("/opt/") || cmdAbsolute.hasPrefix("/bin/")) {
             return cmdAbsolute
-        }
-
-        // If we're running inside an xctest then we don't have a location for this swiftly.
-        guard let cmdAbsolute, !cmdAbsolute.hasSuffix("xctest") else {
-            return nil
         }
 
         return FileManager.default.fileExists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil

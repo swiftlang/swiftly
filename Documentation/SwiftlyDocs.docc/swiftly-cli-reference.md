@@ -545,3 +545,81 @@ The script will receive the argument '+abcde' followed by '+xyz'.
 
 
 
+## link
+
+Link swiftly so it resumes management of the active toolchain.
+
+```
+swiftly link [<toolchain-selector>] [--assume-yes] [--verbose] [--version] [--help]
+```
+
+**toolchain-selector:**
+
+*Links swiftly if it has been disabled.*
+
+
+Links swiftly if it has been disabled.
+
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+
+## unlink
+
+Unlinks swiftly so it no longer manages the active toolchain.
+
+```
+swiftly unlink [<toolchain-selector>] [--assume-yes] [--verbose] [--version] [--help]
+```
+
+**toolchain-selector:**
+
+*Unlinks swiftly, allowing the system default toolchain to be used.*
+
+
+Unlinks swiftly until swiftly is linked again with:
+
+    $ swiftly link
+
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+

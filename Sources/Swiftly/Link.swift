@@ -32,11 +32,15 @@ struct Link: SwiftlyCommand {
             config: &config
         )
 
-        let _ = try Install.setupProxies(
+        let pathChanged = try Install.setupProxies(
             ctx,
             version: toolchainVersion,
             verbose: self.root.verbose,
             assumeYes: self.root.assumeYes
         )
+
+        if pathChanged {
+            ctx.print(Messages.refreshShell)
+        }
     }
 }

@@ -96,33 +96,18 @@ struct Install: SwiftlyCommand {
 
         // Fish doesn't cache its path, so this instruction is not necessary.
         if pathChanged && !shell.hasSuffix("fish") {
-            ctx.print("""
-            NOTE: Swiftly has updated some elements in your path and your shell may not yet be
-            aware of the changes. You can update your shell's environment by running
-
-            hash -r
-
-            or restarting your shell.
-
-            """)
+            ctx.print(Messages.refreshShell)
         }
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
-                throw SwiftlyError(message: """
-
-                There are some dependencies that should be installed before using this toolchain.
-                You can run the following script as the system administrator (e.g. root) to prepare
-                your system:
-
-                \(postInstallScript)
-                """)
+                throw SwiftlyError(message: Messages.postInstall(postInstallScript))
             }
 
             try Data(postInstallScript.utf8).write(to: URL(fileURLWithPath: postInstallFile), options: .atomic)
         }
-    }    
-    
+    }
+
     public static func setupProxies(
         _ ctx: SwiftlyCoreContext,
         version: ToolchainVersion,
@@ -130,7 +115,7 @@ struct Install: SwiftlyCommand {
         assumeYes: Bool
     ) throws -> Bool {
         var pathChanged = false
-        
+
         // Create proxies if we have a location where we can point them
         if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin(ctx) {
             // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.

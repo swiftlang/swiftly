@@ -146,15 +146,7 @@ struct Update: SwiftlyCommand {
         }
 
         if pathChanged {
-            await ctx.print("""
-            NOTE: Swiftly has updated some elements in your path and your shell may not yet be
-            aware of the changes. You can update your shell's environment by running
-
-            hash -r
-
-            or restarting your shell.
-
-            """)
+            await ctx.print(Messages.refreshShell)
         }
     }
 

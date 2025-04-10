@@ -68,10 +68,10 @@ public enum Proxy {
         } catch let terminated as RunProgramError {
             exit(terminated.exitCode)
         } catch let error as SwiftlyError {
-            ctx.print(error.message)
+            await ctx.print(error.message)
             exit(1)
         } catch {
-            ctx.print("\(error)")
+            await ctx.print("\(error)")
             exit(1)
         }
     }

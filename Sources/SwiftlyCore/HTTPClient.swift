@@ -72,7 +72,7 @@ public struct ToolchainFile: Sendable {
     }
 }
 
-public protocol HTTPRequestExecutor {
+public protocol HTTPRequestExecutor: Sendable {
     func getCurrentSwiftlyRelease() async throws -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease
     func getReleaseToolchains() async throws -> [SwiftlyWebsiteAPI.Components.Schemas.Release]
     func getSnapshotToolchains(
@@ -102,7 +102,7 @@ struct SwiftlyUserAgentMiddleware: ClientMiddleware {
 }
 
 /// An `HTTPRequestExecutor` backed by a shared `HTTPClient`. This makes actual network requests.
-public class HTTPRequestExecutorImpl: HTTPRequestExecutor {
+public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     let httpClient: HTTPClient
 
     public init() {
@@ -365,11 +365,12 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
 }
 
 extension SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch {
-    private static let snapshotRegex: Regex<(Substring, Substring?, Substring?, Substring)> =
+    private static func snapshotRegex() -> Regex<(Substring, Substring?, Substring?, Substring)> {
         try! Regex("swift(?:-(\\d+)\\.(\\d+))?-DEVELOPMENT-SNAPSHOT-(\\d{4}-\\d{2}-\\d{2})")
+    }
 
     func parseSnapshot() throws -> ToolchainVersion.Snapshot? {
-        guard let match = try? Self.snapshotRegex.firstMatch(in: self.dir) else {
+        guard let match = try? Self.snapshotRegex().firstMatch(in: self.dir) else {
             return nil
         }
 
@@ -402,7 +403,7 @@ public struct DownloadNotFoundError: LocalizedError {
 }
 
 /// HTTPClient wrapper used for interfacing with various REST APIs and downloading things.
-public struct SwiftlyHTTPClient {
+public struct SwiftlyHTTPClient: Sendable {
     public let httpRequestExecutor: HTTPRequestExecutor
 
     public init(httpRequestExecutor: HTTPRequestExecutor) {

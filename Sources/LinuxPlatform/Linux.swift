@@ -334,7 +334,7 @@ public struct Linux: Platform {
 
     public func install(
         _ ctx: SwiftlyCoreContext, from tmpFile: URL, version: ToolchainVersion, verbose: Bool
-    ) throws {
+    ) async throws {
         guard tmpFile.fileExists() else {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
@@ -345,7 +345,7 @@ public struct Linux: Platform {
             )
         }
 
-        ctx.print("Extracting toolchain...")
+        await ctx.print("Extracting toolchain...")
         let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent(version.name)
 
         if toolchainDir.fileExists() {
@@ -360,7 +360,10 @@ public struct Linux: Platform {
             let destination = toolchainDir.appendingPathComponent(String(relativePath))
 
             if verbose {
-                ctx.print("\(destination.path)")
+                // To avoid having to make extractArchive async this is a regular print
+                //  to stdout. Note that it is unlikely that the test mocking will require
+                //  capturing this output.
+                print("\(destination.path)")
             }
 
             // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
@@ -368,7 +371,7 @@ public struct Linux: Platform {
         }
     }
 
-    public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: URL) throws {
+    public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: URL) async throws {
         guard archive.fileExists() else {
             throw SwiftlyError(message: "\(archive) doesn't exist")
         }
@@ -379,7 +382,7 @@ public struct Linux: Platform {
         }
         try FileManager.default.createDirectory(atPath: tmpDir.path, withIntermediateDirectories: true)
 
-        ctx.print("Extracting new swiftly...")
+        await ctx.print("Extracting new swiftly...")
         try extractArchive(atPath: archive) { name in
             // Extract to the temporary directory
             tmpDir.appendingPathComponent(String(name))
@@ -409,7 +412,7 @@ public struct Linux: Platform {
         _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: URL, verbose: Bool
     ) async throws {
         if verbose {
-            ctx.print("Downloading toolchain signature...")
+            await ctx.print("Downloading toolchain signature...")
         }
 
         let sigFile = self.getTempFilePath()
@@ -420,7 +423,7 @@ public struct Linux: Platform {
 
         try await ctx.httpClient.getSwiftToolchainFileSignature(toolchainFile).download(to: sigFile)
 
-        ctx.print("Verifying toolchain signature...")
+        await ctx.print("Verifying toolchain signature...")
         do {
             if let mockedHomeDir = ctx.mockedHomeDir {
                 try self.runProgram(
@@ -439,7 +442,7 @@ public struct Linux: Platform {
         _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: URL, verbose: Bool
     ) async throws {
         if verbose {
-            ctx.print("Downloading swiftly signature...")
+            await ctx.print("Downloading swiftly signature...")
         }
 
         let sigFile = self.getTempFilePath()
@@ -452,7 +455,7 @@ public struct Linux: Platform {
             url: archiveDownloadURL.appendingPathExtension("sig")
         ).download(to: sigFile)
 
-        ctx.print("Verifying swiftly signature...")
+        await ctx.print("Verifying swiftly signature...")
         do {
             if let mockedHomeDir = ctx.mockedHomeDir {
                 try self.runProgram(
@@ -492,7 +495,7 @@ public struct Linux: Platform {
             """)
 
         let choice =
-            ctx.readLine(prompt: "Pick one of the available selections [0-\(self.linuxPlatforms.count)] ")
+            await ctx.readLine(prompt: "Pick one of the available selections [0-\(self.linuxPlatforms.count)] ")
                 ?? "0"
 
         guard let choiceNum = Int(choice) else {

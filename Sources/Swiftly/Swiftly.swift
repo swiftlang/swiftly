@@ -18,7 +18,7 @@ public struct GlobalOptions: ParsableArguments {
 }
 
 public struct Swiftly: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "A utility for installing and managing Swift toolchains.",
 
         version: String(describing: SwiftlyCore.version),

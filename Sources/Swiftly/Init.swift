@@ -3,7 +3,7 @@ import Foundation
 import SwiftlyCore
 
 struct Init: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Perform swiftly initialization into your user account."
     )
 
@@ -53,7 +53,7 @@ struct Init: SwiftlyCommand {
             // This is a simple upgrade from the 0.4.0 pre-releases, or 1.x
 
             // Move our executable over to the correct place
-            try Swiftly.currentPlatform.installSwiftlyBin(ctx)
+            try await Swiftly.currentPlatform.installSwiftlyBin(ctx)
 
             // Update and save the version
             config.version = SwiftlyCore.version
@@ -113,9 +113,9 @@ struct Init: SwiftlyCommand {
                 """
             }
 
-            ctx.print(msg)
+            await ctx.print(msg)
 
-            guard ctx.promptForConfirmation(defaultBehavior: true) else {
+            guard await ctx.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "swiftly installation has been cancelled")
             }
         }
@@ -177,10 +177,10 @@ struct Init: SwiftlyCommand {
         guard var config else { throw SwiftlyError(message: "Configuration could not be set") }
 
         // Move our executable over to the correct place
-        try Swiftly.currentPlatform.installSwiftlyBin(ctx)
+        try await Swiftly.currentPlatform.installSwiftlyBin(ctx)
 
         if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {
-            ctx.print("Creating shell environment file for the user...")
+            await ctx.print("Creating shell environment file for the user...")
             var env = ""
             if shell.hasSuffix("fish") {
                 env = """
@@ -206,7 +206,7 @@ struct Init: SwiftlyCommand {
         }
 
         if !noModifyProfile {
-            ctx.print("Updating profile...")
+            await ctx.print("Updating profile...")
 
             let userHome = ctx.mockedHomeDir ?? FileManager.default.homeDirectoryForCurrentUser
 
@@ -262,7 +262,7 @@ struct Init: SwiftlyCommand {
                 try Data(sourceLine.utf8).append(to: profileHome)
 
                 if !quietShellFollowup {
-                    ctx.print("""
+                    await ctx.print("""
                     To begin using installed swiftly from your current shell, first run the following command:
                         \(sourceLine)
 
@@ -272,7 +272,7 @@ struct Init: SwiftlyCommand {
 
             // Fish doesn't have path caching, so this might only be needed for bash/zsh
             if pathChanged && !quietShellFollowup && !shell.hasSuffix("fish") {
-                ctx.print("""
+                await ctx.print("""
                 Your shell caches items on your path for better performance. Swiftly has added
                 items to your path that may not get picked up right away. You can update your
                 shell's environment by running
@@ -285,7 +285,7 @@ struct Init: SwiftlyCommand {
             }
 
             if let postInstall {
-                ctx.print("""
+                await ctx.print("""
                 There are some dependencies that should be installed before using this toolchain.
                 You can run the following script as the system administrator (e.g. root) to prepare
                 your system:

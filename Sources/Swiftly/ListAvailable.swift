@@ -2,7 +2,7 @@ import ArgumentParser
 import SwiftlyCore
 
 struct ListAvailable: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "List toolchains available for install."
     )
 
@@ -80,7 +80,7 @@ struct ListAvailable: SwiftlyCommand {
             } else if installedToolchains.contains(toolchain) {
                 message += " (installed)"
             }
-            ctx.print(message)
+            await ctx.print(message)
         }
 
         if let selector {
@@ -100,16 +100,16 @@ struct ListAvailable: SwiftlyCommand {
             }
 
             let message = "Available \(modifier) toolchains"
-            ctx.print(message)
-            ctx.print(String(repeating: "-", count: message.count))
+            await ctx.print(message)
+            await ctx.print(String(repeating: "-", count: message.count))
             for toolchain in toolchains {
-                printToolchain(toolchain)
+                await printToolchain(toolchain)
             }
         } else {
             print("Available release toolchains")
             print("----------------------------")
             for toolchain in toolchains where toolchain.isStableRelease() {
-                printToolchain(toolchain)
+                await printToolchain(toolchain)
             }
         }
     }

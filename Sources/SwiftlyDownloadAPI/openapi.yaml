@@ -1,0 +1,154 @@
+openapi: '3.0.3'
+info:
+  title: swift.org Download Endpoints
+  description: Endpoints for retrieving Swift toolchain and Swiftly releases.
+  version: 1.1.0
+servers:
+  - url: https://www.swift.org
+    description: The production deployment.
+  - url: https://download.swift.org
+    description: The production deployment (for file download operations).
+tags:
+  - name: Download
+    description: File download operations for Swift toolchains, Swiftly releases, and their signatures.
+  - name: Security
+    description: Signing keys for published swift.org releases.
+paths:
+  /keys/all-keys.asc:
+    get:
+      operationId: swiftGpgKeys
+      summary: Download Swift GPG keys.
+      tags:
+        - Security
+      responses:
+        200:
+          description: A successful response.
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: binary
+  /swiftly/{platform}/{file}:
+    parameters:
+      - name: platform
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: downloadSwiftlyRelease
+      summary: Download a Swiftly release.
+      tags:
+        - Download
+      responses:
+        200:
+          description: A successful response.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        404:
+          description: Not found.
+  /swiftly/{platform}/{file}.sig:
+    parameters:
+      - name: platform
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSwiftlyReleaseSignature
+      summary: Get a Swiftly release signature.
+      tags:
+        - Download
+      responses:
+        200:
+          description: A successful response.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /{category}/{platform}/{version}/{file}:
+    parameters:
+      - name: category
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: platform
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: downloadSwiftToolchain
+      summary: Download a Swift toolchain.
+      tags:
+        - Download
+      responses:
+        200:
+          description: A successful response.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        404:
+          description: Not found.
+  /{category}/{platform}/{version}/{file}.sig:
+    parameters:
+      - name: category
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: platform
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSwiftToolchainSignature
+      summary: Get a Swift toolchain signature.
+      tags:
+        - Download
+      responses:
+        200:
+          description: A successful response.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary

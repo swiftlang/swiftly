@@ -52,10 +52,27 @@ let package = Package(
         .target(
             name: "SwiftlyCore",
             dependencies: [
+                "SwiftlyDownloadAPI",
+                "SwiftlyWebsiteAPI",
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "NIOFoundationCompat", package: "swift-nio"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
+            ],
+        ),
+        .target(
+            name: "SwiftlyDownloadAPI",
+            dependencies: [
+                .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+            ],
+            plugins: [
+                .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
+            ]
+        ),
+        .target(
+            name: "SwiftlyWebsiteAPI",
+            dependencies: [
+                .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
             ],
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),

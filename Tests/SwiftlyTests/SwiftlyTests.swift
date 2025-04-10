@@ -424,7 +424,7 @@ public enum SwiftlyTests {
 }
 
 public actor TestOutputHandler: SwiftlyCore.OutputHandler {
-    public var lines: [String]
+    private(set) var lines: [String]
     private let quiet: Bool
 
     public init(quiet: Bool) {

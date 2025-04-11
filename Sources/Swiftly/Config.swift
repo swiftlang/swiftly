@@ -54,7 +54,7 @@ public struct Config: Codable, Equatable {
 #if os(macOS)
         let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
 #else
-        let systemToolchains = []
+        let systemToolchains: [ToolchainVersion] = []
 #endif
 
         guard let selector else {

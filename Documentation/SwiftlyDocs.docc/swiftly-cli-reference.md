@@ -206,6 +206,10 @@ Likewise, the latest snapshot associated with a given development branch can be 
     $ swiftly use 5.7-snapshot
     $ swiftly use main-snapshot
 
+macOS ONLY: There is a special selector for swiftly to use your Xcode toolchain. If there are multiple versions of Xcode then swiftly will use the currently selected toolchain from xcode-select.
+
+    $ swiftly use xcode
+
 
 **--version:**
 

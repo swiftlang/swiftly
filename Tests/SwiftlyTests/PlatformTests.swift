@@ -85,4 +85,19 @@ import Testing
         toolchains = try FileManager.default.contentsOfDirectory(at: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx), includingPropertiesForKeys: nil)
         #expect(0 == toolchains.count)
     }
+
+#if os(macOS)
+    @Test(.testHome()) func findXcodeToolchainLocation() async throws {
+        // GIVEN: the xcode toolchain
+        // AND there is xcode installed
+        guard let xcodeLocation = try? await Swiftly.currentPlatform.runProgramOutput("xcode-select", "-p"), xcodeLocation != "" else {
+            return
+        }
+
+        // WHEN: the location of the xcode toolchain can be found
+        let toolchainLocation = try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .xcodeVersion)
+
+        #expect(toolchainLocation.path.hasPrefix(xcodeLocation.replacingOccurrences(of: "\n", with: "")))
+    }
+#endif
 }

@@ -132,10 +132,10 @@ public protocol Platform: Sendable {
     func getShell() async throws -> String
 
     /// Find the location where the toolchain should be installed.
-    func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> URL
+    func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> URL
 
     /// Find the location of the toolchain binaries.
-    func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> URL
+    func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> URL
 }
 
 extension Platform {
@@ -164,11 +164,11 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
-    func proxyEnv(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) throws -> [
+    func proxyEnv(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> [
         String:
             String
     ] {
-        let tcPath = self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
+        let tcPath = try await self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
         guard tcPath.fileExists() else {
             throw SwiftlyError(
                 message:
@@ -196,7 +196,7 @@ extension Platform {
         _ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String,
         _ arguments: [String], _ env: [String: String] = [:]
     ) async throws {
-        var newEnv = try self.proxyEnv(ctx, toolchain)
+        var newEnv = try await self.proxyEnv(ctx, toolchain)
         for (key, value) in env {
             newEnv[key] = value
         }
@@ -436,9 +436,9 @@ extension Platform {
         return FileManager.default.fileExists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil
     }
 
-    public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> URL
+    public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> URL
     {
-        self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
+        try await self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
     }
 
 #endif

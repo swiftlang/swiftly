@@ -195,6 +195,8 @@ struct Update: SwiftlyCommand {
             default:
                 fatalError("unreachable")
             }
+        case let .xcode:
+            throw SwiftlyError(message: "xcode cannot be updated from swiftly")
         }
     }
 

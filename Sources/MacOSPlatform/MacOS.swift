@@ -207,9 +207,15 @@ public struct MacOS: Platform {
         return "/bin/zsh"
     }
 
-    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> URL
-    {
-        self.swiftlyToolchainsDir(ctx).appendingPathComponent("\(toolchain.identifier).xctoolchain")
+    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> URL {
+        if toolchain == .xcodeVersion {
+            // Print the toolchain location with the help of xcrun
+            if let xcrunLocation = try? await self.runProgramOutput("/usr/bin/xcrun", "-f", "swift") {
+                return URL(filePath: xcrunLocation.replacingOccurrences(of: "\n", with: "")).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            }
+        }
+
+        return self.swiftlyToolchainsDir(ctx).appendingPathComponent("\(toolchain.identifier).xctoolchain")
     }
 
     public static let currentPlatform: any Platform = MacOS()

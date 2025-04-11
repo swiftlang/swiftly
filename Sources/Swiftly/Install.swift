@@ -135,9 +135,9 @@ struct Install: SwiftlyCommand {
 
                 hash -r
 
-                or restarting your shell.
+            or restarting your shell.
 
-                """)
+            """)
         }
 
         if let postInstallScript {

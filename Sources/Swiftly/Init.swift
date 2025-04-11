@@ -140,7 +140,7 @@ struct Init: SwiftlyCommand {
             source "\(envFile.path)"
             """
         } else if shell.hasSuffix("/nu") {
-            envFile = Swiftly.currentPlatform.swiftlyHomeDir.appendingPathComponent("env.nu", isDirectory: false)
+            envFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx).appendingPathComponent("env.nu", isDirectory: false)
             sourceLine = """
 
             # Added by swiftly

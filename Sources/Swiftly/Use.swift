@@ -78,7 +78,7 @@ struct Use: SwiftlyCommand {
 
             if self.printLocation {
                 // Print the toolchain location and exit
-                await ctx.print("\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion).path)")
+                await ctx.print("\(try await Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion).path)")
                 return
             }
 

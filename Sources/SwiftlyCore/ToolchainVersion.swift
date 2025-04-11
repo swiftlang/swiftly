@@ -90,6 +90,7 @@ public enum ToolchainVersion: Sendable {
 
     case stable(StableRelease)
     case snapshot(Snapshot)
+    case xcode
 
     public init(major: Int, minor: Int, patch: Int) {
         self = .stable(StableRelease(major: major, minor: minor, patch: patch))
@@ -98,6 +99,8 @@ public enum ToolchainVersion: Sendable {
     public init(snapshotBranch: Snapshot.Branch, date: String) {
         self = .snapshot(Snapshot(branch: snapshotBranch, date: date))
     }
+
+    public static let xcodeVersion: ToolchainVersion = .xcode
 
     static func stableRegex() -> Regex<(Substring, Substring, Substring, Substring)> {
         try! Regex("^(?:Swift )?(\\d+)\\.(\\d+)\\.(\\d+)$")
@@ -132,6 +135,8 @@ public enum ToolchainVersion: Sendable {
                 throw SwiftlyError(message: "invalid release snapshot version: \(string)")
             }
             self = ToolchainVersion(snapshotBranch: .release(major: major, minor: minor), date: String(match.output.3))
+        } else if string == "xcode" {
+            self = ToolchainVersion.xcodeVersion
         } else {
             throw SwiftlyError(message: "invalid toolchain version: \"\(string)\"")
         }
@@ -176,6 +181,8 @@ public enum ToolchainVersion: Sendable {
             case let .release(major, minor):
                 return "\(major).\(minor)-snapshot-\(release.date)"
             }
+        case .xcode:
+            return "xcode"
         }
     }
 
@@ -194,6 +201,8 @@ public enum ToolchainVersion: Sendable {
             case let .release(major, minor):
                 return "swift-\(major).\(minor)-DEVELOPMENT-SNAPSHOT-\(release.date)-a"
             }
+        case .xcode:
+            return "xcode"
         }
     }
 }
@@ -214,6 +223,8 @@ extension ToolchainVersion: CustomStringConvertible {
             return "\(release)"
         case let .snapshot(snapshot):
             return "\(snapshot)"
+        case .xcode:
+            return "xcode"
         }
     }
 }
@@ -231,6 +242,10 @@ extension ToolchainVersion: Comparable {
             return false
         case (.stable, .snapshot):
             return !(rhs < lhs)
+        case (.xcode, .xcode):
+            return true
+        default:
+            return false
         }
     }
 }
@@ -254,6 +269,9 @@ public enum ToolchainSelector: Sendable {
     /// associated with the given branch.
     case snapshot(branch: ToolchainVersion.Snapshot.Branch, date: String?)
 
+    /// Selects the Xcode of the current system.
+    case xcode
+
     public init(major: Int, minor: Int? = nil, patch: Int? = nil) {
         self = .stable(major: major, minor: minor, patch: patch)
     }
@@ -267,6 +285,11 @@ public enum ToolchainSelector: Sendable {
             return
         }
 
+        if input == "xcode" {
+            self = Self.xcode
+            return
+        }
+
         throw SwiftlyError(message: "invalid toolchain selector: \"\(input)\"")
     }
 
@@ -274,7 +297,7 @@ public enum ToolchainSelector: Sendable {
         switch self {
         case .latest, .stable:
             return true
-        case .snapshot:
+        default:
             return false
         }
     }
@@ -312,7 +335,8 @@ public enum ToolchainSelector: Sendable {
                 }
             }
             return true
-
+        case (.xcode, .xcode):
+            return true
         default:
             return false
         }
@@ -341,6 +365,8 @@ extension ToolchainSelector: CustomStringConvertible {
                 s += "-\(date)"
             }
             return s
+        case .xcode:
+            return "xcode"
         }
     }
 }

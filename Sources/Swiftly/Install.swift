@@ -216,6 +216,8 @@ struct Install: SwiftlyCommand {
             case .main:
                 category = "development"
             }
+        case .xcode:
+            fatalError("unreachable: xcode toolchain cannot be installed with swiftly")
         }
 
         let animation = PercentProgressAnimation(
@@ -282,7 +284,7 @@ struct Install: SwiftlyCommand {
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
             let swiftlyBinDirContents =
                 (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
-            let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
+            let toolchainBinDir = try await Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
             let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(
                 atPath: toolchainBinDir.path)
 
@@ -429,6 +431,8 @@ struct Install: SwiftlyCommand {
             }
 
             return .snapshot(firstSnapshot)
+        case .xcode:
+            throw SwiftlyError(message: "xcode toolchains are not available from swift.org")
         }
     }
 }

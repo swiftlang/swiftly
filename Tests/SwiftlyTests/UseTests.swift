@@ -202,7 +202,9 @@ import Testing
 
                 output = try await SwiftlyTests.runWithMockedIO(Use.self, ["use", "-g", "--print-location"])
 
-                #expect(output.contains(where: { $0.contains(Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchain).path) }))
+                let location = try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchain).path
+
+                #expect(output.contains(where: { $0.contains(location) }))
             }
         }
     }

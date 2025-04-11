@@ -51,7 +51,7 @@ struct Uninstall: SwiftlyCommand {
         try validateSwiftly(ctx)
         let startingConfig = try Config.load(ctx)
 
-        let toolchains: [ToolchainVersion]
+        var toolchains: [ToolchainVersion]
         if self.toolchain == "all" {
             // Sort the uninstalled toolchains such that the in-use toolchain will be uninstalled last.
             // This avoids printing any unnecessary output from using new toolchains while the uninstall is in progress.
@@ -67,6 +67,8 @@ struct Uninstall: SwiftlyCommand {
             }
             toolchains = installedToolchains
         }
+
+        toolchains.removeAll(where: { $0 == .xcodeVersion })
 
         guard !toolchains.isEmpty else {
             await ctx.print("No toolchains matched \"\(self.toolchain)\"")
@@ -101,6 +103,9 @@ struct Uninstall: SwiftlyCommand {
                 case let .snapshot(s):
                     // If a snapshot was previously in use, switch to the latest snapshot associated with that branch.
                     selector = .snapshot(branch: s.branch, date: nil)
+                case .xcode:
+                    // Xcode will not be in the list of installed toolchains, so this is only here for completeness
+                    selector = .xcode
                 }
 
                 if let toUse = config.listInstalledToolchains(selector: selector)

@@ -97,6 +97,9 @@ struct List: SwiftlyCommand {
             for toolchain in toolchains where toolchain.isSnapshot() {
                 await printToolchain(toolchain)
             }
+
+            await ctx.print("")
+            await printToolchain(ToolchainVersion.xcode)
         }
     }
 }

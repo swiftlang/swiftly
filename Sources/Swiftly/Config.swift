@@ -52,7 +52,7 @@ public struct Config: Codable, Equatable {
 
     public func listInstalledToolchains(selector: ToolchainSelector?) -> [ToolchainVersion] {
         guard let selector else {
-            return Array(self.installedToolchains)
+            return Array(self.installedToolchains) + [.xcodeVersion]
         }
 
         if case .latest = selector {
@@ -63,7 +63,7 @@ public struct Config: Codable, Equatable {
             return ts
         }
 
-        return self.installedToolchains.filter { toolchain in
+        return (self.installedToolchains + [.xcodeVersion]).filter { toolchain in
             selector.matches(toolchain: toolchain)
         }
     }

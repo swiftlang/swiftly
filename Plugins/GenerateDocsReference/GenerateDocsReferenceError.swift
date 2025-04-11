@@ -1,6 +1,7 @@
 import Foundation
-import PackagePlugin
+@preconcurrency import PackagePlugin
 
+@preconcurrency
 enum GenerateDocsReferencePluginError: Error {
     case unknownBuildConfiguration(String)
     case buildFailed(String)

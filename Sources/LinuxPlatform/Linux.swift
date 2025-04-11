@@ -42,7 +42,8 @@ public struct Linux: Platform {
         "tar.gz"
     }
 
-    private static let skipVerificationMessage: String = "To skip signature verification, specify the --no-verify flag."
+    private static let skipVerificationMessage: String =
+        "To skip signature verification, specify the --no-verify flag."
 
     public func verifySwiftlySystemPrerequisites() throws {
         // Check if the root CA certificates are installed on this system for NIOSSL to use.
@@ -67,10 +68,15 @@ public struct Linux: Platform {
         }
     }
 
-    public func verifySystemPrerequisitesForInstall(_ ctx: SwiftlyCoreContext, platformName: String, version _: ToolchainVersion, requireSignatureValidation: Bool) async throws -> String? {
+    public func verifySystemPrerequisitesForInstall(
+        _ ctx: SwiftlyCoreContext, platformName: String, version _: ToolchainVersion,
+        requireSignatureValidation: Bool
+    ) async throws -> String? {
         // TODO: these are hard-coded until we have a place to query for these based on the toolchain version
         // These lists were copied from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
-        let packages: [String] = switch platformName {
+        let packages: [String] =
+            switch platformName
+        {
         case "ubuntu1804":
             [
                 "libatomic1",
@@ -221,7 +227,9 @@ public struct Linux: Platform {
             []
         }
 
-        let manager: String? = switch platformName {
+        let manager: String? =
+            switch platformName
+        {
         case "ubuntu1804":
             "apt-get"
         case "ubuntu2004":
@@ -259,18 +267,19 @@ public struct Linux: Platform {
             }
 
             let tmpFile = self.getTempFilePath()
-            let _ = FileManager.default.createFile(atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600])
+            let _ = FileManager.default.createFile(
+                atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600]
+            )
             defer {
                 try? FileManager.default.removeItem(at: tmpFile)
             }
 
-            guard let url = URL(string: "https://www.swift.org/keys/all-keys.asc") else {
-                throw SwiftlyError(message: "malformed URL to the swift gpg keys")
-            }
-
-            try await ctx.httpClient.downloadFile(url: url, to: tmpFile)
+            try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
             if let mockedHomeDir = ctx.mockedHomeDir {
-                try self.runProgram("gpg", "--import", tmpFile.path, quiet: true, env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path])
+                try self.runProgram(
+                    "gpg", "--import", tmpFile.path, quiet: true,
+                    env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path]
+                )
             } else {
                 try self.runProgram("gpg", "--import", tmpFile.path, quiet: true)
             }
@@ -323,16 +332,20 @@ public struct Linux: Platform {
         }
     }
 
-    public func install(_ ctx: SwiftlyCoreContext, from tmpFile: URL, version: ToolchainVersion, verbose: Bool) throws {
+    public func install(
+        _ ctx: SwiftlyCoreContext, from tmpFile: URL, version: ToolchainVersion, verbose: Bool
+    ) async throws {
         guard tmpFile.fileExists() else {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
         if !self.swiftlyToolchainsDir(ctx).fileExists() {
-            try FileManager.default.createDirectory(at: self.swiftlyToolchainsDir(ctx), withIntermediateDirectories: false)
+            try FileManager.default.createDirectory(
+                at: self.swiftlyToolchainsDir(ctx), withIntermediateDirectories: false
+            )
         }
 
-        ctx.print("Extracting toolchain...")
+        await ctx.print("Extracting toolchain...")
         let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent(version.name)
 
         if toolchainDir.fileExists() {
@@ -347,7 +360,10 @@ public struct Linux: Platform {
             let destination = toolchainDir.appendingPathComponent(String(relativePath))
 
             if verbose {
-                ctx.print("\(destination.path)")
+                // To avoid having to make extractArchive async this is a regular print
+                //  to stdout. Note that it is unlikely that the test mocking will require
+                //  capturing this output.
+                print("\(destination.path)")
             }
 
             // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
@@ -355,7 +371,7 @@ public struct Linux: Platform {
         }
     }
 
-    public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: URL) throws {
+    public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: URL) async throws {
         guard archive.fileExists() else {
             throw SwiftlyError(message: "\(archive) doesn't exist")
         }
@@ -366,7 +382,7 @@ public struct Linux: Platform {
         }
         try FileManager.default.createDirectory(atPath: tmpDir.path, withIntermediateDirectories: true)
 
-        ctx.print("Extracting new swiftly...")
+        await ctx.print("Extracting new swiftly...")
         try extractArchive(atPath: archive) { name in
             // Extract to the temporary directory
             tmpDir.appendingPathComponent(String(name))
@@ -375,7 +391,9 @@ public struct Linux: Platform {
         try self.runProgram(tmpDir.appendingPathComponent("swiftly").path, "init")
     }
 
-    public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose _: Bool) throws {
+    public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose _: Bool)
+        throws
+    {
         let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent(toolchain.name)
         try FileManager.default.removeItem(at: toolchainDir)
     }
@@ -390,9 +408,11 @@ public struct Linux: Platform {
         FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
     }
 
-    public func verifySignature(_ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: URL, verbose: Bool) async throws {
+    public func verifyToolchainSignature(
+        _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: URL, verbose: Bool
+    ) async throws {
         if verbose {
-            ctx.print("Downloading toolchain signature...")
+            await ctx.print("Downloading toolchain signature...")
         }
 
         let sigFile = self.getTempFilePath()
@@ -401,15 +421,15 @@ public struct Linux: Platform {
             try? FileManager.default.removeItem(at: sigFile)
         }
 
-        try await ctx.httpClient.downloadFile(
-            url: archiveDownloadURL.appendingPathExtension("sig"),
-            to: sigFile
-        )
+        try await ctx.httpClient.getSwiftToolchainFileSignature(toolchainFile).download(to: sigFile)
 
-        ctx.print("Verifying toolchain signature...")
+        await ctx.print("Verifying toolchain signature...")
         do {
             if let mockedHomeDir = ctx.mockedHomeDir {
-                try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: false, env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path])
+                try self.runProgram(
+                    "gpg", "--verify", sigFile.path, archive.path, quiet: false,
+                    env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path]
+                )
             } else {
                 try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
             }
@@ -418,23 +438,65 @@ public struct Linux: Platform {
         }
     }
 
-    private func manualSelectPlatform(_ ctx: SwiftlyCoreContext, _ platformPretty: String?) async -> PlatformDefinition {
-        if let platformPretty {
-            print("\(platformPretty) is not an officially supported platform, but the toolchains for another platform may still work on it.")
-        } else {
-            print("This platform could not be detected, but a toolchain for one of the supported platforms may work on it.")
+    public func verifySwiftlySignature(
+        _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: URL, verbose: Bool
+    ) async throws {
+        if verbose {
+            await ctx.print("Downloading swiftly signature...")
         }
 
-        let selections = self.linuxPlatforms.enumerated().map { "\($0 + 1)) \($1.namePretty)" }.joined(separator: "\n")
+        let sigFile = self.getTempFilePath()
+        let _ = FileManager.default.createFile(atPath: sigFile.path, contents: nil)
+        defer {
+            try? FileManager.default.removeItem(at: sigFile)
+        }
 
-        print("""
-        Please select the platform to use for toolchain downloads:
+        try await ctx.httpClient.getSwiftlyReleaseSignature(
+            url: archiveDownloadURL.appendingPathExtension("sig")
+        ).download(to: sigFile)
 
-        0) Cancel
-        \(selections)
-        """)
+        await ctx.print("Verifying swiftly signature...")
+        do {
+            if let mockedHomeDir = ctx.mockedHomeDir {
+                try self.runProgram(
+                    "gpg", "--verify", sigFile.path, archive.path, quiet: false,
+                    env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path]
+                )
+            } else {
+                try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
+            }
+        } catch {
+            throw SwiftlyError(message: "Signature verification failed: \(error).")
+        }
+    }
 
-        let choice = ctx.readLine(prompt: "Pick one of the available selections [0-\(self.linuxPlatforms.count)] ") ?? "0"
+    private func manualSelectPlatform(_ ctx: SwiftlyCoreContext, _ platformPretty: String?) async
+        -> PlatformDefinition
+    {
+        if let platformPretty {
+            print(
+                "\(platformPretty) is not an officially supported platform, but the toolchains for another platform may still work on it."
+            )
+        } else {
+            print(
+                "This platform could not be detected, but a toolchain for one of the supported platforms may work on it."
+            )
+        }
+
+        let selections = self.linuxPlatforms.enumerated().map { "\($0 + 1)) \($1.namePretty)" }.joined(
+            separator: "\n")
+
+        print(
+            """
+            Please select the platform to use for toolchain downloads:
+
+            0) Cancel
+            \(selections)
+            """)
+
+        let choice =
+            await ctx.readLine(prompt: "Pick one of the available selections [0-\(self.linuxPlatforms.count)] ")
+                ?? "0"
 
         guard let choiceNum = Int(choice) else {
             fatalError("Installation canceled")
@@ -447,11 +509,15 @@ public struct Linux: Platform {
         return self.linuxPlatforms[choiceNum - 1]
     }
 
-    public func detectPlatform(_ ctx: SwiftlyCoreContext, disableConfirmation: Bool, platform: String?) async throws -> PlatformDefinition {
+    public func detectPlatform(
+        _ ctx: SwiftlyCoreContext, disableConfirmation: Bool, platform: String?
+    ) async throws -> PlatformDefinition {
         // We've been given a hint to use
         if let platform {
             guard let pd = linuxPlatforms.first(where: { $0.nameFull == platform }) else {
-                fatalError("Unrecognized platform \(platform). Recognized values: \(self.linuxPlatforms.map(\.nameFull).joined(separator: ", ")).")
+                fatalError(
+                    "Unrecognized platform \(platform). Recognized values: \(self.linuxPlatforms.map(\.nameFull).joined(separator: ", "))."
+                )
             }
 
             return pd
@@ -489,9 +555,13 @@ public struct Linux: Platform {
             } else if info.hasPrefix("ID_LIKE=") {
                 idlike = String(info.dropFirst("ID_LIKE=".count)).replacingOccurrences(of: "\"", with: "")
             } else if info.hasPrefix("VERSION_ID=") {
-                versionID = String(info.dropFirst("VERSION_ID=".count)).replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: ".", with: "")
+                versionID = String(info.dropFirst("VERSION_ID=".count)).replacingOccurrences(
+                    of: "\"", with: ""
+                ).replacingOccurrences(of: ".", with: "")
             } else if info.hasPrefix("PRETTY_NAME=") {
-                platformPretty = String(info.dropFirst("PRETTY_NAME=".count)).replacingOccurrences(of: "\"", with: "")
+                platformPretty = String(info.dropFirst("PRETTY_NAME=".count)).replacingOccurrences(
+                    of: "\"", with: ""
+                )
             }
         }
 
@@ -529,7 +599,9 @@ public struct Linux: Platform {
             }
 
             return .rhel9
-        } else if let pd = [PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2404, .debian12, .fedora39].first(where: { $0.name == id + versionID }) {
+        } else if let pd = [
+            PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2404, .debian12, .fedora39,
+        ].first(where: { $0.name == id + versionID }) {
             return pd
         }
 
@@ -559,7 +631,8 @@ public struct Linux: Platform {
         return "/bin/bash"
     }
 
-    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> URL {
+    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> URL
+    {
         self.swiftlyToolchainsDir(ctx).appendingPathComponent("\(toolchain.name)")
     }
 

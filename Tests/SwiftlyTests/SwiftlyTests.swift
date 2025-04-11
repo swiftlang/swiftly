@@ -1,10 +1,10 @@
 import _StringProcessing
 import ArgumentParser
-import AsyncHTTPClient
 import Foundation
-import NIO
+import OpenAPIRuntime
 @testable import Swiftly
 @testable import SwiftlyCore
+import SwiftlyWebsiteAPI
 import Testing
 
 #if os(macOS)
@@ -20,23 +20,28 @@ struct SwiftlyTestError: LocalizedError {
 
 let unmockedMsg = "All swiftly test case logic must be mocked in order to prevent mutation of the system running the test. This test must either run swiftly components inside a SwiftlyTests.with... closure, or it must have one of the @Test traits, such as @Test(.testHome), or @Test(.mock...)"
 
-struct OutputHandlerFail: OutputHandler {
+actor OutputHandlerFail: OutputHandler {
     func handleOutputLine(_: String) {
         fatalError(unmockedMsg)
     }
 }
 
-struct InputProviderFail: InputProvider {
+actor InputProviderFail: InputProvider {
     func readLine() -> String? {
         fatalError(unmockedMsg)
     }
 }
 
 struct HTTPRequestExecutorFail: HTTPRequestExecutor {
-    func execute(_: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse { fatalError(unmockedMsg) }
-    func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease { fatalError(unmockedMsg) }
+    func getCurrentSwiftlyRelease() async throws -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease { fatalError(unmockedMsg) }
     func getReleaseToolchains() async throws -> [Components.Schemas.Release] { fatalError(unmockedMsg) }
-    func getSnapshotToolchains(branch _: Components.Schemas.SourceBranch, platform _: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains { fatalError(unmockedMsg) }
+    func getSnapshotToolchains(branch _: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch, platform _: SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains { fatalError(unmockedMsg) }
+    func getGpgKeys() async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
+    func getSwiftlyRelease(url _: URL) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
+    func getSwiftlyReleaseSignature(url _: URL) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
+    func getSwiftToolchainFile(_: ToolchainFile) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
+    func getSwiftToolchainFileSignature(_: ToolchainFile) async throws
+        -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
 }
 
 // Convenience extensions to common Swiftly and SwiftlyCore types to set the correct context
@@ -211,7 +216,7 @@ public enum SwiftlyTests {
 
         try await cmd.run(ctx)
 
-        return handler.lines
+        return await handler.lines
     }
 
     static func getTestHomePath(name: String) -> URL {
@@ -418,8 +423,8 @@ public enum SwiftlyTests {
     }
 }
 
-public class TestOutputHandler: SwiftlyCore.OutputHandler {
-    public var lines: [String]
+public actor TestOutputHandler: SwiftlyCore.OutputHandler {
+    private(set) var lines: [String]
     private let quiet: Bool
 
     public init(quiet: Bool) {
@@ -436,7 +441,7 @@ public class TestOutputHandler: SwiftlyCore.OutputHandler {
     }
 }
 
-public class TestInputProvider: SwiftlyCore.InputProvider {
+public actor TestInputProvider: SwiftlyCore.InputProvider {
     private var lines: [String]
 
     public init(lines: [String]) {
@@ -452,11 +457,9 @@ public class TestInputProvider: SwiftlyCore.InputProvider {
 public struct SwiftExecutable {
     public let path: URL
 
-    private static let stableRegex: Regex<(Substring, Substring)> =
+    private static func stableRegex() -> Regex<(Substring, Substring)> {
         try! Regex("swift-([^-]+)-RELEASE")
-
-    private static let snapshotRegex: Regex<(Substring, Substring)> =
-        try! Regex("\\(LLVM [a-z0-9]+, Swift ([a-z0-9]+)\\)")
+    }
 
     public func exists() -> Bool {
         self.path.fileExists()
@@ -484,7 +487,7 @@ public struct SwiftExecutable {
 
         let outputString = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
 
-        if let match = try Self.stableRegex.firstMatch(in: outputString) {
+        if let match = try Self.stableRegex().firstMatch(in: outputString) {
             let versions = match.output.1.split(separator: ".")
 
             let major = Int(versions[0])!
@@ -509,11 +512,14 @@ public struct SwiftExecutable {
 
 /// An `HTTPRequestExecutor` which will return a mocked response to any toolchain download requests.
 /// All other requests are performed using an actual HTTP client.
-public class MockToolchainDownloader: HTTPRequestExecutor {
-    private static let releaseURLRegex: Regex<(Substring, Substring, Substring, Substring?)> =
+public final actor MockToolchainDownloader: HTTPRequestExecutor {
+    private static func releaseURLRegex() -> Regex<(Substring, Substring, Substring, Substring?)> {
         try! Regex("swift-(\\d+)\\.(\\d+)(?:\\.(\\d+))?-RELEASE")
-    private static let snapshotURLRegex: Regex<Substring> =
+    }
+
+    private static func snapshotURLRegex() -> Regex<Substring> {
         try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
+    }
 
     private let executables: [String]
 #if os(Linux)
@@ -556,8 +562,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         self.snapshotToolchains = snapshotToolchains
     }
 
-    public func getCurrentSwiftlyRelease() async throws -> Components.Schemas.SwiftlyRelease {
-        let release = Components.Schemas.SwiftlyRelease(
+    public func getCurrentSwiftlyRelease() async throws -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease {
+        let release = SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease(
             version: self.latestSwiftlyVersion.description,
             platforms: [
                 .init(platform: .init(.darwin), arm64: "https://download.swift.org/swiftly-darwin.pkg", x8664: "https://download.swift.org/swiftly-darwin.pkg"),
@@ -597,7 +603,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         }
 
         return self.releaseToolchains.map { releaseToolchain in
-            Components.Schemas.Release(
+            SwiftlyWebsiteAPI.Components.Schemas.Release(
                 name: String(describing: releaseToolchain),
                 date: "",
                 platforms: platformName != "Xcode" ? [.init(
@@ -612,7 +618,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         }
     }
 
-    public func getSnapshotToolchains(branch: Components.Schemas.SourceBranch, platform _: Components.Schemas.PlatformIdentifier) async throws -> Components.Schemas.DevToolchains {
+    public func getSnapshotToolchains(branch: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch, platform _: SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains {
         let currentPlatform = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil)
 
         let releasesForBranch = self.snapshotToolchains.filter { snapshotVersion in
@@ -625,8 +631,8 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         }
 
         let devToolchainsForArch = releasesForBranch.map { branchSnapshot in
-            Components.Schemas.DevToolchainForArch(
-                name: Components.Schemas.DevToolchainKind?.none,
+            SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch(
+                name: SwiftlyWebsiteAPI.Components.Schemas.DevToolchainKind?.none,
                 date: "",
                 dir: branch.value1 == .main || branch.value2 == "main" ?
                     "swift-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)" :
@@ -638,37 +644,23 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         }
 
         if currentPlatform == PlatformDefinition.macOS {
-            return Components.Schemas.DevToolchains(universal: devToolchainsForArch)
-        } else if cpuArch == Components.Schemas.Architecture.x8664 {
-            return Components.Schemas.DevToolchains(x8664: devToolchainsForArch)
-        } else if cpuArch == Components.Schemas.Architecture.aarch64 {
-            return Components.Schemas.DevToolchains(aarch64: devToolchainsForArch)
+            return SwiftlyWebsiteAPI.Components.Schemas.DevToolchains(universal: devToolchainsForArch)
+        } else if cpuArch == SwiftlyWebsiteAPI.Components.Schemas.Architecture.x8664 {
+            return SwiftlyWebsiteAPI.Components.Schemas.DevToolchains(x8664: devToolchainsForArch)
+        } else if cpuArch == SwiftlyWebsiteAPI.Components.Schemas.Architecture.aarch64 {
+            return SwiftlyWebsiteAPI.Components.Schemas.DevToolchains(aarch64: devToolchainsForArch)
         } else {
-            return Components.Schemas.DevToolchains()
+            return SwiftlyWebsiteAPI.Components.Schemas.DevToolchains()
         }
     }
 
-    public func execute(_ request: HTTPClientRequest, timeout _: TimeAmount) async throws -> HTTPClientResponse {
-        guard let url = URL(string: request.url) else {
-            throw SwiftlyTestError(message: "invalid request URL: \(request.url)")
-        }
-
-        if url.host == "download.swift.org" && url.path.hasPrefix("/swiftly-") {
-            // Download a swiftly bundle
-            return try self.makeSwiftlyDownloadResponse(from: url)
-        } else if url.host == "download.swift.org" && (url.path.hasPrefix("/swift-") || url.path.hasPrefix("/development")) {
-            // Download a toolchain
-            return try self.makeToolchainDownloadResponse(from: url)
-        } else if url.host == "www.swift.org" && url.path == "/keys/all-keys.asc" {
-            return try self.makeGPGKeysResponse(from: url)
-        } else {
-            throw SwiftlyTestError(message: "unmocked URL: \(request)")
-        }
+    private func makeToolchainDownloadURL(_ toolchainFile: ToolchainFile, isSignature: Bool = false) throws -> URL {
+        URL(string: "https://download.swift.org/\(toolchainFile.category)/\(toolchainFile.platform)/\(toolchainFile.version)/\(toolchainFile.file)\(isSignature ? ".sig" : "")")!
     }
 
-    private func makeToolchainDownloadResponse(from url: URL) throws -> HTTPClientResponse {
+    private func makeToolchainDownloadResponse(from url: URL) throws -> OpenAPIRuntime.HTTPBody {
         let toolchain: ToolchainVersion
-        if let match = try Self.releaseURLRegex.firstMatch(in: url.path) {
+        if let match = try Self.releaseURLRegex().firstMatch(in: url.path) {
             var version = "\(match.output.1).\(match.output.2)."
             if let patch = match.output.3 {
                 version += patch
@@ -676,7 +668,7 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
                 version += "0"
             }
             toolchain = try ToolchainVersion(parsing: version)
-        } else if let match = try Self.snapshotURLRegex.firstMatch(in: url.path) {
+        } else if let match = try Self.snapshotURLRegex().firstMatch(in: url.path) {
             let selector = try ToolchainSelector(parsing: String(match.output))
             guard case let .snapshot(branch, date) = selector else {
                 throw SwiftlyTestError(message: "unexpected selector: \(selector)")
@@ -687,17 +679,30 @@ public class MockToolchainDownloader: HTTPRequestExecutor {
         }
 
         let mockedToolchain = try self.makeMockedToolchain(toolchain: toolchain, name: url.lastPathComponent)
-        return HTTPClientResponse(body: .bytes(ByteBuffer(data: mockedToolchain)))
+        return HTTPBody(mockedToolchain)
     }
 
-    private func makeSwiftlyDownloadResponse(from url: URL) throws -> HTTPClientResponse {
-        let mockedSwiftly = try self.makeMockedSwiftly(from: url)
-        return HTTPClientResponse(body: .bytes(ByteBuffer(data: mockedSwiftly)))
+    public func getSwiftToolchainFile(_ toolchainFile: ToolchainFile) async throws -> OpenAPIRuntime.HTTPBody {
+        try self.makeToolchainDownloadResponse(from: self.makeToolchainDownloadURL(toolchainFile))
     }
 
-    private func makeGPGKeysResponse(from _: URL) throws -> HTTPClientResponse {
+    public func getSwiftToolchainFileSignature(_ toolchainFile: ToolchainFile) async throws
+        -> OpenAPIRuntime.HTTPBody
+    {
+        try self.makeToolchainDownloadResponse(from: self.makeToolchainDownloadURL(toolchainFile, isSignature: true))
+    }
+
+    public func getSwiftlyRelease(url: URL) async throws -> OpenAPIRuntime.HTTPBody {
+        try HTTPBody(Array(self.makeMockedSwiftly(from: url)))
+    }
+
+    public func getSwiftlyReleaseSignature(url: URL) async throws -> OpenAPIRuntime.HTTPBody {
+        try HTTPBody(Array(self.makeMockedSwiftly(from: url)))
+    }
+
+    public func getGpgKeys() async throws -> OpenAPIRuntime.HTTPBody {
         // Give GPG the test's private signature here as trusted
-        HTTPClientResponse(body: .bytes(ByteBuffer(data: Data(PackageResources.mock_signing_key_private_pgp))))
+        HTTPBody(Array(Data(PackageResources.mock_signing_key_private_pgp)))
     }
 
 #if os(Linux)

@@ -178,13 +178,12 @@ extension Platform {
         var pathComponents = (newEnv["PATH"] ?? "").split(separator: ":").map { String($0) }
 
         // The toolchain goes to the beginning of the PATH
-        if pathComponents.first ?? "" != tcPath.path {
-            pathComponents = [tcPath.path] + pathComponents
-        }
+        pathComponents.removeAll(where: { $0 == tcPath.path })
+        pathComponents = [tcPath.path] + pathComponents
 
-        // Remove swiftly bin directory from the PATH
-        let swiftlyBinDir = self.swiftlyBinDir(ctx).path
-        pathComponents.removeAll(where: { $0 == swiftlyBinDir })
+        // Remove swiftly bin directory from the PATH entirely
+        let swiftlyBinDir = self.swiftlyBinDir(ctx)
+        pathComponents.removeAll(where: { $0 == swiftlyBinDir.path })
 
         newEnv["PATH"] = String(pathComponents.joined(by: ":"))
 

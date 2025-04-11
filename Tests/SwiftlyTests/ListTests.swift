@@ -44,13 +44,19 @@ import Testing
         let output = try await SwiftlyTests.runWithMockedIO(List.self, args)
 
         let parsedToolchains = output.compactMap { outputLine in
+#if !os(macOS)
             Set<ToolchainVersion>.allToolchains().first {
                 outputLine.contains(String(describing: $0))
             }
+#else
+            (Set<ToolchainVersion>.allToolchains() + [.xcodeVersion]).first {
+                outputLine.contains(String(describing: $0))
+            }
+#endif
         }
 
         // Ensure extra toolchains weren't accidentally included in the output.
-        guard parsedToolchains.count == output.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") }).count else {
+        guard parsedToolchains.count == output.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") || $0.contains("xcode") }).count else {
             throw SwiftlyTestError(message: "unexpected listed toolchains in \(output)")
         }
 
@@ -62,7 +68,11 @@ import Testing
     @Test func list() async throws {
         try await self.runListTest {
             let toolchains = try await self.runList(selector: nil)
+#if !os(macOS)
             #expect(toolchains == Self.sortedReleaseToolchains + Self.sortedSnapshotToolchains)
+#else
+            #expect(toolchains == Self.sortedReleaseToolchains + Self.sortedSnapshotToolchains + [.xcodeVersion])
+#endif
         }
     }
 
@@ -155,8 +165,14 @@ import Testing
 
     /// Tests that `list` properly handles the case where no toolchains have been installed yet.
     @Test(.testHome(Self.homeName)) func listEmpty() async throws {
+#if !os(macOS)
+        let systemToolchains: [ToolchainVersion] = []
+#else
+        let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
+#endif
+
         var toolchains = try await self.runList(selector: nil)
-        #expect(toolchains == [])
+        #expect(toolchains == systemToolchains)
 
         toolchains = try await self.runList(selector: "5")
         #expect(toolchains == [])

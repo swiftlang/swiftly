@@ -68,10 +68,11 @@ struct Uninstall: SwiftlyCommand {
             toolchains = installedToolchains
         }
 
+        // Filter out the xcode toolchain here since it is not uninstallable
         toolchains.removeAll(where: { $0 == .xcodeVersion })
 
         guard !toolchains.isEmpty else {
-            await ctx.print("No toolchains matched \"\(self.toolchain)\"")
+            await ctx.print("No toolchains can be uninstalled that match \"\(self.toolchain)\"")
             return
         }
 

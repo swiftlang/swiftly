@@ -243,6 +243,10 @@ extension ToolchainVersion: Comparable {
         case (.stable, .snapshot):
             return !(rhs < lhs)
         case (.xcode, .xcode):
+            return false
+        case (.xcode, _):
+            return false
+        case (_, .xcode):
             return true
         default:
             return false

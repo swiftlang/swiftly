@@ -98,8 +98,10 @@ struct List: SwiftlyCommand {
                 await printToolchain(toolchain)
             }
 
+#if os(macOS)
             await ctx.print("")
             await printToolchain(ToolchainVersion.xcode)
+#endif
         }
     }
 }

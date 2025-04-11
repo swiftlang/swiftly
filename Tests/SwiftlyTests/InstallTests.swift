@@ -262,4 +262,11 @@ import Testing
         try await SwiftlyTests.installMockedToolchain(selector: ToolchainVersion.newStable.name, args: ["--use"])
         try await SwiftlyTests.validateInUse(expected: .newStable)
     }
+
+    /// Verify that xcode can't be installed like regular toolchains
+    @Test(.testHomeMockedToolchain()) func installXcode() async throws {
+        try await #expect(throws: SwiftlyError.self) {
+            try await SwiftlyTests.runCommand(Install.self, ["install", "xcode", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        }
+    }
 }

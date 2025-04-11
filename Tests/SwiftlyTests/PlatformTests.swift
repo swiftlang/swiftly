@@ -85,4 +85,30 @@ import Testing
         toolchains = try FileManager.default.contentsOfDirectory(at: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx), includingPropertiesForKeys: nil)
         #expect(0 == toolchains.count)
     }
+
+#if os(macOS) || os(Linux)
+    @Test(
+        .mockHomeToolchains(),
+        arguments: [
+            "/a/b/c:SWIFTLY_BIN_DIR:/d/e/f",
+            "SWIFTLY_BIN_DIR:/abcde",
+            "/defgh:SWIFTLY_BIN_DIR",
+            "/xyzabc:/1/3/4",
+            "",
+        ]
+    ) func proxyEnv(_ path: String) async throws {
+        // GIVEN: a PATH that may contain the swiftly bin directory
+        let env = ["PATH": path.replacing("SWIFTLY_BIN_DIR", with: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).path)]
+
+        // WHEN: proxying to an installed toolchain
+        let newEnv = try Swiftly.currentPlatform.proxyEnv(SwiftlyTests.ctx, env: env, toolchain: .newStable)
+
+        // THEN: the toolchain's bin directory is added to the beginning of the PATH
+        #expect(newEnv["PATH"]!.hasPrefix(Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable).appendingPathComponent("usr/bin").path))
+
+        // AND: the swiftly bin directory is removed from the PATH
+        #expect(!newEnv["PATH"]!.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).path))
+        #expect(!newEnv["PATH"]!.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).path))
+    }
+#endif
 }

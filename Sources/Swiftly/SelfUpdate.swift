@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SwiftlyWebsiteAPI
 @preconcurrency import TSCBasic
 import TSCUtility
 

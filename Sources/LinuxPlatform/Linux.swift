@@ -1,5 +1,6 @@
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 /// `Platform` implementation for Linux systems.
 /// This implementation can be reused for any supported Linux platform.
@@ -18,24 +19,22 @@ public struct Linux: Platform {
 
     public init() {}
 
-    public var defaultSwiftlyHomeDirectory: URL {
+    public var defaultSwiftlyHomeDir: FilePath {
         if let dir = ProcessInfo.processInfo.environment["XDG_DATA_HOME"] {
-            return URL(fileURLWithPath: dir).appendingPathComponent("swiftly", isDirectory: true)
+            return FilePath(dir) / "swiftly"
         } else {
-            return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".local/share/swiftly", isDirectory: true)
+            return homeDir / ".local/share/swiftly"
         }
     }
 
-    public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> URL {
-        ctx.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
-            ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
-            ?? FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".local/share/swiftly/bin", isDirectory: true)
+    public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> FilePath {
+        ctx.mockedHomeDir.map { $0 / "bin" }
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { FilePath($0) }
+            ?? homeDir / ".local/share/swiftly/bin"
     }
 
-    public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> URL {
-        self.swiftlyHomeDir(ctx).appendingPathComponent("toolchains", isDirectory: true)
+    public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath {
+        self.swiftlyHomeDir(ctx) / "toolchains"
     }
 
     public var toolchainFileExtension: String {
@@ -45,12 +44,12 @@ public struct Linux: Platform {
     private static let skipVerificationMessage: String =
         "To skip signature verification, specify the --no-verify flag."
 
-    public func verifySwiftlySystemPrerequisites() throws {
+    public func verifySwiftlySystemPrerequisites() async throws {
         // Check if the root CA certificates are installed on this system for NIOSSL to use.
         // This list comes from LinuxCABundle.swift in NIOSSL.
         var foundTrustedCAs = false
         for crtFile in ["/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt"] {
-            if URL(fileURLWithPath: crtFile).fileExists() {
+            if try await fileExists(atPath: FilePath(crtFile)) {
                 foundTrustedCAs = true
                 break
             }
@@ -267,21 +266,17 @@ public struct Linux: Platform {
             }
 
             let tmpFile = self.getTempFilePath()
-            let _ = FileManager.default.createFile(
-                atPath: tmpFile.path, contents: nil, attributes: [.posixPermissions: 0o600]
-            )
-            defer {
-                try? FileManager.default.removeItem(at: tmpFile)
-            }
-
-            try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
-            if let mockedHomeDir = ctx.mockedHomeDir {
-                try self.runProgram(
-                    "gpg", "--import", tmpFile.path, quiet: true,
-                    env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path]
-                )
-            } else {
-                try self.runProgram("gpg", "--import", tmpFile.path, quiet: true)
+            try await create(file: tmpFile, contents: nil, mode: 0o600)
+            try await withTemporary(files: tmpFile) {
+                try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
+                if let mockedHomeDir = ctx.mockedHomeDir {
+                    try self.runProgram(
+                        "gpg", "--import", "\(tmpFile)", quiet: true,
+                        env: ["GNUPGHOME": (mockedHomeDir / ".gnupg").string]
+                    )
+                } else {
+                    try self.runProgram("gpg", "--import", "\(tmpFile)", quiet: true)
+                }
             }
         }
 
@@ -333,23 +328,21 @@ public struct Linux: Platform {
     }
 
     public func install(
-        _ ctx: SwiftlyCoreContext, from tmpFile: URL, version: ToolchainVersion, verbose: Bool
+        _ ctx: SwiftlyCoreContext, from tmpFile: FilePath, version: ToolchainVersion, verbose: Bool
     ) async throws {
-        guard tmpFile.fileExists() else {
+        guard try await fileExists(atPath: tmpFile) else {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
-        if !self.swiftlyToolchainsDir(ctx).fileExists() {
-            try FileManager.default.createDirectory(
-                at: self.swiftlyToolchainsDir(ctx), withIntermediateDirectories: false
-            )
+        if !(try await fileExists(atPath: self.swiftlyToolchainsDir(ctx))) {
+            try await mkdir(atPath: self.swiftlyToolchainsDir(ctx))
         }
 
         await ctx.print("Extracting toolchain...")
-        let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent(version.name)
+        let toolchainDir = self.swiftlyToolchainsDir(ctx) / version.name
 
-        if toolchainDir.fileExists() {
-            try FileManager.default.removeItem(at: toolchainDir)
+        if try await fileExists(atPath: toolchainDir) {
+            try await remove(atPath: toolchainDir)
         }
 
         try extractArchive(atPath: tmpFile) { name in
@@ -357,13 +350,13 @@ public struct Linux: Platform {
             let relativePath = name.drop { c in c != "/" }.dropFirst()
 
             // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
-            let destination = toolchainDir.appendingPathComponent(String(relativePath))
+            let destination = toolchainDir / String(relativePath)
 
             if verbose {
                 // To avoid having to make extractArchive async this is a regular print
                 //  to stdout. Note that it is unlikely that the test mocking will require
                 //  capturing this output.
-                print("\(destination.path)")
+                print("\(destination)")
             }
 
             // prepend /path/to/swiftlyHomeDir/toolchains/<toolchain> to each file name
@@ -371,31 +364,27 @@ public struct Linux: Platform {
         }
     }
 
-    public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: URL) async throws {
-        guard archive.fileExists() else {
+    public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: FilePath) async throws {
+        guard try await fileExists(atPath: archive) else {
             throw SwiftlyError(message: "\(archive) doesn't exist")
         }
 
         let tmpDir = self.getTempFilePath()
-        defer {
-            try? FileManager.default.removeItem(at: tmpDir)
-        }
-        try FileManager.default.createDirectory(atPath: tmpDir.path, withIntermediateDirectories: true)
+        try await mkdir(atPath: tmpDir, parents: true)
+        try await withTemporary(files: tmpDir) {
+            await ctx.print("Extracting new swiftly...")
+            try extractArchive(atPath: archive) { name in
+                // Extract to the temporary directory
+                tmpDir / String(name)
+            }
 
-        await ctx.print("Extracting new swiftly...")
-        try extractArchive(atPath: archive) { name in
-            // Extract to the temporary directory
-            tmpDir.appendingPathComponent(String(name))
+            try self.runProgram((tmpDir / "swiftly").string, "init")
         }
-
-        try self.runProgram(tmpDir.appendingPathComponent("swiftly").path, "init")
     }
 
-    public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose _: Bool)
-        throws
-    {
-        let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent(toolchain.name)
-        try FileManager.default.removeItem(at: toolchainDir)
+    public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose _: Bool) async throws {
+        let toolchainDir = self.swiftlyToolchainsDir(ctx) / toolchain.name
+        try await remove(atPath: toolchainDir)
     }
 
     public func getExecutableName() -> String {
@@ -404,69 +393,65 @@ public struct Linux: Platform {
         return "swiftly-\(arch)-unknown-linux-gnu"
     }
 
-    public func getTempFilePath() -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
+    public func getTempFilePath() -> FilePath {
+        tmpDir / "swiftly-\(UUID())"
     }
 
     public func verifyToolchainSignature(
-        _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: URL, verbose: Bool
+        _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: FilePath, verbose: Bool
     ) async throws {
         if verbose {
             await ctx.print("Downloading toolchain signature...")
         }
 
         let sigFile = self.getTempFilePath()
-        let _ = FileManager.default.createFile(atPath: sigFile.path, contents: nil)
-        defer {
-            try? FileManager.default.removeItem(at: sigFile)
-        }
+        try await create(file: sigFile, contents: nil)
+        try await withTemporary(files: sigFile) {
+            try await ctx.httpClient.getSwiftToolchainFileSignature(toolchainFile).download(to: sigFile)
 
-        try await ctx.httpClient.getSwiftToolchainFileSignature(toolchainFile).download(to: sigFile)
-
-        await ctx.print("Verifying toolchain signature...")
-        do {
-            if let mockedHomeDir = ctx.mockedHomeDir {
-                try self.runProgram(
-                    "gpg", "--verify", sigFile.path, archive.path, quiet: false,
-                    env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path]
-                )
-            } else {
-                try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
+            await ctx.print("Verifying toolchain signature...")
+            do {
+                if let mockedHomeDir = ctx.mockedHomeDir {
+                    try self.runProgram(
+                        "gpg", "--verify", "\(sigFile)", "\(archive)", quiet: false,
+                        env: ["GNUPGHOME": (mockedHomeDir / ".gnupg").string]
+                    )
+                } else {
+                    try self.runProgram("gpg", "--verify", "\(sigFile)", "\(archive)", quiet: !verbose)
+                }
+            } catch {
+                throw SwiftlyError(message: "Signature verification failed: \(error).")
             }
-        } catch {
-            throw SwiftlyError(message: "Signature verification failed: \(error).")
         }
     }
 
     public func verifySwiftlySignature(
-        _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: URL, verbose: Bool
+        _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: FilePath, verbose: Bool
     ) async throws {
         if verbose {
             await ctx.print("Downloading swiftly signature...")
         }
 
         let sigFile = self.getTempFilePath()
-        let _ = FileManager.default.createFile(atPath: sigFile.path, contents: nil)
-        defer {
-            try? FileManager.default.removeItem(at: sigFile)
-        }
+        try await create(file: sigFile, contents: nil)
+        try await withTemporary(files: sigFile) {
+            try await ctx.httpClient.getSwiftlyReleaseSignature(
+                url: archiveDownloadURL.appendingPathExtension("sig")
+            ).download(to: sigFile)
 
-        try await ctx.httpClient.getSwiftlyReleaseSignature(
-            url: archiveDownloadURL.appendingPathExtension("sig")
-        ).download(to: sigFile)
-
-        await ctx.print("Verifying swiftly signature...")
-        do {
-            if let mockedHomeDir = ctx.mockedHomeDir {
-                try self.runProgram(
-                    "gpg", "--verify", sigFile.path, archive.path, quiet: false,
-                    env: ["GNUPGHOME": mockedHomeDir.appendingPathComponent(".gnupg").path]
-                )
-            } else {
-                try self.runProgram("gpg", "--verify", sigFile.path, archive.path, quiet: !verbose)
+            await ctx.print("Verifying swiftly signature...")
+            do {
+                if let mockedHomeDir = ctx.mockedHomeDir {
+                    try self.runProgram(
+                        "gpg", "--verify", "\(sigFile)", "\(archive)", quiet: false,
+                        env: ["GNUPGHOME": (mockedHomeDir / ".gnupg").string]
+                    )
+                } else {
+                    try self.runProgram("gpg", "--verify", "\(sigFile)", "\(archive)", quiet: !verbose)
+                }
+            } catch {
+                throw SwiftlyError(message: "Signature verification failed: \(error).")
             }
-        } catch {
-            throw SwiftlyError(message: "Signature verification failed: \(error).")
         }
     }
 
@@ -631,9 +616,9 @@ public struct Linux: Platform {
         return "/bin/bash"
     }
 
-    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> URL
+    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> FilePath
     {
-        self.swiftlyToolchainsDir(ctx).appendingPathComponent("\(toolchain.name)")
+        self.swiftlyToolchainsDir(ctx) / "\(toolchain.name)"
     }
 
     public static let currentPlatform: any Platform = Linux()

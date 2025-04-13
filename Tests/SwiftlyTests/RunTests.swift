@@ -15,7 +15,7 @@ import Testing
         #expect(output.contains(ToolchainVersion.newStable.name))
 
         // GIVEN: a set of installed toolchains and one is selected with a .swift-version file
-        let versionFile = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".swift-version")
+        let versionFile = SwiftlyTests.ctx.currentDirectory / ".swift-version"
         try ToolchainVersion.oldStable.name.write(to: versionFile, atomically: true, encoding: .utf8)
         // WHEN: invoking the run command without any selector arguments for toolchains
         output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", "swift", "--version"])
@@ -38,7 +38,7 @@ import Testing
         // The toolchains directory should be the fist entry on the path
         let output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $PATH"])
         #expect(output.count == 1)
-        #expect(output[0].contains(Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).path))
+        #expect(output[0].contains(Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).string))
     }
 
     /// Tests the extraction of proxy arguments from the run command arguments.

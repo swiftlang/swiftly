@@ -26,6 +26,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
         .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.6.0"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.7.0"),
+        .package(url: "https://github.com/apple/swift-system", from: "1.4.2"),
         // This dependency provides the correct version of the formatter so that you can run `swift run swiftformat Package.swift Plugins/ Sources/ Tests/`
         .package(url: "https://github.com/nicklockwood/SwiftFormat", exact: "0.49.18"),
     ],
@@ -38,6 +39,7 @@ let package = Package(
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
+                .product(name: "SystemPackage", package: "swift-system"),
             ]
         ),
         .executableTarget(
@@ -58,6 +60,7 @@ let package = Package(
                 .product(name: "NIOFoundationCompat", package: "swift-nio"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
+                .product(name: "SystemPackage", package: "swift-system"),
             ],
         ),
         .target(
@@ -114,6 +117,7 @@ let package = Package(
             dependencies: [
                 "SwiftlyCore",
                 "CLibArchive",
+                .product(name: "SystemPackage", package: "swift-system"),
             ],
             linkerSettings: [
                 .linkedLibrary("z"),
@@ -123,6 +127,7 @@ let package = Package(
             name: "MacOSPlatform",
             dependencies: [
                 "SwiftlyCore",
+                .product(name: "SystemPackage", package: "swift-system"),
             ]
         ),
         .systemLibrary(
@@ -134,7 +139,10 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftlyTests",
-            dependencies: ["Swiftly"],
+            dependencies: [
+                "Swiftly",
+                .product(name: "SystemPackage", package: "swift-system"),
+            ],
             resources: [
                 .embedInCode("mock-signing-key-private.pgp"),
             ]

@@ -3,11 +3,15 @@ import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
 import SwiftlyWebsiteAPI
+import SystemPackage
 import Testing
 
 @Suite(.serialized) struct HTTPClientTests {
     @Test func getSwiftOrgGPGKeys() async throws {
-        try await withTemporaryFile { tmpFile in
+        let tmpFile = mktemp()
+        try await create(file: tmpFile, contents: nil)
+
+        try await withTemporary(files: tmpFile) {
             let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
             try await retry {
@@ -15,61 +19,65 @@ import Testing
             }
 
             try await withGpg { runGpg in
-                try runGpg(["--import", tmpFile.path])
+                try runGpg(["--import", "\(tmpFile)"])
             }
         }
     }
 
     @Test func getSwiftToolchain() async throws {
-        try await withTemporaryFile { tmpFile in
-            try await withTemporaryFile { tmpFileSignature in
-                let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
+        let tmpFile = mktemp()
+        try await create(file: tmpFile, contents: nil)
+        let tmpFileSignature = mktemp(ext: ".sig")
+        try await create(file: tmpFileSignature, contents: nil)
+        let keysFile = mktemp(ext: ".asc")
+        try await create(file: keysFile, contents: nil)
 
-                let toolchainFile = ToolchainFile(category: "swift-6.0-release", platform: "ubuntu2404", version: "swift-6.0-RELEASE", file: "swift-6.0-RELEASE-ubuntu24.04.tar.gz")
+        try await withTemporary(files: tmpFile, tmpFileSignature, keysFile) {
+            let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
-                try await retry {
-                    try await httpClient.getSwiftToolchainFile(toolchainFile).download(to: tmpFile)
-                }
+            let toolchainFile = ToolchainFile(category: "swift-6.0-release", platform: "ubuntu2404", version: "swift-6.0-RELEASE", file: "swift-6.0-RELEASE-ubuntu24.04.tar.gz")
 
-                try await retry {
-                    try await httpClient.getSwiftToolchainFileSignature(toolchainFile).download(to: tmpFileSignature)
-                }
+            try await retry {
+                try await httpClient.getSwiftToolchainFile(toolchainFile).download(to: tmpFile)
+            }
 
-                try await withGpg { runGpg in
-                    try await withTemporaryFile { keysFile in
-                        try await httpClient.getGpgKeys().download(to: keysFile)
-                        try runGpg(["--import", keysFile.path])
-                    }
+            try await retry {
+                try await httpClient.getSwiftToolchainFileSignature(toolchainFile).download(to: tmpFileSignature)
+            }
 
-                    try runGpg(["--verify", tmpFileSignature.path, tmpFile.path])
-                }
+            try await withGpg { runGpg in
+                try await httpClient.getGpgKeys().download(to: keysFile)
+                try runGpg(["--import", "\(keysFile)"])
+                try runGpg(["--verify", "\(tmpFileSignature)", "\(tmpFile)"])
             }
         }
     }
 
     @Test func getSwiftlyRelease() async throws {
-        try await withTemporaryFile { tmpFile in
-            try await withTemporaryFile { tmpFileSignature in
-                let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
+        let tmpFile = mktemp()
+        try await create(file: tmpFile, contents: nil)
+        let tmpFileSignature = mktemp(ext: ".sig")
+        try await create(file: tmpFileSignature, contents: nil)
+        let keysFile = mktemp(ext: ".asc")
+        try await create(file: keysFile, contents: nil)
 
-                let swiftlyURL = try #require(URL(string: "https://download.swift.org/swiftly/linux/swiftly-x86_64.tar.gz"))
+        try await withTemporary(files: tmpFile, tmpFileSignature, keysFile) {
+            let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
-                try await retry {
-                    try await httpClient.getSwiftlyRelease(url: swiftlyURL).download(to: tmpFile)
-                }
+            let swiftlyURL = try #require(URL(string: "https://download.swift.org/swiftly/linux/swiftly-x86_64.tar.gz"))
 
-                try await retry {
-                    try await httpClient.getSwiftlyReleaseSignature(url: swiftlyURL.appendingPathExtension("sig")).download(to: tmpFileSignature)
-                }
+            try await retry {
+                try await httpClient.getSwiftlyRelease(url: swiftlyURL).download(to: tmpFile)
+            }
 
-                try await withGpg { runGpg in
-                    try await withTemporaryFile { keysFile in
-                        try await httpClient.getGpgKeys().download(to: keysFile)
-                        try runGpg(["--import", keysFile.path])
-                    }
+            try await retry {
+                try await httpClient.getSwiftlyReleaseSignature(url: swiftlyURL.appendingPathExtension("sig")).download(to: tmpFileSignature)
+            }
 
-                    try runGpg(["--verify", tmpFileSignature.path, tmpFile.path])
-                }
+            try await withGpg { runGpg in
+                try await httpClient.getGpgKeys().download(to: keysFile)
+                try runGpg(["--import", "\(keysFile)"])
+                try runGpg(["--verify", "\(tmpFileSignature)", "\(tmpFile)"])
             }
         }
     }
@@ -113,30 +121,19 @@ import Testing
     }
 }
 
-private func withTemporaryFile<T>(_ body: (URL) async throws -> T) async rethrows -> T {
-    let tmpFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-    _ = FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
-    defer {
-        try? FileManager.default.removeItem(at: tmpFile)
-    }
-    return try await body(tmpFile)
-}
-
 private func withGpg(_ body: (([String]) throws -> Void) async throws -> Void) async throws {
 #if os(Linux)
     // With linux, we can ask gpg to try an import to see if the file is valid
     // in a sandbox home directory to avoid contaminating the system
-    let gpgHome = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-    try FileManager.default.createDirectory(atPath: gpgHome.path, withIntermediateDirectories: true)
-    defer {
-        try? FileManager.default.removeItem(at: gpgHome)
-    }
+    let gpgHome = mktemp()
+    try await mkdir(atPath: gpgHome, parents: true)
+    try await withTemporary(files: gpgHome) {
+        func runGpg(arguments: [String]) throws {
+            try Swiftly.currentPlatform.runProgram(["gpg"] + arguments, quiet: false, env: ["GNUPGHOME": gpgHome.string])
+        }
 
-    func runGpg(arguments: [String]) throws {
-        try Swiftly.currentPlatform.runProgram(["gpg"] + arguments, quiet: false, env: ["GNUPGHOME": gpgHome.path])
+        try await body(runGpg)
     }
-
-    try await body(runGpg)
 #endif
 }
 

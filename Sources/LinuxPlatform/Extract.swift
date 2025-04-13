@@ -1,5 +1,6 @@
 import CLibArchive
 import Foundation
+import SystemPackage
 
 // The code in this file consists mainly of a Swift port of the "Complete Extractor" example included in the libarchive
 // documentation: https://github.com/libarchive/libarchive/wiki/Examples#a-complete-extractor
@@ -44,7 +45,7 @@ func copyData(readArchive: OpaquePointer?, writeArchive: OpaquePointer?) throws 
 /// the provided closure which will return the path the file will be written to.
 ///
 /// This uses libarchive under the hood, so a wide variety of archive formats are supported (e.g. .tar.gz).
-func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws {
+func extractArchive(atPath archivePath: FilePath, transform: (String) -> FilePath) throws {
     var flags = Int32(0)
     flags = ARCHIVE_EXTRACT_TIME
     flags |= ARCHIVE_EXTRACT_PERM
@@ -66,8 +67,8 @@ func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws 
         archive_write_free(ext)
     }
 
-    if archive_read_open_filename(a, archivePath.path, 10240) != 0 {
-        throw ExtractError(message: "Failed to open \"\(archivePath.path)\"")
+    if archive_read_open_filename(a, archivePath.string, 10240) != 0 {
+        throw ExtractError(message: "Failed to open \"\(archivePath)\"")
     }
 
     while true {
@@ -82,7 +83,7 @@ func extractArchive(atPath archivePath: URL, transform: (String) -> URL) throws 
         }
 
         let currentPath = String(cString: archive_entry_pathname(entry))
-        archive_entry_set_pathname(entry, transform(currentPath).path)
+        archive_entry_set_pathname(entry, transform(currentPath).string)
         r = archive_write_header(ext, entry)
         guard r == ARCHIVE_OK else {
             throw ExtractError(archive: ext)

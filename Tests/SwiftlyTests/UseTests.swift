@@ -11,7 +11,7 @@ import Testing
     func useAndValidate(argument: String, expectedVersion: ToolchainVersion) async throws {
         try await SwiftlyTests.runCommand(Use.self, ["use", "-g", argument])
 
-        #expect(try Config.load().inUse == expectedVersion)
+        #expect(try await Config.load().inUse == expectedVersion)
     }
 
     /// Tests that the `use` command can switch between installed stable release toolchains.
@@ -152,12 +152,12 @@ import Testing
     @Test(.mockHomeToolchains(toolchains: [])) func useNoInstalledToolchains() async throws {
         try await SwiftlyTests.runCommand(Use.self, ["use", "-g", "latest"])
 
-        var config = try Config.load()
+        var config = try await Config.load()
         #expect(config.inUse == nil)
 
         try await SwiftlyTests.runCommand(Use.self, ["use", "-g", "5.6.0"])
 
-        config = try Config.load()
+        config = try await Config.load()
         #expect(config.inUse == nil)
     }
 
@@ -175,7 +175,7 @@ import Testing
 
     /// Tests that the `use` command works with all the installed toolchains in this test harness.
     @Test(.mockHomeToolchains()) func useAll() async throws {
-        let config = try Config.load()
+        let config = try await Config.load()
 
         for toolchain in config.installedToolchains {
             try await self.useAndValidate(
@@ -202,7 +202,7 @@ import Testing
 
                 output = try await SwiftlyTests.runWithMockedIO(Use.self, ["use", "-g", "--print-location"])
 
-                #expect(output.contains(where: { $0.contains(Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchain).path) }))
+                #expect(output.contains(where: { $0.contains(Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchain).string) }))
             }
         }
     }
@@ -215,10 +215,10 @@ import Testing
             .newReleaseSnapshot,
         ]
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: Set(toolchains)) {
-            let versionFile = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".swift-version")
+            let versionFile = SwiftlyTests.ctx.currentDirectory / ".swift-version"
 
             // GIVEN: a directory with a swift version file that selects a particular toolchain
-            try ToolchainVersion.newStable.name.write(to: versionFile, atomically: true, encoding: .utf8)
+            try ToolchainVersion.newStable.name.write(to: versionFile, atomically: true)
             // WHEN: checking which toolchain is selected with the use command
             var output = try await SwiftlyTests.runWithMockedIO(Use.self, ["use"])
             // THEN: the output shows this toolchain is in use with this working directory
@@ -228,30 +228,30 @@ import Testing
             // WHEN: using another toolchain version
             output = try await SwiftlyTests.runWithMockedIO(Use.self, ["use", ToolchainVersion.newMainSnapshot.name])
             // THEN: the swift version file is updated to this toolchain version
-            var versionFileContents = try String(contentsOf: versionFile, encoding: .utf8)
+            var versionFileContents = try String(contentsOf: versionFile)
             #expect(ToolchainVersion.newMainSnapshot.name == versionFileContents)
             // THEN: the use command reports this toolchain to be in use
             #expect(output.contains(where: { $0.contains(ToolchainVersion.newMainSnapshot.name) }))
 
             // GIVEN: a directory with no swift version file at the top of a git repository
-            try FileManager.default.removeItem(atPath: versionFile.path)
-            let gitDir = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".git")
-            try FileManager.default.createDirectory(atPath: gitDir.path, withIntermediateDirectories: false)
+            try await remove(atPath: versionFile)
+            let gitDir = SwiftlyTests.ctx.currentDirectory / ".git"
+            try await mkdir(atPath: gitDir)
             // WHEN: using a toolchain version
             try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.newReleaseSnapshot.name])
             // THEN: a swift version file is created
-            #expect(FileManager.default.fileExists(atPath: versionFile.path))
+            #expect(try await fileExists(atPath: versionFile))
             // THEN: the version file contains the specified version
-            versionFileContents = try String(contentsOf: versionFile, encoding: .utf8)
+            versionFileContents = try String(contentsOf: versionFile)
             #expect(ToolchainVersion.newReleaseSnapshot.name == versionFileContents)
 
             // GIVEN: a directory with a swift version file at the top of a git repository
-            try "1.2.3".write(to: versionFile, atomically: true, encoding: .utf8)
+            try "1.2.3".write(to: versionFile, atomically: true)
             // WHEN: using with a toolchain selector that can select more than one version, but matches one of the installed toolchains
             let broadSelector = ToolchainSelector.stable(major: ToolchainVersion.newStable.asStableRelease!.major, minor: nil, patch: nil)
             try await SwiftlyTests.runCommand(Use.self, ["use", broadSelector.description])
             // THEN: the swift version file is set to the specific toolchain version that was installed including major, minor, and patch
-            versionFileContents = try String(contentsOf: versionFile, encoding: .utf8)
+            versionFileContents = try String(contentsOf: versionFile)
             #expect(ToolchainVersion.newStable.name == versionFileContents)
         }
     }

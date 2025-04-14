@@ -15,7 +15,12 @@ public enum Proxy {
             guard binName != "swiftly" else {
                 // Treat this as a swiftly invocation, but first check that we are installed, bootstrapping
                 //  the installation process if we aren't.
-                let configResult = Result { try Config.load(ctx) }
+                let configResult: Result<Config, any Error>
+                do {
+                    configResult = Result<Config, any Error>.success(try await Config.load(ctx))
+                } catch {
+                    configResult = Result<Config, any Error>.failure(error)
+                }
 
                 switch configResult {
                 case .success:
@@ -45,7 +50,7 @@ public enum Proxy {
                 }
             }
 
-            var config = try Config.load(ctx)
+            var config = try await Config.load(ctx)
 
             let (toolchain, result) = try await selectToolchain(ctx, config: &config)
 

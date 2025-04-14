@@ -38,12 +38,12 @@ struct List: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        try await validateSwiftly(ctx)
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
 
-        var config = try Config.load(ctx)
+        var config = try await Config.load(ctx)
 
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
         let (inUse, _) = try await selectToolchain(ctx, config: &config)

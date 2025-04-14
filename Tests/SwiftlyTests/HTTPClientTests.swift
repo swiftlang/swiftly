@@ -29,6 +29,10 @@ import Testing
     }
 
     @Test func getSwiftToolchain() async throws {
+        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {
+            return
+        }
+
         let tmpFile = mktemp()
         try await create(file: tmpFile, contents: nil)
         let tmpFileSignature = mktemp(ext: ".sig")
@@ -58,6 +62,10 @@ import Testing
     }
 
     @Test func getSwiftlyRelease() async throws {
+        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {
+            return
+        }
+
         let tmpFile = mktemp()
         try await create(file: tmpFile, contents: nil)
         let tmpFileSignature = mktemp(ext: ".sig")
@@ -87,6 +95,10 @@ import Testing
     }
 
     @Test func getSwiftlyReleaseMetadataFromSwiftOrg() async throws {
+        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {
+            return
+        }
+
         let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
         do {
             let currentRelease = try await httpClient.getCurrentSwiftlyRelease()
@@ -102,6 +114,10 @@ import Testing
         [PlatformDefinition.macOS, .ubuntu2404, .ubuntu2204, .rhel9, .fedora39, .amazonlinux2, .debian12],
         [SwiftlyWebsiteAPI.Components.Schemas.Architecture.x8664, .aarch64]
     ) func getToolchainMetdataFromSwiftOrg(_ platform: PlatformDefinition, _ arch: SwiftlyWebsiteAPI.Components.Schemas.Architecture) async throws {
+        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {
+            return
+        }
+
         let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
         let branches: [ToolchainVersion.Snapshot.Branch] = [

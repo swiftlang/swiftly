@@ -105,6 +105,9 @@ struct Run: SwiftlyCommand {
 
             try await Swiftly.currentPlatform.proxy(ctx, toolchain, command[0], [String](command[1...]))
         } catch let terminated as RunProgramError {
+            if ctx.mockedHomeDir != nil {
+                throw terminated
+            }
             Foundation.exit(terminated.exitCode)
         } catch {
             throw error

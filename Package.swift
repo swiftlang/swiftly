@@ -2,6 +2,10 @@
 
 import PackageDescription
 
+let swiftSettings = [
+    SwiftSetting.enableUpcomingFeature("MemberImportVisibility"),
+]
+
 let package = Package(
     name: "swiftly",
     platforms: [
@@ -38,7 +42,8 @@ let package = Package(
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
-            ]
+            ],
+            swiftSettings: swiftSettings
         ),
         .executableTarget(
             name: "TestSwiftly",
@@ -47,7 +52,8 @@ let package = Package(
                 .target(name: "SwiftlyCore"),
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
-            ]
+            ],
+            swiftSettings: swiftSettings
         ),
         .target(
             name: "SwiftlyCore",
@@ -59,12 +65,14 @@ let package = Package(
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
             ],
+            swiftSettings: swiftSettings
         ),
         .target(
             name: "SwiftlyDownloadAPI",
             dependencies: [
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
             ],
+            swiftSettings: swiftSettings,
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
             ]
@@ -74,6 +82,7 @@ let package = Package(
             dependencies: [
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
             ],
+            swiftSettings: swiftSettings,
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
             ]
@@ -115,6 +124,7 @@ let package = Package(
                 "SwiftlyCore",
                 "CLibArchive",
             ],
+            swiftSettings: swiftSettings,
             linkerSettings: [
                 .linkedLibrary("z"),
             ]
@@ -123,7 +133,8 @@ let package = Package(
             name: "MacOSPlatform",
             dependencies: [
                 "SwiftlyCore",
-            ]
+            ],
+            swiftSettings: swiftSettings
         ),
         .systemLibrary(
             name: "CLibArchive",
@@ -137,7 +148,8 @@ let package = Package(
             dependencies: ["Swiftly"],
             resources: [
                 .embedInCode("mock-signing-key-private.pgp"),
-            ]
+            ],
+            swiftSettings: swiftSettings
         ),
     ]
 )

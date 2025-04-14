@@ -164,10 +164,9 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
-    func proxyEnv(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) throws -> [
-        String:
-            String
-    ] {
+    func proxyEnv(_ ctx: SwiftlyCoreContext, env: [String: String], toolchain: ToolchainVersion) throws -> [String: String] {
+        var newEnv = env
+
         let tcPath = self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
         guard tcPath.fileExists() else {
             throw SwiftlyError(
@@ -175,14 +174,18 @@ extension Platform {
                 "Toolchain \(toolchain) could not be located. You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again."
             )
         }
-        var newEnv = ProcessInfo.processInfo.environment
+
+        var pathComponents = (newEnv["PATH"] ?? "").split(separator: ":").map { String($0) }
 
         // The toolchain goes to the beginning of the PATH
-        var newPath = newEnv["PATH"] ?? ""
-        if !newPath.hasPrefix(tcPath.path + ":") {
-            newPath = "\(tcPath.path):\(newPath)"
-        }
-        newEnv["PATH"] = newPath
+        pathComponents.removeAll(where: { $0 == tcPath.path })
+        pathComponents = [tcPath.path] + pathComponents
+
+        // Remove swiftly bin directory from the PATH entirely
+        let swiftlyBinDir = self.swiftlyBinDir(ctx)
+        pathComponents.removeAll(where: { $0 == swiftlyBinDir.path })
+
+        newEnv["PATH"] = String(pathComponents.joined(separator: ":"))
 
         return newEnv
     }
@@ -192,11 +195,17 @@ extension Platform {
     /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
     /// the exit code and program information.
     ///
-    public func proxy(
-        _ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String,
-        _ arguments: [String], _ env: [String: String] = [:]
-    ) async throws {
-        var newEnv = try self.proxyEnv(ctx, toolchain)
+    public func proxy(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String], _ env: [String: String] = [:]) async throws {
+        let tcPath = self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
+
+        let commandTcPath = tcPath.appendingPathComponent(command)
+        let commandToRun = if FileManager.default.fileExists(atPath: commandTcPath.path) {
+            commandTcPath.path
+        } else {
+            command
+        }
+
+        var newEnv = try self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain)
         for (key, value) in env {
             newEnv[key] = value
         }
@@ -210,7 +219,7 @@ extension Platform {
         }
 #endif
 
-        try self.runProgram([command] + arguments, env: newEnv)
+        try self.runProgram([commandToRun] + arguments, env: newEnv)
     }
 
     /// Proxy the invocation of the provided command to the chosen toolchain and capture the output.
@@ -218,11 +227,17 @@ extension Platform {
     /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
     /// the exit code and program information.
     ///
-    public func proxyOutput(
-        _ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String,
-        _ arguments: [String]
-    ) async throws -> String? {
-        try await self.runProgramOutput(command, arguments, env: self.proxyEnv(ctx, toolchain))
+    public func proxyOutput(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws -> String? {
+        let tcPath = self.findToolchainLocation(ctx, toolchain).appendingPathComponent("usr/bin")
+
+        let commandTcPath = tcPath.appendingPathComponent(command)
+        let commandToRun = if FileManager.default.fileExists(atPath: commandTcPath.path) {
+            commandTcPath.path
+        } else {
+            command
+        }
+
+        return try await self.runProgramOutput(commandToRun, arguments, env: self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain))
     }
 
     /// Run a program.

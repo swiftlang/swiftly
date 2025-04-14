@@ -185,7 +185,7 @@ extension Platform {
         let swiftlyBinDir = self.swiftlyBinDir(ctx)
         pathComponents.removeAll(where: { $0 == swiftlyBinDir.path })
 
-        newEnv["PATH"] = String(pathComponents.joined(by: ":"))
+        newEnv["PATH"] = String(pathComponents.joined(separator: ":"))
 
         return newEnv
     }

@@ -8,10 +8,6 @@ import Testing
 
 @Suite(.serialized) struct HTTPClientTests {
     @Test func getSwiftOrgGPGKeys() async throws {
-        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd.name != PlatformDefinition.rhel9.name && pd.name != PlatformDefinition.ubuntu2004.name else {
-            return
-        }
-
         let tmpFile = mktemp()
         try await create(file: tmpFile, contents: nil)
 
@@ -29,10 +25,6 @@ import Testing
     }
 
     @Test func getSwiftToolchain() async throws {
-        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd.name != PlatformDefinition.rhel9.name && pd.name != PlatformDefinition.ubuntu2004.name else {
-            return
-        }
-
         let tmpFile = mktemp()
         try await create(file: tmpFile, contents: nil)
         let tmpFileSignature = mktemp(ext: ".sig")
@@ -62,10 +54,6 @@ import Testing
     }
 
     @Test func getSwiftlyRelease() async throws {
-        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd.name != PlatformDefinition.rhel9.name && pd.name != PlatformDefinition.ubuntu2004.name else {
-            return
-        }
-
         let tmpFile = mktemp()
         try await create(file: tmpFile, contents: nil)
         let tmpFileSignature = mktemp(ext: ".sig")
@@ -95,10 +83,6 @@ import Testing
     }
 
     @Test func getSwiftlyReleaseMetadataFromSwiftOrg() async throws {
-        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd.name != PlatformDefinition.rhel9.name && pd.name != PlatformDefinition.ubuntu2004.name else {
-            return
-        }
-
         let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
         do {
             let currentRelease = try await httpClient.getCurrentSwiftlyRelease()

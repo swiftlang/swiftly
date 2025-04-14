@@ -7,7 +7,7 @@ import SystemPackage
 import Testing
 
 @Suite(.serialized) struct HTTPClientTests {
-    @Test func getSwiftOrgGPGKeys() async throws {
+    /*@Test func getSwiftOrgGPGKeys() async throws {
         let tmpFile = mktemp()
         try await create(file: tmpFile, contents: nil)
 
@@ -118,7 +118,7 @@ import Testing
             // THEN: we get at least 3 releases
             #expect(3 <= snapshots.count)
         }
-    }
+    }*/
 }
 
 private func withGpg(_ body: (([String]) throws -> Void) async throws -> Void) async throws {

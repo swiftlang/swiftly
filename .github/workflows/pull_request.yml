@@ -37,7 +37,7 @@ jobs:
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build and Test
-        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" || "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swift test --skip HTTPClientTests; else swift test; fi'
+        run: swift test --no-parallel --filter HTTPClientTests
 
   releasebuildcheck:
     name: Release Build Check

@@ -45,6 +45,11 @@ public struct SwiftlyCoreContext: Sendable {
         self.currentDirectory = cwd
     }
 
+    public init(httpClient: SwiftlyHTTPClient) {
+        self.httpClient = httpClient
+        self.currentDirectory = cwd
+    }
+
     /// Pass the provided string to the set output handler if any.
     /// If no output handler has been set, just print to stdout.
     public func print(_ string: String = "", terminator: String? = nil) async {

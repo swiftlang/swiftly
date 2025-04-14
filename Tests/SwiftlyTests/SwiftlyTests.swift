@@ -65,7 +65,7 @@ extension SwiftlyCoreContext {
         outputHandler: (any OutputHandler)?,
         inputProvider: (any InputProvider)?
     ) {
-        self.init()
+        self.init(httpClient: SwiftlyHTTPClient(httpRequestExecutor: httpRequestExecutor))
 
         self.mockedHomeDir = mockedHomeDir
         self.currentDirectory = mockedHomeDir ?? cwd

@@ -215,7 +215,7 @@ extension Platform {
         // find standard libraries that aren't in the toolchain, like libc++. Here we
         // use xcrun to tell us what the default sdk root should be.
         if newEnv["SDKROOT"] == nil {
-            newEnv["SDKROOT"] = (try? await self.runProgramOutput("/usr/bin/xcrun", "--show-sdk-path"))
+            newEnv["SDKROOT"] = (try? await self.runProgramOutput("/usr/bin/xcrun", "--show-sdk-path"))?.replacingOccurrences(of: "\n", with: "")
         }
 #endif
 

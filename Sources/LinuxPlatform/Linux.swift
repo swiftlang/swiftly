@@ -28,7 +28,7 @@ public struct Linux: Platform {
     }
 
     public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> URL {
-        ctx.mockedHomeDir.map { $0.appendingPathComponent(".local/share/swiftly/bin", isDirectory: true) }
+        ctx.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".local/share/swiftly/bin", isDirectory: true)

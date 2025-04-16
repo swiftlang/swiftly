@@ -139,19 +139,25 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
-    internal func proxyEnv(_ toolchain: ToolchainVersion) throws -> [String: String] {
+    internal func proxyEnv(env: [String: String], toolchain: ToolchainVersion) throws -> [String: String] {
+        var newEnv = env
+
         let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
         guard tcPath.fileExists() else {
             throw SwiftlyError(message: "Toolchain \(toolchain) could not be located. You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again.")
         }
-        var newEnv = ProcessInfo.processInfo.environment
+
+        var pathComponents = (newEnv["PATH"] ?? "").split(separator: ":").map { String($0) }
 
         // The toolchain goes to the beginning of the PATH
-        var newPath = newEnv["PATH"] ?? ""
-        if !newPath.hasPrefix(tcPath.path + ":") {
-            newPath = "\(tcPath.path):\(newPath)"
-        }
-        newEnv["PATH"] = newPath
+        pathComponents.removeAll(where: { $0 == tcPath.path })
+        pathComponents = [tcPath.path] + pathComponents
+
+        // Remove swiftly bin directory from the PATH entirely
+        let swiftlyBinDir = self.swiftlyBinDir
+        pathComponents.removeAll(where: { $0 == swiftlyBinDir.path })
+
+        newEnv["PATH"] = String(pathComponents.joined(by: ":"))
 
         return newEnv
     }
@@ -162,7 +168,17 @@ extension Platform {
     /// the exit code and program information.
     ///
     public func proxy(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String], _ env: [String: String] = [:]) async throws {
-        var newEnv = try self.proxyEnv(toolchain)
+        var newEnv = try self.proxyEnv(env: ProcessInfo.processInfo.environment, toolchain: toolchain)
+
+        let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
+
+        let commandTcPath = tcPath.appendingPathComponent(command)
+        let commandToRun = if FileManager.default.fileExists(atPath: commandTcPath.path) {
+            commandTcPath.path
+        } else {
+            command
+        }
+
         for (key, value) in env {
             newEnv[key] = value
         }
@@ -176,7 +192,7 @@ extension Platform {
         }
 #endif
 
-        try self.runProgram([command] + arguments, env: newEnv)
+        try self.runProgram([commandToRun] + arguments, env: newEnv)
     }
 
     /// Proxy the invocation of the provided command to the chosen toolchain and capture the output.
@@ -185,7 +201,16 @@ extension Platform {
     /// the exit code and program information.
     ///
     public func proxyOutput(_ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws -> String? {
-        try await self.runProgramOutput(command, arguments, env: self.proxyEnv(toolchain))
+        let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
+
+        let commandTcPath = tcPath.appendingPathComponent(command)
+        let commandToRun = if FileManager.default.fileExists(atPath: commandTcPath.path) {
+            commandTcPath.path
+        } else {
+            command
+        }
+
+        return try await self.runProgramOutput(commandToRun, arguments, env: self.proxyEnv(env: ProcessInfo.processInfo.environment, toolchain: toolchain))
     }
 
     /// Run a program.

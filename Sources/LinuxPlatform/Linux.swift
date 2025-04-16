@@ -35,7 +35,7 @@ public struct Linux: Platform {
     }
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> URL {
-        ctx.mockedHomeDir.map { $0.appendingPathComponent(".local/share/swiftly/toolchains", isDirectory: true) }
+        ctx.mockedHomeDir.map { $0.appendingPathComponent("toolchains", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/share/swiftly/toolchains")
     }

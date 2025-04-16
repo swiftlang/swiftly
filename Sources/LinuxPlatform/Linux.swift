@@ -28,14 +28,16 @@ public struct Linux: Platform {
     }
 
     public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> URL {
-        ctx.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
+        ctx.mockedHomeDir.map { $0.appendingPathComponent(".local/share/swiftly/bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".local/share/swiftly/bin", isDirectory: true)
     }
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> URL {
-        self.swiftlyHomeDir(ctx).appendingPathComponent("toolchains", isDirectory: true)
+        ctx.mockedHomeDir.map { $0.appendingPathComponent(".local/share/swiftly/toolchains", isDirectory: true) }
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { URL(fileURLWithPath: $0) }
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/share/swiftly/toolchains")
     }
 
     public var toolchainFileExtension: String {

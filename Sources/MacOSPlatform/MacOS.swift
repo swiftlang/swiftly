@@ -18,6 +18,11 @@ public struct MacOS: Platform {
             .appendingPathComponent(".swiftly", isDirectory: true)
     }
 
+    public var defaultToolchainsDirectory: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Developer/Toolchains", isDirectory: true)
+    }
+
     public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> URL {
         ctx.mockedHomeDir.map { $0.appendingPathComponent("bin", isDirectory: true) }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { URL(fileURLWithPath: $0) }
@@ -27,10 +32,9 @@ public struct MacOS: Platform {
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> URL {
         ctx.mockedHomeDir.map { $0.appendingPathComponent("Toolchains", isDirectory: true) }
-            // The toolchains are always installed here by the installer. We bypass the installer in the case of test mocks
-            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(
-                "Library/Developer/Toolchains", isDirectory: true
-            )
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { URL(fileURLWithPath: $0) }
+            // This is where the installer will put the toolchains, and where Xcode can find them
+            ?? self.defaultToolchainsDirectory
     }
 
     public var toolchainFileExtension: String {
@@ -56,30 +60,46 @@ public struct MacOS: Platform {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
-        if !self.swiftlyToolchainsDir(ctx).fileExists() {
+        let toolchainsDir = self.swiftlyToolchainsDir(ctx)
+
+        if !toolchainsDir.fileExists() {
             try FileManager.default.createDirectory(
-                at: self.swiftlyToolchainsDir(ctx), withIntermediateDirectories: false
+                at: self.swiftlyToolchainsDir(ctx), withIntermediateDirectories: true
             )
         }
 
-        if ctx.mockedHomeDir == nil {
+        if toolchainsDir == self.defaultToolchainsDirectory {
+            // If the toolchains go into the default user location then we use the installer to install them
             await ctx.print("Installing package in user home directory...")
             try runProgram(
                 "installer", "-verbose", "-pkg", tmpFile.path, "-target", "CurrentUserHomeDirectory",
                 quiet: !verbose
             )
         } else {
-            // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
-            //  the installer will not install to an arbitrary path, only a volume or user home directory.
+            // Otherwise, we extract the pkg into the requested toolchains directory.
             await ctx.print("Expanding pkg...")
             let tmpDir = self.getTempFilePath()
-            let toolchainDir = self.swiftlyToolchainsDir(ctx).appendingPathComponent(
+            let toolchainDir = toolchainsDir.appendingPathComponent(
                 "\(version.identifier).xctoolchain", isDirectory: true
             )
+
             if !toolchainDir.fileExists() {
                 try FileManager.default.createDirectory(
                     at: toolchainDir, withIntermediateDirectories: false
                 )
+            }
+
+            await ctx.print("Checking package signature...")
+            do {
+                try runProgram("pkgutil", "--check-signature", tmpFile.path, quiet: !verbose)
+            } catch {
+                // If this is not a test that uses mocked toolchains then we must throw this error and abort installation
+                guard ctx.mockedHomeDir != nil else {
+                    throw error
+                }
+
+                // We permit the signature verification to fail during testing
+                await ctx.print("Signature verification failed, which is allowable during testing with mocked toolchains")
             }
             try runProgram("pkgutil", "--verbose", "--expand", tmpFile.path, tmpDir.path, quiet: !verbose)
             // There's a slight difference in the location of the special Payload file between official swift packages

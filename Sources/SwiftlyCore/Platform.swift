@@ -171,7 +171,7 @@ extension Platform {
         guard tcPath.fileExists() else {
             throw SwiftlyError(
                 message:
-                "Toolchain \(toolchain) could not be located. You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again."
+                "Toolchain \(toolchain) could not be located in \(tcPath). You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again."
             )
         }
 

@@ -166,6 +166,16 @@ extension Platform {
         for (key, value) in env {
             newEnv[key] = value
         }
+
+#if os(macOS)
+        // On macOS, we try to set SDKROOT if its empty for tools like clang++ that need it to
+        // find standard libraries that aren't in the toolchain, like libc++. Here we
+        // use xcrun to tell us what the default sdk root should be.
+        if newEnv["SDKROOT"] == nil {
+            newEnv["SDKROOT"] = (try? await self.runProgramOutput("/usr/bin/xcrun", "--show-sdk-path"))?.replacingOccurrences(of: "\n", with: "")
+        }
+#endif
+
         try self.runProgram([command] + arguments, env: newEnv)
     }
 

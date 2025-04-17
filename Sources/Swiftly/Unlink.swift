@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 struct Unlink: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
@@ -25,25 +26,28 @@ struct Unlink: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
 
         var pathChanged = false
-        if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin(ctx) {
+        if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
-            let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
+            let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.string)) ?? [String]()
 
             let existingProxies = swiftlyBinDirContents.filter { bin in
                 do {
-                    let linkTarget = try FileManager.default.destinationOfSymbolicLink(atPath: swiftlyBinDir.appendingPathComponent(bin).path)
-                    return linkTarget == proxyTo
+                    let linkTarget = try FileManager.default.destinationOfSymbolicLink(atPath: (swiftlyBinDir / bin).string)
+                    return linkTarget == proxyTo.string
                 } catch { return false }
             }
 
             for p in existingProxies {
-                let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx).appendingPathComponent(p)
+                let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx) / p
 
-                if proxy.fileExists() {
-                    try FileManager.default.removeItem(at: proxy)
+                if try await fs.exists(atPath: proxy) {
+                    try await fs.remove(atPath: proxy)
                     pathChanged = true
                 }
             }

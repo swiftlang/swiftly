@@ -10,7 +10,7 @@ import SystemPackage
 
 typealias fs = SwiftlyCore.FileSystem
 
-extension FilePath: ExpressibleByArgument {
+extension FilePath: @retroactive ExpressibleByArgument {
     public init?(argument: String) {
         self.init(argument)
     }

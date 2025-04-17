@@ -7,10 +7,9 @@ import Testing
     /// Tests that enabling swiftly results in swiftlyBinDir being populated with symlinks.
     @Test func testLink() async throws {
         try await SwiftlyTests.withTestHome {
-            let fm = FileManager.default
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx)
-            let swiftlyBinaryPath = swiftlyBinDir.appendingPathComponent("swiftly")
-            let swiftVersionFilename = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".swift-version")
+            let swiftlyBinaryPath = swiftlyBinDir / "swiftly"
+            let swiftVersionFilename = SwiftlyTests.ctx.currentDirectory / ".swift-version"
 
             // Configure a mock toolchain
             let versionString = "6.0.3"
@@ -20,20 +19,18 @@ import Testing
             // And start creating a mock folder structure for that toolchain.
             try "swiftly binary".write(to: swiftlyBinaryPath, atomically: true, encoding: .utf8)
 
-            let toolchainDir = Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchainVersion)
-                .appendingPathComponent("usr")
-                .appendingPathComponent("bin")
-            try fm.createDirectory(at: toolchainDir, withIntermediateDirectories: true)
+            let toolchainDir = Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchainVersion) / "usr" / "bin"
+            try await fs.mkdir([.parents], atPath: toolchainDir)
 
             let proxies = ["swift-build", "swift-test", "swift-run"]
             for proxy in proxies {
-                let proxyPath = toolchainDir.appendingPathComponent(proxy)
-                try fm.createSymbolicLink(at: proxyPath, withDestinationURL: swiftlyBinaryPath)
+                let proxyPath = toolchainDir / proxy
+                try await fs.symlink(atPath: proxyPath, linkPath: swiftlyBinaryPath)
             }
 
             _ = try await SwiftlyTests.runWithMockedIO(Link.self, ["link"])
 
-            let enabledSwiftlyBinDirContents = try fm.contentsOfDirectory(atPath: swiftlyBinDir.path).sorted()
+            let enabledSwiftlyBinDirContents = try await fs.ls(atPath: swiftlyBinDir).sorted()
             let expectedProxies = (["swiftly"] + proxies).sorted()
             #expect(enabledSwiftlyBinDirContents == expectedProxies)
         }

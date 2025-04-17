@@ -62,13 +62,12 @@ struct Run: SwiftlyCommand {
         defer {
             versionUpdateReminder()
         }
+        var config = try await Config.load(ctx)
 
         // Handle the specific case where help is requested of the run subcommand
         if command == ["--help"] {
             throw CleanExit.helpRequest(self)
         }
-
-        var config = try await Config.load(ctx)
 
         let (command, selector) = try Self.extractProxyArguments(command: self.command)
 

@@ -23,12 +23,15 @@ struct Link: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
 
-        var config = try Config.load(ctx)
+        var config = try await Config.load(ctx)
         let toolchainVersion = try await Install.determineToolchainVersion(
             ctx,
-            version: nil,
+            version: config.inUse?.name,
             config: &config
         )
 
@@ -40,7 +43,11 @@ struct Link: SwiftlyCommand {
         )
 
         if pathChanged {
-            await ctx.print(Messages.refreshShell)
+            await ctx.print("""
+            Linked swiftly to \(toolchainVersion.name).
+
+            \(Messages.refreshShell)
+            """)
         }
     }
 }

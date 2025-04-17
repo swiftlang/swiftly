@@ -88,6 +88,7 @@ struct Install: SwiftlyCommand {
         }
 
         var config = try await Config.load(ctx)
+        let toolchainVersion = try await Self.determineToolchainVersion(ctx, version: self.version, config: &config)
 
         let (postInstallScript, pathChanged) = try await Self.execute(
             ctx,
@@ -109,12 +110,29 @@ struct Install: SwiftlyCommand {
 
         // Fish doesn't cache its path, so this instruction is not necessary.
         if pathChanged && !shell.hasSuffix("fish") {
-            await ctx.print(Messages.refreshShell)
+            await ctx.print(
+                """
+                NOTE: Swiftly has updated some elements in your path and your shell may not yet be
+                aware of the changes. You can update your shell's environment by running
+
+                hash -r
+
+                or restarting your shell.
+
+                """)
         }
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
-                throw SwiftlyError(message: Messages.postInstall(postInstallScript))
+                throw SwiftlyError(
+                    message: """
+
+                    There are some dependencies that should be installed before using this toolchain.
+                    You can run the following script as the system administrator (e.g. root) to prepare
+                    your system:
+
+                    \(postInstallScript)
+                    """)
             }
 
             try Data(postInstallScript.utf8).write(
@@ -132,21 +150,23 @@ struct Install: SwiftlyCommand {
         var pathChanged = false
 
         // Create proxies if we have a location where we can point them
-        if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin(ctx) {
+        if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
             // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
             let swiftlyBinDirContents =
-                (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
+                (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
             let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
-            let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(
-                atPath: toolchainBinDir.path)
+            let toolchainBinDirContents = try await fs.ls(atPath: toolchainBinDir)
 
-            let existingProxies = swiftlyBinDirContents.filter { bin in
+            var existingProxies: [String] = []
+
+            for bin in swiftlyBinDirContents {
                 do {
-                    let linkTarget = try FileManager.default.destinationOfSymbolicLink(
-                        atPath: swiftlyBinDir.appendingPathComponent(bin).path)
-                    return linkTarget == proxyTo
-                } catch { return false }
+                    let linkTarget = try await fs.readlink(atPath: swiftlyBinDir / bin)
+                    if linkTarget == proxyTo {
+                        existingProxies.append(bin)
+                    }
+                } catch { continue }
             }
 
             let overwrite = Set(toolchainBinDirContents).subtracting(existingProxies).intersection(
@@ -155,7 +175,7 @@ struct Install: SwiftlyCommand {
                 await ctx.print("The following existing executables will be overwritten:")
 
                 for executable in overwrite {
-                    await ctx.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
+                    await ctx.print("  \(swiftlyBinDir / executable)")
                 }
 
                 guard await ctx.promptForConfirmation(defaultBehavior: false) else {
@@ -171,16 +191,13 @@ struct Install: SwiftlyCommand {
                 overwrite)
 
             for p in proxiesToCreate {
-                let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx).appendingPathComponent(p)
+                let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx) / p
 
-                if proxy.fileExists() {
-                    try FileManager.default.removeItem(at: proxy)
+                if try await fs.exists(atPath: proxy) {
+                    try await fs.remove(atPath: proxy)
                 }
 
-                try FileManager.default.createSymbolicLink(
-                    atPath: proxy.path,
-                    withDestinationPath: proxyTo
-                )
+                try await fs.symlink(atPath: proxy, linkPath: proxyTo)
 
                 pathChanged = true
             }
@@ -330,120 +347,15 @@ struct Install: SwiftlyCommand {
 
             try await Swiftly.currentPlatform.install(ctx, from: tmpFile, version: version, verbose: verbose)
 
-            var pathChanged = false
-
-            // Create proxies if we have a location where we can point them
-            if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
-                // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-                let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
-                let swiftlyBinDirContents =
-                    (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
-                let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
-                let toolchainBinDirContents = try await fs.ls(atPath: toolchainBinDir)
-
-                var existingProxies: [String] = []
-
-                for bin in swiftlyBinDirContents {
-                    do {
-                        let linkTarget = try await fs.readlink(atPath: swiftlyBinDir / bin)
-                        if linkTarget == proxyTo {
-                            existingProxies.append(bin)
-                        }
-                    } catch { continue }
-                }
-
-                let overwrite = Set(toolchainBinDirContents).subtracting(existingProxies).intersection(
-                    swiftlyBinDirContents)
-                if !overwrite.isEmpty && !assumeYes {
-                    await ctx.print("The following existing executables will be overwritten:")
-
-                    for executable in overwrite {
-                        await ctx.print("  \(swiftlyBinDir / executable)")
-                    }
-
-<<<<<<< HEAD
-                    guard await ctx.promptForConfirmation(defaultBehavior: false) else {
-                        throw SwiftlyError(message: "Toolchain installation has been cancelled")
-                    }
-                }
-
-                if verbose {
-                    await ctx.print("Setting up toolchain proxies...")
-                }
-
-                let proxiesToCreate = Set(toolchainBinDirContents).subtracting(swiftlyBinDirContents).union(
-                    overwrite)
-
-                for p in proxiesToCreate {
-                    let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx) / p
-
-                    if try await fs.exists(atPath: proxy) {
-                        try await fs.remove(atPath: proxy)
-                    }
-
-                    try await fs.symlink(atPath: proxy, linkPath: proxyTo)
-
-                    pathChanged = true
-                }
-            }
+            let pathChanged = try await Self.setupProxies(
+                ctx,
+                version: version,
+                verbose: verbose,
+                assumeYes: assumeYes
+            )
 
             config.installedToolchains.insert(version)
 
-=======
-                    let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
-                    let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
-
-                    lastUpdate = Date()
-
-                    animation.update(
-                        step: progress.receivedBytes,
-                        total: progress.totalBytes!,
-                        text:
-                        "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
-                    )
-                }
-            )
-        } catch let notFound as DownloadNotFoundError {
-            throw SwiftlyError(message: "\(version) does not exist at URL \(notFound.url), exiting")
-        } catch {
-            animation.complete(success: false)
-            throw error
-        }
-        animation.complete(success: true)
-
-        if verifySignature {
-            try await Swiftly.currentPlatform.verifyToolchainSignature(
-                ctx,
-                toolchainFile: toolchainFile,
-                archive: tmpFile,
-                verbose: verbose
-            )
-        }
-
-        try await Swiftly.currentPlatform.install(ctx, from: tmpFile, version: version, verbose: verbose)
-
-        let pathChanged = try await Self.setupProxies(
-            ctx,
-            version: version,
-            verbose: verbose,
-            assumeYes: assumeYes
-        )
-
-        config.installedToolchains.insert(version)
-
-        try config.save(ctx)
-
-        // If this is the first installed toolchain, mark it as in-use regardless of whether the
-        // --use argument was provided.
-        if useInstalledToolchain {
-            try await Use.execute(ctx, version, globalDefault: false, &config)
-        }
-
-        // We always update the global default toolchain if there is none set. This could
-        //  be the only toolchain that is installed, which makes it the only choice.
-        if config.inUse == nil {
-            config.inUse = version
->>>>>>> 5d7eb2d (Add ability to temporarily disable swiftly)
             try config.save(ctx)
 
             // If this is the first installed toolchain, mark it as in-use regardless of whether the

@@ -60,7 +60,7 @@ struct TestSwiftly: AsyncParsableCommand {
             print("Installing swiftly to custom location \(customLoc!.path)")
             env["SWIFTLY_HOME_DIR"] = customLoc!.path
             env["SWIFTLY_BIN_DIR"] = customLoc!.appendingPathComponent("bin").path
-            env["SWIFTLY_TOOLCHAIN_DIR"] = customLoc!.appendingPathComponent("toolchains").path
+            env["SWIFTLY_TOOLCHAINS_DIR"] = customLoc!.appendingPathComponent("toolchains").path
 
             try currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
             try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc!.path)/env.sh\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)

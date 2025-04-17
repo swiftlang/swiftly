@@ -102,8 +102,7 @@ jobs:
       image: "ubuntu:24.04"
     steps:
       - name: Prepare System
-        run: apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install ca-certificates gpg tzdata ${{matrix.shell.pkg}} && chs
-h -s ${{matrix.shell.bin}}
+        run: apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install ca-certificates gpg tzdata
       - name: Download Release
         uses: actions/download-artifact@v4
         with:

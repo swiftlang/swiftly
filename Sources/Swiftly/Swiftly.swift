@@ -82,7 +82,8 @@ extension Data {
 }
 
 extension SwiftlyCommand {
-    public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) throws {
+    @discardableResult
+    public mutating func validatedConfig(_ ctx: SwiftlyCoreContext) throws -> Config {
         for requiredDir in Swiftly.requiredDirectories(ctx) {
             guard requiredDir.fileExists() else {
                 do {
@@ -94,7 +95,7 @@ extension SwiftlyCommand {
             }
         }
 
-        // Verify that the configuration exists and can be loaded
-        _ = try Config.load(ctx)
+        // Verifies that the configuration exists and can be loaded
+        return try Config.load(ctx)
     }
 }

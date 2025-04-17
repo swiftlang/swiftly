@@ -25,7 +25,7 @@ struct Unlink: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        try validatedConfig(ctx)
 
         var pathChanged = false
         if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin(ctx) {

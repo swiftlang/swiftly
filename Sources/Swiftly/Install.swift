@@ -81,9 +81,7 @@ struct Install: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
-
-        var config = try Config.load(ctx)
+        var config = try validatedConfig(ctx)
         let toolchainVersion = try await Self.determineToolchainVersion(ctx, version: self.version, config: &config)
 
         let (postInstallScript, pathChanged) = try await Self.execute(

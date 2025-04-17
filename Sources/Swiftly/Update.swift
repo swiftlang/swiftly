@@ -82,8 +82,7 @@ struct Update: SwiftlyCommand {
     }
 
     public mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
-        var config = try Config.load(ctx)
+        var config = try validatedConfig(ctx)
 
         guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {
             if let toolchain = self.toolchain {

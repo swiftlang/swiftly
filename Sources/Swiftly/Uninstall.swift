@@ -48,8 +48,7 @@ struct Uninstall: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
-        let startingConfig = try Config.load(ctx)
+        let startingConfig = try validatedConfig(ctx)
 
         let toolchains: [ToolchainVersion]
         if self.toolchain == "all" {

@@ -3,7 +3,7 @@ import Foundation
 import SwiftlyCore
 
 struct Init: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Perform swiftly initialization into your user account."
     )
 
@@ -53,7 +53,7 @@ struct Init: SwiftlyCommand {
             // This is a simple upgrade from the 0.4.0 pre-releases, or 1.x
 
             // Move our executable over to the correct place
-            try Swiftly.currentPlatform.installSwiftlyBin(ctx)
+            try await Swiftly.currentPlatform.installSwiftlyBin(ctx)
 
             // Update and save the version
             config.version = SwiftlyCore.version
@@ -70,6 +70,8 @@ struct Init: SwiftlyCommand {
 
         // Give the user the prompt and the choice to abort at this point.
         if !assumeYes {
+            let toolchainsDir = Swiftly.currentPlatform.swiftlyToolchainsDir(ctx)
+
             var msg = """
             Welcome to swiftly, the Swift toolchain manager for Linux and macOS!
 
@@ -81,12 +83,20 @@ struct Init: SwiftlyCommand {
 
             \(Swiftly.currentPlatform.swiftlyHomeDir(ctx).path) - Directory for configuration files
             \(Swiftly.currentPlatform.swiftlyBinDir(ctx).path) - Links to the binaries of the active toolchain
-            \(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx).path) - Directory hosting installed toolchains
+            \(toolchainsDir.path) - Directory hosting installed toolchains
 
             These locations can be changed by setting the environment variables
-            SWIFTLY_HOME_DIR and SWIFTLY_BIN_DIR before running 'swiftly init' again.
+            SWIFTLY_HOME_DIR, SWIFTLY_BIN_DIR, and SWIFTLY_TOOLCHAINS_DIR before running 'swiftly init' again.
 
             """
+#if os(macOS)
+            if toolchainsDir != FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Developer/Toolchains", isDirectory: true) {
+                msg += """
+
+                NOTE: The toolchains are not being installed in a standard macOS location, so Xcode may not be able to find them.
+                """
+            }
+#endif
             if !skipInstall {
                 msg += """
 
@@ -113,9 +123,9 @@ struct Init: SwiftlyCommand {
                 """
             }
 
-            ctx.print(msg)
+            await ctx.print(msg)
 
-            guard ctx.promptForConfirmation(defaultBehavior: true) else {
+            guard await ctx.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "swiftly installation has been cancelled")
             }
         }
@@ -177,15 +187,16 @@ struct Init: SwiftlyCommand {
         guard var config else { throw SwiftlyError(message: "Configuration could not be set") }
 
         // Move our executable over to the correct place
-        try Swiftly.currentPlatform.installSwiftlyBin(ctx)
+        try await Swiftly.currentPlatform.installSwiftlyBin(ctx)
 
         if overwrite || !FileManager.default.fileExists(atPath: envFile.path) {
-            ctx.print("Creating shell environment file for the user...")
+            await ctx.print("Creating shell environment file for the user...")
             var env = ""
             if shell.hasSuffix("fish") {
                 env = """
                 set -x SWIFTLY_HOME_DIR "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx).path)"
                 set -x SWIFTLY_BIN_DIR "\(Swiftly.currentPlatform.swiftlyBinDir(ctx).path)"
+                set -x SWIFTLY_TOOLCHAINS_DIR "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx).path)"
                 if not contains "$SWIFTLY_BIN_DIR" $PATH
                     set -x PATH "$SWIFTLY_BIN_DIR" $PATH
                 end
@@ -195,6 +206,7 @@ struct Init: SwiftlyCommand {
                 env = """
                 export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx).path)"
                 export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx).path)"
+                export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx).path)"
                 if [[ ":$PATH:" != *":$SWIFTLY_BIN_DIR:"* ]]; then
                     export PATH="$SWIFTLY_BIN_DIR:$PATH"
                 fi
@@ -206,7 +218,7 @@ struct Init: SwiftlyCommand {
         }
 
         if !noModifyProfile {
-            ctx.print("Updating profile...")
+            await ctx.print("Updating profile...")
 
             let userHome = ctx.mockedHomeDir ?? FileManager.default.homeDirectoryForCurrentUser
 
@@ -250,50 +262,50 @@ struct Init: SwiftlyCommand {
                 addEnvToProfile = true
             }
 
-            var postInstall: String?
-            var pathChanged = false
-
-            if !skipInstall {
-                let latestVersion = try await Install.resolve(ctx, config: config, selector: ToolchainSelector.latest)
-                (postInstall, pathChanged) = try await Install.execute(ctx, version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
-            }
-
             if addEnvToProfile {
                 try Data(sourceLine.utf8).append(to: profileHome)
-
-                if !quietShellFollowup {
-                    ctx.print("""
-                    To begin using installed swiftly from your current shell, first run the following command:
-                        \(sourceLine)
-
-                    """)
-                }
             }
+        }
 
-            // Fish doesn't have path caching, so this might only be needed for bash/zsh
-            if pathChanged && !quietShellFollowup && !shell.hasSuffix("fish") {
-                ctx.print("""
-                Your shell caches items on your path for better performance. Swiftly has added
-                items to your path that may not get picked up right away. You can update your
-                shell's environment by running
+        var postInstall: String?
+        var pathChanged = false
 
-                hash -r
+        if !skipInstall {
+            let latestVersion = try await Install.resolve(ctx, config: config, selector: ToolchainSelector.latest)
+            (postInstall, pathChanged) = try await Install.execute(ctx, version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
+        }
 
-                or restarting your shell.
+        if !quietShellFollowup {
+            await ctx.print("""
+            To begin using installed swiftly from your current shell, first run the following command:
+                \(sourceLine)
 
-                """)
-            }
+            """)
+        }
 
-            if let postInstall {
-                ctx.print("""
-                There are some dependencies that should be installed before using this toolchain.
-                You can run the following script as the system administrator (e.g. root) to prepare
-                your system:
+        // Fish doesn't have path caching, so this might only be needed for bash/zsh
+        if pathChanged && !quietShellFollowup && !shell.hasSuffix("fish") {
+            await ctx.print("""
+            Your shell caches items on your path for better performance. Swiftly has added
+            items to your path that may not get picked up right away. You can update your
+            shell's environment by running
 
-                    \(postInstall)
+            hash -r
 
-                """)
-            }
+            or restarting your shell.
+
+            """)
+        }
+
+        if let postInstall {
+            await ctx.print("""
+            There are some dependencies that should be installed before using this toolchain.
+            You can run the following script as the system administrator (e.g. root) to prepare
+            your system:
+
+                \(postInstall)
+
+            """)
         }
     }
 }

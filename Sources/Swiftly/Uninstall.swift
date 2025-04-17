@@ -48,7 +48,11 @@ struct Uninstall: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
+
         let startingConfig = try Config.load(ctx)
 
         let toolchains: [ToolchainVersion]

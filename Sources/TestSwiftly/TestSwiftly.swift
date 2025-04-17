@@ -55,15 +55,15 @@ struct TestSwiftly: AsyncParsableCommand {
         var customLoc: URL?
 
         if self.customLocation {
-            let customLoc = currentPlatform.getTempFilePath()
+            customLoc = currentPlatform.getTempFilePath()
 
-            print("Installing swiftly to custom location \(customLoc.path).")
-            env["SWIFTLY_HOME_DIR"] = customLoc.path
-            env["SWIFTLY_BIN_DIR"] = customLoc.appendingPathComponent("bin").path
-            env["SWIFTLY_TOOLCHAIN_DIR"] = customLoc.appendingPathComponent("toolchains").path
+            print("Installing swiftly to custom location \(customLoc!.path)")
+            env["SWIFTLY_HOME_DIR"] = customLoc!.path
+            env["SWIFTLY_BIN_DIR"] = customLoc!.appendingPathComponent("bin").path
+            env["SWIFTLY_TOOLCHAIN_DIR"] = customLoc!.appendingPathComponent("toolchains").path
 
             try currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
-            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc.path)/env.sh\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
+            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc!.path)/env.sh\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
         } else {
             print("Installing swiftly to the default location.")
             // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell

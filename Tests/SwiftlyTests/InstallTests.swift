@@ -10,9 +10,9 @@ import Testing
     /// behavior, since determining which version is the latest is non-trivial and would require duplicating code
     /// from within swiftly itself.
     @Test(.testHomeMockedToolchain()) func installLatest() async throws {
-        try await SwiftlyTests.runCommand(Install.self, ["install", "latest", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "latest", "--post-install-file=\(mktemp())"])
 
-        let config = try Config.load()
+        let config = try await Config.load()
 
         guard !config.installedToolchains.isEmpty else {
             Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
@@ -34,9 +34,9 @@ import Testing
 
     /// Tests that `swiftly install a.b` installs the latest patch version of Swift a.b.
     @Test(.testHomeMockedToolchain()) func installLatestPatchVersion() async throws {
-        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7", "--post-install-file=\(mktemp())"])
 
-        let config = try Config.load()
+        let config = try await Config.load()
 
         guard !config.installedToolchains.isEmpty else {
             Issue.record("expected swiftly install latest to install release toolchain but installed toolchains is empty in config")
@@ -60,7 +60,7 @@ import Testing
     @Test(.testHomeMockedToolchain()) func installReleases() async throws {
         var installedToolchains: Set<ToolchainVersion> = []
 
-        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(mktemp())"])
 
         installedToolchains.insert(ToolchainVersion(major: 5, minor: 7, patch: 0))
         try await SwiftlyTests.validateInstalledToolchains(
@@ -68,7 +68,7 @@ import Testing
             description: "install a stable release toolchain"
         )
 
-        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.2", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.2", "--post-install-file=\(mktemp())"])
 
         installedToolchains.insert(ToolchainVersion(major: 5, minor: 7, patch: 2))
         try await SwiftlyTests.validateInstalledToolchains(
@@ -81,7 +81,7 @@ import Testing
     @Test(.testHomeMockedToolchain()) func installSnapshots() async throws {
         var installedToolchains: Set<ToolchainVersion> = []
 
-        try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(mktemp())"])
 
         installedToolchains.insert(ToolchainVersion(snapshotBranch: .main, date: "2023-04-01"))
         try await SwiftlyTests.validateInstalledToolchains(
@@ -89,7 +89,7 @@ import Testing
             description: "install a main snapshot toolchain"
         )
 
-        try await SwiftlyTests.runCommand(Install.self, ["install", "5.9-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.9-snapshot-2023-04-01", "--post-install-file=\(mktemp())"])
 
         installedToolchains.insert(
             ToolchainVersion(snapshotBranch: .release(major: 5, minor: 9), date: "2023-04-01"))
@@ -101,9 +101,9 @@ import Testing
 
     /// Tests that `swiftly install main-snapshot` installs the latest available main snapshot.
     @Test(.testHomeMockedToolchain()) func installLatestMainSnapshot() async throws {
-        try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot", "--post-install-file=\(mktemp())"])
 
-        let config = try Config.load()
+        let config = try await Config.load()
 
         guard !config.installedToolchains.isEmpty else {
             Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
@@ -128,9 +128,9 @@ import Testing
 
     /// Tests that `swiftly install a.b-snapshot` installs the latest available a.b release snapshot.
     @Test(.testHomeMockedToolchain()) func installLatestReleaseSnapshot() async throws {
-        try await SwiftlyTests.runCommand(Install.self, ["install", "6.0-snapshot", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "6.0-snapshot", "--post-install-file=\(mktemp())"])
 
-        let config = try Config.load()
+        let config = try await Config.load()
 
         guard !config.installedToolchains.isEmpty else {
             Issue.record("expected to install latest main snapshot toolchain but installed toolchains is empty in the config")
@@ -155,11 +155,11 @@ import Testing
 
     /// Tests that swiftly can install both stable release toolchains and snapshot toolchains.
     @Test(.testHomeMockedToolchain()) func installReleaseAndSnapshots() async throws {
-        try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "main-snapshot-2023-04-01", "--post-install-file=\(mktemp())"])
 
-        try await SwiftlyTests.runCommand(Install.self, ["install", "5.9-snapshot-2023-03-28", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.9-snapshot-2023-03-28", "--post-install-file=\(mktemp())"])
 
-        try await SwiftlyTests.runCommand(Install.self, ["install", "5.8.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.8.0", "--post-install-file=\(mktemp())"])
 
         try await SwiftlyTests.validateInstalledToolchains(
             [
@@ -174,17 +174,17 @@ import Testing
     func duplicateTest(_ version: String) async throws {
         try await SwiftlyTests.withTestHome {
             try await SwiftlyTests.withMockedToolchain {
-                try await SwiftlyTests.runCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+                try await SwiftlyTests.runCommand(Install.self, ["install", version, "--post-install-file=\(mktemp())"])
 
-                let before = try Config.load()
+                let before = try await Config.load()
 
                 let startTime = Date()
-                try await SwiftlyTests.runCommand(Install.self, ["install", version, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+                try await SwiftlyTests.runCommand(Install.self, ["install", version, "--post-install-file=\(mktemp())"])
 
                 // Assert that swiftly didn't attempt to download a new toolchain.
                 #expect(startTime.timeIntervalSinceNow.magnitude < 10)
 
-                let after = try Config.load()
+                let after = try await Config.load()
                 #expect(before == after)
             }
         }
@@ -192,63 +192,63 @@ import Testing
 
     /// Tests that attempting to install stable releases that are already installed doesn't result in an error.
     @Test(.testHomeMockedToolchain(), arguments: ["5.8.0", "latest"]) func installDuplicateReleases(_ installVersion: String) async throws {
-        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(mktemp())"])
 
-        let before = try Config.load()
+        let before = try await Config.load()
 
         let startTime = Date()
-        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(mktemp())"])
 
         // Assert that swiftly didn't attempt to download a new toolchain.
         #expect(startTime.timeIntervalSinceNow.magnitude < 10)
 
-        let after = try Config.load()
+        let after = try await Config.load()
         #expect(before == after)
     }
 
     /// Tests that attempting to install main snapshots that are already installed doesn't result in an error.
     @Test(.testHomeMockedToolchain(), arguments: ["main-snapshot-2023-04-01", "main-snapshot"]) func installDuplicateMainSnapshots(_ installVersion: String) async throws {
-        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(mktemp())"])
 
-        let before = try Config.load()
+        let before = try await Config.load()
 
         let startTime = Date()
-        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(mktemp())"])
 
         // Assert that swiftly didn't attempt to download a new toolchain.
         #expect(startTime.timeIntervalSinceNow.magnitude < 10)
 
-        let after = try Config.load()
+        let after = try await Config.load()
         #expect(before == after)
     }
 
     /// Tests that attempting to install release snapshots that are already installed doesn't result in an error.
     @Test(.testHomeMockedToolchain(), arguments: ["6.0-snapshot-2024-06-18", "6.0-snapshot"]) func installDuplicateReleaseSnapshots(_ installVersion: String) async throws {
-        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(mktemp())"])
 
-        let before = try Config.load()
+        let before = try await Config.load()
 
         let startTime = Date()
-        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", installVersion, "--post-install-file=\(mktemp())"])
 
         // Assert that swiftly didn't attempt to download a new toolchain.
         #expect(startTime.timeIntervalSinceNow.magnitude < 10)
 
-        let after = try Config.load()
+        let after = try await Config.load()
         #expect(before == after)
     }
 
     /// Verify that the installed toolchain will be used if no toolchains currently are installed.
     @Test(.testHomeMockedToolchain()) func installUsesFirstToolchain() async throws {
-        let config = try Config.load()
+        let config = try await Config.load()
         #expect(config.inUse == nil)
         try await SwiftlyTests.validateInUse(expected: nil)
 
-        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(mktemp())"])
 
         try await SwiftlyTests.validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))
 
-        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.1", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"])
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.1", "--post-install-file=\(mktemp())"])
 
         // Verify that 5.7.0 is still in use.
         try await SwiftlyTests.validateInUse(expected: ToolchainVersion(major: 5, minor: 7, patch: 0))

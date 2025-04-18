@@ -48,8 +48,8 @@ struct Uninstall: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
-        let startingConfig = try Config.load(ctx)
+        try await validateSwiftly(ctx)
+        let startingConfig = try await Config.load(ctx)
 
         let toolchains: [ToolchainVersion]
         if self.toolchain == "all" {
@@ -89,7 +89,7 @@ struct Uninstall: SwiftlyCommand {
         await ctx.print()
 
         for toolchain in toolchains {
-            var config = try Config.load(ctx)
+            var config = try await Config.load(ctx)
 
             // If the in-use toolchain was one of the uninstalled toolchains, use a new toolchain.
             if toolchain == config.inUse {

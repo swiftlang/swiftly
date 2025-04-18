@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 #if os(Linux)
 import LinuxPlatform
@@ -45,37 +46,37 @@ struct TestSwiftly: AsyncParsableCommand {
 #endif
 
 #if os(Linux)
-        let extractedSwiftly = "./swiftly"
+        let extractedSwiftly = FilePath("./swiftly")
 #elseif os(macOS)
-        let extractedSwiftly = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly/bin/swiftly").path
+        let extractedSwiftly = homeDir / ".swiftly/bin/swiftly"
 #endif
 
         var env = ProcessInfo.processInfo.environment
         let shell = try await currentPlatform.getShell()
-        var customLoc: URL?
+        var customLoc: FilePath?
 
         if self.customLocation {
-            customLoc = currentPlatform.getTempFilePath()
+            customLoc = mktemp()
 
-            print("Installing swiftly to custom location \(customLoc!.path)")
-            env["SWIFTLY_HOME_DIR"] = customLoc!.path
-            env["SWIFTLY_BIN_DIR"] = customLoc!.appendingPathComponent("bin").path
-            env["SWIFTLY_TOOLCHAINS_DIR"] = customLoc!.appendingPathComponent("toolchains").path
+            print("Installing swiftly to custom location \(customLoc!)")
+            env["SWIFTLY_HOME_DIR"] = customLoc!.string
+            env["SWIFTLY_BIN_DIR"] = (customLoc! / "bin").string
+            env["SWIFTLY_TOOLCHAINS_DIR"] = (customLoc! / "toolchains").string
 
-            try currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
-            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc!.path)/env.sh\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
+            try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
+            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
         } else {
             print("Installing swiftly to the default location.")
             // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
             if shell.hasSuffix("bash") {
-                env["BASH_ENV"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".profile").path
+                env["BASH_ENV"] = (homeDir / ".profile").string
             } else if shell.hasSuffix("zsh") {
-                env["ZDOTDIR"] = FileManager.default.homeDirectoryForCurrentUser.path
+                env["ZDOTDIR"] = homeDir.string
             } else if shell.hasSuffix("fish") {
-                env["XDG_CONFIG_HOME"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config").path
+                env["XDG_CONFIG_HOME"] = (homeDir / ".config").string
             }
 
-            try currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--skip-install", quiet: false, env: env)
+            try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--skip-install", quiet: false, env: env)
             try currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
         }
 
@@ -91,7 +92,7 @@ struct TestSwiftly: AsyncParsableCommand {
         }
 
         if let customLoc = customLoc, swiftReady {
-            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc.path)/env.sh\" && swift --version", quiet: false, env: env)
+            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc / "env.sh")\" && swift --version", quiet: false, env: env)
         } else if swiftReady {
             try currentPlatform.runProgram(shell, "-l", "-c", "swift --version", quiet: false, env: env)
         }

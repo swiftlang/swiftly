@@ -144,7 +144,10 @@ extension Platform {
 
         let tcPath = self.findToolchainLocation(toolchain).appendingPathComponent("usr/bin")
         guard tcPath.fileExists() else {
-            throw SwiftlyError(message: "Toolchain \(toolchain) could not be located. You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again.")
+            throw SwiftlyError(
+                message:
+                "Toolchain \(toolchain) could not be located in \(tcPath). You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again."
+            )
         }
 
         var pathComponents = (newEnv["PATH"] ?? "").split(separator: ":").map { String($0) }

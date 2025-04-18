@@ -1,6 +1,7 @@
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
+import SystemPackage
 import Testing
 
 @Suite struct UseTests {

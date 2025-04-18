@@ -94,6 +94,26 @@ jobs:
       - name: Extract and Run Workflow Tests
         run: cp swiftly-*.tar.gz /root/swiftly.tar.gz && cp test-swiftly-*.tar.gz /root && cd /root && tar zxf test-swiftly-*.tar.gz && ./test-swiftly -y ./swiftly.tar.gz
 
+  release-custom-install-test:
+    name: Test Release - Custom Install Location
+    needs: releasebuildcheck
+    runs-on: ubuntu-latest
+    container:
+      image: "ubuntu:24.04"
+    steps:
+      - name: Prepare System
+        run: apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install ca-certificates gpg tzdata
+      - name: Download Release
+        uses: actions/download-artifact@v4
+        with:
+          name: swiftly-release-x86_64
+      - name: Download Tests
+        uses: actions/download-artifact@v4
+        with:
+          name: swiftly-tests-x86_64
+      - name: Extract and Run Workflow Tests
+        run: cp swiftly-*.tar.gz /root/swiftly.tar.gz && cp test-swiftly-*.tar.gz /root && cd /root && tar zxf test-swiftly-*.tar.gz && ./test-swiftly -y --custom-location ./swiftly.tar.gz
+
   formatcheck:
     name: Format Check
     runs-on: ubuntu-latest

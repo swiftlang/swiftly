@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 #if os(Linux)
 import LinuxPlatform
@@ -20,6 +21,9 @@ let currentPlatform: Platform = MacOS.currentPlatform
 struct TestSwiftly: AsyncParsableCommand {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
     var assumeYes: Bool = false
+
+    @Flag(help: "Install swiftly to a custom location, not added to the user profile.")
+    var customLocation: Bool = false
 
     @Argument var swiftlyArchive: String? = nil
 
@@ -41,30 +45,40 @@ struct TestSwiftly: AsyncParsableCommand {
         try currentPlatform.runProgram("installer", "-pkg", swiftlyArchive, "-target", "CurrentUserHomeDirectory", quiet: false)
 #endif
 
-        print("Running 'swiftly init --assume-yes --verbose' to install swiftly and the latest toolchain")
-
 #if os(Linux)
-        let extractedSwiftly = "./swiftly"
+        let extractedSwiftly = FilePath("./swiftly")
 #elseif os(macOS)
-        let extractedSwiftly = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".swiftly/bin/swiftly").path
+        let extractedSwiftly = homeDir / ".swiftly/bin/swiftly"
 #endif
 
-        try currentPlatform.runProgram(extractedSwiftly, "init", "--assume-yes", "--skip-install", quiet: false)
-
-        let shell = try await currentPlatform.getShell()
-
         var env = ProcessInfo.processInfo.environment
+        let shell = try await currentPlatform.getShell()
+        var customLoc: FilePath?
 
-        // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
-        if shell.hasSuffix("bash") {
-            env["BASH_ENV"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".profile").path
-        } else if shell.hasSuffix("zsh") {
-            env["ZDOTDIR"] = FileManager.default.homeDirectoryForCurrentUser.path
-        } else if shell.hasSuffix("fish") {
-            env["XDG_CONFIG_HOME"] = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config").path
+        if self.customLocation {
+            customLoc = mktemp()
+
+            print("Installing swiftly to custom location \(customLoc!)")
+            env["SWIFTLY_HOME_DIR"] = customLoc!.string
+            env["SWIFTLY_BIN_DIR"] = (customLoc! / "bin").string
+            env["SWIFTLY_TOOLCHAINS_DIR"] = (customLoc! / "toolchains").string
+
+            try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
+            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
+        } else {
+            print("Installing swiftly to the default location.")
+            // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
+            if shell.hasSuffix("bash") {
+                env["BASH_ENV"] = (homeDir / ".profile").string
+            } else if shell.hasSuffix("zsh") {
+                env["ZDOTDIR"] = homeDir.string
+            } else if shell.hasSuffix("fish") {
+                env["XDG_CONFIG_HOME"] = (homeDir / ".config").string
+            }
+
+            try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--skip-install", quiet: false, env: env)
+            try currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
         }
-
-        try currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
 
         var swiftReady = false
 
@@ -77,7 +91,9 @@ struct TestSwiftly: AsyncParsableCommand {
             swiftReady = true
         }
 
-        if swiftReady {
+        if let customLoc = customLoc, swiftReady {
+            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc / "env.sh")\" && swift --version", quiet: false, env: env)
+        } else if swiftReady {
             try currentPlatform.runProgram(shell, "-l", "-c", "swift --version", quiet: false, env: env)
         }
     }

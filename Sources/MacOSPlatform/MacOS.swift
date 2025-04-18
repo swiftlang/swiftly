@@ -18,16 +18,21 @@ public struct MacOS: Platform {
         homeDir / ".swiftly"
     }
 
+    public var defaultToolchainsDirectory: FilePath {
+        homeDir / "Library/Developer/Toolchains"
+    }
+
     public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "bin" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { FilePath($0) }
-            ?? (homeDir / ".swiftly/bin")
+            ?? homeDir / ".swiftly/bin"
     }
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "Toolchains" }
-            // The toolchains are always installed here by the installer. We bypass the installer in the case of test mocks
-            ?? homeDir / "Library/Developer/Toolchains"
+            ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { FilePath($0) }
+            // This is where the installer will put the toolchains, and where Xcode can find them
+            ?? self.defaultToolchainsDirectory
     }
 
     public var toolchainFileExtension: String {
@@ -53,26 +58,43 @@ public struct MacOS: Platform {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
-        if !(try await fileExists(atPath: self.swiftlyToolchainsDir(ctx))) {
-            try await mkdir(atPath: self.swiftlyToolchainsDir(ctx))
+        let toolchainsDir = self.swiftlyToolchainsDir(ctx)
+
+        if !(try await fileExists(atPath: toolchainsDir)) {
+            try await mkdir(atPath: self.swiftlyToolchainsDir(ctx), parents: true)
         }
 
-        if ctx.mockedHomeDir == nil {
+        if toolchainsDir == self.defaultToolchainsDirectory {
+            // If the toolchains go into the default user location then we use the installer to install them
             await ctx.print("Installing package in user home directory...")
             try runProgram(
                 "installer", "-verbose", "-pkg", "\(tmpFile)", "-target", "CurrentUserHomeDirectory",
                 quiet: !verbose
             )
         } else {
-            // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
-            //  the installer will not install to an arbitrary path, only a volume or user home directory.
+            // Otherwise, we extract the pkg into the requested toolchains directory.
             await ctx.print("Expanding pkg...")
             let tmpDir = mktemp()
-            let toolchainDir = self.swiftlyToolchainsDir(ctx) / "\(version.identifier).xctoolchain"
+            let toolchainDir = toolchainsDir / "\(version.identifier).xctoolchain"
+
             if !(try await fileExists(atPath: toolchainDir)) {
                 try await mkdir(atPath: toolchainDir)
             }
+
+            await ctx.print("Checking package signature...")
+            do {
+                try runProgram("pkgutil", "--check-signature", "\(tmpFile)", quiet: !verbose)
+            } catch {
+                // If this is not a test that uses mocked toolchains then we must throw this error and abort installation
+                guard ctx.mockedHomeDir != nil else {
+                    throw error
+                }
+
+                // We permit the signature verification to fail during testing
+                await ctx.print("Signature verification failed, which is allowable during testing with mocked toolchains")
+            }
             try runProgram("pkgutil", "--verbose", "--expand", "\(tmpFile)", "\(tmpDir)", quiet: !verbose)
+
             // There's a slight difference in the location of the special Payload file between official swift packages
             // and the ones that are mocked here in the test framework.
             var payload = tmpDir / "Payload"

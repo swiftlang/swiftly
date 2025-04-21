@@ -230,7 +230,7 @@ import Testing
         #expect(config.inUse == nil)
 
         // Ensure all symlinks have been cleaned up.
-        let symlinks = try await ls(
+        let symlinks = try await fs.ls(
             atPath: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx)
         )
         #expect(symlinks == [])

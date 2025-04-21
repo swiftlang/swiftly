@@ -27,7 +27,7 @@ public struct Config: Codable, Equatable, Sendable {
     public static func load(_ ctx: SwiftlyCoreContext) async throws -> Config {
         do {
             let configFile = Swiftly.currentPlatform.swiftlyConfigFile(ctx)
-            let data = try await cat(atPath: configFile)
+            let data = try await fs.cat(atPath: configFile)
             var config = try JSONDecoder().decode(Config.self, from: data)
             if config.version == nil {
                 // Assume that the version of swiftly is 0.3.0 because that is the last

@@ -17,6 +17,8 @@ let currentPlatform: Platform = MacOS.currentPlatform
 #error("Unsupported platform")
 #endif
 
+typealias fs = SwiftlyCore.FileSystem
+
 @main
 struct TestSwiftly: AsyncParsableCommand {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
@@ -48,7 +50,7 @@ struct TestSwiftly: AsyncParsableCommand {
 #if os(Linux)
         let extractedSwiftly = FilePath("./swiftly")
 #elseif os(macOS)
-        let extractedSwiftly = homeDir / ".swiftly/bin/swiftly"
+        let extractedSwiftly = fs.home / ".swiftly/bin/swiftly"
 #endif
 
         var env = ProcessInfo.processInfo.environment
@@ -56,7 +58,7 @@ struct TestSwiftly: AsyncParsableCommand {
         var customLoc: FilePath?
 
         if self.customLocation {
-            customLoc = mktemp()
+            customLoc = fs.mktemp()
 
             print("Installing swiftly to custom location \(customLoc!)")
             env["SWIFTLY_HOME_DIR"] = customLoc!.string
@@ -69,11 +71,11 @@ struct TestSwiftly: AsyncParsableCommand {
             print("Installing swiftly to the default location.")
             // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
             if shell.hasSuffix("bash") {
-                env["BASH_ENV"] = (homeDir / ".profile").string
+                env["BASH_ENV"] = (fs.home / ".profile").string
             } else if shell.hasSuffix("zsh") {
-                env["ZDOTDIR"] = homeDir.string
+                env["ZDOTDIR"] = fs.home.string
             } else if shell.hasSuffix("fish") {
-                env["XDG_CONFIG_HOME"] = (homeDir / ".config").string
+                env["XDG_CONFIG_HOME"] = (fs.home / ".config").string
             }
 
             try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--skip-install", quiet: false, env: env)

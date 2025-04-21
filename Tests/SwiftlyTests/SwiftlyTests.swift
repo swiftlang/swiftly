@@ -68,7 +68,7 @@ extension SwiftlyCoreContext {
         self.init(httpClient: SwiftlyHTTPClient(httpRequestExecutor: httpRequestExecutor))
 
         self.mockedHomeDir = mockedHomeDir
-        self.currentDirectory = mockedHomeDir ?? cwd
+        self.currentDirectory = mockedHomeDir ?? fs.cwd
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: httpRequestExecutor)
         self.outputHandler = outputHandler
         self.inputProvider = inputProvider
@@ -222,7 +222,7 @@ public enum SwiftlyTests {
     }
 
     static func getTestHomePath(name: String) -> FilePath {
-        tmpDir / "swiftly-tests-\(name)-\(UUID())"
+        fs.tmp / "swiftly-tests-\(name)-\(UUID())"
     }
 
     /// Create a fresh swiftly home directory, populate it with a base config, and run the provided closure.
@@ -242,10 +242,10 @@ public enum SwiftlyTests {
             inputProvider: nil
         )
 
-        try await withTemporary(files: [testHome] + Swiftly.requiredDirectories(ctx)) {
+        try await fs.withTemporary(files: [testHome] + Swiftly.requiredDirectories(ctx)) {
             for dir in Swiftly.requiredDirectories(ctx) {
                 try FileManager.default.deleteIfExists(atPath: dir)
-                try await mkdir(atPath: dir)
+                try await fs.mkdir(atPath: dir)
             }
 
             let config = try await Self.baseTestConfig()
@@ -275,10 +275,7 @@ public enum SwiftlyTests {
             if !toolchains.isEmpty {
                 try await Self.runCommand(Use.self, ["use", inUse?.name ?? "latest"])
             } else {
-                try await mkdir(
-                    atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx),
-                    parents: true
-                )
+                try await fs.mkdir(.parents, atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
                 cleanBinDir = true
             }
 
@@ -286,11 +283,11 @@ public enum SwiftlyTests {
                 try await f()
 
                 if cleanBinDir {
-                    try await remove(atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
+                    try await fs.remove(atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
                 }
             } catch {
                 if cleanBinDir {
-                    try await remove(atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
+                    try await fs.remove(atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
                 }
             }
         }
@@ -350,7 +347,7 @@ public enum SwiftlyTests {
 #if os(macOS)
         for toolchain in toolchains {
             let toolchainDir = Self.ctx.mockedHomeDir! / "Toolchains/\(toolchain.identifier).xctoolchain"
-            #expect(try await fileExists(atPath: toolchainDir))
+            #expect(try await fs.exists(atPath: toolchainDir))
 
             let swiftBinary = toolchainDir / "usr/bin/swift"
 
@@ -362,7 +359,7 @@ public enum SwiftlyTests {
         // Verify that the toolchains on disk correspond to those in the config.
         for toolchain in toolchains {
             let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir(Self.ctx) / "toolchains/\(toolchain.name)"
-            #expect(try await fileExists(atPath: toolchainDir))
+            #expect(try await fs.exists(atPath: toolchainDir))
 
             let swiftBinary = toolchainDir / "usr/bin/swift"
 
@@ -379,7 +376,7 @@ public enum SwiftlyTests {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     static func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
         try await Self.withMockedToolchain(executables: executables) {
-            try await Self.runCommand(Install.self, ["install", "\(selector)", "--no-verify", "--post-install-file=\(mktemp())"] + args)
+            try await Self.runCommand(Install.self, ["install", "\(selector)", "--no-verify", "--post-install-file=\(fs.mktemp())"] + args)
         }
     }
 
@@ -458,7 +455,7 @@ public struct SwiftExecutable {
     }
 
     public func exists() async throws -> Bool {
-        try await fileExists(atPath: self.path)
+        try await fs.exists(atPath: self.path)
     }
 
     /// Gets the version of this executable by parsing the `swift --version` output, potentially looking
@@ -718,12 +715,12 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             return signature
         }
 
-        let tmp = mktemp()
-        let gpgKeyFile = mktemp(ext: ".asc")
+        let tmp = fs.mktemp()
+        let gpgKeyFile = fs.mktemp(ext: ".asc")
 
         let swiftlyDir = tmp / "swiftly"
 
-        try await mkdir(atPath: swiftlyDir, parents: true)
+        try await fs.mkdir(.parents, atPath: swiftlyDir)
 
         for executable in ["swiftly"] {
             let executablePath = swiftlyDir / executable
@@ -738,7 +735,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             try data.write(to: executablePath)
 
             // make the file executable
-            try await chmod(atPath: executablePath, mode: 0o755)
+            try await fs.chmod(atPath: executablePath, mode: 0o755)
         }
 
         let archive = tmp / "swiftly.tar.gz"
@@ -792,8 +789,8 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
 
         let data = try Data(contentsOf: archive)
 
-        try await remove(atPath: tmp)
-        try await remove(atPath: gpgKeyFile)
+        try await fs.remove(atPath: tmp)
+        try await fs.remove(atPath: gpgKeyFile)
 
         return data
     }
@@ -809,13 +806,13 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             return signature
         }
 
-        let tmp = mktemp()
-        let gpgKeyFile = mktemp(ext: ".asc")
+        let tmp = fs.mktemp()
+        let gpgKeyFile = fs.mktemp(ext: ".asc")
 
         let toolchainDir = tmp / "toolchain"
         let toolchainBinDir = toolchainDir / "usr/bin"
 
-        try await mkdir(atPath: toolchainBinDir, parents: true)
+        try await fs.mkdir(.parents, atPath: toolchainBinDir)
 
         for executable in self.executables {
             let executablePath = toolchainBinDir / executable
@@ -830,7 +827,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             try data.write(to: executablePath)
 
             // make the file executable
-            try await chmod(atPath: executablePath, mode: 0o755)
+            try await fs.chmod(atPath: executablePath, mode: 0o755)
         }
 
         let archive = tmp / "toolchain.tar.gz"
@@ -884,26 +881,23 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
 
         let data = try Data(contentsOf: archive)
 
-        try await remove(atPath: tmp)
-        try await remove(atPath: gpgKeyFile)
+        try await fs.remove(atPath: tmp)
+        try await fs.remove(atPath: gpgKeyFile)
 
         return data
     }
 
 #elseif os(macOS)
     public func makeMockedSwiftly(from _: URL) async throws -> Data {
-        let tmp = mktemp()
+        let tmp = fs.mktemp()
 
-        let swiftlyDir = tmp.appending(".swiftly")
-        let swiftlyBinDir = swiftlyDir.appending("bin")
+        let swiftlyDir = tmp / ".swiftly"
+        let swiftlyBinDir = swiftlyDir / "bin"
 
-        try await mkdir(
-            atPath: swiftlyBinDir,
-            parents: true
-        )
+        try await fs.mkdir(.parents, atPath: swiftlyBinDir)
 
         for executable in ["swiftly"] {
-            let executablePath = swiftlyBinDir.appending(executable)
+            let executablePath = swiftlyBinDir / executable
 
             let script = """
             #!/usr/bin/env sh
@@ -915,10 +909,10 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             try data.write(to: executablePath)
 
             // make the file executable
-            try await chmod(atPath: executablePath, mode: 0o755)
+            try await fs.chmod(atPath: executablePath, mode: 0o755)
         }
 
-        let pkg = tmp.appending("swiftly.pkg")
+        let pkg = tmp / "swiftly.pkg"
 
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -938,20 +932,17 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         task.waitUntilExit()
 
         let data = try Data(contentsOf: pkg)
-        try await remove(atPath: tmp)
+        try await fs.remove(atPath: tmp)
         return data
     }
 
     public func makeMockedToolchain(toolchain: ToolchainVersion, name _: String) async throws -> Data {
-        let tmp = mktemp()
+        let tmp = fs.mktemp()
 
         let toolchainDir = tmp.appending("toolchain")
         let toolchainBinDir = toolchainDir.appending("usr/bin")
 
-        try await mkdir(
-            atPath: toolchainBinDir,
-            parents: true
-        )
+        try await fs.mkdir(.parents, atPath: toolchainBinDir)
 
         for executable in self.executables {
             let executablePath = toolchainBinDir.appending(executable)
@@ -966,7 +957,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             try data.write(to: executablePath)
 
             // make the file executable
-            try await chmod(atPath: executablePath, mode: 0o755)
+            try await fs.chmod(atPath: executablePath, mode: 0o755)
         }
 
         // Add a skeletal Info.plist at the top
@@ -996,7 +987,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         task.waitUntilExit()
 
         let pkgData = try Data(contentsOf: pkg)
-        try await remove(atPath: tmp)
+        try await fs.remove(atPath: tmp)
 
         return pkgData
     }

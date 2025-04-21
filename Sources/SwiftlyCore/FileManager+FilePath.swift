@@ -1,95 +1,118 @@
 import Foundation
 import SystemPackage
 
-public var cwd: FilePath {
-    FileManager.default.currentDir
-}
+typealias fs = FileSystem
 
-public var homeDir: FilePath {
-    FileManager.default.homeDir
-}
-
-public var tmpDir: FilePath {
-    FileManager.default.temporaryDir
-}
-
-public func fileExists(atPath: FilePath) async throws -> Bool {
-    FileManager.default.fileExists(atPath: atPath)
-}
-
-public func remove(atPath: FilePath) async throws {
-    try FileManager.default.removeItem(atPath: atPath)
-}
-
-public func move(atPath: FilePath, toPath: FilePath) async throws {
-    try FileManager.default.moveItem(atPath: atPath, toPath: toPath)
-}
-
-public func copy(atPath: FilePath, toPath: FilePath) async throws {
-    try FileManager.default.copyItem(atPath: atPath, toPath: toPath)
-}
-
-public func mkdir(atPath: FilePath, parents: Bool = false) async throws {
-    try FileManager.default.createDir(atPath: atPath, withIntermediateDirectories: parents)
-}
-
-public func cat(atPath: FilePath) async throws -> Data {
-    guard let data = FileManager.default.contents(atPath: atPath) else {
-        throw SwiftlyError(message: "File at path \(atPath) could not be read")
+public struct FileSystem {
+    public static var cwd: FilePath {
+        FileManager.default.currentDir
     }
 
-    return data
-}
+    public static var home: FilePath {
+        FileManager.default.homeDir
+    }
 
-public func mktemp(ext: String? = nil) -> FilePath {
-    FileManager.default.temporaryDir.appending("swiftly-\(UUID())\(ext ?? "")")
-}
+    public static var tmp: FilePath {
+        FileManager.default.temporaryDir
+    }
 
-public func withTemporary<T>(files: FilePath..., f: () async throws -> T) async throws -> T {
-    try await withTemporary(files: files, f: f)
-}
+    public static func exists(atPath: FilePath) async throws -> Bool {
+        FileManager.default.fileExists(atPath: atPath)
+    }
 
-public func withTemporary<T>(files: [FilePath], f: () async throws -> T) async throws -> T {
-    do {
-        let t: T = try await f()
+    public static func remove(atPath: FilePath) async throws {
+        try FileManager.default.removeItem(atPath: atPath)
+    }
 
-        for f in files {
-            try? await remove(atPath: f)
+    public static func move(atPath: FilePath, toPath: FilePath) async throws {
+        try FileManager.default.moveItem(atPath: atPath, toPath: toPath)
+    }
+
+    public static func copy(atPath: FilePath, toPath: FilePath) async throws {
+        try FileManager.default.copyItem(atPath: atPath, toPath: toPath)
+    }
+
+    public enum MkdirOptions {
+        case parents
+    }
+
+    public static func mkdir(_ options: MkdirOptions..., atPath: FilePath) async throws {
+        try await Self.mkdir(options, atPath: atPath)
+    }
+
+    public static func mkdir(_ options: [MkdirOptions] = [], atPath: FilePath) async throws {
+        try FileManager.default.createDir(atPath: atPath, withIntermediateDirectories: options.contains(.parents))
+    }
+
+    public static func cat(atPath: FilePath) async throws -> Data {
+        guard let data = FileManager.default.contents(atPath: atPath) else {
+            throw SwiftlyError(message: "File at path \(atPath) could not be read")
         }
 
-        return t
-    } catch {
-        // Sort the list in case there are temporary files nested within other temporary files
-        for f in files.map(\.string).sorted() {
-            try? await remove(atPath: FilePath(f))
+        return data
+    }
+
+    public static func mktemp(ext: String? = nil) -> FilePath {
+        FileManager.default.temporaryDir.appending("swiftly-\(UUID())\(ext ?? "")")
+    }
+
+    public enum CreateOptions {
+        case mode(Int)
+    }
+
+    public static func create(_ options: CreateOptions..., file: FilePath, contents: Data?) async throws {
+        try await Self.create(options, file: file, contents: contents)
+    }
+
+    public static func create(_ options: [CreateOptions] = [], file: FilePath, contents: Data?) async throws {
+        let attributes = options.reduce(into: [FileAttributeKey: Any]()) {
+            switch($1) {
+            case .mode(let m):
+                $0[FileAttributeKey.posixPermissions] =  m
+            }
         }
 
-        throw error
+        _ = FileManager.default.createFile(atPath: file.string, contents: contents, attributes: attributes)
     }
-}
 
-public func create(file: FilePath, contents: Data?, mode: Int = 0) async throws {
-    if mode != 0 {
-        _ = FileManager.default.createFile(atPath: file.string, contents: contents, attributes: [.posixPermissions: mode])
-    } else {
-        _ = FileManager.default.createFile(atPath: file.string, contents: contents)
+    public static func ls(atPath: FilePath) async throws -> [String] {
+        try FileManager.default.contentsOfDir(atPath: atPath)
     }
-}
 
-public func ls(atPath: FilePath) async throws -> [String] {
-    try FileManager.default.contentsOfDir(atPath: atPath)
-}
+    public static func readlink(atPath: FilePath) async throws -> FilePath {
+        try FileManager.default.destinationOfSymbolicLink(atPath: atPath)
+    }
 
-public func readlink(atPath: FilePath) async throws -> FilePath {
-    try FileManager.default.destinationOfSymbolicLink(atPath: atPath)
-}
+    public static func symlink(atPath: FilePath, linkPath: FilePath) async throws {
+        try FileManager.default.createSymbolicLink(atPath: atPath, withDestinationPath: linkPath)
+    }
 
-public func symlink(atPath: FilePath, linkPath: FilePath) async throws {
-    try FileManager.default.createSymbolicLink(atPath: atPath, withDestinationPath: linkPath)
-}
+    public static func chmod(atPath: FilePath, mode: Int) async throws {
+        try FileManager.default.setAttributes([.posixPermissions: mode], ofItemAtPath: atPath.string)
+    }
 
-public func chmod(atPath: FilePath, mode: Int) async throws {
-    try FileManager.default.setAttributes([.posixPermissions: mode], ofItemAtPath: atPath.string)
+    public static func withTemporary<T>(files: FilePath..., f: () async throws -> T) async throws -> T {
+        try await self.withTemporary(files: files, f: f)
+    }
+
+    public static func withTemporary<T>(files: [FilePath], f: () async throws -> T) async throws -> T {
+        do {
+            let t: T = try await f()
+
+            for f in files {
+                try? await Self.remove(atPath: f)
+            }
+
+            return t
+        } catch {
+            // Sort the list in case there are temporary files nested within other temporary files
+            for f in files.map(\.string).sorted() {
+                try? await Self.remove(atPath: FilePath(f))
+            }
+
+            throw error
+        }
+    }
 }
 
 extension FileManager {

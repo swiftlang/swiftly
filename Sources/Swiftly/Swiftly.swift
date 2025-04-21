@@ -8,6 +8,8 @@ import MacOSPlatform
 import SwiftlyCore
 import SystemPackage
 
+typealias fs = SwiftlyCore.FileSystem
+
 public struct GlobalOptions: ParsableArguments {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
     var assumeYes: Bool = false
@@ -83,9 +85,9 @@ extension Data {
 extension SwiftlyCommand {
     public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) async throws {
         for requiredDir in Swiftly.requiredDirectories(ctx) {
-            guard try await fileExists(atPath: requiredDir) else {
+            guard try await fs.exists(atPath: requiredDir) else {
                 do {
-                    try await mkdir(atPath: requiredDir, parents: true)
+                    try await fs.mkdir(.parents, atPath: requiredDir)
                 } catch {
                     throw SwiftlyError(message: "Failed to create required directory \"\(requiredDir)\": \(error)")
                 }

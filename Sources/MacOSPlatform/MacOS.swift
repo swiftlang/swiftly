@@ -2,6 +2,8 @@ import Foundation
 import SwiftlyCore
 import SystemPackage
 
+typealias fs = SwiftlyCore.FileSystem
+
 public struct SwiftPkgInfo: Codable {
     public var CFBundleIdentifier: String
 
@@ -15,17 +17,17 @@ public struct MacOS: Platform {
     public init() {}
 
     public var defaultSwiftlyHomeDir: FilePath {
-        homeDir / ".swiftly"
+        fs.home / ".swiftly"
     }
 
     public var defaultToolchainsDirectory: FilePath {
-        homeDir / "Library/Developer/Toolchains"
+        fs.home / "Library/Developer/Toolchains"
     }
 
     public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "bin" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { FilePath($0) }
-            ?? homeDir / ".swiftly/bin"
+            ?? fs.home / ".swiftly/bin"
     }
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath {
@@ -54,14 +56,14 @@ public struct MacOS: Platform {
     public func install(
         _ ctx: SwiftlyCoreContext, from tmpFile: FilePath, version: ToolchainVersion, verbose: Bool
     ) async throws {
-        guard try await fileExists(atPath: tmpFile) else {
+        guard try await fs.exists(atPath: tmpFile) else {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
         let toolchainsDir = self.swiftlyToolchainsDir(ctx)
 
-        if !(try await fileExists(atPath: toolchainsDir)) {
-            try await mkdir(atPath: self.swiftlyToolchainsDir(ctx), parents: true)
+        if !(try await fs.exists(atPath: toolchainsDir)) {
+            try await fs.mkdir(.parents, atPath: self.swiftlyToolchainsDir(ctx))
         }
 
         if toolchainsDir == self.defaultToolchainsDirectory {
@@ -74,11 +76,11 @@ public struct MacOS: Platform {
         } else {
             // Otherwise, we extract the pkg into the requested toolchains directory.
             await ctx.print("Expanding pkg...")
-            let tmpDir = mktemp()
+            let tmpDir = fs.mktemp()
             let toolchainDir = toolchainsDir / "\(version.identifier).xctoolchain"
 
-            if !(try await fileExists(atPath: toolchainDir)) {
-                try await mkdir(atPath: toolchainDir)
+            if !(try await fs.exists(atPath: toolchainDir)) {
+                try await fs.mkdir(atPath: toolchainDir)
             }
 
             await ctx.print("Checking package signature...")
@@ -98,7 +100,7 @@ public struct MacOS: Platform {
             // There's a slight difference in the location of the special Payload file between official swift packages
             // and the ones that are mocked here in the test framework.
             var payload = tmpDir / "Payload"
-            if !(try await fileExists(atPath: payload)) {
+            if !(try await fs.exists(atPath: payload)) {
                 payload = tmpDir / "\(version.identifier)-osx-package.pkg/Payload"
             }
 
@@ -108,11 +110,11 @@ public struct MacOS: Platform {
     }
 
     public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: FilePath) async throws {
-        guard try await fileExists(atPath: archive) else {
+        guard try await fs.exists(atPath: archive) else {
             throw SwiftlyError(message: "\(archive) doesn't exist")
         }
 
-        let userHomeDir = ctx.mockedHomeDir ?? homeDir
+        let userHomeDir = ctx.mockedHomeDir ?? fs.home
 
         if ctx.mockedHomeDir == nil {
             await ctx.print("Extracting the swiftly package...")
@@ -120,17 +122,17 @@ public struct MacOS: Platform {
             try? runProgram("pkgutil", "--volume", "\(userHomeDir)", "--forget", "org.swift.swiftly")
         } else {
             let installDir = userHomeDir / ".swiftly"
-            try await mkdir(atPath: installDir, parents: true)
+            try await fs.mkdir(.parents, atPath: installDir)
 
             // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
             //  the installer will not install to an arbitrary path, only a volume or user home directory.
-            let tmpDir = mktemp()
+            let tmpDir = fs.mktemp()
             try runProgram("pkgutil", "--expand", "\(archive)", "\(tmpDir)")
 
             // There's a slight difference in the location of the special Payload file between official swift packages
             // and the ones that are mocked here in the test framework.
             let payload = tmpDir / "Payload"
-            guard try await fileExists(atPath: payload) else {
+            guard try await fs.exists(atPath: payload) else {
                 throw SwiftlyError(message: "Payload file could not be found at \(tmpDir).")
             }
 
@@ -150,16 +152,16 @@ public struct MacOS: Platform {
 
         let decoder = PropertyListDecoder()
         let infoPlist = toolchainDir / "Info.plist"
-        let data = try await cat(atPath: infoPlist)
+        let data = try await fs.cat(atPath: infoPlist)
 
         guard let pkgInfo = try? decoder.decode(SwiftPkgInfo.self, from: data) else {
             throw SwiftlyError(message: "could not decode plist at \(infoPlist)")
         }
 
-        try await remove(atPath: toolchainDir)
+        try await fs.remove(atPath: toolchainDir)
 
         try? runProgram(
-            "pkgutil", "--volume", "\(homeDir)", "--forget", pkgInfo.CFBundleIdentifier, quiet: !verbose
+            "pkgutil", "--volume", "\(fs.home)", "--forget", pkgInfo.CFBundleIdentifier, quiet: !verbose
         )
     }
 
@@ -189,7 +191,7 @@ public struct MacOS: Platform {
     }
 
     public func getShell() async throws -> String {
-        if let directoryInfo = try await runProgramOutput("dscl", ".", "-read", "\(homeDir)") {
+        if let directoryInfo = try await runProgramOutput("dscl", ".", "-read", "\(fs.home)") {
             for line in directoryInfo.components(separatedBy: "\n") {
                 if line.hasPrefix("UserShell: ") {
                     if case let comps = line.components(separatedBy: ": "), comps.count == 2 {

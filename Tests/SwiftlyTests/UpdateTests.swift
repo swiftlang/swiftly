@@ -10,7 +10,7 @@ import Testing
 
         let beforeUpdateConfig = try await Config.load()
 
-        try await SwiftlyTests.runCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(mktemp())"])
+        try await SwiftlyTests.runCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(fs.mktemp())"])
 
         #expect(try await Config.load() == beforeUpdateConfig)
         try await SwiftlyTests.validateInstalledToolchains(
@@ -21,7 +21,7 @@ import Testing
 
     /// Verify that attempting to update when no toolchains are installed has no effect.
     @Test(.testHomeMockedToolchain()) func updateLatestWithNoToolchains() async throws {
-        try await SwiftlyTests.runCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(mktemp())"])
+        try await SwiftlyTests.runCommand(Update.self, ["update", "latest", "--no-verify", "--post-install-file=\(fs.mktemp())"])
 
         try await SwiftlyTests.validateInstalledToolchains(
             [],
@@ -32,7 +32,7 @@ import Testing
     /// Verify that updating the latest installed toolchain updates it to the latest available toolchain.
     @Test(.testHomeMockedToolchain()) func updateLatestToLatest() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
-        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "latest", "--no-verify", "--post-install-file=\(mktemp())"])
+        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "latest", "--no-verify", "--post-install-file=\(fs.mktemp())"])
 
         let config = try await Config.load()
         let inUse = config.inUse!.asStableRelease!
@@ -48,7 +48,7 @@ import Testing
     /// released minor version.
     @Test(.testHomeMockedToolchain()) func updateToLatestMinor() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: .stable(major: 5, minor: 9, patch: 0))
-        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5", "--no-verify", "--post-install-file=\(mktemp())"])
+        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5", "--no-verify", "--post-install-file=\(fs.mktemp())"])
 
         let config = try await Config.load()
         let inUse = config.inUse!.asStableRelease!
@@ -66,7 +66,7 @@ import Testing
     @Test(.testHomeMockedToolchain()) func updateToLatestPatch() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: "5.9.0")
 
-        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5.9.0", "--no-verify", "--post-install-file=\(mktemp())"])
+        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "5.9.0", "--no-verify", "--post-install-file=\(fs.mktemp())"])
 
         let config = try await Config.load()
         let inUse = config.inUse!.asStableRelease!
@@ -86,7 +86,7 @@ import Testing
     @Test(.testHomeMockedToolchain()) func updateGlobalDefault() async throws {
         try await SwiftlyTests.installMockedToolchain(selector: "6.0.0")
 
-        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(mktemp())"])
+        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(fs.mktemp())"])
 
         let config = try await Config.load()
         let inUse = config.inUse!.asStableRelease!
@@ -111,7 +111,7 @@ import Testing
         let versionFile = SwiftlyTests.ctx.currentDirectory / ".swift-version"
         try "6.0.0".write(to: versionFile, atomically: true)
 
-        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(mktemp())"])
+        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "--no-verify", "--post-install-file=\(fs.mktemp())"])
 
         let versionFileContents = try String(contentsOf: versionFile)
         let inUse = try ToolchainVersion(parsing: versionFileContents)
@@ -138,7 +138,7 @@ import Testing
         try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: date))
 
         try await SwiftlyTests.runCommand(
-            Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(mktemp())"]
+            Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(fs.mktemp())"]
         )
 
         let config = try await Config.load()
@@ -158,7 +158,7 @@ import Testing
         try await SwiftlyTests.installMockedToolchain(selector: "6.0.1")
         try await SwiftlyTests.installMockedToolchain(selector: "6.0.0")
 
-        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "6.0", "--no-verify", "--post-install-file=\(mktemp())"])
+        try await SwiftlyTests.runCommand(Update.self, ["update", "-y", "6.0", "--no-verify", "--post-install-file=\(fs.mktemp())"])
 
         let config = try await Config.load()
         let inUse = config.inUse!.asStableRelease!
@@ -185,7 +185,7 @@ import Testing
             try await SwiftlyTests.installMockedToolchain(selector: .snapshot(branch: branch, date: "2024-06-18"))
 
             try await SwiftlyTests.runCommand(
-                Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(mktemp())"]
+                Update.self, ["update", "-y", "\(branch.name)-snapshot", "--no-verify", "--post-install-file=\(fs.mktemp())"]
             )
 
             let config = try await Config.load()

@@ -7,7 +7,7 @@ import Testing
 @Suite struct InitTests {
     @Test(.testHome(), arguments: ["/bin/bash", "/bin/zsh", "/bin/fish"]) func initFresh(_ shell: String) async throws {
         // GIVEN: a fresh user account without swiftly installed
-        try? await remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
+        try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
 
         // AND: the user is using the bash shell
         var ctx = SwiftlyTests.ctx
@@ -24,7 +24,7 @@ import Testing
             }
 
             if let envScript {
-                #expect(!(try await fileExists(atPath: envScript)))
+                #expect(!(try await fs.exists(atPath: envScript)))
             }
 
             // WHEN: swiftly is invoked to init the user account and finish swiftly installation
@@ -36,7 +36,7 @@ import Testing
 
             // AND: it creates an environment script suited for the type of shell
             if let envScript {
-                #expect(try await fileExists(atPath: envScript))
+                #expect(try await fs.exists(atPath: envScript))
                 if let scriptContents = try? String(contentsOf: envScript) {
                     #expect(scriptContents.contains("SWIFTLY_HOME_DIR"))
                     #expect(scriptContents.contains("SWIFTLY_BIN_DIR"))
@@ -50,7 +50,7 @@ import Testing
                 var foundSourceLine = false
                 for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"] {
                     let profile = SwiftlyTests.ctx.mockedHomeDir! / p
-                    if try await fileExists(atPath: profile) {
+                    if try await fs.exists(atPath: profile) {
                         if let profileContents = try? String(contentsOf: profile), profileContents.contains(envScript.string) {
                             foundSourceLine = true
                             break
@@ -64,7 +64,7 @@ import Testing
 
     @Test(.testHome()) func initOverwrite() async throws {
         // GIVEN: a user account with swiftly already installed
-        try? await remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
+        try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
 
         try await SwiftlyTests.runCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
 
@@ -82,13 +82,13 @@ import Testing
         // THEN: everything is overwritten in initialization
         config = try await Config.load()
         #expect(SwiftlyCore.version == config.version)
-        #expect(!(try await fileExists(atPath: Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "foo.txt")))
-        #expect(!(try await fileExists(atPath: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx) / "foo.txt")))
+        #expect(!(try await fs.exists(atPath: Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "foo.txt")))
+        #expect(!(try await fs.exists(atPath: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx) / "foo.txt")))
     }
 
     @Test(.testHome()) func initTwice() async throws {
         // GIVEN: a user account with swiftly already installed
-        try? await remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
+        try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
 
         try await SwiftlyTests.runCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
 
@@ -114,7 +114,7 @@ import Testing
         // AND: files were left intact
         config = try await Config.load()
         #expect(try SwiftlyVersion(parsing: "100.0.0") == config.version)
-        #expect(try await fileExists(atPath: Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "foo.txt"))
-        #expect(try await fileExists(atPath: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx) / "foo.txt"))
+        #expect(try await fs.exists(atPath: Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "foo.txt"))
+        #expect(try await fs.exists(atPath: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx) / "foo.txt"))
     }
 }

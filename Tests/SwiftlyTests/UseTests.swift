@@ -235,13 +235,13 @@ import Testing
             #expect(output.contains(where: { $0.contains(ToolchainVersion.newMainSnapshot.name) }))
 
             // GIVEN: a directory with no swift version file at the top of a git repository
-            try await remove(atPath: versionFile)
+            try await fs.remove(atPath: versionFile)
             let gitDir = SwiftlyTests.ctx.currentDirectory / ".git"
-            try await mkdir(atPath: gitDir)
+            try await fs.mkdir(atPath: gitDir)
             // WHEN: using a toolchain version
             try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.newReleaseSnapshot.name])
             // THEN: a swift version file is created
-            #expect(try await fileExists(atPath: versionFile))
+            #expect(try await fs.exists(atPath: versionFile))
             // THEN: the version file contains the specified version
             versionFileContents = try String(contentsOf: versionFile)
             #expect(ToolchainVersion.newReleaseSnapshot.name == versionFileContents)

@@ -8,10 +8,10 @@ import Testing
 
 @Suite(.serialized) struct HTTPClientTests {
     @Test func getSwiftOrgGPGKeys() async throws {
-        let tmpFile = mktemp()
-        try await create(file: tmpFile, contents: nil)
+        let tmpFile = fs.mktemp()
+        try await fs.create(file: tmpFile, contents: nil)
 
-        try await withTemporary(files: tmpFile) {
+        try await fs.withTemporary(files: tmpFile) {
             let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
             try await retry {
@@ -25,14 +25,14 @@ import Testing
     }
 
     @Test func getSwiftToolchain() async throws {
-        let tmpFile = mktemp()
-        try await create(file: tmpFile, contents: nil)
-        let tmpFileSignature = mktemp(ext: ".sig")
-        try await create(file: tmpFileSignature, contents: nil)
-        let keysFile = mktemp(ext: ".asc")
-        try await create(file: keysFile, contents: nil)
+        let tmpFile = fs.mktemp()
+        try await fs.create(file: tmpFile, contents: nil)
+        let tmpFileSignature = fs.mktemp(ext: ".sig")
+        try await fs.create(file: tmpFileSignature, contents: nil)
+        let keysFile = fs.mktemp(ext: ".asc")
+        try await fs.create(file: keysFile, contents: nil)
 
-        try await withTemporary(files: tmpFile, tmpFileSignature, keysFile) {
+        try await fs.withTemporary(files: tmpFile, tmpFileSignature, keysFile) {
             let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
             let toolchainFile = ToolchainFile(category: "swift-6.0-release", platform: "ubuntu2404", version: "swift-6.0-RELEASE", file: "swift-6.0-RELEASE-ubuntu24.04.tar.gz")
@@ -54,14 +54,14 @@ import Testing
     }
 
     @Test func getSwiftlyRelease() async throws {
-        let tmpFile = mktemp()
-        try await create(file: tmpFile, contents: nil)
-        let tmpFileSignature = mktemp(ext: ".sig")
-        try await create(file: tmpFileSignature, contents: nil)
-        let keysFile = mktemp(ext: ".asc")
-        try await create(file: keysFile, contents: nil)
+        let tmpFile = fs.mktemp()
+        try await fs.create(file: tmpFile, contents: nil)
+        let tmpFileSignature = fs.mktemp(ext: ".sig")
+        try await fs.create(file: tmpFileSignature, contents: nil)
+        let keysFile = fs.mktemp(ext: ".asc")
+        try await fs.create(file: keysFile, contents: nil)
 
-        try await withTemporary(files: tmpFile, tmpFileSignature, keysFile) {
+        try await fs.withTemporary(files: tmpFile, tmpFileSignature, keysFile) {
             let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
             let swiftlyURL = try #require(URL(string: "https://download.swift.org/swiftly/linux/swiftly-x86_64.tar.gz"))
@@ -129,9 +129,9 @@ private func withGpg(_ body: (([String]) throws -> Void) async throws -> Void) a
 #if os(Linux)
     // With linux, we can ask gpg to try an import to see if the file is valid
     // in a sandbox home directory to avoid contaminating the system
-    let gpgHome = mktemp()
-    try await mkdir(atPath: gpgHome, parents: true)
-    try await withTemporary(files: gpgHome) {
+    let gpgHome = fs.mktemp()
+    try await fs.mkdir(.parents, atPath: gpgHome)
+    try await fs.withTemporary(files: gpgHome) {
         func runGpg(arguments: [String]) throws {
             try Swiftly.currentPlatform.runProgram(["gpg"] + arguments, quiet: false, env: ["GNUPGHOME": gpgHome.string])
         }

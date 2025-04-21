@@ -165,7 +165,7 @@ extension Platform {
         var newEnv = env
 
         let tcPath = self.findToolchainLocation(ctx, toolchain) / "usr/bin"
-        guard try await fileExists(atPath: tcPath) else {
+        guard try await fs.exists(atPath: tcPath) else {
             throw SwiftlyError(
                 message:
                 "Toolchain \(toolchain) could not be located in \(tcPath). You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again."
@@ -196,7 +196,7 @@ extension Platform {
         let tcPath = self.findToolchainLocation(ctx, toolchain) / "usr/bin"
 
         let commandTcPath = tcPath / command
-        let commandToRun = if try await fileExists(atPath: commandTcPath) {
+        let commandToRun = if try await fs.exists(atPath: commandTcPath) {
             commandTcPath.string
         } else {
             command
@@ -228,7 +228,7 @@ extension Platform {
         let tcPath = self.findToolchainLocation(ctx, toolchain) / "usr/bin"
 
         let commandTcPath = tcPath / command
-        let commandToRun = if try await fileExists(atPath: commandTcPath) {
+        let commandToRun = if try await fs.exists(atPath: commandTcPath) {
             commandTcPath.string
         } else {
             command
@@ -358,13 +358,13 @@ extension Platform {
         if cmd.hasPrefix("/") {
             cmdAbsolute = FilePath(cmd)
         } else {
-            let pathEntries = ([cwd.string] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map
+            let pathEntries = ([fs.cwd.string] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map
                 {
                     FilePath($0) / cmd
                 }
 
             for pathEntry in pathEntries {
-                if try await fileExists(atPath: pathEntry) {
+                if try await fs.exists(atPath: pathEntry) {
                     cmdAbsolute = pathEntry
                     break
                 }
@@ -378,7 +378,7 @@ extension Platform {
         }
 
         // Proceed to installation only if we're in the user home directory, or a non-system location.
-        let userHome = homeDir
+        let userHome = fs.home
 
         let systemRoots: [FilePath] = ["/usr", "/opt", "/bin"]
 
@@ -401,14 +401,14 @@ extension Platform {
 
         await ctx.print("Installing swiftly in \(swiftlyHomeBin)...")
 
-        if try await fileExists(atPath: swiftlyHomeBin) {
-            try await remove(atPath: swiftlyHomeBin)
+        if try await fs.exists(atPath: swiftlyHomeBin) {
+            try await fs.remove(atPath: swiftlyHomeBin)
         }
 
         do {
-            try await move(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
+            try await fs.move(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
         } catch {
-            try await copy(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
+            try await fs.copy(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
             await ctx.print(
                 "Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed."
             )
@@ -425,13 +425,13 @@ extension Platform {
         if cmd.hasPrefix("/") {
             cmdAbsolute = FilePath(cmd)
         } else {
-            let pathEntries = ([cwd.string] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map
+            let pathEntries = ([fs.cwd.string] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map
                 {
                     FilePath($0) / cmd
                 }
 
             for pathEntry in pathEntries {
-                if try await fileExists(atPath: pathEntry) {
+                if try await fs.exists(atPath: pathEntry) {
                     cmdAbsolute = pathEntry
                     break
                 }
@@ -440,7 +440,7 @@ extension Platform {
 
         // We couldn't find ourselves in the usual places, so if we're not going to be installing
         // swiftly then we can assume that we are running from the final location.
-        let homeBinExists = try await fileExists(atPath: swiftlyHomeBin)
+        let homeBinExists = try await fs.exists(atPath: swiftlyHomeBin)
         if cmdAbsolute == nil && homeBinExists {
             return swiftlyHomeBin
         }
@@ -448,7 +448,7 @@ extension Platform {
         let systemRoots: [FilePath] = ["/usr", "/opt", "/bin"]
 
         // If we are system managed then we know where swiftly should be.
-        let userHome = homeDir
+        let userHome = fs.home
 
         if let cmdAbsolute, !cmdAbsolute.starts(with: userHome) && systemRoots.filter({ cmdAbsolute.starts(with: $0) }).first != nil {
             return cmdAbsolute
@@ -459,7 +459,7 @@ extension Platform {
             return nil
         }
 
-        return try await fileExists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil
+        return try await fs.exists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil
     }
 
     public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> FilePath

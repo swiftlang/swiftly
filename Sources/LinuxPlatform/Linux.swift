@@ -2,6 +2,8 @@ import Foundation
 import SwiftlyCore
 import SystemPackage
 
+typealias fs = SwiftlyCore.FileSystem
+
 /// `Platform` implementation for Linux systems.
 /// This implementation can be reused for any supported Linux platform.
 /// TODO: replace dummy implementations
@@ -23,20 +25,20 @@ public struct Linux: Platform {
         if let dir = ProcessInfo.processInfo.environment["XDG_DATA_HOME"] {
             return FilePath(dir) / "swiftly"
         } else {
-            return homeDir / ".local/share/swiftly"
+            return fs.home / ".local/share/swiftly"
         }
     }
 
     public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "bin" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { FilePath($0) }
-            ?? homeDir / ".local/share/swiftly/bin"
+            ?? fs.home / ".local/share/swiftly/bin"
     }
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "toolchains" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { FilePath($0) }
-            ?? homeDir / ".local/share/swiftly/toolchains"
+            ?? fs.home / ".local/share/swiftly/toolchains"
     }
 
     public var toolchainFileExtension: String {
@@ -51,7 +53,7 @@ public struct Linux: Platform {
         // This list comes from LinuxCABundle.swift in NIOSSL.
         var foundTrustedCAs = false
         for crtFile in ["/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt"] {
-            if try await fileExists(atPath: FilePath(crtFile)) {
+            if try await fs.exists(atPath: FilePath(crtFile)) {
                 foundTrustedCAs = true
                 break
             }
@@ -268,8 +270,8 @@ public struct Linux: Platform {
             }
 
             let tmpFile = self.getTempFilePath()
-            try await create(file: tmpFile, contents: nil, mode: 0o600)
-            try await withTemporary(files: tmpFile) {
+            try await fs.create(.mode(0o600), file: tmpFile, contents: nil)
+            try await fs.withTemporary(files: tmpFile) {
                 try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
                 if let mockedHomeDir = ctx.mockedHomeDir {
                     try self.runProgram(
@@ -332,19 +334,19 @@ public struct Linux: Platform {
     public func install(
         _ ctx: SwiftlyCoreContext, from tmpFile: FilePath, version: ToolchainVersion, verbose: Bool
     ) async throws {
-        guard try await fileExists(atPath: tmpFile) else {
+        guard try await fs.exists(atPath: tmpFile) else {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
-        if !(try await fileExists(atPath: self.swiftlyToolchainsDir(ctx))) {
-            try await mkdir(atPath: self.swiftlyToolchainsDir(ctx))
+        if !(try await fs.exists(atPath: self.swiftlyToolchainsDir(ctx))) {
+            try await fs.mkdir(atPath: self.swiftlyToolchainsDir(ctx))
         }
 
         await ctx.print("Extracting toolchain...")
         let toolchainDir = self.swiftlyToolchainsDir(ctx) / version.name
 
-        if try await fileExists(atPath: toolchainDir) {
-            try await remove(atPath: toolchainDir)
+        if try await fs.exists(atPath: toolchainDir) {
+            try await fs.remove(atPath: toolchainDir)
         }
 
         try extractArchive(atPath: tmpFile) { name in
@@ -367,13 +369,13 @@ public struct Linux: Platform {
     }
 
     public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: FilePath) async throws {
-        guard try await fileExists(atPath: archive) else {
+        guard try await fs.exists(atPath: archive) else {
             throw SwiftlyError(message: "\(archive) doesn't exist")
         }
 
         let tmpDir = self.getTempFilePath()
-        try await mkdir(atPath: tmpDir, parents: true)
-        try await withTemporary(files: tmpDir) {
+        try await fs.mkdir(.parents, atPath: tmpDir)
+        try await fs.withTemporary(files: tmpDir) {
             await ctx.print("Extracting new swiftly...")
             try extractArchive(atPath: archive) { name in
                 // Extract to the temporary directory
@@ -386,7 +388,7 @@ public struct Linux: Platform {
 
     public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose _: Bool) async throws {
         let toolchainDir = self.swiftlyToolchainsDir(ctx) / toolchain.name
-        try await remove(atPath: toolchainDir)
+        try await fs.remove(atPath: toolchainDir)
     }
 
     public func getExecutableName() -> String {
@@ -396,7 +398,7 @@ public struct Linux: Platform {
     }
 
     public func getTempFilePath() -> FilePath {
-        tmpDir / "swiftly-\(UUID())"
+        fs.tmp / "swiftly-\(UUID())"
     }
 
     public func verifyToolchainSignature(
@@ -407,8 +409,8 @@ public struct Linux: Platform {
         }
 
         let sigFile = self.getTempFilePath()
-        try await create(file: sigFile, contents: nil)
-        try await withTemporary(files: sigFile) {
+        try await fs.create(file: sigFile, contents: nil)
+        try await fs.withTemporary(files: sigFile) {
             try await ctx.httpClient.getSwiftToolchainFileSignature(toolchainFile).download(to: sigFile)
 
             await ctx.print("Verifying toolchain signature...")
@@ -435,8 +437,8 @@ public struct Linux: Platform {
         }
 
         let sigFile = self.getTempFilePath()
-        try await create(file: sigFile, contents: nil)
-        try await withTemporary(files: sigFile) {
+        try await fs.create(file: sigFile, contents: nil)
+        try await fs.withTemporary(files: sigFile) {
             try await ctx.httpClient.getSwiftlyReleaseSignature(
                 url: archiveDownloadURL.appendingPathExtension("sig")
             ).download(to: sigFile)
@@ -513,7 +515,7 @@ public struct Linux: Platform {
         let osReleaseFiles = ["/etc/os-release", "/usr/lib/os-release"]
         var releaseFile: String?
         for file in osReleaseFiles {
-            if FileManager.default.fileExists(atPath: file) {
+            if try await fs.exists(atPath: FilePath(file)) {
                 releaseFile = file
                 break
             }

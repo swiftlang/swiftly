@@ -91,7 +91,7 @@ struct Init: SwiftlyCommand {
 
             """
 #if os(macOS)
-            if toolchainsDir != homeDir / "Library/Developer/Toolchains" {
+            if toolchainsDir != fs.home / "Library/Developer/Toolchains" {
                 msg += """
 
                 NOTE: The toolchains are not being installed in a standard macOS location, so Xcode may not be able to find them.
@@ -160,15 +160,15 @@ struct Init: SwiftlyCommand {
         }
 
         if overwrite {
-            try? await remove(atPath: Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))
-            try? await remove(atPath: Swiftly.currentPlatform.swiftlyHomeDir(ctx))
+            try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))
+            try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyHomeDir(ctx))
         }
 
         // Go ahead and create the directories as needed
         for requiredDir in Swiftly.requiredDirectories(ctx) {
-            if !(try await fileExists(atPath: requiredDir)) {
+            if !(try await fs.exists(atPath: requiredDir)) {
                 do {
-                    try await mkdir(atPath: requiredDir, parents: true)
+                    try await fs.mkdir(.parents, atPath: requiredDir)
                 } catch {
                     throw SwiftlyError(message: "Failed to create required directory \"\(requiredDir)\": \(error)")
                 }
@@ -190,7 +190,7 @@ struct Init: SwiftlyCommand {
         // Move our executable over to the correct place
         try await Swiftly.currentPlatform.installSwiftlyBin(ctx)
 
-        let envFileExists = try await fileExists(atPath: envFile)
+        let envFileExists = try await fs.exists(atPath: envFile)
 
         if overwrite || !envFileExists {
             await ctx.print("Creating shell environment file for the user...")
@@ -223,15 +223,15 @@ struct Init: SwiftlyCommand {
         if !noModifyProfile {
             await ctx.print("Updating profile...")
 
-            let userHome = ctx.mockedHomeDir ?? homeDir
+            let userHome = ctx.mockedHomeDir ?? fs.home
 
             let profileHome: FilePath
             if shell.hasSuffix("zsh") {
                 profileHome = userHome / ".zprofile"
             } else if shell.hasSuffix("bash") {
-                if case let p = userHome / ".bash_profile", try await fileExists(atPath: p) {
+                if case let p = userHome / ".bash_profile", try await fs.exists(atPath: p) {
                     profileHome = p
-                } else if case let p = userHome / ".bash_login", try await fileExists(atPath: p) {
+                } else if case let p = userHome / ".bash_login", try await fs.exists(atPath: p) {
                     profileHome = p
                 } else {
                     profileHome = userHome / ".profile"
@@ -239,11 +239,11 @@ struct Init: SwiftlyCommand {
             } else if shell.hasSuffix("fish") {
                 if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"], case let xdgConfigURL = FilePath(xdgConfigHome) {
                     let confDir = xdgConfigURL / "fish/conf.d"
-                    try await mkdir(atPath: confDir, parents: true)
+                    try await fs.mkdir(.parents, atPath: confDir)
                     profileHome = confDir / "swiftly.fish"
                 } else {
                     let confDir = userHome / ".config/fish/conf.d"
-                    try await mkdir(atPath: confDir, parents: true)
+                    try await fs.mkdir(.parents, atPath: confDir)
                     profileHome = confDir / "swiftly.fish"
                 }
             } else {
@@ -252,7 +252,7 @@ struct Init: SwiftlyCommand {
 
             var addEnvToProfile = false
             do {
-                if !(try await fileExists(atPath: profileHome)) {
+                if !(try await fs.exists(atPath: profileHome)) {
                     addEnvToProfile = true
                 } else if case let profileContents = try String(contentsOf: profileHome, encoding: .utf8), !profileContents.contains(sourceLine) {
                     addEnvToProfile = true

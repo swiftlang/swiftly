@@ -185,9 +185,9 @@ struct Install: SwiftlyCommand {
 
         await ctx.print("Installing \(version)")
 
-        let tmpFile = mktemp()
-        try await create(file: tmpFile, contents: nil)
-        return try await withTemporary(files: tmpFile) {
+        let tmpFile = fs.mktemp()
+        try await fs.create(file: tmpFile, contents: nil)
+        return try await fs.withTemporary(files: tmpFile) {
             var platformString = config.platform.name
             var platformFullString = config.platform.nameFull
 
@@ -279,15 +279,15 @@ struct Install: SwiftlyCommand {
                 // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
                 let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
                 let swiftlyBinDirContents =
-                    (try? await ls(atPath: swiftlyBinDir)) ?? [String]()
+                    (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
                 let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
-                let toolchainBinDirContents = try await ls(atPath: toolchainBinDir)
+                let toolchainBinDirContents = try await fs.ls(atPath: toolchainBinDir)
 
                 var existingProxies: [String] = []
 
                 for bin in swiftlyBinDirContents {
                     do {
-                        let linkTarget = try await readlink(atPath: swiftlyBinDir / bin)
+                        let linkTarget = try await fs.readlink(atPath: swiftlyBinDir / bin)
                         if linkTarget == proxyTo {
                             existingProxies.append(bin)
                         }
@@ -318,11 +318,11 @@ struct Install: SwiftlyCommand {
                 for p in proxiesToCreate {
                     let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx) / p
 
-                    if try await fileExists(atPath: proxy) {
-                        try await remove(atPath: proxy)
+                    if try await fs.exists(atPath: proxy) {
+                        try await fs.remove(atPath: proxy)
                     }
 
-                    try await symlink(atPath: proxy, linkPath: proxyTo)
+                    try await fs.symlink(atPath: proxy, linkPath: proxyTo)
 
                     pathChanged = true
                 }

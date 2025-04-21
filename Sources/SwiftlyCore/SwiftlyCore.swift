@@ -42,12 +42,12 @@ public struct SwiftlyCoreContext: Sendable {
 
     public init() {
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
-        self.currentDirectory = cwd
+        self.currentDirectory = fs.cwd
     }
 
     public init(httpClient: SwiftlyHTTPClient) {
         self.httpClient = httpClient
-        self.currentDirectory = cwd
+        self.currentDirectory = fs.cwd
     }
 
     /// Pass the provided string to the set output handler if any.

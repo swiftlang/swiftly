@@ -152,13 +152,13 @@ struct Use: SwiftlyCommand {
         var cwd = ctx.currentDirectory
 
         while !cwd.isEmpty && !cwd.removingRoot().isEmpty {
-            guard try await fileExists(atPath: cwd) else {
+            guard try await fs.exists(atPath: cwd) else {
                 break
             }
 
             let gitDir = cwd / ".git"
 
-            if try await fileExists(atPath: gitDir) {
+            if try await fs.exists(atPath: gitDir) {
                 return cwd / ".swift-version"
             }
 
@@ -199,13 +199,13 @@ public func selectToolchain(_ ctx: SwiftlyCoreContext, config: inout Config, glo
         var cwd = ctx.currentDirectory
 
         while !cwd.isEmpty && !cwd.removingRoot().isEmpty {
-            guard try await fileExists(atPath: cwd) else {
+            guard try await fs.exists(atPath: cwd) else {
                 break
             }
 
             let svFile = cwd / ".swift-version"
 
-            if try await fileExists(atPath: svFile) {
+            if try await fs.exists(atPath: svFile) {
                 let contents = try? String(contentsOf: svFile)
 
                 guard let contents else {

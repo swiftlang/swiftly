@@ -39,7 +39,7 @@ jobs:
       - name: Build and Test
         # UBI 9 and Ubuntu 20.04 - See https://github.com/swiftlang/swift/issues/80908
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80909
-        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swift test --skip HTTPClientTests; else swift test; fi'
+        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swift build --build-tests; else swift test; fi'
 
   releasebuildcheck:
     name: Release Build Check

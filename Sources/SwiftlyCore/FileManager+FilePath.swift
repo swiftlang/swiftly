@@ -3,7 +3,7 @@ import SystemPackage
 
 typealias fs = FileSystem
 
-public struct FileSystem {
+public enum FileSystem {
     public static var cwd: FilePath {
         FileManager.default.currentDir
     }
@@ -66,9 +66,9 @@ public struct FileSystem {
 
     public static func create(_ options: [CreateOptions] = [], file: FilePath, contents: Data?) async throws {
         let attributes = options.reduce(into: [FileAttributeKey: Any]()) {
-            switch($1) {
-            case .mode(let m):
-                $0[FileAttributeKey.posixPermissions] =  m
+            switch $1 {
+            case let .mode(m):
+                $0[FileAttributeKey.posixPermissions] = m
             }
         }
 

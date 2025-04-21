@@ -10,6 +10,16 @@ import SystemPackage
 
 typealias fs = SwiftlyCore.FileSystem
 
+extension FilePath: ExpressibleByArgument {
+    public init?(argument: String) {
+        self.init(argument)
+    }
+
+    public static var defaultCompletionKind: CompletionKind {
+        CompletionKind.file()
+    }
+}
+
 public struct GlobalOptions: ParsableArguments {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
     var assumeYes: Bool = false

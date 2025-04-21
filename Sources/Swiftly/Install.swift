@@ -69,7 +69,7 @@ struct Install: SwiftlyCommand {
             written to this file as commands that can be run after the installation.
             """
         ))
-    var postInstallFile: String?
+    var postInstallFile: FilePath?
 
     @OptionGroup var root: GlobalOptions
 
@@ -156,7 +156,7 @@ struct Install: SwiftlyCommand {
             }
 
             try Data(postInstallScript.utf8).write(
-                to: FilePath(postInstallFile), options: .atomic
+                to: postInstallFile, options: .atomic
             )
         }
     }

@@ -72,7 +72,7 @@ struct Update: SwiftlyCommand {
         written to this file as commands that can be run after the installation.
         """
     ))
-    var postInstallFile: String?
+    var postInstallFile: FilePath?
 
     private enum CodingKeys: String, CodingKey {
         case toolchain, root, verify, postInstallFile
@@ -138,7 +138,7 @@ struct Update: SwiftlyCommand {
                 """)
             }
 
-            try Data(postInstallScript.utf8).write(to: FilePath(postInstallFile), options: .atomic)
+            try Data(postInstallScript.utf8).write(to: postInstallFile, options: .atomic)
         }
 
         if pathChanged {

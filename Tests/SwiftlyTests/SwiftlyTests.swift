@@ -14,6 +14,8 @@ import MacOSPlatform
 import AsyncHTTPClient
 import NIO
 
+import SystemPackage
+
 struct SwiftlyTestError: LocalizedError {
     let message: String
 }
@@ -47,8 +49,8 @@ struct HTTPRequestExecutorFail: HTTPRequestExecutor {
 // Convenience extensions to common Swiftly and SwiftlyCore types to set the correct context
 
 extension Config {
-    public static func load() throws -> Config {
-        try Config.load(SwiftlyTests.ctx)
+    public static func load() async throws -> Config {
+        try await Config.load(SwiftlyTests.ctx)
     }
 
     public func save() throws {
@@ -58,15 +60,15 @@ extension Config {
 
 extension SwiftlyCoreContext {
     public init(
-        mockedHomeDir: URL?,
+        mockedHomeDir: FilePath?,
         httpRequestExecutor: HTTPRequestExecutor,
         outputHandler: (any OutputHandler)?,
         inputProvider: (any InputProvider)?
     ) {
-        self.init()
+        self.init(httpClient: SwiftlyHTTPClient(httpRequestExecutor: httpRequestExecutor))
 
         self.mockedHomeDir = mockedHomeDir
-        self.currentDirectory = mockedHomeDir ?? URL.currentDirectory()
+        self.currentDirectory = mockedHomeDir ?? fs.cwd
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: httpRequestExecutor)
         self.outputHandler = outputHandler
         self.inputProvider = inputProvider
@@ -159,7 +161,7 @@ extension Trait where Self == TestHomeMockedToolchainTrait {
 
 public enum SwiftlyTests {
     @TaskLocal static var ctx: SwiftlyCoreContext = .init(
-        mockedHomeDir: URL(fileURLWithPath: "/does/not/exist"),
+        mockedHomeDir: .init("/does/not/exist"),
         httpRequestExecutor: HTTPRequestExecutorFail(),
         outputHandler: OutputHandlerFail(),
         inputProvider: InputProviderFail()
@@ -219,8 +221,8 @@ public enum SwiftlyTests {
         return await handler.lines
     }
 
-    static func getTestHomePath(name: String) -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-tests-\(name)-\(UUID())")
+    static func getTestHomePath(name: String) -> FilePath {
+        fs.tmp / "swiftly-tests-\(name)-\(UUID())"
     }
 
     /// Create a fresh swiftly home directory, populate it with a base config, and run the provided closure.
@@ -233,10 +235,6 @@ public enum SwiftlyTests {
     ) async throws {
         let testHome = Self.getTestHomePath(name: name)
 
-        defer {
-            try? FileManager.default.removeItem(atPath: testHome.path)
-        }
-
         let ctx = SwiftlyCoreContext(
             mockedHomeDir: testHome,
             httpRequestExecutor: SwiftlyTests.ctx.httpClient.httpRequestExecutor,
@@ -244,22 +242,18 @@ public enum SwiftlyTests {
             inputProvider: nil
         )
 
-        for dir in Swiftly.requiredDirectories(ctx) {
-            try dir.deleteIfExists()
-            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)
-        }
-
-        defer {
+        try await fs.withTemporary(files: [testHome] + Swiftly.requiredDirectories(ctx)) {
             for dir in Swiftly.requiredDirectories(ctx) {
-                try? FileManager.default.removeItem(at: dir)
+                try FileManager.default.deleteIfExists(atPath: dir)
+                try await fs.mkdir(atPath: dir)
             }
-        }
 
-        let config = try await Self.baseTestConfig()
-        try config.save(ctx)
+            let config = try await Self.baseTestConfig()
+            try config.save(ctx)
 
-        try await Self.$ctx.withValue(ctx) {
-            try await f()
+            try await Self.$ctx.withValue(ctx) {
+                try await f()
+            }
         }
     }
 
@@ -276,20 +270,26 @@ public enum SwiftlyTests {
                 try await Self.installMockedToolchain(toolchain: toolchain)
             }
 
+            var cleanBinDir = false
+
             if !toolchains.isEmpty {
                 try await Self.runCommand(Use.self, ["use", inUse?.name ?? "latest"])
             } else {
-                try FileManager.default.createDirectory(
-                    at: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx),
-                    withIntermediateDirectories: true
-                )
-
-                defer {
-                    try? FileManager.default.removeItem(at: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
-                }
+                try await fs.mkdir(.parents, atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
+                cleanBinDir = true
             }
 
-            try await f()
+            do {
+                try await f()
+
+                if cleanBinDir {
+                    try await fs.remove(atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
+                }
+            } catch {
+                if cleanBinDir {
+                    try await fs.remove(atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
+                }
+            }
         }
     }
 
@@ -329,7 +329,7 @@ public enum SwiftlyTests {
     /// configuration file and by executing `swift --version` using the swift executable in the `bin` directory.
     /// If nil is provided, this validates that no toolchain is currently in use.
     static func validateInUse(expected: ToolchainVersion?) async throws {
-        let config = try Config.load()
+        let config = try await Config.load()
         #expect(config.inUse == expected)
     }
 
@@ -338,7 +338,7 @@ public enum SwiftlyTests {
     /// This method ensures that config.json reflects the expected installed toolchains and also
     /// validates that the toolchains on disk match their expected versions via `swift --version`.
     static func validateInstalledToolchains(_ toolchains: Set<ToolchainVersion>, description: String) async throws {
-        let config = try Config.load()
+        let config = try await Config.load()
 
         guard config.installedToolchains == toolchains else {
             throw SwiftlyTestError(message: "\(description): expected \(toolchains) but got \(config.installedToolchains)")
@@ -346,13 +346,10 @@ public enum SwiftlyTests {
 
 #if os(macOS)
         for toolchain in toolchains {
-            let toolchainDir = Self.ctx.mockedHomeDir!.appendingPathComponent("Toolchains/\(toolchain.identifier).xctoolchain")
-            #expect(toolchainDir.fileExists())
+            let toolchainDir = Self.ctx.mockedHomeDir! / "Toolchains/\(toolchain.identifier).xctoolchain"
+            #expect(try await fs.exists(atPath: toolchainDir))
 
-            let swiftBinary = toolchainDir
-                .appendingPathComponent("usr")
-                .appendingPathComponent("bin")
-                .appendingPathComponent("swift")
+            let swiftBinary = toolchainDir / "usr/bin/swift"
 
             let executable = SwiftExecutable(path: swiftBinary)
             let actualVersion = try await executable.version()
@@ -361,14 +358,10 @@ public enum SwiftlyTests {
 #elseif os(Linux)
         // Verify that the toolchains on disk correspond to those in the config.
         for toolchain in toolchains {
-            let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir(Self.ctx)
-                .appendingPathComponent("toolchains/\(toolchain.name)")
-            #expect(toolchainDir.fileExists())
+            let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir(Self.ctx) / "toolchains/\(toolchain.name)"
+            #expect(try await fs.exists(atPath: toolchainDir))
 
-            let swiftBinary = toolchainDir
-                .appendingPathComponent("usr")
-                .appendingPathComponent("bin")
-                .appendingPathComponent("swift")
+            let swiftBinary = toolchainDir / "usr/bin/swift"
 
             let executable = SwiftExecutable(path: swiftBinary)
             let actualVersion = try await executable.version()
@@ -383,7 +376,7 @@ public enum SwiftlyTests {
     /// When executed, the mocked executables will simply print the toolchain version and return.
     static func installMockedToolchain(selector: String, args: [String] = [], executables: [String]? = nil) async throws {
         try await Self.withMockedToolchain(executables: executables) {
-            try await Self.runCommand(Install.self, ["install", "\(selector)", "--no-verify", "--post-install-file=\(Swiftly.currentPlatform.getTempFilePath().path)"] + args)
+            try await Self.runCommand(Install.self, ["install", "\(selector)", "--no-verify", "--post-install-file=\(fs.mktemp())"] + args)
         }
     }
 
@@ -403,10 +396,10 @@ public enum SwiftlyTests {
         try await Self.installMockedToolchain(selector: "\(selector)", executables: executables)
     }
 
-    /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given URL.
-    static func getMockedToolchainVersion(at url: URL) throws -> ToolchainVersion {
+    /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given FilePath.
+    static func getMockedToolchainVersion(at path: FilePath) throws -> ToolchainVersion {
         let process = Process()
-        process.executableURL = url
+        process.executableURL = URL(fileURLWithPath: path.string)
 
         let outputPipe = Pipe()
         process.standardOutput = outputPipe
@@ -415,7 +408,7 @@ public enum SwiftlyTests {
         process.waitUntilExit()
 
         guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
-            throw SwiftlyTestError(message: "got no output from swift binary at path \(url.path)")
+            throw SwiftlyTestError(message: "got no output from swift binary at path \(path)")
         }
 
         let toolchainVersion = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
@@ -455,25 +448,25 @@ public actor TestInputProvider: SwiftlyCore.InputProvider {
 
 /// Wrapper around a `swift` executable used to execute swift commands.
 public struct SwiftExecutable {
-    public let path: URL
+    public let path: FilePath
 
     private static func stableRegex() -> Regex<(Substring, Substring)> {
         try! Regex("swift-([^-]+)-RELEASE")
     }
 
-    public func exists() -> Bool {
-        self.path.fileExists()
+    public func exists() async throws -> Bool {
+        try await fs.exists(atPath: self.path)
     }
 
     /// Gets the version of this executable by parsing the `swift --version` output, potentially looking
     /// up the commit hash via the GitHub API.
     public func version() async throws -> ToolchainVersion {
         let process = Process()
-        process.executableURL = self.path
+        process.executableURL = URL(fileURLWithPath: self.path.string)
         process.arguments = ["--version"]
 
         let binPath = ProcessInfo.processInfo.environment["PATH"]!
-        process.environment = ["PATH": "\(self.path.deletingLastPathComponent().path):\(binPath)"]
+        process.environment = ["PATH": "\(self.path.removingLastComponent()):\(binPath)"]
 
         let outputPipe = Pipe()
         process.standardOutput = outputPipe
@@ -482,7 +475,7 @@ public struct SwiftExecutable {
         process.waitUntilExit()
 
         guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
-            throw SwiftlyTestError(message: "got no output from swift binary at path \(self.path.path)")
+            throw SwiftlyTestError(message: "got no output from swift binary at path \(self.path)")
         }
 
         let outputString = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
@@ -658,7 +651,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         URL(string: "https://download.swift.org/\(toolchainFile.category)/\(toolchainFile.platform)/\(toolchainFile.version)/\(toolchainFile.file)\(isSignature ? ".sig" : "")")!
     }
 
-    private func makeToolchainDownloadResponse(from url: URL) throws -> OpenAPIRuntime.HTTPBody {
+    private func makeToolchainDownloadResponse(from url: URL) async throws -> OpenAPIRuntime.HTTPBody {
         let toolchain: ToolchainVersion
         if let match = try Self.releaseURLRegex().firstMatch(in: url.path) {
             var version = "\(match.output.1).\(match.output.2)."
@@ -678,26 +671,31 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             throw SwiftlyTestError(message: "invalid toolchain download URL: \(url.path)")
         }
 
-        let mockedToolchain = try self.makeMockedToolchain(toolchain: toolchain, name: url.lastPathComponent)
+        let mockedToolchain = try await self.makeMockedToolchain(toolchain: toolchain, name: url.lastPathComponent)
         return HTTPBody(mockedToolchain)
     }
 
     public func getSwiftToolchainFile(_ toolchainFile: ToolchainFile) async throws -> OpenAPIRuntime.HTTPBody {
-        try self.makeToolchainDownloadResponse(from: self.makeToolchainDownloadURL(toolchainFile))
+        try await self.makeToolchainDownloadResponse(from: self.makeToolchainDownloadURL(toolchainFile))
     }
 
     public func getSwiftToolchainFileSignature(_ toolchainFile: ToolchainFile) async throws
         -> OpenAPIRuntime.HTTPBody
     {
-        try self.makeToolchainDownloadResponse(from: self.makeToolchainDownloadURL(toolchainFile, isSignature: true))
+        try await self.makeToolchainDownloadResponse(from: self.makeToolchainDownloadURL(toolchainFile, isSignature: true))
     }
 
     public func getSwiftlyRelease(url: URL) async throws -> OpenAPIRuntime.HTTPBody {
-        try HTTPBody(Array(self.makeMockedSwiftly(from: url)))
+        let mockedSwiftly = try await self.makeMockedSwiftly(from: url)
+
+        return HTTPBody(Array(mockedSwiftly))
     }
 
     public func getSwiftlyReleaseSignature(url: URL) async throws -> OpenAPIRuntime.HTTPBody {
-        try HTTPBody(Array(self.makeMockedSwiftly(from: url)))
+        let mockedSwiftly = try await self.makeMockedSwiftly(from: url)
+
+        // FIXME: the release signature shouldn't be a mocked swiftly itself
+        return HTTPBody(Array(mockedSwiftly))
     }
 
     public func getGpgKeys() async throws -> OpenAPIRuntime.HTTPBody {
@@ -706,7 +704,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
     }
 
 #if os(Linux)
-    public func makeMockedSwiftly(from url: URL) throws -> Data {
+    public func makeMockedSwiftly(from url: URL) async throws -> Data {
         // Check our cache if this is a signature request
         if url.path.hasSuffix(".sig") {
             // Signatures will either be in the cache or this don't exist
@@ -717,19 +715,15 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             return signature
         }
 
-        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-        defer {
-            try? FileManager.default.removeItem(at: tmp)
-        }
-        let swiftlyDir = tmp.appendingPathComponent("swiftly", isDirectory: true)
+        let tmp = fs.mktemp()
+        let gpgKeyFile = fs.mktemp(ext: ".asc")
 
-        try FileManager.default.createDirectory(
-            at: swiftlyDir,
-            withIntermediateDirectories: true
-        )
+        let swiftlyDir = tmp / "swiftly"
+
+        try await fs.mkdir(.parents, atPath: swiftlyDir)
 
         for executable in ["swiftly"] {
-            let executablePath = swiftlyDir.appendingPathComponent(executable)
+            let executablePath = swiftlyDir / executable
 
             let script = """
             #!/usr/bin/env sh
@@ -741,32 +735,27 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             try data.write(to: executablePath)
 
             // make the file executable
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+            try await fs.chmod(atPath: executablePath, mode: 0o755)
         }
 
-        let archive = tmp.appendingPathComponent("swiftly.tar.gz")
+        let archive = tmp / "swiftly.tar.gz"
 
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        task.arguments = ["bash", "-c", "tar -C \(swiftlyDir.path) -czf \(archive.path) swiftly"]
+        task.arguments = ["bash", "-c", "tar -C \(swiftlyDir) -czf \(archive) swiftly"]
 
         try task.run()
         task.waitUntilExit()
 
         // Extra step involves generating a gpg signature and putting that in a cache for a later request. We will
         // use a local key for this to avoid running into entropy problems in CI.
-        let gpgKeyFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-
         try Data(PackageResources.mock_signing_key_private_pgp).write(to: gpgKeyFile)
-        defer {
-            try? FileManager.default.removeItem(at: gpgKeyFile)
-        }
 
         let importKey = Process()
         importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         importKey.arguments = ["bash", "-c", """
-        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)/.gnupg"
-        gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
+        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
+        gpg --batch --import \(gpgKeyFile) >/dev/null 2>&1 || echo -n
         """]
         try importKey.run()
         importKey.waitUntilExit()
@@ -778,12 +767,12 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         detachSign.arguments = ["bash", "-c", """
         export GPG_TTY=$(tty)
-        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)/.gnupg"
+        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
         gpg --version | grep '2.0.' > /dev/null
         if [ "$?" == "0" ]; then
-            gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+            gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive)"
         else
-            gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+            gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive)"
         fi
         """]
         try detachSign.run()
@@ -793,12 +782,20 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
         }
 
-        self.signatures["swiftly"] = try Data(contentsOf: archive.appendingPathExtension("sig"))
+        var signature = archive
+        signature.extension = "gz.sig"
 
-        return try Data(contentsOf: archive)
+        self.signatures["swiftly"] = try Data(contentsOf: signature)
+
+        let data = try Data(contentsOf: archive)
+
+        try await fs.remove(atPath: tmp)
+        try await fs.remove(atPath: gpgKeyFile)
+
+        return data
     }
 
-    public func makeMockedToolchain(toolchain: ToolchainVersion, name: String) throws -> Data {
+    public func makeMockedToolchain(toolchain: ToolchainVersion, name: String) async throws -> Data {
         // Check our cache if this is a signature request
         if name.hasSuffix(".sig") {
             // Signatures will either be in the cache or they don't exist
@@ -809,23 +806,16 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             return signature
         }
 
-        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-        defer {
-            try? FileManager.default.removeItem(at: tmp)
-        }
+        let tmp = fs.mktemp()
+        let gpgKeyFile = fs.mktemp(ext: ".asc")
 
-        let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
-        let toolchainBinDir = toolchainDir
-            .appendingPathComponent("usr", isDirectory: true)
-            .appendingPathComponent("bin", isDirectory: true)
+        let toolchainDir = tmp / "toolchain"
+        let toolchainBinDir = toolchainDir / "usr/bin"
 
-        try FileManager.default.createDirectory(
-            at: toolchainBinDir,
-            withIntermediateDirectories: true
-        )
+        try await fs.mkdir(.parents, atPath: toolchainBinDir)
 
         for executable in self.executables {
-            let executablePath = toolchainBinDir.appendingPathComponent(executable)
+            let executablePath = toolchainBinDir / executable
 
             let script = """
             #!/usr/bin/env sh
@@ -837,31 +827,27 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             try data.write(to: executablePath)
 
             // make the file executable
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+            try await fs.chmod(atPath: executablePath, mode: 0o755)
         }
 
-        let archive = tmp.appendingPathComponent("toolchain.tar.gz")
+        let archive = tmp / "toolchain.tar.gz"
 
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        task.arguments = ["bash", "-c", "tar -C \(tmp.path) -czf \(archive.path) \(toolchainDir.lastPathComponent)"]
+        task.arguments = ["bash", "-c", "tar -C \(tmp) -czf \(archive) \(toolchainDir.lastComponent!.string)"]
 
         try task.run()
         task.waitUntilExit()
 
         // Extra step involves generating a gpg signature and putting that in a cache for a later request. We will
         // use a local key for this to avoid running into entropy problems in CI.
-        let gpgKeyFile = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
         try Data(PackageResources.mock_signing_key_private_pgp).write(to: gpgKeyFile)
-        defer {
-            try? FileManager.default.removeItem(at: gpgKeyFile)
-        }
 
         let importKey = Process()
         importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         importKey.arguments = ["bash", "-c", """
-        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)/.gnupg"
-        gpg --batch --import \(gpgKeyFile.path) >/dev/null 2>&1 || echo -n
+        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
+        gpg --batch --import \(gpgKeyFile) >/dev/null 2>&1 || echo -n
         """]
         try importKey.run()
         importKey.waitUntilExit()
@@ -873,12 +859,12 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         detachSign.arguments = ["bash", "-c", """
         export GPG_TTY=$(tty)
-        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!.path)/.gnupg"
+        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
         gpg --version | grep '2.0.' > /dev/null
         if [ "$?" == "0" ]; then
-            gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+            gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive)"
         else
-            gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive.path)"
+            gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive)"
         fi
         """]
         try detachSign.run()
@@ -888,28 +874,30 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
         }
 
-        self.signatures[toolchain.name] = try Data(contentsOf: archive.appendingPathExtension("sig"))
+        var signature = archive
+        signature.extension = "gz.sig"
 
-        return try Data(contentsOf: archive)
+        self.signatures[toolchain.name] = try Data(contentsOf: signature)
+
+        let data = try Data(contentsOf: archive)
+
+        try await fs.remove(atPath: tmp)
+        try await fs.remove(atPath: gpgKeyFile)
+
+        return data
     }
 
 #elseif os(macOS)
-    public func makeMockedSwiftly(from _: URL) throws -> Data {
-        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-        defer {
-            try? FileManager.default.removeItem(at: tmp)
-        }
+    public func makeMockedSwiftly(from _: URL) async throws -> Data {
+        let tmp = fs.mktemp()
 
-        let swiftlyDir = tmp.appendingPathComponent(".swiftly", isDirectory: true)
-        let swiftlyBinDir = swiftlyDir.appendingPathComponent("bin")
+        let swiftlyDir = tmp / ".swiftly"
+        let swiftlyBinDir = swiftlyDir / "bin"
 
-        try FileManager.default.createDirectory(
-            at: swiftlyBinDir,
-            withIntermediateDirectories: true
-        )
+        try await fs.mkdir(.parents, atPath: swiftlyBinDir)
 
         for executable in ["swiftly"] {
-            let executablePath = swiftlyBinDir.appendingPathComponent(executable)
+            let executablePath = swiftlyBinDir / executable
 
             let script = """
             #!/usr/bin/env sh
@@ -921,47 +909,43 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             try data.write(to: executablePath)
 
             // make the file executable
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+            try await fs.chmod(atPath: executablePath, mode: 0o755)
         }
 
-        let pkg = tmp.appendingPathComponent("swiftly.pkg")
+        let pkg = tmp / "swiftly.pkg"
 
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         task.arguments = [
             "pkgbuild",
             "--root",
-            swiftlyDir.path,
+            "\(swiftlyDir)",
             "--install-location",
             ".swiftly",
             "--version",
             "\(self.latestSwiftlyVersion)",
             "--identifier",
             "org.swift.swiftly",
-            pkg.path,
+            "\(pkg)",
         ]
         try task.run()
         task.waitUntilExit()
 
-        return try Data(contentsOf: pkg)
+        let data = try Data(contentsOf: pkg)
+        try await fs.remove(atPath: tmp)
+        return data
     }
 
-    public func makeMockedToolchain(toolchain: ToolchainVersion, name _: String) throws -> Data {
-        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("swiftly-\(UUID())")
-        defer {
-            try? FileManager.default.removeItem(at: tmp)
-        }
+    public func makeMockedToolchain(toolchain: ToolchainVersion, name _: String) async throws -> Data {
+        let tmp = fs.mktemp()
 
-        let toolchainDir = tmp.appendingPathComponent("toolchain", isDirectory: true)
-        let toolchainBinDir = toolchainDir.appendingPathComponent("usr/bin", isDirectory: true)
+        let toolchainDir = tmp.appending("toolchain")
+        let toolchainBinDir = toolchainDir.appending("usr/bin")
 
-        try FileManager.default.createDirectory(
-            at: toolchainBinDir,
-            withIntermediateDirectories: true
-        )
+        try await fs.mkdir(.parents, atPath: toolchainBinDir)
 
         for executable in self.executables {
-            let executablePath = toolchainBinDir.appendingPathComponent(executable)
+            let executablePath = toolchainBinDir.appending(executable)
 
             let script = """
             #!/usr/bin/env sh
@@ -973,7 +957,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             try data.write(to: executablePath)
 
             // make the file executable
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executablePath.path)
+            try await fs.chmod(atPath: executablePath, mode: 0o755)
         }
 
         // Add a skeletal Info.plist at the top
@@ -981,28 +965,31 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         encoder.outputFormat = .xml
         let pkgInfo = SwiftPkgInfo(CFBundleIdentifier: "org.swift.swift.mock.\(toolchain.name)")
         let data = try encoder.encode(pkgInfo)
-        try data.write(to: toolchainDir.appendingPathComponent("Info.plist"))
+        try data.write(to: toolchainDir.appending("Info.plist"))
 
-        let pkg = tmp.appendingPathComponent("toolchain.pkg")
+        let pkg = tmp.appending("toolchain.pkg")
 
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         task.arguments = [
             "pkgbuild",
             "--root",
-            toolchainDir.path,
+            "\(toolchainDir)",
             "--install-location",
             "Library/Developer/Toolchains/\(toolchain.identifier).xctoolchain",
             "--version",
             "\(toolchain.name)",
             "--identifier",
             pkgInfo.CFBundleIdentifier,
-            pkg.path,
+            "\(pkg)",
         ]
         try task.run()
         task.waitUntilExit()
 
-        return try Data(contentsOf: pkg)
+        let pkgData = try Data(contentsOf: pkg)
+        try await fs.remove(atPath: tmp)
+
+        return pkgData
     }
 
 #endif

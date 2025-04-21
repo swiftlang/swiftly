@@ -1,5 +1,6 @@
 import Foundation
 import SwiftlyWebsiteAPI
+import SystemPackage
 
 public let version = SwiftlyVersion(major: 1, minor: 1, patch: 0, suffix: "dev")
 
@@ -18,11 +19,11 @@ public protocol InputProvider: Actor {
 public struct SwiftlyCoreContext: Sendable {
     /// A separate home directory to use for testing purposes. This overrides swiftly's default
     /// home directory location logic.
-    public var mockedHomeDir: URL?
+    public var mockedHomeDir: FilePath?
 
     /// A separate current working directory to use for testing purposes. This overrides
     /// swiftly's default current working directory logic.
-    public var currentDirectory: URL
+    public var currentDirectory: FilePath
 
     /// A chosen shell for the current user as a typical path to the shell's binary
     /// location (e.g. /bin/sh). This overrides swiftly's default shell detection mechanisms
@@ -41,7 +42,12 @@ public struct SwiftlyCoreContext: Sendable {
 
     public init() {
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
-        self.currentDirectory = URL.currentDirectory()
+        self.currentDirectory = fs.cwd
+    }
+
+    public init(httpClient: SwiftlyHTTPClient) {
+        self.httpClient = httpClient
+        self.currentDirectory = fs.cwd
     }
 
     /// Pass the provided string to the set output handler if any.

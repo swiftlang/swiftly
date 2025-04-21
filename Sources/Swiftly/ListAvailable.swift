@@ -44,12 +44,12 @@ struct ListAvailable: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        try await validateSwiftly(ctx)
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
 
-        var config = try Config.load(ctx)
+        var config = try await Config.load(ctx)
 
         let tc: [ToolchainVersion]
 

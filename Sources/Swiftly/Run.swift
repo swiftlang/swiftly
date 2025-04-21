@@ -58,14 +58,14 @@ struct Run: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        try await validateSwiftly(ctx)
 
         // Handle the specific case where help is requested of the run subcommand
         if command == ["--help"] {
             throw CleanExit.helpRequest(self)
         }
 
-        var config = try Config.load(ctx)
+        var config = try await Config.load(ctx)
 
         let (command, selector) = try Self.extractProxyArguments(command: self.command)
 

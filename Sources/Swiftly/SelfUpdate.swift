@@ -21,10 +21,10 @@ struct SelfUpdate: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        try await validateSwiftly(ctx)
 
-        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx).appendingPathComponent("swiftly")
-        guard FileManager.default.fileExists(atPath: swiftlyBin.path) else {
+        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx) / "swiftly"
+        guard try await fs.exists(atPath: swiftlyBin) else {
             throw SwiftlyError(
                 message:
                 "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place."
@@ -76,43 +76,41 @@ struct SelfUpdate: SwiftlyCommand {
 
         await ctx.print("A new version is available: \(version)")
 
-        let tmpFile = Swiftly.currentPlatform.getTempFilePath()
-        FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
-        defer {
-            try? FileManager.default.removeItem(at: tmpFile)
-        }
-
-        let animation = PercentProgressAnimation(
-            stream: stdoutStream,
-            header: "Downloading swiftly \(version)"
-        )
-        do {
-            try await ctx.httpClient.getSwiftlyRelease(url: downloadURL).download(
-                to: tmpFile,
-                reportProgress: { progress in
-                    let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
-                    let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
-
-                    animation.update(
-                        step: progress.receivedBytes,
-                        total: progress.totalBytes!,
-                        text:
-                        "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
-                    )
-                }
+        let tmpFile = fs.mktemp()
+        try await fs.create(file: tmpFile, contents: nil)
+        return try await fs.withTemporary(files: tmpFile) {
+            let animation = PercentProgressAnimation(
+                stream: stdoutStream,
+                header: "Downloading swiftly \(version)"
             )
-        } catch {
-            animation.complete(success: false)
-            throw error
+            do {
+                try await ctx.httpClient.getSwiftlyRelease(url: downloadURL).download(
+                    to: tmpFile,
+                    reportProgress: { progress in
+                        let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
+                        let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
+
+                        animation.update(
+                            step: progress.receivedBytes,
+                            total: progress.totalBytes!,
+                            text:
+                            "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
+                        )
+                    }
+                )
+            } catch {
+                animation.complete(success: false)
+                throw error
+            }
+            animation.complete(success: true)
+
+            try await Swiftly.currentPlatform.verifySwiftlySignature(
+                ctx, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose
+            )
+            try await Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
+
+            await ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
+            return version
         }
-        animation.complete(success: true)
-
-        try await Swiftly.currentPlatform.verifySwiftlySignature(
-            ctx, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose
-        )
-        try await Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
-
-        await ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
-        return version
     }
 }

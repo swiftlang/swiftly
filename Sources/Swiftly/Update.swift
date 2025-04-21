@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 struct Update: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
@@ -82,8 +83,8 @@ struct Update: SwiftlyCommand {
     }
 
     public mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
-        var config = try Config.load(ctx)
+        try await validateSwiftly(ctx)
+        var config = try await Config.load(ctx)
 
         guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {
             if let toolchain = self.toolchain {
@@ -137,7 +138,7 @@ struct Update: SwiftlyCommand {
                 """)
             }
 
-            try Data(postInstallScript.utf8).write(to: URL(fileURLWithPath: postInstallFile), options: .atomic)
+            try Data(postInstallScript.utf8).write(to: FilePath(postInstallFile), options: .atomic)
         }
 
         if pathChanged {

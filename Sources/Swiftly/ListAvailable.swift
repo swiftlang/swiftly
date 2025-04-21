@@ -67,7 +67,7 @@ struct ListAvailable: SwiftlyCommand {
         let toolchains = tc.filter { selector?.matches(toolchain: $0) ?? true }
 
         let installedToolchains = Set(config.listInstalledToolchains(selector: selector))
-        let (inUse, _) = try await selectToolchain(ctx, config: &config)
+        let (inUse, _) = try await selectToolchain(config: &config)
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"

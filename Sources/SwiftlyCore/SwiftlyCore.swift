@@ -53,15 +53,38 @@ public struct SwiftlyCoreContext: Sendable {
     /// Pass the provided string to the set output handler if any.
     /// If no output handler has been set, just print to stdout.
     public func print(_ string: String = "", terminator: String? = nil) async {
+        // Get terminal size or use default width
+        let terminalWidth = self.getTerminalWidth()
+        let wrappedString = string.isEmpty ? string : string.wrapText(to: terminalWidth)
+
         guard let handler = self.outputHandler else {
             if let terminator {
-                Swift.print(string, terminator: terminator)
+                Swift.print(wrappedString, terminator: terminator)
             } else {
-                Swift.print(string)
+                Swift.print(wrappedString)
             }
             return
         }
-        await handler.handleOutputLine(string + (terminator ?? ""))
+        await handler.handleOutputLine(wrappedString + (terminator ?? ""))
+    }
+
+    /// Detects the terminal width in columns
+    private func getTerminalWidth() -> Int {
+#if os(macOS) || os(Linux)
+        var size = winsize()
+#if os(OpenBSD)
+        // TIOCGWINSZ is a complex macro, so we need the flattened value.
+        let tiocgwinsz = UInt(0x4008_7468)
+        let result = ioctl(STDOUT_FILENO, tiocgwinsz, &size)
+#else
+        let result = ioctl(STDOUT_FILENO, UInt(TIOCGWINSZ), &size)
+#endif
+
+        if result == 0 && Int(size.ws_col) > 0 {
+            return Int(size.ws_col)
+        }
+#endif
+        return 80 // Default width if terminal size detection fails
     }
 
     public func readLine(prompt: String) async -> String? {
@@ -81,10 +104,13 @@ public struct SwiftlyCoreContext: Sendable {
         }
 
         while true {
-            let answer = (await self.readLine(prompt: "Proceed? \(options)") ?? (defaultBehavior ? "y" : "n")).lowercased()
+            let answer =
+                (await self.readLine(prompt: "Proceed? \(options)")
+                        ?? (defaultBehavior ? "y" : "n")).lowercased()
 
             guard ["y", "n", ""].contains(answer) else {
-                await self.print("Please input either \"y\" or \"n\", or press ENTER to use the default.")
+                await self.print(
+                    "Please input either \"y\" or \"n\", or press ENTER to use the default.")
                 continue
             }
 

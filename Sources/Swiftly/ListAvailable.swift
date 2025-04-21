@@ -49,7 +49,7 @@ struct ListAvailable: SwiftlyCommand {
             try ToolchainSelector(parsing: input)
         }
 
-        let config = try Config.load(ctx)
+        var config = try Config.load(ctx)
 
         let tc: [ToolchainVersion]
 
@@ -71,14 +71,18 @@ struct ListAvailable: SwiftlyCommand {
         let toolchains = tc.filter { selector?.matches(toolchain: $0) ?? true }
 
         let installedToolchains = Set(config.listInstalledToolchains(selector: selector))
-        let activeToolchain = config.inUse
+        let (inUse, _) = try await selectToolchain(ctx, config: &config)
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"
-            if toolchain == activeToolchain {
-                message += " (installed, in use)"
-            } else if installedToolchains.contains(toolchain) {
+            if installedToolchains.contains(toolchain) {
                 message += " (installed)"
+            }
+            if let inUse, toolchain == inUse {
+                message += " (in use)"
+            }
+            if toolchain == config.inUse {
+                message += " (default)"
             }
             await ctx.print(message)
         }

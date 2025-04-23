@@ -25,6 +25,27 @@ extension Tag {
     @Tag static var large: Self
 }
 
+extension Executable {
+    public func exists() async throws -> Bool {
+        switch self.storage {
+        case let .path(p):
+            return (try await FileSystem.exists(atPath: p))
+        case let .executable(e):
+            let path = ProcessInfo.processInfo.environment["PATH"]
+
+            guard let path else { return false }
+
+            for p in path.split(separator: ":") {
+                if try await FileSystem.exists(atPath: FilePath(String(p)) / e) {
+                    return true
+                }
+            }
+
+            return false
+        }
+    }
+}
+
 let unmockedMsg = "All swiftly test case logic must be mocked in order to prevent mutation of the system running the test. This test must either run swiftly components inside a SwiftlyTests.with... closure, or it must have one of the @Test traits, such as @Test(.testHome), or @Test(.mock...)"
 
 actor OutputHandlerFail: OutputHandler {

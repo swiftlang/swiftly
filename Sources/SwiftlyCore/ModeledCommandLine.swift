@@ -121,27 +121,6 @@ public struct Arguments: Sendable, ExpressibleByArrayLiteral, Hashable {
     }
 }
 
-extension Executable {
-    public func exists() async throws -> Bool {
-        switch self.storage {
-        case let .path(p):
-            return (try await FileSystem.exists(atPath: p))
-        case let .executable(e):
-            let path = ProcessInfo.processInfo.environment["PATH"]
-
-            guard let path else { return false }
-
-            for p in path.split(separator: ":") {
-                if try await FileSystem.exists(atPath: FilePath(String(p)) / e) {
-                    return true
-                }
-            }
-
-            return false
-        }
-    }
-}
-
 public protocol Runnable {
     func config() -> Configuration
 }

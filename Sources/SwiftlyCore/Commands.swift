@@ -1,8 +1,13 @@
 import Foundation
 import SystemPackage
 
+public enum SystemCommand {}
+
+// This file contains a set of system commands that's used by Swiftly and its related tests and tooling
+
 // Directory Service command line utility for macOS
-public enum SystemCommand {
+// See dscl(1) for details
+extension SystemCommand {
     public static func dscl(executable: Executable = DsclCommand.defaultExecutable, datasource: String? = nil) -> DsclCommand {
         DsclCommand(executable: executable, datasource: datasource)
     }
@@ -30,7 +35,7 @@ public enum SystemCommand {
 
             return Configuration(
                 executable: self.executable,
-                arguments: .init(args),
+                arguments: Arguments(args),
                 environment: .inherit
             )
         }

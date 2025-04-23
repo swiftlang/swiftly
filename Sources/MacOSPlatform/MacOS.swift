@@ -192,10 +192,8 @@ public struct MacOS: Platform {
     }
 
     public func getShell() async throws -> String {
-        for (key, value) in try await sys.dscl(datasource: ".").read(path: fs.home).properties(self) {
-            if key == "UserShell" {
-                return value
-            }
+        for (key, value) in try await sys.dscl(datasource: ".").read(path: fs.home, keys: "UserShell").properties(self) {
+            return value
         }
 
         // Fall back to zsh on macOS

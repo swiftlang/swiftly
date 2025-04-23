@@ -20,6 +20,11 @@ struct SwiftlyTestError: LocalizedError {
     let message: String
 }
 
+extension Tag {
+    @Tag static var medium: Self
+    @Tag static var large: Self
+}
+
 let unmockedMsg = "All swiftly test case logic must be mocked in order to prevent mutation of the system running the test. This test must either run swiftly components inside a SwiftlyTests.with... closure, or it must have one of the @Test traits, such as @Test(.testHome), or @Test(.mock...)"
 
 actor OutputHandlerFail: OutputHandler {

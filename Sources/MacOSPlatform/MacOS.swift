@@ -2,6 +2,7 @@ import Foundation
 import SwiftlyCore
 import SystemPackage
 
+typealias sys = SwiftlyCore.SystemCommand
 typealias fs = SwiftlyCore.FileSystem
 
 public struct SwiftPkgInfo: Codable {
@@ -191,13 +192,9 @@ public struct MacOS: Platform {
     }
 
     public func getShell() async throws -> String {
-        if let directoryInfo = try await runProgramOutput("dscl", ".", "-read", "\(fs.home)") {
-            for line in directoryInfo.components(separatedBy: "\n") {
-                if line.hasPrefix("UserShell: ") {
-                    if case let comps = line.components(separatedBy: ": "), comps.count == 2 {
-                        return comps[1]
-                    }
-                }
+        for (key, value) in try await sys.dscl(datasource: ".").read(path: fs.home).properties(self) {
+            if key == "UserShell" {
+                return value
             }
         }
 

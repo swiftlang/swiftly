@@ -48,7 +48,7 @@ extension SystemCommand {
             self.read(path: path, keys: keys)
         }
 
-        public struct ReadCommand: Output {
+        public struct ReadCommand {
             var dscl: DsclCommand
             var path: FilePath?
             var keys: [String]
@@ -76,7 +76,7 @@ extension SystemCommand {
     }
 }
 
-extension SystemCommand.DsclCommand.ReadCommand {
+extension SystemCommand.DsclCommand.ReadCommand: Output {
     public func properties(_ p: Platform) async throws -> [(key: String, value: String)] {
         let output = try await self.output(p)
         guard let output else { return [] }
@@ -90,3 +90,63 @@ extension SystemCommand.DsclCommand.ReadCommand {
         return props
     }
 }
+
+extension SystemCommand {
+    public static func lipo(executable: Executable = LipoCommand.defaultExecutable, inputFiles: FilePath...) -> LipoCommand {
+        Self.lipo(executable: executable, inputFiles: inputFiles)
+    }
+
+    public static func lipo(executable: Executable = LipoCommand.defaultExecutable, inputFiles: [FilePath]) -> LipoCommand {
+        LipoCommand(executable: executable, inputFiles: inputFiles)
+    }
+
+    public struct LipoCommand {
+        public static var defaultExecutable: Executable { .name("lipo") }
+
+        var executable: Executable
+        var inputFiles: [FilePath]
+
+        public init(executable: Executable, inputFiles: [FilePath]) {
+            self.executable = executable
+            self.inputFiles = inputFiles
+        }
+
+        func config() -> Configuration {
+            var args: [String] = []
+
+            args += self.inputFiles.map(\.string)
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func create(output: FilePath) -> CreateCommand {
+            CreateCommand(self, output: output)
+        }
+
+        public struct CreateCommand {
+            var lipo: LipoCommand
+            var output: FilePath
+
+            init(_ lipo: LipoCommand, output: FilePath) {
+                self.lipo = lipo
+                self.output = output
+            }
+
+            public func config() -> Configuration {
+                var c = self.lipo.config()
+
+                var args = c.arguments.storage.map(\.description) + ["-create", "-output", "\(self.output)"]
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand.LipoCommand.CreateCommand: Runnable {}

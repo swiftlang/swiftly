@@ -126,7 +126,7 @@ public protocol Runnable {
 }
 
 extension Runnable {
-    public func run(_ p: Platform, quiet: Bool) async throws {
+    public func run(_ p: Platform, quiet: Bool = false) async throws {
         let c = self.config()
         let executable = switch c.executable.storage {
         case let .executable(name):

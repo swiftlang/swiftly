@@ -28,4 +28,15 @@ public struct CommandLineTests {
         #expect(properties.count == 1) // Only one shell for the current user
         #expect(properties[0].key == "UserShell") // The one property key should be the one that is requested
     }
+
+    @Test func testLipo() {
+        var config = sys.lipo(inputFiles: "swiftly1", "swiftly2").create(output: "swiftly-universal").config()
+
+        #expect(config.executable == .name("lipo"))
+        #expect(config.arguments.storage.map(\.description) == ["swiftly1", "swiftly2", "-create", "-output", "swiftly-universal"])
+
+        config = sys.lipo(inputFiles: "swiftly").create(output: "swiftly-universal-with-one-arch").config()
+        #expect(config.executable == .name("lipo"))
+        #expect(config.arguments.storage.map(\.description) == ["swiftly", "-create", "-output", "swiftly-universal-with-one-arch"])
+    }
 }

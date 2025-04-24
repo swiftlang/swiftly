@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 #if os(macOS)
 import MacOSPlatform
@@ -13,6 +14,9 @@ let currentPlatform = MacOS()
 #elseif os(Linux)
 let currentPlatform = Linux()
 #endif
+
+typealias fs = FileSystem
+typealias sys = SystemCommand
 
 public struct SwiftPlatform: Codable {
     public var name: String?
@@ -392,7 +396,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         try await self.checkGitRepoStatus(git)
 
-        let lipo = try await self.assertTool("lipo", message: "In order to make a universal binary there needs to be the `lipo` tool that is installed on macOS.")
         let pkgbuild = try await self.assertTool("pkgbuild", message: "In order to make pkg installers there needs to be the `pkgbuild` tool that is installed on macOS.")
         let strip = try await self.assertTool("strip", message: "In order to strip binaries there needs to be the `strip` tool that is installed on macOS.")
 
@@ -405,10 +408,14 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             try runProgram(strip, ".build/\(arch)-apple-macosx/release/swiftly")
         }
 
-        let swiftlyBinDir = FileManager.default.currentDirectoryPath + "/.build/release/.swiftly/bin"
-        try? FileManager.default.createDirectory(atPath: swiftlyBinDir, withIntermediateDirectories: true)
+        let swiftlyBinDir = fs.cwd / ".build/release/.swiftly/bin"
+        try? await fs.mkdir(.parents, atPath: swiftlyBinDir)
 
-        try runProgram(lipo, ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly", "-create", "-o", "\(swiftlyBinDir)/swiftly")
+        try await sys.lipo(
+            inputFiles: ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly"
+        )
+        .create(output: swiftlyBinDir / "swiftly")
+        .run(currentPlatform)
 
         let swiftlyLicenseDir = FileManager.default.currentDirectoryPath + "/.build/release/.swiftly/license"
         try? FileManager.default.createDirectory(atPath: swiftlyLicenseDir, withIntermediateDirectories: true)
@@ -423,7 +430,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             try runProgram(
                 pkgbuild,
                 "--root",
-                swiftlyBinDir + "/..",
+                "\(swiftlyBinDir.parent)",
                 "--install-location",
                 ".swiftly",
                 "--version",
@@ -438,7 +445,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             try runProgram(
                 pkgbuild,
                 "--root",
-                swiftlyBinDir + "/..",
+                "\(swiftlyBinDir.parent)",
                 "--install-location",
                 ".swiftly",
                 "--version",
@@ -479,7 +486,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
             let testArchive = releaseDir.appendingPathComponent("test-swiftly-macos.tar.gz")
 
-            try runProgram(lipo, ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly", "-create", "-o", "\(swiftlyBinDir)/swiftly")
+            try await sys.lipo(
+                inputFiles: ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly"
+            )
+            .create(output: swiftlyBinDir / "swiftly")
+            .run(currentPlatform)
+
             try runProgram(tar, "--directory=.build/x86_64-apple-macosx/debug", "-czf", testArchive.path, "test-swiftly")
 
             print(testArchive.path)

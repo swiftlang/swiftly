@@ -1,5 +1,18 @@
 import ArgumentParser
 import Foundation
+import SwiftlyCore
+
+#if os(macOS)
+import MacOSPlatform
+#elseif os(Linux)
+import LinuxPlatform
+#endif
+
+#if os(macOS)
+let currentPlatform = MacOS()
+#elseif os(Linux)
+let currentPlatform = Linux()
+#endif
 
 public struct SwiftPlatform: Codable {
     public var name: String?
@@ -110,39 +123,6 @@ public func runProgramOutput(_ program: String, _ args: String...) async throws 
     }
 }
 
-#if os(macOS)
-public func getShell() async throws -> String {
-    if let directoryInfo = try await runProgramOutput("dscl", ".", "-read", FileManager.default.homeDirectoryForCurrentUser.path) {
-        for line in directoryInfo.components(separatedBy: "\n") {
-            if line.hasPrefix("UserShell: ") {
-                if case let comps = line.components(separatedBy: ": "), comps.count == 2 {
-                    return comps[1]
-                }
-            }
-        }
-    }
-
-    // Fall back to zsh on macOS
-    return "/bin/zsh"
-}
-
-#elseif os(Linux)
-public func getShell() async throws -> String {
-    if let passwds = try await runProgramOutput("getent", "passwd") {
-        for line in passwds.components(separatedBy: "\n") {
-            if line.hasPrefix("root:") {
-                if case let comps = line.components(separatedBy: ":"), comps.count > 1 {
-                    return comps[comps.count - 1]
-                }
-            }
-        }
-    }
-
-    // Fall back on bash on Linux and other Unixes
-    return "/bin/bash"
-}
-#endif
-
 @main
 struct BuildSwiftlyRelease: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -183,11 +163,11 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     }
 
     func assertTool(_ name: String, message: String) async throws -> String {
-        guard let _ = try? await runProgramOutput(getShell(), "-c", "which which") else {
+        guard let _ = try? await runProgramOutput(currentPlatform.getShell(), "-c", "which which") else {
             throw Error(message: "The which command could not be found. Please install it with your package manager.")
         }
 
-        guard let location = try? await runProgramOutput(getShell(), "-c", "which \(name)") else {
+        guard let location = try? await runProgramOutput(currentPlatform.getShell(), "-c", "which \(name)") else {
             throw Error(message: message)
         }
 

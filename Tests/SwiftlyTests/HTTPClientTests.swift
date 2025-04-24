@@ -7,7 +7,7 @@ import SystemPackage
 import Testing
 
 @Suite(.serialized) struct HTTPClientTests {
-    @Test func getSwiftOrgGPGKeys() async throws {
+    @Test(.tags(.large)) func getSwiftOrgGPGKeys() async throws {
         let tmpFile = fs.mktemp()
         try await fs.create(file: tmpFile, contents: nil)
 
@@ -24,7 +24,7 @@ import Testing
         }
     }
 
-    @Test func getSwiftToolchain() async throws {
+    @Test(.tags(.large)) func getSwiftToolchain() async throws {
         let tmpFile = fs.mktemp()
         try await fs.create(file: tmpFile, contents: nil)
         let tmpFileSignature = fs.mktemp(ext: ".sig")
@@ -53,7 +53,7 @@ import Testing
         }
     }
 
-    @Test func getSwiftlyRelease() async throws {
+    @Test(.tags(.large)) func getSwiftlyRelease() async throws {
         let tmpFile = fs.mktemp()
         try await fs.create(file: tmpFile, contents: nil)
         let tmpFileSignature = fs.mktemp(ext: ".sig")
@@ -82,7 +82,7 @@ import Testing
         }
     }
 
-    @Test func getSwiftlyReleaseMetadataFromSwiftOrg() async throws {
+    @Test(.tags(.large)) func getSwiftlyReleaseMetadataFromSwiftOrg() async throws {
         let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
         do {
             let currentRelease = try await httpClient.getCurrentSwiftlyRelease()
@@ -94,6 +94,7 @@ import Testing
     }
 
     @Test(
+        .tags(.large),
         arguments:
         [PlatformDefinition.macOS, .ubuntu2404, .ubuntu2204, .rhel9, .fedora39, .amazonlinux2, .debian12],
         [SwiftlyWebsiteAPI.Components.Schemas.Architecture.x8664, .aarch64]

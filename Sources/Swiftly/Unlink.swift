@@ -34,13 +34,14 @@ struct Unlink: SwiftlyCommand {
         var pathChanged = false
         if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
-            let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.string)) ?? [String]()
+            let swiftlyBinDirContents = (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
 
-            let existingProxies = swiftlyBinDirContents.filter { bin in
-                do {
-                    let linkTarget = try FileManager.default.destinationOfSymbolicLink(atPath: (swiftlyBinDir / bin).string)
-                    return linkTarget == proxyTo.string
-                } catch { return false }
+            var existingProxies = [String]()
+            for bin in swiftlyBinDirContents {
+                let linkTarget = try? await fs.readlink(atPath: swiftlyBinDir / bin)
+                if linkTarget == proxyTo {
+                    existingProxies.append(bin)
+                }
             }
 
             for p in existingProxies {

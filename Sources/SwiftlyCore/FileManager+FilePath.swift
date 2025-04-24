@@ -199,4 +199,6 @@ extension FilePath {
     public static func / (left: FilePath, right: String) -> FilePath {
         left.appending(right)
     }
+
+    public var parent: FilePath { self.removingLastComponent() }
 }

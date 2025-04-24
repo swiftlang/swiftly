@@ -30,9 +30,13 @@ public struct CommandLineTests {
     }
 
     @Test func testLipo() {
-        var config = sys.lipo(inputFiles: FilePath("swiftly1"), FilePath("swiftly2")).create(.output(FilePath("swiftly-universal"))).config()
+        var config = sys.lipo(inputFiles: "swiftly1", "swiftly2").create(output: "swiftly-universal").config()
 
         #expect(config.executable == .name("lipo"))
         #expect(config.arguments.storage.map(\.description) == ["swiftly1", "swiftly2", "-create", "-output", "swiftly-universal"])
+
+        config = sys.lipo(inputFiles: "swiftly").create(output: "swiftly-universal-with-one-arch").config()
+        #expect(config.executable == .name("lipo"))
+        #expect(config.arguments.storage.map(\.description) == ["swiftly", "-create", "-output", "swiftly-universal-with-one-arch"])
     }
 }

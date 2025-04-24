@@ -414,7 +414,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try await sys.lipo(
             inputFiles: FilePath(".build/x86_64-apple-macosx/release/swiftly"), FilePath(".build/arm64-apple-macosx/release/swiftly")
         )
-        .create(.output(swiftlyBinDir / "swiftly"))
+        .create(output: swiftlyBinDir / "swiftly")
         .run(currentPlatform)
 
         let swiftlyLicenseDir = FileManager.default.currentDirectoryPath + "/.build/release/.swiftly/license"
@@ -430,7 +430,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             try runProgram(
                 pkgbuild,
                 "--root",
-                "\(swiftlyBinDir.removingLastComponent)",
+                "\(swiftlyBinDir.removingLastComponent())",
                 "--install-location",
                 ".swiftly",
                 "--version",
@@ -445,7 +445,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             try runProgram(
                 pkgbuild,
                 "--root",
-                "\(swiftlyBinDir.removingLastComponent)",
+                "\(swiftlyBinDir.removingLastComponent())",
                 "--install-location",
                 ".swiftly",
                 "--version",
@@ -489,7 +489,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             try await sys.lipo(
                 inputFiles: FilePath(".build/x86_64-apple-macosx/debug/test-swiftly"), FilePath(".build/arm64-apple-macosx/debug/test-swiftly")
             )
-            .create(.output(swiftlyBinDir / "swiftly"))
+            .create(output: swiftlyBinDir / "swiftly")
             .run(currentPlatform)
 
             try runProgram(tar, "--directory=.build/x86_64-apple-macosx/debug", "-czf", testArchive.path, "test-swiftly")

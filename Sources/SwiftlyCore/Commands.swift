@@ -123,39 +123,23 @@ extension SystemCommand {
             )
         }
 
-        public func create(_ options: CreateCommand.Option...) -> CreateCommand {
-            CreateCommand(self, options)
+        public func create(output: FilePath) -> CreateCommand {
+            CreateCommand(self, output: output)
         }
 
         public struct CreateCommand {
             var lipo: LipoCommand
+            var output: FilePath
 
-            var options: [Option]
-
-            init(_ lipo: LipoCommand, _ options: [Option]) {
+            init(_ lipo: LipoCommand, output: FilePath) {
                 self.lipo = lipo
-                self.options = options
-            }
-
-            public enum Option {
-                case output(FilePath)
-
-                func args() -> [String] {
-                    switch self {
-                    case let .output(output):
-                        return ["-output", output.string]
-                    }
-                }
+                self.output = output
             }
 
             public func config() -> Configuration {
                 var c = self.lipo.config()
 
-                var args = c.arguments.storage.map(\.description) + ["-create"]
-
-                for opt in self.options {
-                    args += opt.args()
-                }
+                var args = c.arguments.storage.map(\.description) + ["-create", "-output", "\(self.output)"]
 
                 c.arguments = .init(args)
 

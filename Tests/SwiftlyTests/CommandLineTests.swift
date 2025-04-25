@@ -46,5 +46,19 @@ public struct CommandLineTests {
 
         config = sys.pkgbuild(.version("1234"), root: "somepath", packageOutputPath: "output").config()
         #expect(String(describing: config) == "pkgbuild --version 1234 --root somepath output")
+
+        config = sys.pkgbuild(.installLocation("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .sign("mycert"), root: "someroot", packageOutputPath: "my.pkg").config()
+        #expect(String(describing: config) == "pkgbuild --install-location /usr/local --version 1.0.0 --identifier org.foo.bar --sign mycert --root someroot my.pkg")
+
+        config = sys.pkgbuild(.installLocation("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), root: "someroot", packageOutputPath: "my.pkg").config()
+        #expect(String(describing: config) == "pkgbuild --install-location /usr/local --version 1.0.0 --identifier org.foo.bar --root someroot my.pkg")
+    }
+
+    @Test func testGetent() {
+        var config = sys.getent(database: "passwd", keys: "swiftly").config()
+        #expect(String(describing: config) == "getent passwd swiftly")
+
+        config = sys.getent(database: "foo", keys: "abc", "def").config()
+        #expect(String(describing: config) == "getent foo abc def")
     }
 }

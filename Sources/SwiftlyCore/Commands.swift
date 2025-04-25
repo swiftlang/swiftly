@@ -221,3 +221,61 @@ extension SystemCommand {
 }
 
 extension SystemCommand.PkgbuildCommand: Runnable {}
+
+// get entries from Name Service Switch libraries
+// See getent(1) for more details
+extension SystemCommand {
+    public static func getent(executable: Executable = GetentCommand.defaultExecutable, database: String, keys: String...) -> GetentCommand {
+        Self.getent(executable: executable, database: database, keys: keys)
+    }
+
+    public static func getent(executable: Executable = GetentCommand.defaultExecutable, database: String, keys: [String]) -> GetentCommand {
+        GetentCommand(executable: executable, database: database, keys: keys)
+    }
+
+    public struct GetentCommand {
+        public static var defaultExecutable: Executable { .name("getent") }
+
+        var executable: Executable
+
+        var database: String
+
+        var keys: [String]
+
+        internal init(
+            executable: Executable,
+            database: String,
+            keys: [String]
+        ) {
+            self.executable = executable
+            self.database = database
+            self.keys = keys
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            args += [self.database]
+            args += self.keys
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand.GetentCommand: Output {
+    public func entries(_ platform: Platform) async throws -> [[String]] {
+        let output = try await output(platform)
+        guard let output else { return [] }
+
+        var entries: [[String]] = []
+        for line in output.components(separatedBy: "\n") {
+            entries.append(line.components(separatedBy: ":"))
+        }
+        return entries
+    }
+}

@@ -115,7 +115,7 @@ extension SwiftlyCommand {
             if shouldUpdateSwiftly {
                 let updateMessage = """
                 -----------------------------
-                A new release of swiftly is available
+                A new release of swiftly is available.
                 Please run `swiftly self-update` to update.
                 -----------------------------\n
                 """

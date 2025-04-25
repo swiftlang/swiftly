@@ -1,9 +1,10 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 struct Update: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Update an installed toolchain to a newer version."
     )
 
@@ -71,7 +72,7 @@ struct Update: SwiftlyCommand {
         written to this file as commands that can be run after the installation.
         """
     ))
-    var postInstallFile: String?
+    var postInstallFile: FilePath?
 
     private enum CodingKeys: String, CodingKey {
         case toolchain, root, verify, postInstallFile
@@ -91,27 +92,27 @@ struct Update: SwiftlyCommand {
 
         guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {
             if let toolchain = self.toolchain {
-                ctx.print("No installed toolchain matched \"\(toolchain)\"")
+                await ctx.print("No installed toolchain matched \"\(toolchain)\"")
             } else {
-                ctx.print("No toolchains are currently installed")
+                await ctx.print("No toolchains are currently installed")
             }
             return
         }
 
         guard let newToolchain = try await self.lookupNewToolchain(ctx, config, parameters) else {
-            ctx.print("\(parameters.oldToolchain) is already up to date")
+            await ctx.print("\(parameters.oldToolchain) is already up to date")
             return
         }
 
         guard !config.installedToolchains.contains(newToolchain) else {
-            ctx.print("The newest version of \(parameters.oldToolchain) (\(newToolchain)) is already installed")
+            await ctx.print("The newest version of \(parameters.oldToolchain) (\(newToolchain)) is already installed")
             return
         }
 
         if !self.root.assumeYes {
-            ctx.print("Update \(parameters.oldToolchain) -> \(newToolchain)?")
-            guard ctx.promptForConfirmation(defaultBehavior: true) else {
-                ctx.print("Aborting")
+            await ctx.print("Update \(parameters.oldToolchain) -> \(newToolchain)?")
+            guard await ctx.promptForConfirmation(defaultBehavior: true) else {
+                await ctx.print("Aborting")
                 return
             }
         }
@@ -127,7 +128,7 @@ struct Update: SwiftlyCommand {
         )
 
         try await Uninstall.execute(ctx, parameters.oldToolchain, &config, verbose: self.root.verbose)
-        ctx.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
+        await ctx.print("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
@@ -141,11 +142,11 @@ struct Update: SwiftlyCommand {
                 """)
             }
 
-            try Data(postInstallScript.utf8).write(to: URL(fileURLWithPath: postInstallFile), options: .atomic)
+            try Data(postInstallScript.utf8).write(to: postInstallFile, options: .atomic)
         }
 
         if pathChanged {
-            ctx.print("""
+            await ctx.print("""
             NOTE: Swiftly has updated some elements in your path and your shell may not yet be
             aware of the changes. You can update your shell's environment by running
 

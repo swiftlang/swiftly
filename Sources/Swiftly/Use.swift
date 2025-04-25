@@ -1,9 +1,10 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 struct Use: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Set the in-use or default toolchain. If no toolchain is provided, print the currently in-use toolchain, if any."
     )
 
@@ -82,7 +83,7 @@ struct Use: SwiftlyCommand {
 
             if self.printLocation {
                 // Print the toolchain location and exit
-                ctx.print("\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion).path)")
+                await ctx.print("\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion))")
                 return
             }
 
@@ -90,12 +91,12 @@ struct Use: SwiftlyCommand {
 
             switch result {
             case let .swiftVersionFile(versionFile, _, _):
-                message += " (\(versionFile.path))"
+                message += " (\(versionFile))"
             case .globalDefault:
                 message += " (default)"
             }
 
-            ctx.print(message)
+            await ctx.print(message)
 
             return
         }
@@ -107,7 +108,7 @@ struct Use: SwiftlyCommand {
         let selector = try ToolchainSelector(parsing: toolchain)
 
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
-            ctx.print("No installed toolchains match \"\(toolchain)\"")
+            await ctx.print("No installed toolchains match \"\(toolchain)\"")
             return
         }
 
@@ -122,22 +123,22 @@ struct Use: SwiftlyCommand {
 
         if case let .swiftVersionFile(versionFile, _, _) = result {
             // We don't care in this case if there were any problems with the swift version files, just overwrite it with the new value
-            try toolchain.name.write(to: versionFile, atomically: true, encoding: .utf8)
+            try toolchain.name.write(to: versionFile, atomically: true)
 
-            message = "The file `\(versionFile.path)` has been set to `\(toolchain)`"
-        } else if let newVersionFile = findNewVersionFile(ctx), !globalDefault {
+            message = "The file `\(versionFile)` has been set to `\(toolchain)`"
+        } else if let newVersionFile = try await findNewVersionFile(ctx), !globalDefault {
             if !assumeYes {
-                ctx.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
+                await ctx.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
 
-                guard ctx.promptForConfirmation(defaultBehavior: true) else {
-                    ctx.print("Aborting setting in-use toolchain")
+                guard await ctx.promptForConfirmation(defaultBehavior: true) else {
+                    await ctx.print("Aborting setting in-use toolchain")
                     return
                 }
             }
 
-            try toolchain.name.write(to: newVersionFile, atomically: true, encoding: .utf8)
+            try toolchain.name.write(to: newVersionFile, atomically: true)
 
-            message = "The file `\(newVersionFile.path)` has been set to `\(toolchain)`"
+            message = "The file `\(newVersionFile)` has been set to `\(toolchain)`"
         } else {
             config.inUse = toolchain
             try config.save(ctx)
@@ -148,33 +149,33 @@ struct Use: SwiftlyCommand {
             message += " (was \(selectedVersion.name))"
         }
 
-        ctx.print(message)
+        await ctx.print(message)
     }
 
-    static func findNewVersionFile(_ ctx: SwiftlyCoreContext) -> URL? {
+    static func findNewVersionFile(_ ctx: SwiftlyCoreContext) async throws -> FilePath? {
         var cwd = ctx.currentDirectory
 
-        while cwd.path != "" && cwd.path != "/" {
-            guard FileManager.default.fileExists(atPath: cwd.path) else {
+        while !cwd.isEmpty && !cwd.removingRoot().isEmpty {
+            guard try await fs.exists(atPath: cwd) else {
                 break
             }
 
-            let gitDir = cwd.appendingPathComponent(".git")
+            let gitDir = cwd / ".git"
 
-            if FileManager.default.fileExists(atPath: gitDir.path) {
-                return cwd.appendingPathComponent(".swift-version")
+            if try await fs.exists(atPath: gitDir) {
+                return cwd / ".swift-version"
             }
 
-            cwd = cwd.deletingLastPathComponent()
+            cwd = cwd.removingLastComponent()
         }
 
         return nil
     }
 }
 
-public enum ToolchainSelectionResult {
+public enum ToolchainSelectionResult: Sendable {
     case globalDefault
-    case swiftVersionFile(URL, ToolchainSelector?, Error?)
+    case swiftVersionFile(FilePath, ToolchainSelector?, Error?)
 }
 
 /// Returns the currently selected swift toolchain, if any, with details of the selection.
@@ -201,15 +202,15 @@ public func selectToolchain(_ ctx: SwiftlyCoreContext, config: inout Config, glo
     if !globalDefault {
         var cwd = ctx.currentDirectory
 
-        while cwd.path != "" && cwd.path != "/" {
-            guard FileManager.default.fileExists(atPath: cwd.path) else {
+        while !cwd.isEmpty && !cwd.removingRoot().isEmpty {
+            guard try await fs.exists(atPath: cwd) else {
                 break
             }
 
-            let svFile = cwd.appendingPathComponent(".swift-version")
+            let svFile = cwd / ".swift-version"
 
-            if FileManager.default.fileExists(atPath: svFile.path) {
-                let contents = try? String(contentsOf: svFile, encoding: .utf8)
+            if try await fs.exists(atPath: svFile) {
+                let contents = try? String(contentsOf: svFile)
 
                 guard let contents else {
                     return (nil, .swiftVersionFile(svFile, nil, SwiftlyError(message: "The swift version file could not be read: \(svFile)")))
@@ -232,13 +233,13 @@ public func selectToolchain(_ ctx: SwiftlyCoreContext, config: inout Config, glo
                 }
 
                 guard let selectedToolchain = config.listInstalledToolchains(selector: selector).max() else {
-                    return (nil, .swiftVersionFile(svFile, selector, SwiftlyError(message: "The swift version file `\(svFile.path)` uses toolchain version \(selector), but it doesn't match any of the installed toolchains. You can install the toolchain with `swiftly install`.")))
+                    return (nil, .swiftVersionFile(svFile, selector, SwiftlyError(message: "The swift version file `\(svFile)` uses toolchain version \(selector), but it doesn't match any of the installed toolchains. You can install the toolchain with `swiftly install`.")))
                 }
 
                 return (selectedToolchain, .swiftVersionFile(svFile, selector, nil))
             }
 
-            cwd = cwd.deletingLastPathComponent()
+            cwd = cwd.removingLastComponent()
         }
     }
 

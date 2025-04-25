@@ -1,70 +1,75 @@
 import _StringProcessing
 import ArgumentParser
 import Foundation
-import TSCBasic
+import SwiftlyCore
+import SystemPackage
+@preconcurrency import TSCBasic
 import TSCUtility
 
-import SwiftlyCore
-
 struct Install: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Install a new toolchain."
     )
 
-    @Argument(help: ArgumentHelp(
-        "The version of the toolchain to install.",
-        discussion: """
+    @Argument(
+        help: ArgumentHelp(
+            "The version of the toolchain to install.",
+            discussion: """
 
-        The string "latest" can be provided to install the most recent stable version release:
+            The string "latest" can be provided to install the most recent stable version release:
 
-            $ swiftly install latest
+                $ swiftly install latest
 
-        A specific toolchain can be installed by providing a full toolchain name, for example \
-        a stable release version with patch (e.g. a.b.c):
+            A specific toolchain can be installed by providing a full toolchain name, for example \
+            a stable release version with patch (e.g. a.b.c):
 
-            $ swiftly install 5.4.2
+                $ swiftly install 5.4.2
 
-        Or a snapshot with date:
+            Or a snapshot with date:
 
-            $ swiftly install 5.7-snapshot-2022-06-20
-            $ swiftly install main-snapshot-2022-06-20
+                $ swiftly install 5.7-snapshot-2022-06-20
+                $ swiftly install main-snapshot-2022-06-20
 
-        The latest patch release of a specific minor version can be installed by omitting the \
-        patch version:
+            The latest patch release of a specific minor version can be installed by omitting the \
+            patch version:
 
-            $ swiftly install 5.6
+                $ swiftly install 5.6
 
-        Likewise, the latest snapshot associated with a given development branch can be \
-        installed by omitting the date:
+            Likewise, the latest snapshot associated with a given development branch can be \
+            installed by omitting the date:
 
-            $ swiftly install 5.7-snapshot
-            $ swiftly install main-snapshot
+                $ swiftly install 5.7-snapshot
+                $ swiftly install main-snapshot
 
-        Install whatever toolchain is currently selected, such as the the one in the .swift-version file:
+            Install whatever toolchain is currently selected, such as the the one in the .swift-version file:
 
-            $ swiftly install
+                $ swiftly install
 
-        NOTE: Swiftly downloads toolchains to a temporary file that it later cleans during its installation process. If these files are too big for your system temporary directory, set another location by setting the `TMPDIR` environment variable.
+            NOTE: Swiftly downloads toolchains to a temporary file that it later cleans during its installation process. If these files are too big for your system temporary directory, set another location by setting the `TMPDIR` environment variable.
 
-            $ TMPDIR=/large/file/tmp/storage swiftly install latest
-        """
-    ))
+                $ TMPDIR=/large/file/tmp/storage swiftly install latest
+            """
+        ))
     var version: String?
 
     @Flag(name: .shortAndLong, help: "Mark the newly installed toolchain as in-use.")
     var use: Bool = false
 
-    @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
+    @Flag(
+        inversion: .prefixedNo,
+        help: "Verify the toolchain's PGP signature before proceeding with installation."
+    )
     var verify = true
 
-    @Option(help: ArgumentHelp(
-        "A file path to a location for a post installation script",
-        discussion: """
-        If the toolchain that is installed has extra post installation steps, they will be
-        written to this file as commands that can be run after the installation.
-        """
-    ))
-    var postInstallFile: String?
+    @Option(
+        help: ArgumentHelp(
+            "A file path to a location for a post installation script",
+            discussion: """
+            If the toolchain that is installed has extra post installation steps, they will be
+            written to this file as commands that can be run after the installation.
+            """
+        ))
+    var postInstallFile: FilePath?
 
     @OptionGroup var root: GlobalOptions
 
@@ -82,7 +87,7 @@ struct Install: SwiftlyCommand {
             versionUpdateReminder()
         }
 
-        var config = try Config.load(ctx)
+        var config = try await Config.load(ctx)
 
         var selector: ToolchainSelector
 
@@ -100,7 +105,10 @@ struct Install: SwiftlyCommand {
                     throw SwiftlyError(message: "Internal error selecting toolchain to install.")
                 }
             } else {
-                throw SwiftlyError(message: "Swiftly couldn't determine the toolchain version to install. Please set a version like this and try again: `swiftly install latest`")
+                throw SwiftlyError(
+                    message:
+                    "Swiftly couldn't determine the toolchain version to install. Please set a version like this and try again: `swiftly install latest`"
+                )
             }
         }
 
@@ -115,7 +123,9 @@ struct Install: SwiftlyCommand {
             assumeYes: self.root.assumeYes
         )
 
-        let shell = if let s = ProcessInfo.processInfo.environment["SHELL"] {
+        let shell =
+            if let s = ProcessInfo.processInfo.environment["SHELL"]
+        {
             s
         } else {
             try await Swiftly.currentPlatform.getShell()
@@ -123,30 +133,34 @@ struct Install: SwiftlyCommand {
 
         // Fish doesn't cache its path, so this instruction is not necessary.
         if pathChanged && !shell.hasSuffix("fish") {
-            ctx.print("""
-            NOTE: Swiftly has updated some elements in your path and your shell may not yet be
-            aware of the changes. You can update your shell's environment by running
+            await ctx.print(
+                """
+                NOTE: Swiftly has updated some elements in your path and your shell may not yet be
+                aware of the changes. You can update your shell's environment by running
 
-            hash -r
+                hash -r
 
-            or restarting your shell.
+                or restarting your shell.
 
-            """)
+                """)
         }
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
-                throw SwiftlyError(message: """
+                throw SwiftlyError(
+                    message: """
 
-                There are some dependencies that should be installed before using this toolchain.
-                You can run the following script as the system administrator (e.g. root) to prepare
-                your system:
+                    There are some dependencies that should be installed before using this toolchain.
+                    You can run the following script as the system administrator (e.g. root) to prepare
+                    your system:
 
-                \(postInstallScript)
-                """)
+                    \(postInstallScript)
+                    """)
             }
 
-            try Data(postInstallScript.utf8).write(to: URL(fileURLWithPath: postInstallFile), options: .atomic)
+            try Data(postInstallScript.utf8).write(
+                to: postInstallFile, options: .atomic
+            )
         }
     }
 
@@ -160,190 +174,199 @@ struct Install: SwiftlyCommand {
         assumeYes: Bool
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
-            ctx.print("\(version) is already installed.")
+            await ctx.print("\(version) is already installed.")
             return (nil, false)
         }
 
         // Ensure the system is set up correctly before downloading it. Problems that prevent installation
         //  will throw, while problems that prevent use of the toolchain will be written out as a post install
         //  script for the user to run afterwards.
-        let postInstallScript = try await Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(ctx, platformName: config.platform.name, version: version, requireSignatureValidation: verifySignature)
-
-        ctx.print("Installing \(version)")
-
-        let tmpFile = Swiftly.currentPlatform.getTempFilePath()
-        FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
-        defer {
-            try? FileManager.default.removeItem(at: tmpFile)
-        }
-
-        var url = "https://download.swift.org/"
-
-        var platformString = config.platform.name
-        var platformFullString = config.platform.nameFull
-
-#if !os(macOS) && arch(arm64)
-        platformString += "-aarch64"
-        platformFullString += "-aarch64"
-#endif
-
-        switch version {
-        case let .stable(stableVersion):
-            // Building URL path that looks like:
-            // swift-5.6.2-release/ubuntu2004/swift-5.6.2-RELEASE/swift-5.6.2-RELEASE-ubuntu20.04.tar.gz
-            var versionString = "\(stableVersion.major).\(stableVersion.minor)"
-            if stableVersion.patch != 0 {
-                versionString += ".\(stableVersion.patch)"
-            }
-
-            url += "swift-\(versionString)-release/"
-        case let .snapshot(release):
-            switch release.branch {
-            case let .release(major, minor):
-                url += "swift-\(major).\(minor)-branch/"
-            case .main:
-                url += "development/"
-            }
-        }
-
-        url += "\(platformString)/"
-        url += "\(version.identifier)/"
-        url += "\(version.identifier)-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
-
-        guard let url = URL(string: url) else {
-            throw SwiftlyError(message: "Invalid toolchain URL: \(url)")
-        }
-
-        let animation = PercentProgressAnimation(
-            stream: stdoutStream,
-            header: "Downloading \(version)"
+        let postInstallScript = try await Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(
+            ctx, platformName: config.platform.name, version: version,
+            requireSignatureValidation: verifySignature
         )
 
-        var lastUpdate = Date()
+        await ctx.print("Installing \(version)")
 
-        do {
-            try await ctx.httpClient.downloadFile(
-                url: url,
-                to: tmpFile,
-                reportProgress: { progress in
-                    let now = Date()
+        let tmpFile = fs.mktemp()
+        try await fs.create(file: tmpFile, contents: nil)
+        return try await fs.withTemporary(files: tmpFile) {
+            var platformString = config.platform.name
+            var platformFullString = config.platform.nameFull
 
-                    guard lastUpdate.distance(to: now) > 0.25 || progress.receivedBytes == progress.totalBytes else {
-                        return
+#if !os(macOS) && arch(arm64)
+            platformString += "-aarch64"
+            platformFullString += "-aarch64"
+#endif
+
+            let category: String
+            switch version {
+            case let .stable(stableVersion):
+                // Building URL path that looks like:
+                // swift-5.6.2-release/ubuntu2004/swift-5.6.2-RELEASE/swift-5.6.2-RELEASE-ubuntu20.04.tar.gz
+                var versionString = "\(stableVersion.major).\(stableVersion.minor)"
+                if stableVersion.patch != 0 {
+                    versionString += ".\(stableVersion.patch)"
+                }
+
+                category = "swift-\(versionString)-release"
+            case let .snapshot(release):
+                switch release.branch {
+                case let .release(major, minor):
+                    category = "swift-\(major).\(minor)-branch"
+                case .main:
+                    category = "development"
+                }
+            }
+
+            let animation = PercentProgressAnimation(
+                stream: stdoutStream,
+                header: "Downloading \(version)"
+            )
+
+            var lastUpdate = Date()
+
+            let toolchainFile = ToolchainFile(
+                category: category, platform: platformString, version: version.identifier,
+                file:
+                "\(version.identifier)-\(platformFullString).\(Swiftly.currentPlatform.toolchainFileExtension)"
+            )
+
+            do {
+                try await ctx.httpClient.getSwiftToolchainFile(toolchainFile).download(
+                    to: tmpFile,
+                    reportProgress: { progress in
+                        let now = Date()
+
+                        guard lastUpdate.distance(to: now) > 0.25 || progress.receivedBytes == progress.totalBytes
+                        else {
+                            return
+                        }
+
+                        let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
+                        let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
+
+                        lastUpdate = Date()
+
+                        animation.update(
+                            step: progress.receivedBytes,
+                            total: progress.totalBytes!,
+                            text:
+                            "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
+                        )
+                    }
+                )
+            } catch let notFound as DownloadNotFoundError {
+                throw SwiftlyError(message: "\(version) does not exist at URL \(notFound.url), exiting")
+            } catch {
+                animation.complete(success: false)
+                throw error
+            }
+            animation.complete(success: true)
+
+            if verifySignature {
+                try await Swiftly.currentPlatform.verifyToolchainSignature(
+                    ctx,
+                    toolchainFile: toolchainFile,
+                    archive: tmpFile,
+                    verbose: verbose
+                )
+            }
+
+            try await Swiftly.currentPlatform.install(ctx, from: tmpFile, version: version, verbose: verbose)
+
+            var pathChanged = false
+
+            // Create proxies if we have a location where we can point them
+            if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
+                // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
+                let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
+                let swiftlyBinDirContents =
+                    (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
+                let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
+                let toolchainBinDirContents = try await fs.ls(atPath: toolchainBinDir)
+
+                var existingProxies: [String] = []
+
+                for bin in swiftlyBinDirContents {
+                    do {
+                        let linkTarget = try await fs.readlink(atPath: swiftlyBinDir / bin)
+                        if linkTarget == proxyTo {
+                            existingProxies.append(bin)
+                        }
+                    } catch { continue }
+                }
+
+                let overwrite = Set(toolchainBinDirContents).subtracting(existingProxies).intersection(
+                    swiftlyBinDirContents)
+                if !overwrite.isEmpty && !assumeYes {
+                    await ctx.print("The following existing executables will be overwritten:")
+
+                    for executable in overwrite {
+                        await ctx.print("  \(swiftlyBinDir / executable)")
                     }
 
-                    let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
-                    let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
-
-                    lastUpdate = Date()
-
-                    animation.update(
-                        step: progress.receivedBytes,
-                        total: progress.totalBytes!,
-                        text: "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
-                    )
-                }
-            )
-        } catch let notFound as SwiftlyHTTPClient.DownloadNotFoundError {
-            throw SwiftlyError(message: "\(version) does not exist at URL \(notFound.url), exiting")
-        } catch {
-            animation.complete(success: false)
-            throw error
-        }
-        animation.complete(success: true)
-
-        if verifySignature {
-            try await Swiftly.currentPlatform.verifySignature(
-                ctx,
-                archiveDownloadURL: url,
-                archive: tmpFile,
-                verbose: verbose
-            )
-        }
-
-        try Swiftly.currentPlatform.install(ctx, from: tmpFile, version: version, verbose: verbose)
-
-        var pathChanged = false
-
-        // Create proxies if we have a location where we can point them
-        if let proxyTo = try? Swiftly.currentPlatform.findSwiftlyBin(ctx) {
-            // Ensure swiftly doesn't overwrite any existing executables without getting confirmation first.
-            let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
-            let swiftlyBinDirContents = (try? FileManager.default.contentsOfDirectory(atPath: swiftlyBinDir.path)) ?? [String]()
-            let toolchainBinDir = Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
-            let toolchainBinDirContents = try FileManager.default.contentsOfDirectory(atPath: toolchainBinDir.path)
-
-            let existingProxies = swiftlyBinDirContents.filter { bin in
-                do {
-                    let linkTarget = try FileManager.default.destinationOfSymbolicLink(atPath: swiftlyBinDir.appendingPathComponent(bin).path)
-                    return linkTarget == proxyTo
-                } catch { return false }
-            }
-
-            let overwrite = Set(toolchainBinDirContents).subtracting(existingProxies).intersection(swiftlyBinDirContents)
-            if !overwrite.isEmpty && !assumeYes {
-                ctx.print("The following existing executables will be overwritten:")
-
-                for executable in overwrite {
-                    ctx.print("  \(swiftlyBinDir.appendingPathComponent(executable).path)")
+                    guard await ctx.promptForConfirmation(defaultBehavior: false) else {
+                        throw SwiftlyError(message: "Toolchain installation has been cancelled")
+                    }
                 }
 
-                guard ctx.promptForConfirmation(defaultBehavior: false) else {
-                    throw SwiftlyError(message: "Toolchain installation has been cancelled")
+                if verbose {
+                    await ctx.print("Setting up toolchain proxies...")
+                }
+
+                let proxiesToCreate = Set(toolchainBinDirContents).subtracting(swiftlyBinDirContents).union(
+                    overwrite)
+
+                for p in proxiesToCreate {
+                    let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx) / p
+
+                    if try await fs.exists(atPath: proxy) {
+                        try await fs.remove(atPath: proxy)
+                    }
+
+                    try await fs.symlink(atPath: proxy, linkPath: proxyTo)
+
+                    pathChanged = true
                 }
             }
 
-            if verbose {
-                ctx.print("Setting up toolchain proxies...")
-            }
+            config.installedToolchains.insert(version)
 
-            let proxiesToCreate = Set(toolchainBinDirContents).subtracting(swiftlyBinDirContents).union(overwrite)
-
-            for p in proxiesToCreate {
-                let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx).appendingPathComponent(p)
-
-                if proxy.fileExists() {
-                    try FileManager.default.removeItem(at: proxy)
-                }
-
-                try FileManager.default.createSymbolicLink(
-                    atPath: proxy.path,
-                    withDestinationPath: proxyTo
-                )
-
-                pathChanged = true
-            }
-        }
-
-        config.installedToolchains.insert(version)
-
-        try config.save(ctx)
-
-        // If this is the first installed toolchain, mark it as in-use regardless of whether the
-        // --use argument was provided.
-        if useInstalledToolchain {
-            try await Use.execute(ctx, version, globalDefault: false, &config)
-        }
-
-        // We always update the global default toolchain if there is none set. This could
-        //  be the only toolchain that is installed, which makes it the only choice.
-        if config.inUse == nil {
-            config.inUse = version
             try config.save(ctx)
-            ctx.print("The global default toolchain has been set to `\(version)`")
-        }
 
-        ctx.print("\(version) installed successfully!")
-        return (postInstallScript, pathChanged)
+            // If this is the first installed toolchain, mark it as in-use regardless of whether the
+            // --use argument was provided.
+            if useInstalledToolchain {
+                try await Use.execute(ctx, version, globalDefault: false, &config)
+            }
+
+            // We always update the global default toolchain if there is none set. This could
+            //  be the only toolchain that is installed, which makes it the only choice.
+            if config.inUse == nil {
+                config.inUse = version
+                try config.save(ctx)
+                await ctx.print("The global default toolchain has been set to `\(version)`")
+            }
+
+            await ctx.print("\(version) installed successfully!")
+            return (postInstallScript, pathChanged)
+        }
     }
 
     /// Utilize the swift.org API along with the provided selector to select a toolchain for install.
-    public static func resolve(_ ctx: SwiftlyCoreContext, config: Config, selector: ToolchainSelector) async throws -> ToolchainVersion {
+    public static func resolve(_ ctx: SwiftlyCoreContext, config: Config, selector: ToolchainSelector)
+        async throws -> ToolchainVersion
+    {
         switch selector {
         case .latest:
-            ctx.print("Fetching the latest stable Swift release...")
+            await ctx.print("Fetching the latest stable Swift release...")
 
-            guard let release = try await ctx.httpClient.getReleaseToolchains(platform: config.platform, limit: 1).first else {
+            guard
+                let release = try await ctx.httpClient.getReleaseToolchains(
+                    platform: config.platform, limit: 1
+                ).first
+            else {
                 throw SwiftlyError(message: "couldn't get latest releases")
             }
             return .stable(release)
@@ -351,7 +374,8 @@ struct Install: SwiftlyCommand {
         case let .stable(major, minor, patch):
             guard let minor else {
                 throw SwiftlyError(
-                    message: "Need to provide at least major and minor versions when installing a release toolchain."
+                    message:
+                    "Need to provide at least major and minor versions when installing a release toolchain."
                 )
             }
 
@@ -359,10 +383,12 @@ struct Install: SwiftlyCommand {
                 return .stable(ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch))
             }
 
-            ctx.print("Fetching the latest stable Swift \(major).\(minor) release...")
+            await ctx.print("Fetching the latest stable Swift \(major).\(minor) release...")
             // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
-            let toolchain = try await ctx.httpClient.getReleaseToolchains(platform: config.platform, limit: 1) { release in
+            let toolchain = try await ctx.httpClient.getReleaseToolchains(
+                platform: config.platform, limit: 1
+            ) { release in
                 release.major == major && release.minor == minor
             }.first
 
@@ -377,17 +403,22 @@ struct Install: SwiftlyCommand {
                 return ToolchainVersion(snapshotBranch: branch, date: date)
             }
 
-            ctx.print("Fetching the latest \(branch) branch snapshot...")
+            await ctx.print("Fetching the latest \(branch) branch snapshot...")
 
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.
             let snapshots: [ToolchainVersion.Snapshot]
             do {
-                snapshots = try await ctx.httpClient.getSnapshotToolchains(platform: config.platform, branch: branch, limit: 1) { snapshot in
+                snapshots = try await ctx.httpClient.getSnapshotToolchains(
+                    platform: config.platform, branch: branch, limit: 1
+                ) { snapshot in
                     snapshot.branch == branch
                 }
             } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
-                throw SwiftlyError(message: "You have requested to install a snapshot toolchain from branch \(branchNotFoundErr.branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try again with a different branch.")
+                throw SwiftlyError(
+                    message:
+                    "You have requested to install a snapshot toolchain from branch \(branchNotFoundErr.branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try again with a different branch."
+                )
             } catch {
                 throw error
             }

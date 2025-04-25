@@ -226,19 +226,19 @@ import Testing
     /// Tests that uninstalling the last toolchain is handled properly and cleans up any symlinks.
     @Test(.mockHomeToolchains(Self.homeName, toolchains: [.oldStable])) func uninstallLastToolchain() async throws {
         _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["y"])
-        let config = try Config.load()
+        let config = try await Config.load()
         #expect(config.inUse == nil)
 
         // Ensure all symlinks have been cleaned up.
-        let symlinks = try FileManager.default.contentsOfDirectory(
-            atPath: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).path
+        let symlinks = try await fs.ls(
+            atPath: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx)
         )
         #expect(symlinks == [])
     }
 
     /// Tests that aborting an uninstall works correctly.
     @Test(.mockHomeToolchains(Self.homeName, toolchains: .allToolchains(), inUse: .oldStable)) func uninstallAbort() async throws {
-        let preConfig = try Config.load()
+        let preConfig = try await Config.load()
         _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["n"])
         try await SwiftlyTests.validateInstalledToolchains(
             .allToolchains(),
@@ -246,7 +246,7 @@ import Testing
         )
 
         // Ensure config did not change.
-        #expect(try Config.load() == preConfig)
+        #expect(try await Config.load() == preConfig)
     }
 
     /// Tests that providing the `-y` argument skips the confirmation prompt.
@@ -269,7 +269,7 @@ import Testing
 
     /// Tests that uninstalling a toolchain that is the global default, but is not in the list of installed toolchains.
     @Test(.mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable, .newMainSnapshot, .oldReleaseSnapshot])) func uninstallNotInstalled() async throws {
-        var config = try Config.load()
+        var config = try await Config.load()
         config.inUse = .newMainSnapshot
         config.installedToolchains.remove(.newMainSnapshot)
         try config.save()

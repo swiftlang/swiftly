@@ -6,6 +6,19 @@ import LinuxPlatform
 import MacOSPlatform
 #endif
 import SwiftlyCore
+import SystemPackage
+
+typealias fs = SwiftlyCore.FileSystem
+
+extension FilePath: ExpressibleByArgument {
+    public init?(argument: String) {
+        self.init(argument)
+    }
+
+    public static var defaultCompletionKind: CompletionKind {
+        CompletionKind.file()
+    }
+}
 
 public struct GlobalOptions: ParsableArguments {
     @Flag(name: [.customShort("y"), .long], help: "Disable confirmation prompts by assuming 'yes'")
@@ -18,7 +31,7 @@ public struct GlobalOptions: ParsableArguments {
 }
 
 public struct Swiftly: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "A utility for installing and managing Swift toolchains.",
 
         version: String(describing: SwiftlyCore.version),
@@ -42,7 +55,7 @@ public struct Swiftly: SwiftlyCommand {
 
     /// The list of directories that swiftly needs to exist in order to execute.
     /// If they do not exist when a swiftly command is invoked, they will be created.
-    public static func requiredDirectories(_ ctx: SwiftlyCoreContext) -> [URL] {
+    public static func requiredDirectories(_ ctx: SwiftlyCoreContext) -> [FilePath] {
         [
             Swiftly.currentPlatform.swiftlyHomeDir(ctx),
             Swiftly.currentPlatform.swiftlyBinDir(ctx),
@@ -66,8 +79,8 @@ public protocol SwiftlyCommand: AsyncParsableCommand {
 }
 
 extension Data {
-    func append(to file: URL) throws {
-        if let fileHandle = FileHandle(forWritingAtPath: file.path) {
+    func append(to file: FilePath) throws {
+        if let fileHandle = FileHandle(forWritingAtPath: file.string) {
             defer {
                 fileHandle.closeFile()
             }
@@ -82,11 +95,11 @@ extension Data {
 extension SwiftlyCommand {
     public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) async throws -> () -> Void {
         for requiredDir in Swiftly.requiredDirectories(ctx) {
-            guard requiredDir.fileExists() else {
+            guard try await fs.exists(atPath: requiredDir) else {
                 do {
-                    try FileManager.default.createDirectory(at: requiredDir, withIntermediateDirectories: true)
+                    try await fs.mkdir(.parents, atPath: requiredDir)
                 } catch {
-                    throw SwiftlyError(message: "Failed to create required directory \"\(requiredDir.path)\": \(error)")
+                    throw SwiftlyError(message: "Failed to create required directory \"\(requiredDir)\": \(error)")
                 }
                 continue
             }

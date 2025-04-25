@@ -1,12 +1,12 @@
 import ArgumentParser
 import Foundation
-import TSCBasic
+import SwiftlyCore
+import SwiftlyWebsiteAPI
+@preconcurrency import TSCBasic
 import TSCUtility
 
-import SwiftlyCore
-
 struct SelfUpdate: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "Update the version of swiftly itself."
     )
 
@@ -23,21 +23,26 @@ struct SelfUpdate: SwiftlyCommand {
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
         let _ = try await validateSwiftly(ctx)
 
-        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx).appendingPathComponent("swiftly")
-        guard FileManager.default.fileExists(atPath: swiftlyBin.path) else {
-            throw SwiftlyError(message: "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place.")
+        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx) / "swiftly"
+        guard try await fs.exists(atPath: swiftlyBin) else {
+            throw SwiftlyError(
+                message:
+                "Self update doesn't work when swiftly has been installed externally. Please keep it updated from the source where you installed it in the first place."
+            )
         }
 
         let _ = try await Self.execute(ctx, verbose: self.root.verbose)
     }
 
-    public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool) async throws -> SwiftlyVersion {
-        ctx.print("Checking for swiftly updates...")
+    public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool) async throws
+        -> SwiftlyVersion
+    {
+        await ctx.print("Checking for swiftly updates...")
 
         let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
 
         guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
-            ctx.print("Already up to date.")
+            await ctx.print("Already up to date.")
             return SwiftlyCore.version
         }
 
@@ -61,48 +66,51 @@ struct SelfUpdate: SwiftlyCommand {
         }
 
         guard let downloadURL else {
-            throw SwiftlyError(message: "The newest release of swiftly is incompatible with your current OS and/or processor architecture.")
+            throw SwiftlyError(
+                message:
+                "The newest release of swiftly is incompatible with your current OS and/or processor architecture."
+            )
         }
 
         let version = try swiftlyRelease.swiftlyVersion
 
-        ctx.print("A new version is available: \(version)")
+        await ctx.print("A new version is available: \(version)")
 
-        let tmpFile = Swiftly.currentPlatform.getTempFilePath()
-        FileManager.default.createFile(atPath: tmpFile.path, contents: nil)
-        defer {
-            try? FileManager.default.removeItem(at: tmpFile)
-        }
-
-        let animation = PercentProgressAnimation(
-            stream: stdoutStream,
-            header: "Downloading swiftly \(version)"
-        )
-        do {
-            try await ctx.httpClient.downloadFile(
-                url: downloadURL,
-                to: tmpFile,
-                reportProgress: { progress in
-                    let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
-                    let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
-
-                    animation.update(
-                        step: progress.receivedBytes,
-                        total: progress.totalBytes!,
-                        text: "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
-                    )
-                }
+        let tmpFile = fs.mktemp()
+        try await fs.create(file: tmpFile, contents: nil)
+        return try await fs.withTemporary(files: tmpFile) {
+            let animation = PercentProgressAnimation(
+                stream: stdoutStream,
+                header: "Downloading swiftly \(version)"
             )
-        } catch {
-            animation.complete(success: false)
-            throw error
+            do {
+                try await ctx.httpClient.getSwiftlyRelease(url: downloadURL).download(
+                    to: tmpFile,
+                    reportProgress: { progress in
+                        let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
+                        let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
+
+                        animation.update(
+                            step: progress.receivedBytes,
+                            total: progress.totalBytes!,
+                            text:
+                            "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
+                        )
+                    }
+                )
+            } catch {
+                animation.complete(success: false)
+                throw error
+            }
+            animation.complete(success: true)
+
+            try await Swiftly.currentPlatform.verifySwiftlySignature(
+                ctx, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose
+            )
+            try await Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
+
+            await ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
+            return version
         }
-        animation.complete(success: true)
-
-        try await Swiftly.currentPlatform.verifySignature(ctx, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose)
-        try Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
-
-        ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
-        return version
     }
 }

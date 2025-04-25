@@ -1,9 +1,9 @@
 import _StringProcessing
 
 /// Enum representing a fully resolved toolchain version (e.g. 5.6.7 or 5.7-snapshot-2022-07-05).
-public enum ToolchainVersion {
-    public struct Snapshot: Equatable, Hashable, CustomStringConvertible, Comparable {
-        public enum Branch: Equatable, Hashable, CustomStringConvertible {
+public enum ToolchainVersion: Sendable {
+    public struct Snapshot: Equatable, Hashable, CustomStringConvertible, Comparable, Sendable {
+        public enum Branch: Equatable, Hashable, CustomStringConvertible, Sendable {
             case main
             case release(major: Int, minor: Int)
 
@@ -62,7 +62,7 @@ public enum ToolchainVersion {
         }
     }
 
-    public struct StableRelease: Equatable, Comparable, Hashable, CustomStringConvertible {
+    public struct StableRelease: Equatable, Comparable, Hashable, CustomStringConvertible, Sendable {
         public let major: Int
         public let minor: Int
         public let patch: Int
@@ -99,18 +99,21 @@ public enum ToolchainVersion {
         self = .snapshot(Snapshot(branch: snapshotBranch, date: date))
     }
 
-    static let stableRegex: Regex<(Substring, Substring, Substring, Substring)> =
+    static func stableRegex() -> Regex<(Substring, Substring, Substring, Substring)> {
         try! Regex("^(?:Swift )?(\\d+)\\.(\\d+)\\.(\\d+)$")
+    }
 
-    static let mainSnapshotRegex: Regex<(Substring, Substring)> =
+    static func mainSnapshotRegex() -> Regex<(Substring, Substring)> {
         try! Regex("^main-snapshot-(\\d{4}-\\d{2}-\\d{2})$")
+    }
 
-    static let releaseSnapshotRegex: Regex<(Substring, Substring, Substring, Substring)> =
+    static func releaseSnapshotRegex() -> Regex<(Substring, Substring, Substring, Substring)> {
         try! Regex("^(\\d+)\\.(\\d+)-snapshot-(\\d{4}-\\d{2}-\\d{2})$")
+    }
 
     /// Parse a toolchain version from the provided string.
     public init(parsing string: String) throws {
-        if let match = try Self.stableRegex.wholeMatch(in: string) {
+        if let match = try Self.stableRegex().wholeMatch(in: string) {
             guard
                 let major = Int(match.output.1),
                 let minor = Int(match.output.2),
@@ -119,9 +122,9 @@ public enum ToolchainVersion {
                 throw SwiftlyError(message: "invalid stable version: \(string)")
             }
             self = ToolchainVersion(major: major, minor: minor, patch: patch)
-        } else if let match = try Self.mainSnapshotRegex.wholeMatch(in: string) {
+        } else if let match = try Self.mainSnapshotRegex().wholeMatch(in: string) {
             self = ToolchainVersion(snapshotBranch: .main, date: String(match.output.1))
-        } else if let match = try Self.releaseSnapshotRegex.wholeMatch(in: string) {
+        } else if let match = try Self.releaseSnapshotRegex().wholeMatch(in: string) {
             guard
                 let major = Int(match.output.1),
                 let minor = Int(match.output.2)
@@ -235,7 +238,7 @@ extension ToolchainVersion: Comparable {
 extension ToolchainVersion: Hashable {}
 
 /// Enum modeling a partially or fully supplied selector of a toolchain version.
-public enum ToolchainSelector {
+public enum ToolchainSelector: Sendable {
     /// Select the latest stable toolchain.
     case latest
 
@@ -347,7 +350,7 @@ extension ToolchainSelector: Equatable {}
 extension ToolchainSelector: Hashable {}
 
 /// Protocol used to facilitate parsing `ToolchainSelector`s from strings.
-protocol ToolchainSelectorParser {
+protocol ToolchainSelectorParser: Sendable {
     func parse(_ string: String) throws -> ToolchainSelector?
 }
 
@@ -363,15 +366,16 @@ private let parsers: [any ToolchainSelectorParser] = [
 ///    - a.b.c
 ///    - a.b
 struct StableReleaseParser: ToolchainSelectorParser {
-    static let regex: Regex<(Substring, Substring, Substring?, Substring?)> =
+    static func regex() -> Regex<(Substring, Substring, Substring?, Substring?)> {
         try! Regex("^(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?$")
+    }
 
     func parse(_ input: String) throws -> ToolchainSelector? {
         if input == "latest" {
             return .latest
         }
 
-        guard let match = try Self.regex.wholeMatch(in: input) else {
+        guard let match = try Self.regex().wholeMatch(in: input) else {
             return nil
         }
 
@@ -399,11 +403,12 @@ struct StableReleaseParser: ToolchainSelectorParser {
 ///    - swift-a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
 ///    - swift-a.b-DEVELOPMENT-SNAPSHOT
 struct ReleaseSnapshotParser: ToolchainSelectorParser {
-    static let regex: Regex<(Substring, Substring, Substring, Substring?)> =
+    static func regex() -> Regex<(Substring, Substring, Substring, Substring?)> {
         try! Regex("^(?:swift-)?([0-9]+)\\.([0-9]+)-(?:snapshot|DEVELOPMENT-SNAPSHOT|SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
+    }
 
     func parse(_ input: String) throws -> ToolchainSelector? {
-        guard let match = try Self.regex.wholeMatch(in: input) else {
+        guard let match = try Self.regex().wholeMatch(in: input) else {
             return nil
         }
 
@@ -434,11 +439,12 @@ struct ReleaseSnapshotParser: ToolchainSelectorParser {
 ///    - swift-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
 ///    - swift-DEVELOPMENT-SNAPSHOT
 struct MainSnapshotParser: ToolchainSelectorParser {
-    static let regex: Regex<(Substring, Substring?)> =
+    static func regex() -> Regex<(Substring, Substring?)> {
         try! Regex("^(?:swift-)?(?:main-snapshot|DEVELOPMENT-SNAPSHOT|main-SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
+    }
 
     func parse(_ input: String) throws -> ToolchainSelector? {
-        guard let match = try Self.regex.wholeMatch(in: input) else {
+        guard let match = try Self.regex().wholeMatch(in: input) else {
             return nil
         }
         return .snapshot(branch: .main, date: match.output.1.map(String.init))

@@ -2,7 +2,7 @@ import ArgumentParser
 import SwiftlyCore
 
 struct ListAvailable: SwiftlyCommand {
-    public static var configuration = CommandConfiguration(
+    public static let configuration = CommandConfiguration(
         abstract: "List toolchains available for install."
     )
 
@@ -48,12 +48,12 @@ struct ListAvailable: SwiftlyCommand {
         defer {
             versionUpdateReminder()
         }
-        
+
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
 
-        let config = try Config.load(ctx)
+        var config = try await Config.load(ctx)
 
         let tc: [ToolchainVersion]
 
@@ -75,16 +75,20 @@ struct ListAvailable: SwiftlyCommand {
         let toolchains = tc.filter { selector?.matches(toolchain: $0) ?? true }
 
         let installedToolchains = Set(config.listInstalledToolchains(selector: selector))
-        let activeToolchain = config.inUse
+        let (inUse, _) = try await selectToolchain(ctx, config: &config)
 
         let printToolchain = { (toolchain: ToolchainVersion) in
             var message = "\(toolchain)"
-            if toolchain == activeToolchain {
-                message += " (installed, in use)"
-            } else if installedToolchains.contains(toolchain) {
+            if installedToolchains.contains(toolchain) {
                 message += " (installed)"
             }
-            ctx.print(message)
+            if let inUse, toolchain == inUse {
+                message += " (in use)"
+            }
+            if toolchain == config.inUse {
+                message += " (default)"
+            }
+            await ctx.print(message)
         }
 
         if let selector {
@@ -104,16 +108,16 @@ struct ListAvailable: SwiftlyCommand {
             }
 
             let message = "Available \(modifier) toolchains"
-            ctx.print(message)
-            ctx.print(String(repeating: "-", count: message.count))
+            await ctx.print(message)
+            await ctx.print(String(repeating: "-", count: message.count))
             for toolchain in toolchains {
-                printToolchain(toolchain)
+                await printToolchain(toolchain)
             }
         } else {
             print("Available release toolchains")
             print("----------------------------")
             for toolchain in toolchains where toolchain.isStableRelease() {
-                printToolchain(toolchain)
+                await printToolchain(toolchain)
             }
         }
     }

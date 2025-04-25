@@ -2,10 +2,11 @@ import _StringProcessing
 import Foundation
 
 /// Struct modeling a version of swiftly itself.
-public struct SwiftlyVersion: Equatable, Comparable, CustomStringConvertible {
+public struct SwiftlyVersion: Equatable, Comparable, CustomStringConvertible, Sendable {
     /// Regex matching versions like "a.b.c", "a.b.c-alpha", and "a.b.c-alpha2".
-    static let regex: Regex<(Substring, Substring, Substring, Substring, Substring?)> =
+    public static func regex() -> Regex<(Substring, Substring, Substring, Substring, Substring?)> {
         try! Regex("^(\\d+)\\.(\\d+)\\.(\\d+)(?:-([a-zA-Z0-9]+))?$")
+    }
 
     public let major: Int
     public let minor: Int
@@ -20,7 +21,7 @@ public struct SwiftlyVersion: Equatable, Comparable, CustomStringConvertible {
     }
 
     public init(parsing tag: String) throws {
-        guard let match = try Self.regex.wholeMatch(in: tag) else {
+        guard let match = try Self.regex().wholeMatch(in: tag) else {
             throw SwiftlyError(message: "unable to parse release tag: \"\(tag)\"")
         }
 

@@ -108,22 +108,22 @@ extension SwiftlyCommand {
         // Verify that the configuration exists and can be loaded
         _ = try await Config.load(ctx)
 
-        let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
-        let shouldUpdateSwiftly = try swiftlyRelease.swiftlyVersion > SwiftlyCore.version
-        
         return {
-            if shouldUpdateSwiftly {
+            if let swiftlyRelease = try? await ctx.httpClient.getCurrentSwiftlyRelease(),
+               swiftlyRelease.swiftlyVersion > SwiftlyCore.version 
+            {
                 let updateMessage = """
                 -----------------------------
                 A new release of swiftly is available.
                 Please run `swiftly self-update` to update.
                 -----------------------------\n
                 """
-                
+        
                 if let data = updateMessage.data(using: .utf8) {
                     FileHandle.standardError.write(data)
                 }
             }
         }
+
     }
 }

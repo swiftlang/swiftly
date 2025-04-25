@@ -64,7 +64,7 @@ struct Use: SwiftlyCommand {
         defer {
             versionUpdateReminder()
         }
-        
+
         var config = try await Config.load(ctx)
 
         // This is the bare use command where we print the selected toolchain version (or the path to it)

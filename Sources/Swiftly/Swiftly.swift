@@ -110,7 +110,7 @@ extension SwiftlyCommand {
 
         return {
             if let swiftlyRelease = try? await ctx.httpClient.getCurrentSwiftlyRelease(),
-               swiftlyRelease.swiftlyVersion > SwiftlyCore.version 
+               swiftlyRelease.swiftlyVersion > SwiftlyCore.version
             {
                 let updateMessage = """
                 -----------------------------
@@ -118,12 +118,11 @@ extension SwiftlyCommand {
                 Please run `swiftly self-update` to update.
                 -----------------------------\n
                 """
-        
+
                 if let data = updateMessage.data(using: .utf8) {
                     FileHandle.standardError.write(data)
                 }
             }
         }
-
     }
 }

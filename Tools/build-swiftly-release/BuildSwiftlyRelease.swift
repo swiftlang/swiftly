@@ -236,17 +236,17 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         return swift
     }
 
-    func checkGitRepoStatus(_ git: String) async throws {
+    func checkGitRepoStatus(_: String) async throws {
         guard !self.skip else {
             return
         }
 
-        guard let gitTags = try await runProgramOutput(git, "log", "-n1", "--pretty=format:%d"), gitTags.contains("tag: \(self.version)") else {
+        guard let gitTags = try await sys.git().log(.maxCount(1), .pretty("format:%d")).output(currentPlatform), gitTags.contains("tag: \(self.version)") else {
             throw Error(message: "Git repo is not yet tagged for release \(self.version). Please tag this commit with that version and push it to GitHub.")
         }
 
         do {
-            try runProgram(git, "diff-index", "--quiet", "HEAD")
+            try await sys.git().diffIndex(.quiet, treeIsh: "HEAD").run(currentPlatform)
         } catch {
             throw Error(message: "Git repo has local changes. First commit these changes, tag the commit with release \(self.version) and push the tag to GitHub.")
         }

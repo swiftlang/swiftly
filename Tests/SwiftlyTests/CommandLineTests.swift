@@ -61,4 +61,54 @@ public struct CommandLineTests {
         config = sys.getent(database: "foo", keys: "abc", "def").config()
         #expect(String(describing: config) == "getent foo abc def")
     }
+
+    @Test func testGitModel() {
+        var config = sys.git().log(.maxCount(1), .pretty("format:%d")).config()
+        #expect(String(describing: config) == "git log --max-count=1 --pretty=format:%d")
+
+        config = sys.git().log().config()
+        #expect(String(describing: config) == "git log")
+
+        config = sys.git().log(.pretty("foo")).config()
+        #expect(String(describing: config) == "git log --pretty=foo")
+
+        config = sys.git().diffIndex(.quiet, treeIsh: "HEAD").config()
+        #expect(String(describing: config) == "git diff-index --quiet HEAD")
+
+        config = sys.git().diffIndex(treeIsh: "main").config()
+        #expect(String(describing: config) == "git diff-index main")
+    }
+
+    @Test(
+        .tags(.medium),
+        .enabled {
+            try await sys.GitCommand.defaultExecutable.exists()
+        }
+    )
+    func testGit() async throws {
+        // GIVEN a simple git repository
+        let tmp = fs.mktemp()
+        try await fs.mkdir(atPath: tmp)
+        try await sys.git(workingDir: tmp)._init().run(Swiftly.currentPlatform)
+
+        // AND a simple history
+        try "Some text".write(to: tmp / "foo.txt", atomically: true)
+        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "add", "foo.txt")
+        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "config", "user.email", "user@example.com")
+        try await sys.git(workingDir: tmp).commit(.message("Initial commit")).run(Swiftly.currentPlatform)
+        try await sys.git(workingDir: tmp).diffIndex(.quiet, treeIsh: "HEAD").run(Swiftly.currentPlatform)
+
+        // WHEN inspecting the log
+        let log = try await sys.git(workingDir: tmp).log(.maxCount(1)).output(Swiftly.currentPlatform)!
+        // THEN it is not empty
+        #expect(log != "")
+
+        // WHEN there is a change to the work tree
+        try "Some new text".write(to: tmp / "foo.txt", atomically: true)
+
+        // THEN diff index finds a change
+        try await #expect(throws: Error.self) {
+            try await sys.git(workingDir: tmp).diffIndex(.quiet, treeIsh: "HEAD").run(Swiftly.currentPlatform)
+        }
+    }
 }

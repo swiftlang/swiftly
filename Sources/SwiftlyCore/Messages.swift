@@ -9,13 +9,20 @@ public enum Messages {
 
     """
 
-    public static func postInstall(_ message: String) -> String {
+    public static let unlinkSuccess = """
+    Swiftly is now unlinked and will not manage the active toolchain until the following command is run:
+
+        $ swiftly link
+
+    """
+
+    public static func postInstall(_ command: String) -> String {
         """
         There are some dependencies that should be installed before using this toolchain.
         You can run the following script as the system administrator (e.g. root) to prepare
         your system:
 
-            \(message)
+            \(command)
 
         """
     }

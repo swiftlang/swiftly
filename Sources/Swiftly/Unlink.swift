@@ -55,6 +55,7 @@ struct Unlink: SwiftlyCommand {
         }
 
         if pathChanged {
+            await ctx.print(Messages.unlinkSuccess)
             await ctx.print(Messages.refreshShell)
         }
     }

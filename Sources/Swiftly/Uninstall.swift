@@ -53,7 +53,7 @@ struct Uninstall: SwiftlyCommand {
             versionUpdateReminder()
         }
 
-        let startingConfig = try Config.load(ctx)
+        let startingConfig = try await Config.load(ctx)
 
         let toolchains: [ToolchainVersion]
         if self.toolchain == "all" {

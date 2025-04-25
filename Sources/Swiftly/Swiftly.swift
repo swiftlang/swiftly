@@ -106,7 +106,7 @@ extension SwiftlyCommand {
         }
 
         // Verify that the configuration exists and can be loaded
-        _ = try Config.load(ctx)
+        _ = try await Config.load(ctx)
 
         let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
         let shouldUpdateSwiftly = try swiftlyRelease.swiftlyVersion > SwiftlyCore.version

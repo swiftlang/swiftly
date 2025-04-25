@@ -88,7 +88,7 @@ struct Update: SwiftlyCommand {
             versionUpdateReminder()
         }
 
-        var config = try Config.load(ctx)
+        var config = try await Config.load(ctx)
 
         guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {
             if let toolchain = self.toolchain {

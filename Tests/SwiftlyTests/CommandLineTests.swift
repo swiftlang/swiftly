@@ -39,4 +39,12 @@ public struct CommandLineTests {
         #expect(config.executable == .name("lipo"))
         #expect(config.arguments.storage.map(\.description) == ["swiftly", "-create", "-output", "swiftly-universal-with-one-arch"])
     }
+
+    @Test func testPkgbuild() {
+        var config = sys.pkgbuild(root: "mypath", packageOutputPath: "outputDir").config()
+        #expect(String(describing: config) == "pkgbuild --root mypath outputDir")
+
+        config = sys.pkgbuild(.version("1234"), root: "somepath", packageOutputPath: "output").config()
+        #expect(String(describing: config) == "pkgbuild --version 1234 --root somepath output")
+    }
 }

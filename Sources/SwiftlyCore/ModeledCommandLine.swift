@@ -121,6 +121,38 @@ public struct Arguments: Sendable, ExpressibleByArrayLiteral, Hashable {
     }
 }
 
+// Provide string representations of Configuration
+extension Executable: CustomStringConvertible {
+    public var description: String {
+        switch self.storage {
+        case let .executable(name):
+            name
+        case let .path(path):
+            path.string
+        }
+    }
+}
+
+extension Arguments: CustomStringConvertible {
+    public var description: String {
+        let normalized: [String] = self.storage.map(\.description).map {
+            if $0.contains(" ") {
+                return "\"\($0)\""
+            } else {
+                return String($0)
+            }
+        }
+
+        return normalized.joined(separator: " ")
+    }
+}
+
+extension Configuration: CustomStringConvertible {
+    public var description: String {
+        "\(self.executable) \(self.arguments)"
+    }
+}
+
 public protocol Runnable {
     func config() -> Configuration
 }

@@ -18,6 +18,17 @@ let currentPlatform = Linux()
 typealias fs = FileSystem
 typealias sys = SystemCommand
 
+extension Runnable {
+    // Runs the command while echoing the full command-line to stdout for logging and reproduction
+    func runEcho(_ platform: Platform, quiet: Bool = false) async throws {
+        let config = self.config()
+        // if !quiet { print("\(args.joined(separator: " "))") }
+        if !quiet { print("\(config)") }
+
+        try await self.run(platform)
+    }
+}
+
 public struct SwiftPlatform: Codable {
     public var name: String?
     public var checksum: String?
@@ -396,7 +407,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         try await self.checkGitRepoStatus(git)
 
-        let pkgbuild = try await self.assertTool("pkgbuild", message: "In order to make pkg installers there needs to be the `pkgbuild` tool that is installed on macOS.")
         let strip = try await self.assertTool("strip", message: "In order to strip binaries there needs to be the `strip` tool that is installed on macOS.")
 
         let tar = try await self.assertTool("tar", message: "In order to produce archives there needs to be the `tar` tool that is installed on macOS.")
@@ -415,7 +425,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             inputFiles: ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly"
         )
         .create(output: swiftlyBinDir / "swiftly")
-        .run(currentPlatform)
+        .runEcho(currentPlatform)
 
         let swiftlyLicenseDir = FileManager.default.currentDirectoryPath + "/.build/release/.swiftly/license"
         try? FileManager.default.createDirectory(atPath: swiftlyLicenseDir, withIntermediateDirectories: true)
@@ -427,33 +437,22 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let pkgFile = releaseDir.appendingPathComponent("/swiftly-\(self.version).pkg")
 
         if let cert {
-            try runProgram(
-                pkgbuild,
-                "--root",
-                "\(swiftlyBinDir.parent)",
-                "--install-location",
-                ".swiftly",
-                "--version",
-                self.version,
-                "--identifier",
-                identifier,
-                "--sign",
-                cert,
-                ".build/release/swiftly-\(self.version).pkg"
-            )
+            try await sys.pkgbuild(
+                .installLocation(".swiftly"),
+                .version(self.version),
+                .identifier(identifier),
+                .sign(cert),
+                root: swiftlyBinDir.parent,
+                packageOutputPath: FilePath(".build/release/swiftly-\(self.version).pkg")
+            ).runEcho(currentPlatform)
         } else {
-            try runProgram(
-                pkgbuild,
-                "--root",
-                "\(swiftlyBinDir.parent)",
-                "--install-location",
-                ".swiftly",
-                "--version",
-                self.version,
-                "--identifier",
-                identifier,
-                ".build/release/swiftly-\(self.version).pkg"
-            )
+            try await sys.pkgbuild(
+                .installLocation(".swiftly"),
+                .version(self.version),
+                .identifier(identifier),
+                root: swiftlyBinDir.parent,
+                packageOutputPath: FilePath(".build/release/swiftly-\(self.version).pkg")
+            ).runEcho(currentPlatform)
         }
 
         // Re-configure the pkg to prefer installs into the current user's home directory with the help of productbuild.
@@ -490,7 +489,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
                 inputFiles: ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly"
             )
             .create(output: swiftlyBinDir / "swiftly")
-            .run(currentPlatform)
+            .runEcho(currentPlatform)
 
             try runProgram(tar, "--directory=.build/x86_64-apple-macosx/debug", "-czf", testArchive.path, "test-swiftly")
 

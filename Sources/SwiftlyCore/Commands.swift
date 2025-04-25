@@ -91,6 +91,8 @@ extension SystemCommand.DsclCommand.ReadCommand: Output {
     }
 }
 
+// Create or operate on universal files
+// See lipo(1) for details
 extension SystemCommand {
     public static func lipo(executable: Executable = LipoCommand.defaultExecutable, inputFiles: FilePath...) -> LipoCommand {
         Self.lipo(executable: executable, inputFiles: inputFiles)
@@ -106,7 +108,7 @@ extension SystemCommand {
         var executable: Executable
         var inputFiles: [FilePath]
 
-        public init(executable: Executable, inputFiles: [FilePath]) {
+        internal init(executable: Executable, inputFiles: [FilePath]) {
             self.executable = executable
             self.inputFiles = inputFiles
         }
@@ -150,3 +152,72 @@ extension SystemCommand {
 }
 
 extension SystemCommand.LipoCommand.CreateCommand: Runnable {}
+
+// Build a macOS Installer component package from on-disk files
+// See pkgbuild(1) for more details
+extension SystemCommand {
+    public static func pkgbuild(executable: Executable = PkgbuildCommand.defaultExecutable, _ options: PkgbuildCommand.Option..., root: FilePath, packageOutputPath: FilePath) -> PkgbuildCommand {
+        Self.pkgbuild(executable: executable, options: options, root: root, packageOutputPath: packageOutputPath)
+    }
+
+    public static func pkgbuild(executable: Executable = PkgbuildCommand.defaultExecutable, options: [PkgbuildCommand.Option], root: FilePath, packageOutputPath: FilePath) -> PkgbuildCommand {
+        PkgbuildCommand(executable: executable, options, root: root, packageOutputPath: packageOutputPath)
+    }
+
+    public struct PkgbuildCommand {
+        public static var defaultExecutable: Executable { .name("pkgbuild") }
+
+        var executable: Executable
+
+        var options: [Option]
+
+        var root: FilePath
+        var packageOutputPath: FilePath
+
+        internal init(executable: Executable, _ options: [Option], root: FilePath, packageOutputPath: FilePath) {
+            self.executable = executable
+            self.options = options
+            self.root = root
+            self.packageOutputPath = packageOutputPath
+        }
+
+        public enum Option {
+            case installLocation(FilePath)
+            case version(String)
+            case identifier(String)
+            case sign(String)
+
+            func args() -> [String] {
+                switch self {
+                case let .installLocation(installLocation):
+                    return ["--install-location", installLocation.string]
+                case let .version(version):
+                    return ["--version", version]
+                case let .identifier(identifier):
+                    return ["--identifier", identifier]
+                case let .sign(identityName):
+                    return ["--sign", identityName]
+                }
+            }
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            for option in self.options {
+                args += option.args()
+            }
+
+            args += ["--root", "\(self.root)"]
+            args += ["\(self.packageOutputPath)"]
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand.PkgbuildCommand: Runnable {}

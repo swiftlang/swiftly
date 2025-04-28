@@ -62,7 +62,7 @@ if [ "$installSwiftly" == true ]; then
     fi
 
     echo "Displaying swift version"
-    swift "${selector[@]} --version
+    swiftly run "${runSelector[@]}" swift --version
 
     CC=clang swiftly run "${runSelector[@]}" "$(dirname "$0")/install-libarchive.sh"
 else

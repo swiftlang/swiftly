@@ -142,6 +142,25 @@ extension Trait where Self == TestHomeTrait {
     static func testHome(_ name: String = "testHome") -> Self { Self(name) }
 }
 
+// extension Trait for mockedSwiftlyVersion
+struct MockedSwiftlyVersionTrait: TestTrait, TestScoping {
+    var name: String = "testHome"
+
+    init(_ name: String) { self.name = name }
+
+    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
+        try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: SwiftlyVersion(major: 1, minor: 0, patch: 0)) {
+            print("Mocking swiftly version: \(SwiftlyVersion(major: 1, minor: 0, patch: 0)) at \(#file):\(#line)")
+
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == MockedSwiftlyVersionTrait {
+    static func mockedSwiftlyVersion(_ name: String = "testHome") -> Self { Self(name) }
+}
+
 struct MockHomeToolchainsTrait: TestTrait, TestScoping {
     var name: String = "testHome"
     var toolchains: Set<ToolchainVersion> = .allToolchains()
@@ -337,7 +356,7 @@ public enum SwiftlyTests {
 
     /// Operate with a mocked toolchain that has the provided list of executables in its bin directory.
     static func withMockedToolchain(executables: [String]? = nil, f: () async throws -> Void) async throws {
-        let mockDownloader = MockToolchainDownloader(executables: executables)
+        let mockDownloader = MockToolchainDownloader(executables: executables, latestSwiftlyVersion: SwiftlyVersion(major: 1, minor: 0, patch: 0))
 
         let ctx = SwiftlyCoreContext(
             mockedHomeDir: SwiftlyTests.ctx.mockedHomeDir,

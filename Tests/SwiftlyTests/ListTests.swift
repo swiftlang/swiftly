@@ -19,7 +19,7 @@ import Testing
         .oldReleaseSnapshot,
     ]
 
-    private static let swiftlyVersion = SwiftlyVersion(major: 1, minor: 0, patch: 0)
+    private static let swiftlyVersion = SwiftlyVersion(major: SwiftlyCore.version.major, minor: 0, patch: 0)
 
     /// Constructs a mock home directory with the toolchains listed above installed and runs the provided closure within
     /// the context of that home.

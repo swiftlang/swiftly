@@ -1,9 +1,6 @@
 on:
   schedule:
     - cron: '30 3 * * *'
-  # TODO REMOVE THESE
-  pull_request:
-    types: [opened, reopened, synchronize]
 
 env:
   SWIFTLY_BOOTSTRAP_VERSION: 1.0.0

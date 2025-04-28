@@ -87,9 +87,9 @@ struct Update: SwiftlyCommand {
         defer {
             versionUpdateReminder()
         }
+        try await valitateLinked(ctx)
 
         var config = try await Config.load(ctx)
-
         guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {
             if let toolchain = self.toolchain {
                 await ctx.print("No installed toolchain matched \"\(toolchain)\"")

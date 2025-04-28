@@ -67,6 +67,8 @@ struct Use: SwiftlyCommand {
 
         var config = try await Config.load(ctx)
 
+        try await valitateLinked(ctx)
+
         // This is the bare use command where we print the selected toolchain version (or the path to it)
         guard let toolchain = self.toolchain else {
             let (selectedVersion, result) = try await selectToolchain(ctx, config: &config, globalDefault: self.globalDefault)
@@ -113,6 +115,7 @@ struct Use: SwiftlyCommand {
         }
 
         try await Self.execute(ctx, toolchain, globalDefault: self.globalDefault, assumeYes: self.root.assumeYes, &config)
+
     }
 
     /// Use a toolchain. This method can modify and save the input config and also create/modify a `.swift-version` file.

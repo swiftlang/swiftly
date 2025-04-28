@@ -86,6 +86,7 @@ struct Install: SwiftlyCommand {
         defer {
             versionUpdateReminder()
         }
+        try await valitateLinked(ctx)
 
         var config = try await Config.load(ctx)
         let toolchainVersion = try await Self.determineToolchainVersion(ctx, version: self.version, config: &config)

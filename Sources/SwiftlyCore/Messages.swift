@@ -10,9 +10,20 @@ public enum Messages {
     """
 
     public static let unlinkSuccess = """
-    Swiftly is now unlinked and will not manage the active toolchain until the following command is run:
+    Swiftly is now unlinked and will not manage the active toolchain until the following
+    command is run:
 
         $ swiftly link
+
+
+    """
+
+    public static let currentlyUnlinked = """
+    Swiftly is currently unlinked and will not manage the active toolchain. You can run
+    the following command to link swiftly to the active toolchain:
+
+        $ swiftly link
+
 
     """
 

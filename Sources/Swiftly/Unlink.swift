@@ -32,31 +32,44 @@ struct Unlink: SwiftlyCommand {
         }
 
         var pathChanged = false
-        if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
-            let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
-            let swiftlyBinDirContents = (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
+        let existingProxies = try await symlinkedProxies(ctx)
 
-            var existingProxies = [String]()
-            for bin in swiftlyBinDirContents {
-                let linkTarget = try? await fs.readlink(atPath: swiftlyBinDir / bin)
-                if linkTarget == proxyTo {
-                    existingProxies.append(bin)
-                }
-            }
+        for p in existingProxies {
+            let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx) / p
 
-            for p in existingProxies {
-                let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx) / p
-
-                if try await fs.exists(atPath: proxy) {
-                    try await fs.remove(atPath: proxy)
-                    pathChanged = true
-                }
+            if try await fs.exists(atPath: proxy) {
+                try await fs.remove(atPath: proxy)
+                pathChanged = true
             }
         }
 
         if pathChanged {
             await ctx.print(Messages.unlinkSuccess)
             await ctx.print(Messages.refreshShell)
+        }
+    }
+}
+
+func symlinkedProxies(_ ctx: SwiftlyCoreContext) async throws -> [String] {
+    if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
+        let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
+        let swiftlyBinDirContents = (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
+        var proxies = [String]()
+        for bin in swiftlyBinDirContents {
+            let linkTarget = try? await fs.readlink(atPath: swiftlyBinDir / bin)
+            if linkTarget == proxyTo {
+                proxies.append(bin)
+            }
+        }
+        return proxies
+    }
+    return []
+}
+
+extension SwiftlyCommand {
+    func valitateLinked(_ ctx: SwiftlyCoreContext) async throws {
+        if try await symlinkedProxies(ctx).isEmpty {
+            await ctx.print(Messages.currentlyUnlinked)
         }
     }
 }

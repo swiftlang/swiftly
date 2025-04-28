@@ -115,7 +115,6 @@ struct Use: SwiftlyCommand {
         }
 
         try await Self.execute(ctx, toolchain, globalDefault: self.globalDefault, assumeYes: self.root.assumeYes, &config)
-
     }
 
     /// Use a toolchain. This method can modify and save the input config and also create/modify a `.swift-version` file.

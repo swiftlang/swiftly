@@ -1,13 +1,16 @@
 on:
   schedule:
     - cron: '30 3 * * *'
+  # TODO REMOVE THESE
+  pull_request:
+    types: [opened, reopened, synchronize]
 
 env:
   SWIFTLY_BOOTSTRAP_VERSION: 1.0.0
 
 jobs:
   tests-selfhosted:
-    name: Test (Self Hosted) / ${{ matrix.container }}
+    name: Test (Smoke Test - Nightly Swift Toolchain) / ${{ matrix.container }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -19,9 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh --install-swiftly
-      - name: Install main-snapshot toolchain
-        run: swiftly install main-snapshot
+        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-main-snapshot
       - name: Build and Test
         # UBI 9 and Ubuntu 20.04 - See https://github.com/swiftlang/swift/issues/80908
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80909

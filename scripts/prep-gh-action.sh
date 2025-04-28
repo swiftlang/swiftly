@@ -16,6 +16,9 @@ while [ $# -ne 0 ]; do
         --install-swiftly)
             installSwiftly=true
             ;;
+        --swift-main-snapshot)
+            swiftMainSnapshot=true
+            ;;
         *)
             ;;
     esac
@@ -34,13 +37,24 @@ if [ "$installSwiftly" == true ]; then
         echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"
     fi
 
+    selector=()
+    runSelector=()
+
+    if [ "$swiftMainSnapshot" == true ]; then
+        echo "Installing latest main-snapshot toolchain"
+        selector=("main-snapshot")
+        runSelector=("+main-snapshot")
     if [ -f .swift-version ]; then
-        echo "Installing selected swift toolchain"
-        swiftly install --post-install-file=post-install.sh
+        echo "Installing selected swift toolchain from .swift-version file"
+        selector=()
+        runSelector=()
     else
         echo "Installing latest toolchain"
-        swiftly install --post-install-file=post-install.sh latest
+        selector=("latest")
+        runSelector=("+latest")
     fi
+
+    swiftly install --post-install-file=post-install.sh "${selector[@]}"
 
     if [ -f post-install.sh ]; then
         echo "Performing swift toolchain post-installation"
@@ -48,9 +62,9 @@ if [ "$installSwiftly" == true ]; then
     fi
 
     echo "Displaying swift version"
-    swift --version
+    swift "${selector[@]} --version
 
-    CC=clang swiftly run "$(dirname "$0")/install-libarchive.sh"
+    CC=clang swiftly run "${runSelector[@]}" "$(dirname "$0")/install-libarchive.sh"
 else
     "$(dirname "$0")/install-libarchive.sh"
 fi

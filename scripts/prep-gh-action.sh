@@ -44,7 +44,7 @@ if [ "$installSwiftly" == true ]; then
         echo "Installing latest main-snapshot toolchain"
         selector=("main-snapshot")
         runSelector=("+main-snapshot")
-    if [ -f .swift-version ]; then
+    elif [ -f .swift-version ]; then
         echo "Installing selected swift toolchain from .swift-version file"
         selector=()
         runSelector=()

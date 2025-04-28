@@ -87,7 +87,7 @@ struct Update: SwiftlyCommand {
         defer {
             versionUpdateReminder()
         }
-        try await valitateLinked(ctx)
+        try await validateLinked(ctx)
 
         var config = try await Config.load(ctx)
         guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {

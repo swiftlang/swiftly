@@ -48,28 +48,56 @@ struct Unlink: SwiftlyCommand {
             await ctx.print(Messages.refreshShell)
         }
     }
-}
 
-func symlinkedProxies(_ ctx: SwiftlyCoreContext) async throws -> [String] {
-    if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
-        let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
-        let swiftlyBinDirContents = (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
-        var proxies = [String]()
-        for bin in swiftlyBinDirContents {
-            let linkTarget = try? await fs.readlink(atPath: swiftlyBinDir / bin)
-            if linkTarget == proxyTo {
-                proxies.append(bin)
+    func symlinkedProxies(_ ctx: SwiftlyCoreContext) async throws -> [String] {
+        if let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) {
+            let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
+            let swiftlyBinDirContents = (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
+            var proxies = [String]()
+            for file in swiftlyBinDirContents {
+                let linkTarget = try? await fs.readlink(atPath: swiftlyBinDir / file)
+                if linkTarget == proxyTo {
+                    proxies.append(file)
+                }
             }
+            return proxies
         }
-        return proxies
+        return []
     }
-    return []
 }
 
 extension SwiftlyCommand {
-    func valitateLinked(_ ctx: SwiftlyCoreContext) async throws {
-        if try await symlinkedProxies(ctx).isEmpty {
+    /// Checks if swiftly is currently linked to manage the active toolchain.
+    /// - Parameter ctx: The Swiftly context.
+    func validateLinked(_ ctx: SwiftlyCoreContext) async throws {
+        if try await !self.isLinked(ctx) {
             await ctx.print(Messages.currentlyUnlinked)
         }
+    }
+
+    private func isLinked(_ ctx: SwiftlyCoreContext) async throws -> Bool {
+        guard let proxyTo = try? await Swiftly.currentPlatform.findSwiftlyBin(ctx) else {
+            return false
+        }
+
+        let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(ctx)
+        guard let swiftlyBinDirContents = try? await fs.ls(atPath: swiftlyBinDir) else {
+            return false
+        }
+
+        for file in swiftlyBinDirContents {
+            // A way to test swiftly locally is to symlink the swiftly executable
+            // in the bin dir to one being built from their local swiftly repo.
+            if file == "swiftly" {
+                continue
+            }
+
+            let potentialProxyPath = swiftlyBinDir / file
+            if let linkTarget = try? await fs.readlink(atPath: potentialProxyPath), linkTarget == proxyTo {
+                return true
+            }
+        }
+
+        return false
     }
 }

@@ -61,9 +61,9 @@ This command checks to see if there are new versions of swiftly itself and upgra
 
 Currently, only manual uninstallation is supported. If you need to uninstall swiftly, please follow the instructions below:
 
-NOTE: This will not uninstall any toolchains you have installed unless you do so manually.
+NOTE: This will not uninstall any toolchains you have installed unless you do so manually with `swiftly uninstall all`.
 
-1. (Optional) Remove all installed toolchains with `swiftly uninstall all`
+1. (Optional) Remove all installed toolchains with `swiftly uninstall all`.
 
 2. Remove any sections added by swiftly in your `.zprofile`, `.bash_profile`, `.profile`, or `fish/conf.d` files. These sections might look like this:
 
@@ -72,7 +72,7 @@ NOTE: This will not uninstall any toolchains you have installed unless you do so
    . "/Users/<USERNAME>/.swiftly/env.sh"
    ```
 
-3. Remove the swfitly home and bin directories. The default location is `~/.swiftpm`
+3. Remove the swfitly home and bin directories. The default location is `~/.swiftpm`.
 
 4. Restart your shell and check you have correctly removed the swiftly environment.
 

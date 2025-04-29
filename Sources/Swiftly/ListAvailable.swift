@@ -44,7 +44,11 @@ struct ListAvailable: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try await validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
+
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }

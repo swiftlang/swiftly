@@ -142,6 +142,23 @@ extension Trait where Self == TestHomeTrait {
     static func testHome(_ name: String = "testHome") -> Self { Self(name) }
 }
 
+// extension Trait for mockedSwiftlyVersion
+struct MockedSwiftlyVersionTrait: TestTrait, TestScoping {
+    var name: String = "testHome"
+
+    init(_ name: String) { self.name = name }
+
+    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
+        try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: SwiftlyVersion(major: SwiftlyCore.version.major, minor: 0, patch: 0)) {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == MockedSwiftlyVersionTrait {
+    static func mockedSwiftlyVersion(_ name: String = "testHome") -> Self { Self(name) }
+}
+
 struct MockHomeToolchainsTrait: TestTrait, TestScoping {
     var name: String = "testHome"
     var toolchains: Set<ToolchainVersion> = .allToolchains()

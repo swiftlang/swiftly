@@ -19,17 +19,21 @@ import Testing
         .oldReleaseSnapshot,
     ]
 
+    private static let swiftlyVersion = SwiftlyVersion(major: SwiftlyCore.version.major, minor: 0, patch: 0)
+
     /// Constructs a mock home directory with the toolchains listed above installed and runs the provided closure within
     /// the context of that home.
     func runListTest(f: () async throws -> Void) async throws {
         try await SwiftlyTests.withTestHome(name: Self.homeName) {
-            for toolchain in Set<ToolchainVersion>.allToolchains() {
-                try await SwiftlyTests.installMockedToolchain(toolchain: toolchain)
+            try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: Self.swiftlyVersion) {
+                for toolchain in Set<ToolchainVersion>.allToolchains() {
+                    try await SwiftlyTests.installMockedToolchain(toolchain: toolchain)
+                }
+
+                try await SwiftlyTests.runCommand(Use.self, ["use", "latest"])
+
+                try await f()
             }
-
-            try await SwiftlyTests.runCommand(Use.self, ["use", "latest"])
-
-            try await f()
         }
     }
 
@@ -155,16 +159,18 @@ import Testing
 
     /// Tests that `list` properly handles the case where no toolchains have been installed yet.
     @Test(.testHome(Self.homeName)) func listEmpty() async throws {
-        var toolchains = try await self.runList(selector: nil)
-        #expect(toolchains == [])
+        try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: Self.swiftlyVersion) {
+            var toolchains = try await self.runList(selector: nil)
+            #expect(toolchains == [])
 
-        toolchains = try await self.runList(selector: "5")
-        #expect(toolchains == [])
+            toolchains = try await self.runList(selector: "5")
+            #expect(toolchains == [])
 
-        toolchains = try await self.runList(selector: "main-snapshot")
-        #expect(toolchains == [])
+            toolchains = try await self.runList(selector: "main-snapshot")
+            #expect(toolchains == [])
 
-        toolchains = try await self.runList(selector: "5.7-snapshot")
-        #expect(toolchains == [])
+            toolchains = try await self.runList(selector: "5.7-snapshot")
+            #expect(toolchains == [])
+        }
     }
 }

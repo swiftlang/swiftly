@@ -93,7 +93,7 @@ extension Data {
 }
 
 extension SwiftlyCommand {
-    public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) async throws {
+    public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) async throws -> () -> Void {
         for requiredDir in Swiftly.requiredDirectories(ctx) {
             guard try await fs.exists(atPath: requiredDir) else {
                 do {
@@ -107,5 +107,27 @@ extension SwiftlyCommand {
 
         // Verify that the configuration exists and can be loaded
         _ = try await Config.load(ctx)
+
+        let shouldUpdateSwiftly: Bool
+        if let swiftlyRelease = try? await ctx.httpClient.getCurrentSwiftlyRelease() {
+            shouldUpdateSwiftly = try swiftlyRelease.swiftlyVersion > SwiftlyCore.version
+        } else {
+            shouldUpdateSwiftly = false
+        }
+
+        return {
+            if shouldUpdateSwiftly {
+                let updateMessage = """
+                -----------------------------
+                A new release of swiftly is available.
+                Please run `swiftly self-update` to update.
+                -----------------------------\n
+                """
+
+                if let data = updateMessage.data(using: .utf8) {
+                    FileHandle.standardError.write(data)
+                }
+            }
+        }
     }
 }

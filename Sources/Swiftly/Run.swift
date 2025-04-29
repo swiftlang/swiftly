@@ -58,7 +58,10 @@ struct Run: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try await validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
 
         // Handle the specific case where help is requested of the run subcommand
         if command == ["--help"] {

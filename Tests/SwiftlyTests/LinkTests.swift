@@ -5,7 +5,7 @@ import Testing
 
 @Suite struct LinkTests {
     /// Tests that enabling swiftly results in swiftlyBinDir being populated with symlinks.
-    @Test func testLink() async throws {
+    @Test(.testHomeMockedToolchain()) func testLink() async throws {
         try await SwiftlyTests.withTestHome {
             let swiftlyBinDir = Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx)
             let swiftlyBinaryPath = swiftlyBinDir / "swiftly"
@@ -20,7 +20,7 @@ import Testing
             try "swiftly binary".write(to: swiftlyBinaryPath, atomically: true, encoding: .utf8)
 
             let toolchainDir = Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchainVersion) / "usr" / "bin"
-            try await fs.mkdir([.parents], atPath: toolchainDir)
+            try await fs.mkdir(.parents, atPath: toolchainDir)
 
             let proxies = ["swift-build", "swift-test", "swift-run"]
             for proxy in proxies {

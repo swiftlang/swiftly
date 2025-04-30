@@ -49,11 +49,10 @@ struct ListAvailable: SwiftlyCommand {
             versionUpdateReminder()
         }
 
+        var config = try await Config.load(ctx)
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
-
-        var config = try await Config.load(ctx)
 
         let tc: [ToolchainVersion]
 

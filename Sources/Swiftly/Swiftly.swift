@@ -10,7 +10,7 @@ import SystemPackage
 
 typealias fs = SwiftlyCore.FileSystem
 
-extension FilePath: ExpressibleByArgument {
+extension FilePath: @retroactive ExpressibleByArgument {
     public init?(argument: String) {
         self.init(argument)
     }
@@ -46,6 +46,8 @@ public struct Swiftly: SwiftlyCommand {
             Init.self,
             SelfUpdate.self,
             Run.self,
+            Link.self,
+            Unlink.self,
         ]
     )
 

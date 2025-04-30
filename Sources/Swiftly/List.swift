@@ -43,11 +43,10 @@ struct List: SwiftlyCommand {
             versionUpdateReminder()
         }
 
+        var config = try await Config.load(ctx)
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
-
-        var config = try await Config.load(ctx)
 
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
         let (inUse, _) = try await selectToolchain(ctx, config: &config)

@@ -136,11 +136,7 @@ extension Executable: CustomStringConvertible {
 extension Arguments: CustomStringConvertible {
     public var description: String {
         let normalized: [String] = self.storage.map(\.description).map {
-            if $0.contains(" ") {
-                return "\"\($0)\""
-            } else {
-                return String($0)
-            }
+            $0.contains(" ") ? "\"\($0)\"" : String($0)
         }
 
         return normalized.joined(separator: " ")

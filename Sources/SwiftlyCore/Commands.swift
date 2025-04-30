@@ -30,7 +30,7 @@ extension SystemCommand {
             var args: [String] = []
 
             if let datasource = self.datasource {
-                args += [datasource]
+                args.append(datasource)
             }
 
             return Configuration(
@@ -65,8 +65,10 @@ extension SystemCommand {
                 var args = c.arguments.storage.map(\.description) + ["-read"]
 
                 if let path = self.path {
-                    args += [path.string] + self.keys
+                    args.append(path.string)
                 }
+
+                args.append(contentsOf: self.keys)
 
                 c.arguments = .init(args)
 
@@ -116,7 +118,7 @@ extension SystemCommand {
         func config() -> Configuration {
             var args: [String] = []
 
-            args += self.inputFiles.map(\.string)
+            args.append(contentsOf: self.inputFiles.map(\.string))
 
             return Configuration(
                 executable: self.executable,
@@ -205,11 +207,11 @@ extension SystemCommand {
             var args: [String] = []
 
             for option in self.options {
-                args += option.args()
+                args.append(contentsOf: option.args())
             }
 
-            args += ["--root", "\(self.root)"]
-            args += ["\(self.packageOutputPath)"]
+            args.append(contentsOf: ["--root", "\(self.root)"])
+            args.append("\(self.packageOutputPath)")
 
             return Configuration(
                 executable: self.executable,
@@ -255,8 +257,8 @@ extension SystemCommand {
         public func config() -> Configuration {
             var args: [String] = []
 
-            args += [self.database]
-            args += self.keys
+            args.append(self.database)
+            args.append(contentsOf: self.keys)
 
             return Configuration(
                 executable: self.executable,
@@ -301,7 +303,7 @@ extension SystemCommand {
             var args: [String] = []
 
             if let workingDir {
-                args += ["-C", "\(workingDir)"]
+                args.append(contentsOf: ["-C", "\(workingDir)"])
             }
 
             return Configuration(
@@ -327,7 +329,7 @@ extension SystemCommand {
 
                 var args = c.arguments.storage.map(\.description)
 
-                args += ["init"]
+                args.append("init")
 
                 c.arguments = .init(args)
 
@@ -375,9 +377,9 @@ extension SystemCommand {
 
                 var args = c.arguments.storage.map(\.description)
 
-                args += ["commit"]
+                args.append("commit")
                 for option in self.options {
-                    args += option.args()
+                    args.append(contentsOf: option.args())
                 }
 
                 c.arguments = .init(args)
@@ -418,10 +420,10 @@ extension SystemCommand {
 
                 var args = c.arguments.storage.map(\.description)
 
-                args += ["log"]
+                args.append("log")
 
                 for opt in self.options {
-                    args += opt.args()
+                    args.append(contentsOf: opt.args())
                 }
 
                 c.arguments = .init(args)
@@ -461,14 +463,14 @@ extension SystemCommand {
 
                 var args = c.arguments.storage.map(\.description)
 
-                args += ["diff-index"]
+                args.append("diff-index")
 
                 for opt in self.options {
-                    args += opt.args()
+                    args.append(contentsOf: opt.args())
                 }
 
                 if let treeIsh = self.treeIsh {
-                    args += [treeIsh]
+                    args.append(treeIsh)
                 }
 
                 c.arguments = .init(args)

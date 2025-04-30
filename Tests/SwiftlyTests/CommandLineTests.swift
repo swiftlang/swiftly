@@ -39,4 +39,76 @@ public struct CommandLineTests {
         #expect(config.executable == .name("lipo"))
         #expect(config.arguments.storage.map(\.description) == ["swiftly", "-create", "-output", "swiftly-universal-with-one-arch"])
     }
+
+    @Test func testPkgbuild() {
+        var config = sys.pkgbuild(root: "mypath", packageOutputPath: "outputDir").config()
+        #expect(String(describing: config) == "pkgbuild --root mypath outputDir")
+
+        config = sys.pkgbuild(.version("1234"), root: "somepath", packageOutputPath: "output").config()
+        #expect(String(describing: config) == "pkgbuild --version 1234 --root somepath output")
+
+        config = sys.pkgbuild(.installLocation("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .sign("mycert"), root: "someroot", packageOutputPath: "my.pkg").config()
+        #expect(String(describing: config) == "pkgbuild --install-location /usr/local --version 1.0.0 --identifier org.foo.bar --sign mycert --root someroot my.pkg")
+
+        config = sys.pkgbuild(.installLocation("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), root: "someroot", packageOutputPath: "my.pkg").config()
+        #expect(String(describing: config) == "pkgbuild --install-location /usr/local --version 1.0.0 --identifier org.foo.bar --root someroot my.pkg")
+    }
+
+    @Test func testGetent() {
+        var config = sys.getent(database: "passwd", keys: "swiftly").config()
+        #expect(String(describing: config) == "getent passwd swiftly")
+
+        config = sys.getent(database: "foo", keys: "abc", "def").config()
+        #expect(String(describing: config) == "getent foo abc def")
+    }
+
+    @Test func testGitModel() {
+        var config = sys.git().log(.maxCount(1), .pretty("format:%d")).config()
+        #expect(String(describing: config) == "git log --max-count=1 --pretty=format:%d")
+
+        config = sys.git().log().config()
+        #expect(String(describing: config) == "git log")
+
+        config = sys.git().log(.pretty("foo")).config()
+        #expect(String(describing: config) == "git log --pretty=foo")
+
+        config = sys.git().diffIndex(.quiet, treeIsh: "HEAD").config()
+        #expect(String(describing: config) == "git diff-index --quiet HEAD")
+
+        config = sys.git().diffIndex(treeIsh: "main").config()
+        #expect(String(describing: config) == "git diff-index main")
+    }
+
+    @Test(
+        .tags(.medium),
+        .enabled {
+            try await sys.GitCommand.defaultExecutable.exists()
+        }
+    )
+    func testGit() async throws {
+        // GIVEN a simple git repository
+        let tmp = fs.mktemp()
+        try await fs.mkdir(atPath: tmp)
+        try await sys.git(workingDir: tmp)._init().run(Swiftly.currentPlatform)
+
+        // AND a simple history
+        try "Some text".write(to: tmp / "foo.txt", atomically: true)
+        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "add", "foo.txt")
+        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "config", "user.email", "user@example.com")
+        try await sys.git(workingDir: tmp).commit(.message("Initial commit")).run(Swiftly.currentPlatform)
+        try await sys.git(workingDir: tmp).diffIndex(.quiet, treeIsh: "HEAD").run(Swiftly.currentPlatform)
+
+        // WHEN inspecting the log
+        let log = try await sys.git(workingDir: tmp).log(.maxCount(1)).output(Swiftly.currentPlatform)!
+        // THEN it is not empty
+        #expect(log != "")
+
+        // WHEN there is a change to the work tree
+        try "Some new text".write(to: tmp / "foo.txt", atomically: true)
+
+        // THEN diff index finds a change
+        try await #expect(throws: Error.self) {
+            try await sys.git(workingDir: tmp).diffIndex(.quiet, treeIsh: "HEAD").run(Swiftly.currentPlatform)
+        }
+    }
 }

@@ -2,6 +2,7 @@ import Foundation
 import SwiftlyCore
 import SystemPackage
 
+typealias sys = SwiftlyCore.SystemCommand
 typealias fs = SwiftlyCore.FileSystem
 
 /// `Platform` implementation for Linux systems.
@@ -605,15 +606,8 @@ public struct Linux: Platform {
 
     public func getShell() async throws -> String {
         let userName = ProcessInfo.processInfo.userName
-        let prefix = "\(userName):"
-        if let passwds = try await runProgramOutput("getent", "passwd") {
-            for line in passwds.components(separatedBy: "\n") {
-                if line.hasPrefix(prefix) {
-                    if case let comps = line.components(separatedBy: ":"), comps.count > 1 {
-                        return comps[comps.count - 1]
-                    }
-                }
-            }
+        if let entry = try await sys.getent(database: "passwd", keys: userName).entries(self).first {
+            if let shell = entry.last { return shell }
         }
 
         // Fall back on bash on Linux and other Unixes

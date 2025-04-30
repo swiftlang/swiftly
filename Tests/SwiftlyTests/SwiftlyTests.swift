@@ -957,22 +957,14 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
 
         let pkg = tmp / "swiftly.pkg"
 
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        task.arguments = [
-            "pkgbuild",
-            "--root",
-            "\(swiftlyDir)",
-            "--install-location",
-            ".swiftly",
-            "--version",
-            "\(self.latestSwiftlyVersion)",
-            "--identifier",
-            "org.swift.swiftly",
-            "\(pkg)",
-        ]
-        try task.run()
-        task.waitUntilExit()
+        try await sys.pkgbuild(
+            .installLocation("swiftly"),
+            .version("\(self.latestSwiftlyVersion)"),
+            .identifier("org.swift.swiftly"),
+            root: swiftlyDir,
+            packageOutputPath: pkg
+        )
+        .run(Swiftly.currentPlatform)
 
         let data = try Data(contentsOf: pkg)
         try await fs.remove(atPath: tmp)
@@ -1010,24 +1002,16 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         let data = try encoder.encode(pkgInfo)
         try data.write(to: toolchainDir.appending("Info.plist"))
 
-        let pkg = tmp.appending("toolchain.pkg")
+        let pkg = tmp / "toolchain.pkg"
 
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        task.arguments = [
-            "pkgbuild",
-            "--root",
-            "\(toolchainDir)",
-            "--install-location",
-            "Library/Developer/Toolchains/\(toolchain.identifier).xctoolchain",
-            "--version",
-            "\(toolchain.name)",
-            "--identifier",
-            pkgInfo.CFBundleIdentifier,
-            "\(pkg)",
-        ]
-        try task.run()
-        task.waitUntilExit()
+        try await sys.pkgbuild(
+            .installLocation(FilePath("Library/Developer/Toolchains/\(toolchain.identifier).xctoolchain")),
+            .version("\(toolchain.name)"),
+            .identifier(pkgInfo.CFBundleIdentifier),
+            root: toolchainDir,
+            packageOutputPath: pkg
+        )
+        .run(Swiftly.currentPlatform)
 
         let pkgData = try Data(contentsOf: pkg)
         try await fs.remove(atPath: tmp)

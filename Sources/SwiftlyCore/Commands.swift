@@ -30,7 +30,7 @@ extension SystemCommand {
             var args: [String] = []
 
             if let datasource = self.datasource {
-                args += [datasource]
+                args.append(datasource)
             }
 
             return Configuration(
@@ -65,8 +65,10 @@ extension SystemCommand {
                 var args = c.arguments.storage.map(\.description) + ["-read"]
 
                 if let path = self.path {
-                    args += [path.string] + self.keys
+                    args.append(path.string)
                 }
+
+                args.append(contentsOf: self.keys)
 
                 c.arguments = .init(args)
 
@@ -91,6 +93,8 @@ extension SystemCommand.DsclCommand.ReadCommand: Output {
     }
 }
 
+// Create or operate on universal files
+// See lipo(1) for details
 extension SystemCommand {
     public static func lipo(executable: Executable = LipoCommand.defaultExecutable, inputFiles: FilePath...) -> LipoCommand {
         Self.lipo(executable: executable, inputFiles: inputFiles)
@@ -106,7 +110,7 @@ extension SystemCommand {
         var executable: Executable
         var inputFiles: [FilePath]
 
-        public init(executable: Executable, inputFiles: [FilePath]) {
+        internal init(executable: Executable, inputFiles: [FilePath]) {
             self.executable = executable
             self.inputFiles = inputFiles
         }
@@ -114,7 +118,7 @@ extension SystemCommand {
         func config() -> Configuration {
             var args: [String] = []
 
-            args += self.inputFiles.map(\.string)
+            args.append(contentsOf: self.inputFiles.map(\.string))
 
             return Configuration(
                 executable: self.executable,
@@ -150,3 +154,334 @@ extension SystemCommand {
 }
 
 extension SystemCommand.LipoCommand.CreateCommand: Runnable {}
+
+// Build a macOS Installer component package from on-disk files
+// See pkgbuild(1) for more details
+extension SystemCommand {
+    public static func pkgbuild(executable: Executable = PkgbuildCommand.defaultExecutable, _ options: PkgbuildCommand.Option..., root: FilePath, packageOutputPath: FilePath) -> PkgbuildCommand {
+        Self.pkgbuild(executable: executable, options: options, root: root, packageOutputPath: packageOutputPath)
+    }
+
+    public static func pkgbuild(executable: Executable = PkgbuildCommand.defaultExecutable, options: [PkgbuildCommand.Option], root: FilePath, packageOutputPath: FilePath) -> PkgbuildCommand {
+        PkgbuildCommand(executable: executable, options, root: root, packageOutputPath: packageOutputPath)
+    }
+
+    public struct PkgbuildCommand {
+        public static var defaultExecutable: Executable { .name("pkgbuild") }
+
+        var executable: Executable
+
+        var options: [Option]
+
+        var root: FilePath
+        var packageOutputPath: FilePath
+
+        internal init(executable: Executable, _ options: [Option], root: FilePath, packageOutputPath: FilePath) {
+            self.executable = executable
+            self.options = options
+            self.root = root
+            self.packageOutputPath = packageOutputPath
+        }
+
+        public enum Option {
+            case installLocation(FilePath)
+            case version(String)
+            case identifier(String)
+            case sign(String)
+
+            func args() -> [String] {
+                switch self {
+                case let .installLocation(installLocation):
+                    return ["--install-location", installLocation.string]
+                case let .version(version):
+                    return ["--version", version]
+                case let .identifier(identifier):
+                    return ["--identifier", identifier]
+                case let .sign(identityName):
+                    return ["--sign", identityName]
+                }
+            }
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            for option in self.options {
+                args.append(contentsOf: option.args())
+            }
+
+            args.append(contentsOf: ["--root", "\(self.root)"])
+            args.append("\(self.packageOutputPath)")
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand.PkgbuildCommand: Runnable {}
+
+// get entries from Name Service Switch libraries
+// See getent(1) for more details
+extension SystemCommand {
+    public static func getent(executable: Executable = GetentCommand.defaultExecutable, database: String, keys: String...) -> GetentCommand {
+        Self.getent(executable: executable, database: database, keys: keys)
+    }
+
+    public static func getent(executable: Executable = GetentCommand.defaultExecutable, database: String, keys: [String]) -> GetentCommand {
+        GetentCommand(executable: executable, database: database, keys: keys)
+    }
+
+    public struct GetentCommand {
+        public static var defaultExecutable: Executable { .name("getent") }
+
+        var executable: Executable
+
+        var database: String
+
+        var keys: [String]
+
+        internal init(
+            executable: Executable,
+            database: String,
+            keys: [String]
+        ) {
+            self.executable = executable
+            self.database = database
+            self.keys = keys
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            args.append(self.database)
+            args.append(contentsOf: self.keys)
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand.GetentCommand: Output {
+    public func entries(_ platform: Platform) async throws -> [[String]] {
+        let output = try await output(platform)
+        guard let output else { return [] }
+
+        var entries: [[String]] = []
+        for line in output.components(separatedBy: "\n") {
+            entries.append(line.components(separatedBy: ":"))
+        }
+        return entries
+    }
+}
+
+extension SystemCommand {
+    public static func git(executable: Executable = GitCommand.defaultExecutable, workingDir: FilePath? = nil) -> GitCommand {
+        GitCommand(executable: executable, workingDir: workingDir)
+    }
+
+    public struct GitCommand {
+        public static var defaultExecutable: Executable { .name("git") }
+
+        var executable: Executable
+
+        var workingDir: FilePath?
+
+        internal init(executable: Executable, workingDir: FilePath?) {
+            self.executable = executable
+            self.workingDir = workingDir
+        }
+
+        func config() -> Configuration {
+            var args: [String] = []
+
+            if let workingDir {
+                args.append(contentsOf: ["-C", "\(workingDir)"])
+            }
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func _init() -> InitCommand {
+            InitCommand(self)
+        }
+
+        public struct InitCommand {
+            var git: GitCommand
+
+            internal init(_ git: GitCommand) {
+                self.git = git
+            }
+
+            public func config() -> Configuration {
+                var c = self.git.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("init")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func commit(_ options: CommitCommand.Option...) -> CommitCommand {
+            self.commit(options: options)
+        }
+
+        public func commit(options: [CommitCommand.Option]) -> CommitCommand {
+            CommitCommand(self, options: options)
+        }
+
+        public struct CommitCommand {
+            var git: GitCommand
+
+            var options: [Option]
+
+            internal init(_ git: GitCommand, options: [Option]) {
+                self.git = git
+                self.options = options
+            }
+
+            public enum Option {
+                case allowEmpty
+                case allowEmptyMessage
+                case message(String)
+
+                public func args() -> [String] {
+                    switch self {
+                    case .allowEmpty:
+                        ["--allow-empty"]
+                    case .allowEmptyMessage:
+                        ["--allow-empty-message"]
+                    case let .message(message):
+                        ["-m", message]
+                    }
+                }
+            }
+
+            public func config() -> Configuration {
+                var c = self.git.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("commit")
+                for option in self.options {
+                    args.append(contentsOf: option.args())
+                }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func log(_ options: LogCommand.Option...) -> LogCommand {
+            LogCommand(self, options)
+        }
+
+        public struct LogCommand {
+            var git: GitCommand
+            var options: [Option]
+
+            internal init(_ git: GitCommand, _ options: [Option]) {
+                self.git = git
+                self.options = options
+            }
+
+            public enum Option {
+                case maxCount(Int)
+                case pretty(String)
+
+                func args() -> [String] {
+                    switch self {
+                    case let .maxCount(num):
+                        return ["--max-count=\(num)"]
+                    case let .pretty(format):
+                        return ["--pretty=\(format)"]
+                    }
+                }
+            }
+
+            public func config() -> Configuration {
+                var c = self.git.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("log")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func diffIndex(_ options: DiffIndexCommand.Option..., treeIsh: String?) -> DiffIndexCommand {
+            DiffIndexCommand(self, options, treeIsh: treeIsh)
+        }
+
+        public struct DiffIndexCommand {
+            var git: GitCommand
+            var options: [Option]
+            var treeIsh: String?
+
+            internal init(_ git: GitCommand, _ options: [Option], treeIsh: String?) {
+                self.git = git
+                self.options = options
+                self.treeIsh = treeIsh
+            }
+
+            public enum Option {
+                case quiet
+
+                func args() -> [String] {
+                    switch self {
+                    case .quiet:
+                        return ["--quiet"]
+                    }
+                }
+            }
+
+            public func config() -> Configuration {
+                var c = self.git.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("diff-index")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+
+                if let treeIsh = self.treeIsh {
+                    args.append(treeIsh)
+                }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand.GitCommand.LogCommand: Output {}
+extension SystemCommand.GitCommand.DiffIndexCommand: Runnable {}
+extension SystemCommand.GitCommand.InitCommand: Runnable {}
+extension SystemCommand.GitCommand.CommitCommand: Runnable {}

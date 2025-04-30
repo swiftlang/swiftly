@@ -72,7 +72,7 @@ NOTE: This will not uninstall any toolchains you have installed unless you do so
    . "/Users/<USERNAME>/.swiftly/env.sh"
    ```
 
-3. Remove the swfitly home and bin directories. The default location is `~/.swiftpm`.
+3. Remove the swfitly home and bin directories. The default location might be `~/.swiftpm` or `.local/share/swiftly`
 
 4. Restart your shell and check you have correctly removed the swiftly environment.
 

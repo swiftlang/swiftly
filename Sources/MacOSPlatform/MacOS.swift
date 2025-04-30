@@ -106,7 +106,7 @@ public struct MacOS: Platform {
             }
 
             await ctx.print("Untarring pkg Payload...")
-            try runProgram("tar", "-C", "\(toolchainDir)", "-xvf", "\(payload)", quiet: !verbose)
+            try await sys.tar(.directory(toolchainDir)).extract(.verbose, .archive(payload)).run(self, quiet: !verbose)
         }
     }
 
@@ -138,7 +138,7 @@ public struct MacOS: Platform {
             }
 
             await ctx.print("Extracting the swiftly package into \(installDir)...")
-            try runProgram("tar", "-C", "\(installDir)", "-xvf", "\(payload)", quiet: false)
+            try await sys.tar(.directory(installDir)).extract(.verbose, .archive(payload)).run(self, quiet: false)
         }
 
         try self.runProgram((userHomeDir / ".swiftly/bin/swiftly").string, "init")

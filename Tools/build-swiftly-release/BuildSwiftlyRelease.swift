@@ -264,7 +264,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     func buildLinuxRelease() async throws {
         // TODO: turn these into checks that the system meets the criteria for being capable of using the toolchain + checking for packages, not tools
         let curl = try await self.assertTool("curl", message: "Please install curl with `yum install curl`")
-        let tar = try await self.assertTool("tar", message: "Please install tar with `yum install tar`")
         let make = try await self.assertTool("make", message: "Please install make with `yum install make`")
         let git = try await self.assertTool("git", message: "Please install git with `yum install git`")
         let strip = try await self.assertTool("strip", message: "Please install strip with `yum install binutils`")
@@ -295,7 +294,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             let shaActual = libArchiveTarShaActual ?? "none"
             throw Error(message: "The libarchive tar.gz file sha256sum is \(shaActual), but expected \(libArchiveTarSha)")
         }
-        try runProgram(tar, "--directory=\(buildCheckoutsDir)", "-xzf", "\(buildCheckoutsDir)/libarchive-\(libArchiveVersion).tar.gz")
+        try await sys.tar(.directory(FilePath(buildCheckoutsDir))).extract(.compressed, .archive(FilePath("\(buildCheckoutsDir)/libarchive-\(libArchiveVersion).tar.gz"))).run(currentPlatform)
 
         let cwd = FileManager.default.currentDirectoryPath
         FileManager.default.changeCurrentDirectoryPath(libArchivePath)
@@ -377,7 +376,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let releaseArchive = "\(releaseDir)/swiftly-\(version)-x86_64.tar.gz"
 #endif
 
-        try runProgram(tar, "--directory=\(releaseDir)", "-czf", releaseArchive, "swiftly", "LICENSE.txt")
+        try await sys.tar(.directory(FilePath(releaseDir))).create(.compressed, .archive(FilePath(releaseArchive)), files: "swiftly", "LICENSE.txt").run(currentPlatform)
 
         print(releaseArchive)
 
@@ -391,7 +390,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 #endif
 
             try runProgram(swift, "build", "--swift-sdk", "\(arch)-swift-linux-musl", "--product=test-swiftly", "--pkg-config-path=\(pkgConfigPath)/lib/pkgconfig", "--static-swift-stdlib", "--configuration=debug")
-            try runProgram(tar, "--directory=\(debugDir)", "-czf", testArchive, "test-swiftly")
+            try await sys.tar(.directory(FilePath(debugDir))).create(.compressed, .archive(FilePath(testArchive)), files: "test-swiftly").run(currentPlatform)
 
             print(testArchive)
         }
@@ -408,8 +407,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try await self.checkGitRepoStatus(git)
 
         let strip = try await self.assertTool("strip", message: "In order to strip binaries there needs to be the `strip` tool that is installed on macOS.")
-
-        let tar = try await self.assertTool("tar", message: "In order to produce archives there needs to be the `tar` tool that is installed on macOS.")
 
         try runProgram(swift, "package", "clean")
 
@@ -491,7 +488,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             .create(output: swiftlyBinDir / "swiftly")
             .runEcho(currentPlatform)
 
-            try runProgram(tar, "--directory=.build/x86_64-apple-macosx/debug", "-czf", testArchive.path, "test-swiftly")
+            try await sys.tar(.directory(FilePath(".build/x86_64-apple-macosx/debug"))).create(.compressed, .archive(FilePath(testArchive.path)), files: "test-swiftly").run(currentPlatform)
 
             print(testArchive.path)
         }

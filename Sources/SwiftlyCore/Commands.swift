@@ -647,3 +647,302 @@ extension SystemCommand {
 
 extension SystemCommand.TarCommand.CreateCommand: Runnable {}
 extension SystemCommand.TarCommand.ExtractCommand: Runnable {}
+
+extension SystemCommand {
+    public static func swift(executable: Executable = SwiftCommand.defaultExecutable) -> SwiftCommand {
+        SwiftCommand(executable: executable)
+    }
+
+    public struct SwiftCommand {
+        public static var defaultExecutable: Executable { .name("swift") }
+
+        public var executable: Executable
+
+        public init(executable: Executable) {
+            self.executable = executable
+        }
+
+        func config() -> Configuration {
+            var args: [String] = []
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func package() -> PackageCommand {
+            PackageCommand(self)
+        }
+
+        public struct PackageCommand {
+            var swift: SwiftCommand
+
+            init(_ swift: SwiftCommand) {
+                self.swift = swift
+            }
+
+            public func config() -> Configuration {
+                var c = self.swift.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("package")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+
+            public func reset() -> ResetCommand {
+                ResetCommand(self)
+            }
+
+            public struct ResetCommand {
+                var packageCommand: PackageCommand
+
+                init(_ packageCommand: PackageCommand) {
+                    self.packageCommand = packageCommand
+                }
+
+                public func config() -> Configuration {
+                    var c = self.packageCommand.config()
+
+                    var args = c.arguments.storage.map(\.description)
+
+                    args.append("reset")
+
+                    c.arguments = .init(args)
+
+                    return c
+                }
+            }
+
+            public func clean() -> CleanCommand {
+                CleanCommand(self)
+            }
+
+            public struct CleanCommand {
+                var packageCommand: PackageCommand
+
+                init(_ packageCommand: PackageCommand) {
+                    self.packageCommand = packageCommand
+                }
+
+                public func config() -> Configuration {
+                    var c = self.packageCommand.config()
+
+                    var args = c.arguments.storage.map(\.description)
+
+                    args.append("clean")
+
+                    c.arguments = .init(args)
+
+                    return c
+                }
+            }
+
+            public func _init(_ options: InitCommand.Option...) -> InitCommand {
+                self._init(options: options)
+            }
+
+            public func _init(options: [InitCommand.Option]) -> InitCommand {
+                InitCommand(self, options)
+            }
+
+            public struct InitCommand {
+                var packageCommand: PackageCommand
+
+                var options: [Option]
+
+                public enum Option {
+                    case type(String)
+                    case packagePath(FilePath)
+
+                    func args() -> [String] {
+                        switch self {
+                        case let .type(type):
+                            return ["--type=\(type)"]
+                        case let .packagePath(packagePath):
+                            return ["--package-path=\(packagePath)"]
+                        }
+                    }
+                }
+
+                init(_ packageCommand: PackageCommand, _ options: [Option]) {
+                    self.packageCommand = packageCommand
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.packageCommand.config()
+
+                    var args = c.arguments.storage.map(\.description)
+
+                    args.append("init")
+
+                    for opt in self.options {
+                        args.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(args)
+
+                    return c
+                }
+            }
+        }
+
+        public func sdk() -> SdkCommand {
+            SdkCommand(self)
+        }
+
+        public struct SdkCommand {
+            var swift: SwiftCommand
+
+            init(_ swift: SwiftCommand) {
+                self.swift = swift
+            }
+
+            public func config() -> Configuration {
+                var c = self.swift.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("sdk")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+
+            public func install(_ bundlePathOrUrl: String, checksum: String? = nil) -> InstallCommand {
+                InstallCommand(self, bundlePathOrUrl, checksum: checksum)
+            }
+
+            public struct InstallCommand {
+                var sdkCommand: SdkCommand
+                var bundlePathOrUrl: String
+                var checksum: String?
+
+                init(_ sdkCommand: SdkCommand, _ bundlePathOrUrl: String, checksum: String?) {
+                    self.sdkCommand = sdkCommand
+                    self.bundlePathOrUrl = bundlePathOrUrl
+                    self.checksum = checksum
+                }
+
+                public func config() -> Configuration {
+                    var c = self.sdkCommand.config()
+
+                    var args = c.arguments.storage.map(\.description)
+
+                    args.append("install")
+
+                    args.append(self.bundlePathOrUrl)
+
+                    if let checksum = self.checksum {
+                        args.append("--checksum=\(checksum)")
+                    }
+
+                    c.arguments = .init(args)
+
+                    return c
+                }
+            }
+
+            public func remove(_ sdkIdOrBundleName: String) -> RemoveCommand {
+                RemoveCommand(self, sdkIdOrBundleName)
+            }
+
+            public struct RemoveCommand {
+                var sdkCommand: SdkCommand
+                var sdkIdOrBundleName: String
+
+                init(_ sdkCommand: SdkCommand, _ sdkIdOrBundleName: String) {
+                    self.sdkCommand = sdkCommand
+                    self.sdkIdOrBundleName = sdkIdOrBundleName
+                }
+
+                public func config() -> Configuration {
+                    var c = self.sdkCommand.config()
+
+                    var args = c.arguments.storage.map(\.description)
+
+                    args.append("remove")
+
+                    args.append(self.sdkIdOrBundleName)
+
+                    c.arguments = .init(args)
+
+                    return c
+                }
+            }
+        }
+
+        public func build(_ options: BuildCommand.Option...) -> BuildCommand {
+            BuildCommand(self, options)
+        }
+
+        public struct BuildCommand {
+            var swift: SwiftCommand
+            var options: [Option]
+
+            init(_ swift: SwiftCommand, _ options: [Option]) {
+                self.swift = swift
+                self.options = options
+            }
+
+            public func config() -> Configuration {
+                var c = self.swift.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("build")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+
+            public enum Option {
+                case arch(String)
+                case configuration(String)
+                case packagePath(FilePath)
+                case pkgConfigPath(String)
+                case product(String)
+                case swiftSdk(String)
+                case staticSwiftStdlib
+
+                func args() -> [String] {
+                    switch self {
+                    case let .arch(arch):
+                        return ["--arch=\(arch)"]
+                    case let .configuration(configuration):
+                        return ["--configuration=\(configuration)"]
+                    case let .packagePath(packagePath):
+                        return ["--package-path=\(packagePath)"]
+                    case let .pkgConfigPath(pkgConfigPath):
+                        return ["--pkg-config-path=\(pkgConfigPath)"]
+                    case let .swiftSdk(sdk):
+                        return ["--swift-sdk=\(sdk)"]
+                    case .staticSwiftStdlib:
+                        return ["--static-swift-stdlib"]
+                    case let .product(product):
+                        return ["--product=\(product)"]
+                    }
+                }
+            }
+        }
+    }
+}
+
+extension SystemCommand.SwiftCommand.PackageCommand.ResetCommand: Runnable {}
+extension SystemCommand.SwiftCommand.PackageCommand.CleanCommand: Runnable {}
+extension SystemCommand.SwiftCommand.PackageCommand.InitCommand: Runnable {}
+extension SystemCommand.SwiftCommand.SdkCommand.InstallCommand: Runnable {}
+extension SystemCommand.SwiftCommand.SdkCommand.RemoveCommand: Runnable {}
+extension SystemCommand.SwiftCommand.BuildCommand: Runnable {}

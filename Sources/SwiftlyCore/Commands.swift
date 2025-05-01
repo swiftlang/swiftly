@@ -5,9 +5,9 @@ public enum SystemCommand {}
 
 // This file contains a set of system commands that's used by Swiftly and its related tests and tooling
 
-// Directory Service command line utility for macOS
-// See dscl(1) for details
 extension SystemCommand {
+    // Directory Service command line utility for macOS
+    // See dscl(1) for details
     public static func dscl(executable: Executable = DsclCommand.defaultExecutable, datasource: String? = nil) -> DsclCommand {
         DsclCommand(executable: executable, datasource: datasource)
     }
@@ -93,13 +93,15 @@ extension SystemCommand.DsclCommand.ReadCommand: Output {
     }
 }
 
-// Create or operate on universal files
-// See lipo(1) for details
 extension SystemCommand {
+    // Create or operate on universal files
+    // See lipo(1) for details
     public static func lipo(executable: Executable = LipoCommand.defaultExecutable, inputFiles: FilePath...) -> LipoCommand {
         Self.lipo(executable: executable, inputFiles: inputFiles)
     }
 
+    // Create or operate on universal files
+    // See lipo(1) for details
     public static func lipo(executable: Executable = LipoCommand.defaultExecutable, inputFiles: [FilePath]) -> LipoCommand {
         LipoCommand(executable: executable, inputFiles: inputFiles)
     }
@@ -155,13 +157,15 @@ extension SystemCommand {
 
 extension SystemCommand.LipoCommand.CreateCommand: Runnable {}
 
-// Build a macOS Installer component package from on-disk files
-// See pkgbuild(1) for more details
 extension SystemCommand {
+    // Build a macOS Installer component package from on-disk files
+    // See pkgbuild(1) for more details
     public static func pkgbuild(executable: Executable = PkgbuildCommand.defaultExecutable, _ options: PkgbuildCommand.Option..., root: FilePath, packageOutputPath: FilePath) -> PkgbuildCommand {
         Self.pkgbuild(executable: executable, options: options, root: root, packageOutputPath: packageOutputPath)
     }
 
+    // Build a macOS Installer component package from on-disk files
+    // See pkgbuild(1) for more details
     public static func pkgbuild(executable: Executable = PkgbuildCommand.defaultExecutable, options: [PkgbuildCommand.Option], root: FilePath, packageOutputPath: FilePath) -> PkgbuildCommand {
         PkgbuildCommand(executable: executable, options, root: root, packageOutputPath: packageOutputPath)
     }
@@ -224,13 +228,15 @@ extension SystemCommand {
 
 extension SystemCommand.PkgbuildCommand: Runnable {}
 
-// get entries from Name Service Switch libraries
-// See getent(1) for more details
 extension SystemCommand {
+    // get entries from Name Service Switch libraries
+    // See getent(1) for more details
     public static func getent(executable: Executable = GetentCommand.defaultExecutable, database: String, keys: String...) -> GetentCommand {
         Self.getent(executable: executable, database: database, keys: keys)
     }
 
+    // get entries from Name Service Switch libraries
+    // See getent(1) for more details
     public static func getent(executable: Executable = GetentCommand.defaultExecutable, database: String, keys: [String]) -> GetentCommand {
         GetentCommand(executable: executable, database: database, keys: keys)
     }
@@ -283,6 +289,8 @@ extension SystemCommand.GetentCommand: Output {
 }
 
 extension SystemCommand {
+    // the stupid content tracker
+    // See git(1) for more information.
     public static func git(executable: Executable = GitCommand.defaultExecutable, workingDir: FilePath? = nil) -> GitCommand {
         GitCommand(executable: executable, workingDir: workingDir)
     }
@@ -486,13 +494,15 @@ extension SystemCommand.GitCommand.DiffIndexCommand: Runnable {}
 extension SystemCommand.GitCommand.InitCommand: Runnable {}
 extension SystemCommand.GitCommand.CommitCommand: Runnable {}
 
-// manipulate tape archives
-// See tar(1) for more details
 extension SystemCommand {
+    // manipulate tape archives
+    // See tar(1) for more details
     public static func tar(executable: Executable = TarCommand.defaultExecutable, _ options: TarCommand.Option...) -> TarCommand {
         Self.tar(executable: executable, options)
     }
 
+    // manipulate tape archives
+    // See tar(1) for more details
     public static func tar(executable: Executable = TarCommand.defaultExecutable, _ options: [TarCommand.Option]) -> TarCommand {
         TarCommand(executable: executable, options)
     }
@@ -948,6 +958,8 @@ extension SystemCommand.SwiftCommand.SdkCommand.RemoveCommand: Runnable {}
 extension SystemCommand.SwiftCommand.BuildCommand: Runnable {}
 
 extension SystemCommand {
+    // make utility to maintain groups of programs
+    // See make(1) for more information.
     public static func make(executable: Executable = MakeCommand.defaultExecutable) -> MakeCommand {
         MakeCommand(executable: executable)
     }
@@ -1001,10 +1013,14 @@ extension SystemCommand.MakeCommand: Runnable {}
 extension SystemCommand.MakeCommand.InstallCommand: Runnable {}
 
 extension SystemCommand {
+    // remove symbols
+    // See strip(1) for more information.
     public static func strip(executable: Executable = StripCommand.defaultExecutable, names: FilePath...) -> StripCommand {
         self.strip(executable: executable, names: names)
     }
 
+    // remove symbols
+    // See strip(1) for more information.
     public static func strip(executable: Executable = StripCommand.defaultExecutable, names: [FilePath]) -> StripCommand {
         StripCommand(executable: executable, names: names)
     }
@@ -1038,10 +1054,14 @@ extension SystemCommand {
 extension SystemCommand.StripCommand: Runnable {}
 
 extension SystemCommand {
+    // calculate a message-digest fingerprint (checksum) for a file
+    // See sha256sum(1) for more information.
     public static func sha256sum(executable: Executable = Sha256SumCommand.defaultExecutable, files: FilePath...) -> Sha256SumCommand {
         self.sha256sum(executable: executable, files: files)
     }
 
+    // calculate a message-digest fingerprint (checksum) for a file
+    // See sha256sum(1) for more information.
     public static func sha256sum(executable: Executable, files: [FilePath]) -> Sha256SumCommand {
         Sha256SumCommand(executable: executable, files: files)
     }
@@ -1073,3 +1093,126 @@ extension SystemCommand {
 }
 
 extension SystemCommand.Sha256SumCommand: Output {}
+
+extension SystemCommand {
+    // Build a product archive for the macOS Installer or the Mac App Store.
+    // See productbuild(1) for more information.
+    public static func productbuild(executable: Executable = ProductBuildCommand.defaultExecutable) -> ProductBuildCommand {
+        ProductBuildCommand(executable: executable)
+    }
+
+    public struct ProductBuildCommand {
+        public static var defaultExecutable: Executable { .name("productbuild") }
+
+        public var executable: Executable
+
+        public init(executable: Executable) {
+            self.executable = executable
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func synthesize(package: FilePath, distributionOutputPath: FilePath) -> SynthesizeCommand {
+            SynthesizeCommand(self, package: package, distributionOutputPath: distributionOutputPath)
+        }
+
+        public struct SynthesizeCommand {
+            public var productBuildCommand: ProductBuildCommand
+
+            public var package: FilePath
+
+            public var distributionOutputPath: FilePath
+
+            public init(_ productBuildCommand: ProductBuildCommand, package: FilePath, distributionOutputPath: FilePath) {
+                self.productBuildCommand = productBuildCommand
+                self.package = package
+                self.distributionOutputPath = distributionOutputPath
+            }
+
+            public func config() -> Configuration {
+                var c = self.productBuildCommand.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--synthesize")
+
+                args.append(contentsOf: ["--package", "\(self.package)"])
+                args.append("\(self.distributionOutputPath)")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func distribution(_ options: DistributionCommand.Option..., distPath: FilePath, productOutputPath: FilePath) -> DistributionCommand {
+            self.distribution(options, distPath: distPath, productOutputPath: productOutputPath)
+        }
+
+        public func distribution(_ options: [DistributionCommand.Option], distPath: FilePath, productOutputPath: FilePath) -> DistributionCommand {
+            DistributionCommand(self, options, distPath: distPath, productOutputPath: productOutputPath)
+        }
+
+        public struct DistributionCommand {
+            public var productBuildCommand: ProductBuildCommand
+
+            public var options: [Option]
+
+            public var distPath: FilePath
+
+            public var productOutputPath: FilePath
+
+            public enum Option {
+                case packagePath(FilePath)
+                case sign(String)
+
+                public func args() -> [String] {
+                    switch self {
+                    case let .packagePath(packagePath):
+                        ["--package-path", "\(packagePath)"]
+                    case let .sign(sign):
+                        ["--sign", "\(sign)"]
+                    }
+                }
+            }
+
+            public init(_ productBuildCommand: ProductBuildCommand, _ options: [Option], distPath: FilePath, productOutputPath: FilePath) {
+                self.productBuildCommand = productBuildCommand
+                self.options = options
+                self.distPath = distPath
+                self.productOutputPath = productOutputPath
+            }
+
+            public func config() -> Configuration {
+                var c = self.productBuildCommand.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--distribution")
+
+                args.append("\(self.distPath)")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+
+                args.append("\(self.productOutputPath)")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand.ProductBuildCommand.SynthesizeCommand: Runnable {}
+extension SystemCommand.ProductBuildCommand.DistributionCommand: Runnable {}

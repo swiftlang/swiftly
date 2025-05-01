@@ -422,16 +422,16 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let pkgFileReconfigured = releaseDir.appendingPathComponent("swiftly-\(self.version)-reconfigured.pkg")
         let distFile = releaseDir.appendingPathComponent("distribution.plist")
 
-        try runProgram("productbuild", "--synthesize", "--package", pkgFile.path, distFile.path)
+        try await sys.productbuild().synthesize(package: FilePath(pkgFile.path), distributionOutputPath: FilePath(distFile.path))
 
         var distFileContents = try String(contentsOf: distFile, encoding: .utf8)
         distFileContents = distFileContents.replacingOccurrences(of: "<choices-outline>", with: "<title>swiftly</title><domains enable_anywhere=\"false\" enable_currentUserHome=\"true\" enable_localSystem=\"false\"/><choices-outline>")
         try distFileContents.write(to: distFile, atomically: true, encoding: .utf8)
 
         if let cert = cert {
-            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.deletingLastPathComponent().path, "--sign", cert, pkgFileReconfigured.path)
+            try await sys.productbuild().distribution(.packagePath(FilePath(pkgFile.deletingLastPathComponent().path)), .sign(cert), distPath: FilePath(distFile.path), productOutputPath: FilePath(pkgFileReconfigured.path))
         } else {
-            try runProgram("productbuild", "--distribution", distFile.path, "--package-path", pkgFile.deletingLastPathComponent().path, pkgFileReconfigured.path)
+            try await sys.productbuild().distribution(.packagePath(FilePath(pkgFile.deletingLastPathComponent().path)), distPath: FilePath(distFile.path), productOutputPath: FilePath(pkgFileReconfigured.path))
         }
         try FileManager.default.removeItem(at: pkgFile)
         try FileManager.default.copyItem(atPath: pkgFileReconfigured.path, toPath: pkgFile.path)

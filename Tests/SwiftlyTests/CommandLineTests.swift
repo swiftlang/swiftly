@@ -220,4 +220,12 @@ public struct CommandLineTests {
         config = sys.productbuild().distribution(.packagePath(FilePath("pkgpath")), .sign("mycert"), distPath: FilePath("mydist"), productOutputPath: FilePath("myproduct")).config()
         #expect(String(describing: config) == "productbuild --distribution mydist --package-path pkgpath --sign mycert myproduct")
     }
+
+    @Test func testGpg() async throws {
+        var config = sys.gpg()._import(keys: FilePath("somekeys.asc")).config()
+        #expect(String(describing: config) == "gpg --import somekeys.asc")
+
+        config = sys.gpg().verify(detachedSignature: FilePath("file.sig"), signedData: FilePath("file")).config()
+        #expect(String(describing: config) == "gpg --verify file.sig file")
+    }
 }

@@ -1216,3 +1216,100 @@ extension SystemCommand {
 
 extension SystemCommand.ProductBuildCommand.SynthesizeCommand: Runnable {}
 extension SystemCommand.ProductBuildCommand.DistributionCommand: Runnable {}
+
+extension SystemCommand {
+    public static func gpg(executable: Executable = GpgCommand.defaultExecutable) -> GpgCommand {
+        GpgCommand(executable: executable)
+    }
+
+    public struct GpgCommand {
+        public static var defaultExecutable: Executable { .name("gpg") }
+
+        public var executable: Executable
+
+        public init(executable: Executable) {
+            self.executable = executable
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func _import(keys: FilePath...) -> ImportCommand {
+            self._import(keys: keys)
+        }
+
+        public func _import(keys: [FilePath]) -> ImportCommand {
+            ImportCommand(self, keys: keys)
+        }
+
+        public struct ImportCommand {
+            public var gpg: GpgCommand
+
+            public var keys: [FilePath]
+
+            public init(_ gpg: GpgCommand, keys: [FilePath]) {
+                self.gpg = gpg
+                self.keys = keys
+            }
+
+            public func config() -> Configuration {
+                var c: Configuration = self.gpg.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--import")
+
+                for key in self.keys {
+                    args.append("\(key)")
+                }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func verify(detachedSignature: FilePath, signedData: FilePath) -> VerifyCommand {
+            VerifyCommand(self, detachedSignature: detachedSignature, signedData: signedData)
+        }
+
+        public struct VerifyCommand {
+            public var gpg: GpgCommand
+
+            public var detachedSignature: FilePath
+
+            public var signedData: FilePath
+
+            public init(_ gpg: GpgCommand, detachedSignature: FilePath, signedData: FilePath) {
+                self.gpg = gpg
+                self.detachedSignature = detachedSignature
+                self.signedData = signedData
+            }
+
+            public func config() -> Configuration {
+                var c: Configuration = self.gpg.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--verify")
+
+                args.append("\(self.detachedSignature)")
+                args.append("\(self.signedData)")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand.GpgCommand.ImportCommand: Runnable {}
+extension SystemCommand.GpgCommand.VerifyCommand: Runnable {}

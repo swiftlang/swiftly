@@ -154,7 +154,7 @@ public protocol Runnable {
 }
 
 extension Runnable {
-    public func run(_ p: Platform, quiet: Bool = false) async throws {
+    public func run(_ p: Platform, env: [String: String] = ProcessInfo.processInfo.environment, quiet: Bool = false) async throws {
         let c = self.config()
         let executable = switch c.executable.storage {
         case let .executable(name):
@@ -163,16 +163,19 @@ extension Runnable {
             p.string
         }
         let args = c.arguments.storage.map(\.description)
-        var env: [String: String] = ProcessInfo.processInfo.environment
+
+        var newEnv: [String: String] = env
+
         switch c.environment.config {
         case let .inherit(newValue):
             for (key, value) in newValue {
-                env[key] = value
+                newEnv[key] = value
             }
         case let .custom(newValue):
-            env = newValue
+            newEnv = newValue
         }
-        try await p.runProgram([executable] + args, quiet: quiet, env: env)
+
+        try await p.runProgram([executable] + args, quiet: quiet, env: newEnv)
     }
 }
 

@@ -194,4 +194,19 @@ public struct CommandLineTests {
         try await sys.swift().package()._init(.packagePath(tmp), .type("executable")).run(Swiftly.currentPlatform)
         try await sys.swift().build(.packagePath(tmp), .configuration("release"))
     }
+
+    @Test func testMake() async throws {
+        var config = sys.make().install().config()
+        #expect(String(describing: config) == "make install")
+    }
+
+    @Test func testStrip() async throws {
+        var config = sys.strip(names: FilePath("foo")).config()
+        #expect(String(describing: config) == "strip foo")
+    }
+
+    @Test func testSha256Sum() async throws {
+        var config = sys.sha256sum(files: FilePath("abcde")).config()
+        #expect(String(describing: config) == "sha256sum abcde")
+    }
 }

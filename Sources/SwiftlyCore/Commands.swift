@@ -946,3 +946,130 @@ extension SystemCommand.SwiftCommand.PackageCommand.InitCommand: Runnable {}
 extension SystemCommand.SwiftCommand.SdkCommand.InstallCommand: Runnable {}
 extension SystemCommand.SwiftCommand.SdkCommand.RemoveCommand: Runnable {}
 extension SystemCommand.SwiftCommand.BuildCommand: Runnable {}
+
+extension SystemCommand {
+    public static func make(executable: Executable = MakeCommand.defaultExecutable) -> MakeCommand {
+        MakeCommand(executable: executable)
+    }
+
+    public struct MakeCommand {
+        public static var defaultExecutable: Executable { .name("make") }
+
+        public var executable: Executable
+
+        public init(executable: Executable) {
+            self.executable = executable
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func install() -> InstallCommand {
+            InstallCommand(self)
+        }
+
+        public struct InstallCommand {
+            var make: MakeCommand
+
+            init(_ make: MakeCommand) {
+                self.make = make
+            }
+
+            public func config() -> Configuration {
+                var c = self.make.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("install")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand.MakeCommand: Runnable {}
+extension SystemCommand.MakeCommand.InstallCommand: Runnable {}
+
+extension SystemCommand {
+    public static func strip(executable: Executable = StripCommand.defaultExecutable, names: FilePath...) -> StripCommand {
+        self.strip(executable: executable, names: names)
+    }
+
+    public static func strip(executable: Executable = StripCommand.defaultExecutable, names: [FilePath]) -> StripCommand {
+        StripCommand(executable: executable, names: names)
+    }
+
+    public struct StripCommand {
+        public static var defaultExecutable: Executable { .name("strip") }
+
+        public var executable: Executable
+
+        public var names: [FilePath]
+
+        public init(executable: Executable, names: [FilePath]) {
+            self.executable = executable
+            self.names = names
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            args.append(contentsOf: self.names.map(\.string))
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand.StripCommand: Runnable {}
+
+extension SystemCommand {
+    public static func sha256sum(executable: Executable = Sha256SumCommand.defaultExecutable, files: FilePath...) -> Sha256SumCommand {
+        self.sha256sum(executable: executable, files: files)
+    }
+
+    public static func sha256sum(executable: Executable, files: [FilePath]) -> Sha256SumCommand {
+        Sha256SumCommand(executable: executable, files: files)
+    }
+
+    public struct Sha256SumCommand {
+        public static var defaultExecutable: Executable { .name("sha256sum") }
+
+        public var executable: Executable
+
+        public var files: [FilePath]
+
+        public init(executable: Executable, files: [FilePath]) {
+            self.executable = executable
+            self.files = files
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            args.append(contentsOf: self.files.map(\.string))
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand.Sha256SumCommand: Output {}

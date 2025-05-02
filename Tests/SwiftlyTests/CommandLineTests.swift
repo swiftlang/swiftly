@@ -228,4 +228,15 @@ public struct CommandLineTests {
         config = sys.gpg().verify(detachedSignature: FilePath("file.sig"), signedData: FilePath("file")).config()
         #expect(String(describing: config) == "gpg --verify file.sig file")
     }
+
+    @Test func testPkgutil() async throws {
+        var config = sys.pkgutil(.verbose).checkSignature(pkgPath: FilePath("path/to/my.pkg")).config()
+        #expect(String(describing: config) == "pkgutil --verbose --check-signature path/to/my.pkg")
+
+        config = sys.pkgutil(.verbose).expand(pkgPath: FilePath("path/to/my.pkg"), dirPath: FilePath("expand/to/here")).config()
+        #expect(String(describing: config) == "pkgutil --verbose --expand path/to/my.pkg expand/to/here")
+
+        config = sys.pkgutil(.volume("CurrentUserHomeDirectory")).forget(packageId: "com.example.pkg").config()
+        #expect(String(describing: config) == "pkgutil --volume CurrentUserHomeDirectory --forget com.example.pkg")
+    }
 }

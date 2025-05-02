@@ -1218,6 +1218,8 @@ extension SystemCommand.ProductBuildCommand.SynthesizeCommand: Runnable {}
 extension SystemCommand.ProductBuildCommand.DistributionCommand: Runnable {}
 
 extension SystemCommand {
+    // OpenPGP encryption and signing tool
+    // See gpg(1) for more information.
     public static func gpg(executable: Executable = GpgCommand.defaultExecutable) -> GpgCommand {
         GpgCommand(executable: executable)
     }
@@ -1313,3 +1315,154 @@ extension SystemCommand {
 
 extension SystemCommand.GpgCommand.ImportCommand: Runnable {}
 extension SystemCommand.GpgCommand.VerifyCommand: Runnable {}
+
+extension SystemCommand {
+    // Query and manipulate macOS Installer packages and receipts.
+    // See pkgutil(1) for more information.
+    public static func pkgutil(executable: Executable = PkgutilCommand.defaultExecutable, _ options: PkgutilCommand.Option...) -> PkgutilCommand {
+        Self.pkgutil(executable: executable, options)
+    }
+
+    // Query and manipulate macOS Installer packages and receipts.
+    // See pkgutil(1) for more information.
+    public static func pkgutil(executable: Executable = PkgutilCommand.defaultExecutable, _ options: [PkgutilCommand.Option]) -> PkgutilCommand {
+        PkgutilCommand(executable: executable, options)
+    }
+
+    public struct PkgutilCommand {
+        public static var defaultExecutable: Executable { .name("pkgutil") }
+
+        public var executable: Executable
+
+        public var options: [Option]
+
+        public enum Option {
+            case verbose
+            case volume(FilePath)
+
+            public func args() -> [String] {
+                switch self {
+                case .verbose:
+                    ["--verbose"]
+                case let .volume(volume):
+                    ["--volume", "\(volume)"]
+                }
+            }
+        }
+
+        public init(executable: Executable, _ options: [Option]) {
+            self.executable = executable
+            self.options = options
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            for opt in self.options {
+                args.append(contentsOf: opt.args())
+            }
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func checkSignature(pkgPath: FilePath) -> CheckSignatureCommand {
+            CheckSignatureCommand(self, pkgPath: pkgPath)
+        }
+
+        public struct CheckSignatureCommand {
+            public var pkgutil: PkgutilCommand
+
+            public var pkgPath: FilePath
+
+            public init(_ pkgutil: PkgutilCommand, pkgPath: FilePath) {
+                self.pkgutil = pkgutil
+                self.pkgPath = pkgPath
+            }
+
+            public func config() -> Configuration {
+                var c: Configuration = self.pkgutil.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--check-signature")
+
+                args.append("\(self.pkgPath)")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func expand(pkgPath: FilePath, dirPath: FilePath) -> ExpandCommand {
+            ExpandCommand(self, pkgPath: pkgPath, dirPath: dirPath)
+        }
+
+        public struct ExpandCommand {
+            public var pkgutil: PkgutilCommand
+
+            public var pkgPath: FilePath
+
+            public var dirPath: FilePath
+
+            public init(_ pkgutil: PkgutilCommand, pkgPath: FilePath, dirPath: FilePath) {
+                self.pkgutil = pkgutil
+                self.pkgPath = pkgPath
+                self.dirPath = dirPath
+            }
+
+            public func config() -> Configuration {
+                var c: Configuration = self.pkgutil.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--expand")
+
+                args.append("\(self.pkgPath)")
+
+                args.append("\(self.dirPath)")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func forget(packageId: String) -> ForgetCommand {
+            ForgetCommand(self, packageId: packageId)
+        }
+
+        public struct ForgetCommand {
+            public var pkgutil: PkgutilCommand
+
+            public var packageId: String
+
+            public init(_ pkgutil: PkgutilCommand, packageId: String) {
+                self.pkgutil = pkgutil
+                self.packageId = packageId
+            }
+
+            public func config() -> Configuration {
+                var c: Configuration = self.pkgutil.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--forget")
+
+                args.append("\(self.packageId)")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand.PkgutilCommand.CheckSignatureCommand: Runnable {}
+extension SystemCommand.PkgutilCommand.ExpandCommand: Runnable {}
+extension SystemCommand.PkgutilCommand.ForgetCommand: Runnable {}

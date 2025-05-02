@@ -32,7 +32,7 @@ swift --version
 --
 Apple Swift version 6.2-dev (LLVM 059105ceb0cb60e, Swift 714c862d3791544)
 Target: arm64-apple-macosx15.0
-Build config: +assertions 
+Build config: +assertions
 ```
 
 For more detailed usage guides there is [documentation](https://swiftpackageindex.com/swiftlang/swiftly/main/documentation/swiftlydocs).
@@ -57,6 +57,25 @@ This command checks to see if there are new versions of swiftly itself and upgra
 
 `swiftly self-update`
 
+## Uninstalling swiftly
+
+Currently, only manual uninstallation is supported. If you need to uninstall swiftly, please follow the instructions below:
+
+NOTE: This will not uninstall any toolchains you have installed unless you do so manually with `swiftly uninstall all`.
+
+1. (Optional) Remove all installed toolchains with `swiftly uninstall all`.
+
+2. Remove any sections added by swiftly in your `.zprofile`, `.bash_profile`, `.profile`, or `fish/conf.d` files. These sections might look like this:
+
+   ```sh
+   # Added by swiftly
+   . "/Users/<USERNAME>/.swiftly/env.sh"
+   ```
+
+3. Remove the swfitly home and bin directories. The default location might be `~/.swiftpm` or `.local/share/swiftly`
+
+4. Restart your shell and check you have correctly removed the swiftly environment.
+
 ## Contributing
 
 Welcome to the Swift community!
@@ -77,7 +96,7 @@ Swiftly prior to verion 1.0.0 had a different installation and delivery mechanis
 To uninstall the old swiftly, first locate the swiftly home directory, which is often in `~/.local/share/swiftly` and remove it. Then check your shell profile files (`~/.profile`, `~/.zprofile`, `~/.bash_profile`, or `~/.config/fish/conf.d`) and remove any entries that attempt to source the `env.sh` or `env.fish` file in the swiftly home directory. Finally, remove the symbolic links that swiftly placed in your `~/.local/bin` to toolchain binaries (e.g. swift, clang, lldb, etc.). These will likely be symbolic links to toolchain directories in the swiftly home directory. Remove them so that there aren't any orphaned path entries.
 
 Restart your shell and/or terminal to get a fresh environment. You should be ready to installing the new swiftly.
- 
+
 ## FAQ
 
 #### Why not install Swift through the package manager (e.g. `apt` or `yum`)?
@@ -90,11 +109,10 @@ swiftenv is an existing Swift version manager which already has much of the func
 
 - swiftly is being built as a community driven effort, and through this collaboration, swiftly is an official installation tool for Swift toolchains. swiftly has helped to inform the creation of API endpoints maintained by the Swift project that it uses to retrieve information about what toolchains are available to install and to verify their expected signatures. swiftenv currently uses a third party API layer for this. Using an official API reduces the avenues for security vulnerabilities and also reduces the risk of downtime affecting Swift installations.
 
-- swiftly will be written in Swift, which we think is important for maintainability and encouraging community contributions. 
+- swiftly will be written in Swift, which we think is important for maintainability and encouraging community contributions.
 
 - swiftly has first-class support for installing and managing snapshot toolchains.
 
 - swiftly has built in support for updating toolchains.
 
 - swiftly is optimized for ease of installation. In addition, swiftly doesn't require any system dependencies to be installed on the user's system. While swiftenv is also relatively easy to install, it does involve cloning a git repository or using Homebrew, and it requires a few system dependencies (e.g. bash, curl, tar).
-

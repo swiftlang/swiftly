@@ -366,7 +366,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             print(testArchive)
         }
 
-        try await sys.swift().sdk().remove(sdkName)
+        try await sys.swift().sdk().remove(sdkName).runEcho(currentPlatform)
     }
 
     func buildMacOSRelease(cert: String?, identifier: String) async throws {
@@ -422,16 +422,16 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let pkgFileReconfigured = releaseDir.appendingPathComponent("swiftly-\(self.version)-reconfigured.pkg")
         let distFile = releaseDir.appendingPathComponent("distribution.plist")
 
-        try await sys.productbuild().synthesize(package: FilePath(pkgFile.path), distributionOutputPath: FilePath(distFile.path))
+        try await sys.productbuild().synthesize(package: FilePath(pkgFile.path), distributionOutputPath: FilePath(distFile.path)).runEcho(currentPlatform)
 
         var distFileContents = try String(contentsOf: distFile, encoding: .utf8)
         distFileContents = distFileContents.replacingOccurrences(of: "<choices-outline>", with: "<title>swiftly</title><domains enable_anywhere=\"false\" enable_currentUserHome=\"true\" enable_localSystem=\"false\"/><choices-outline>")
         try distFileContents.write(to: distFile, atomically: true, encoding: .utf8)
 
         if let cert = cert {
-            try await sys.productbuild().distribution(.packagePath(FilePath(pkgFile.deletingLastPathComponent().path)), .sign(cert), distPath: FilePath(distFile.path), productOutputPath: FilePath(pkgFileReconfigured.path))
+            try await sys.productbuild().distribution(.packagePath(FilePath(pkgFile.deletingLastPathComponent().path)), .sign(cert), distPath: FilePath(distFile.path), productOutputPath: FilePath(pkgFileReconfigured.path)).runEcho(currentPlatform)
         } else {
-            try await sys.productbuild().distribution(.packagePath(FilePath(pkgFile.deletingLastPathComponent().path)), distPath: FilePath(distFile.path), productOutputPath: FilePath(pkgFileReconfigured.path))
+            try await sys.productbuild().distribution(.packagePath(FilePath(pkgFile.deletingLastPathComponent().path)), distPath: FilePath(distFile.path), productOutputPath: FilePath(pkgFileReconfigured.path)).runEcho(currentPlatform)
         }
         try FileManager.default.removeItem(at: pkgFile)
         try FileManager.default.copyItem(atPath: pkgFileReconfigured.path, toPath: pkgFile.path)
@@ -440,8 +440,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         if self.test {
             for arch in ["x86_64", "arm64"] {
-                try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("\(arch)")).run(currentPlatform)
-                try await sys.strip(names: FilePath(".build") / "\(arch)-apple-macosx/release/swiftly").run(currentPlatform)
+                try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("\(arch)")).runEcho(currentPlatform)
+                try await sys.strip(names: FilePath(".build") / "\(arch)-apple-macosx/release/swiftly").runEcho(currentPlatform)
             }
 
             let testArchive = releaseDir.appendingPathComponent("test-swiftly-macos.tar.gz")

@@ -17,7 +17,59 @@ let currentPlatform: Platform = MacOS.currentPlatform
 #error("Unsupported platform")
 #endif
 
+typealias sys = SwiftlyCore.SystemCommand
 typealias fs = SwiftlyCore.FileSystem
+
+func sh(executable: Executable = ShCommand.defaultExecutable, _ options: ShCommand.Option...) -> ShCommand {
+    sh(executable: executable, options)
+}
+
+func sh(executable: Executable = ShCommand.defaultExecutable, _ options: [ShCommand.Option]) -> ShCommand {
+    ShCommand(executable: executable, options)
+}
+
+struct ShCommand {
+    static var defaultExecutable: Executable { .name("sh") }
+
+    var executable: Executable
+
+    var options: [Option]
+
+    enum Option {
+        case login
+        case command(String)
+
+        func args() -> [String] {
+            switch self {
+            case .login:
+                ["-l"]
+            case let .command(command):
+                ["-c", command]
+            }
+        }
+    }
+
+    init(executable: Executable, _ options: [Option]) {
+        self.executable = executable
+        self.options = options
+    }
+
+    func config() -> Configuration {
+        var args: [String] = []
+
+        for opt in self.options {
+            args.append(contentsOf: opt.args())
+        }
+
+        return Configuration(
+            executable: self.executable,
+            arguments: Arguments(args),
+            environment: .inherit
+        )
+    }
+}
+
+extension ShCommand: Runnable {}
 
 @main
 struct TestSwiftly: AsyncParsableCommand {
@@ -40,11 +92,13 @@ struct TestSwiftly: AsyncParsableCommand {
             Foundation.exit(2)
         }
 
+        guard case let swiftlyArchive = FilePath(swiftlyArchive) else { fatalError("") }
+
         print("Extracting swiftly release")
 #if os(Linux)
-        try currentPlatform.runProgram("tar", "-zxvf", swiftlyArchive, quiet: false)
+        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchive)).run(currentPlatform, quiet: false)
 #elseif os(macOS)
-        try currentPlatform.runProgram("installer", "-pkg", swiftlyArchive, "-target", "CurrentUserHomeDirectory", quiet: false)
+        try await sys.installer(.verbose, pkg: swiftlyArchive, target: "CurrentUserHomeDirectory").run(currentPlatform, quiet: false)
 #endif
 
 #if os(Linux)
@@ -54,7 +108,7 @@ struct TestSwiftly: AsyncParsableCommand {
 #endif
 
         var env = ProcessInfo.processInfo.environment
-        let shell = try await currentPlatform.getShell()
+        let shell = FilePath(try await currentPlatform.getShell())
         var customLoc: FilePath?
 
         if self.customLocation {
@@ -66,37 +120,39 @@ struct TestSwiftly: AsyncParsableCommand {
             env["SWIFTLY_TOOLCHAINS_DIR"] = (customLoc! / "toolchains").string
 
             try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
-            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
+            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(currentPlatform, env: env, quiet: false)
         } else {
             print("Installing swiftly to the default location.")
             // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
-            if shell.hasSuffix("bash") {
+            if shell.ends(with: "bash") {
                 env["BASH_ENV"] = (fs.home / ".profile").string
-            } else if shell.hasSuffix("zsh") {
+            } else if shell.ends(with: "zsh") {
                 env["ZDOTDIR"] = fs.home.string
-            } else if shell.hasSuffix("fish") {
+            } else if shell.ends(with: "fish") {
                 env["XDG_CONFIG_HOME"] = (fs.home / ".config").string
             }
 
             try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--skip-install", quiet: false, env: env)
-            try currentPlatform.runProgram(shell, "-l", "-c", "swiftly install --assume-yes latest --post-install-file=./post-install.sh", quiet: false, env: env)
+            try await sh(executable: .path(shell), .login, .command("swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(currentPlatform, env: env, quiet: false)
         }
 
         var swiftReady = false
 
-        if NSUserName() == "root" && FileManager.default.fileExists(atPath: "./post-install.sh") {
-            try currentPlatform.runProgram(shell, "./post-install.sh", quiet: false)
+        if NSUserName() == "root" {
+            if try await fs.exists(atPath: "./post-install.sh") {
+                try currentPlatform.runProgram(shell.string, "./post-install.sh", quiet: false)
+            }
             swiftReady = true
-        } else if FileManager.default.fileExists(atPath: "./post-install.sh") {
+        } else if try await fs.exists(atPath: "./post-install.sh") {
             print("WARNING: not running as root, so skipping the post installation steps and final swift verification.")
         } else {
             swiftReady = true
         }
 
         if let customLoc = customLoc, swiftReady {
-            try currentPlatform.runProgram(shell, "-l", "-c", ". \"\(customLoc / "env.sh")\" && swift --version", quiet: false, env: env)
+            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swift --version")).run(currentPlatform, env: env, quiet: false)
         } else if swiftReady {
-            try currentPlatform.runProgram(shell, "-l", "-c", "swift --version", quiet: false, env: env)
+            try await sh(executable: .path(shell), .login, .command("swift --version")).run(currentPlatform, env: env, quiet: false)
         }
     }
 }

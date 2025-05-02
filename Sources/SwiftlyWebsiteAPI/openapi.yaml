@@ -284,6 +284,9 @@ components:
           items:
             $ref: '#/components/schemas/Architecture'
           description: List of supported architectures.
+        checksum:
+          type: string
+          description: SHA-256 Checksum of the static SDK, if this platform is the static SDK.
       required:
         - name
         - platform

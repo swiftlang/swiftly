@@ -15,6 +15,12 @@ public struct Configuration: Sendable {
     public var arguments: Arguments
     /// The environment to use when running the executable.
     public var environment: Environment
+
+    public init(executable: Executable, arguments: Arguments, environment: Environment) {
+        self.executable = executable
+        self.arguments = arguments
+        self.environment = environment
+    }
 }
 
 public struct Executable: Sendable, Hashable {

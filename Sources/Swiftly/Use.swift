@@ -60,8 +60,14 @@ struct Use: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try await validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
+
         var config = try await Config.load(ctx)
+
+        try await validateLinked(ctx)
 
         // This is the bare use command where we print the selected toolchain version (or the path to it)
         guard let toolchain = self.toolchain else {

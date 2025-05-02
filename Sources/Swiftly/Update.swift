@@ -83,9 +83,13 @@ struct Update: SwiftlyCommand {
     }
 
     public mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try await validateSwiftly(ctx)
-        var config = try await Config.load(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
+        try await validateLinked(ctx)
 
+        var config = try await Config.load(ctx)
         guard let parameters = try await self.resolveUpdateParameters(ctx, &config) else {
             if let toolchain = self.toolchain {
                 await ctx.print("No installed toolchain matched \"\(toolchain)\"")
@@ -142,15 +146,7 @@ struct Update: SwiftlyCommand {
         }
 
         if pathChanged {
-            await ctx.print("""
-            NOTE: Swiftly has updated some elements in your path and your shell may not yet be
-            aware of the changes. You can update your shell's environment by running
-
-            hash -r
-
-            or restarting your shell.
-
-            """)
+            await ctx.print(Messages.refreshShell)
         }
     }
 

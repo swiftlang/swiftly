@@ -455,7 +455,12 @@ extension Platform {
         }
 
         // If we're running inside an xctest then we don't have a location for this swiftly.
-        guard let cmdAbsolute, !cmdAbsolute.string.hasSuffix("xctest") else {
+        guard let cmdAbsolute,
+              !(
+                  (cmdAbsolute.string.hasSuffix("xctest") || cmdAbsolute.string.hasSuffix("swiftpm-testing-helper"))
+                      && CommandLine.arguments.contains { $0.contains("InstallTests") }
+              )
+        else {
             return nil
         }
 

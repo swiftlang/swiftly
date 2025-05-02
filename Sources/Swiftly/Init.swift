@@ -297,14 +297,7 @@ struct Init: SwiftlyCommand {
         }
 
         if let postInstall {
-            await ctx.print("""
-            There are some dependencies that should be installed before using this toolchain.
-            You can run the following script as the system administrator (e.g. root) to prepare
-            your system:
-
-                \(postInstall)
-
-            """)
+            await ctx.print(Messages.postInstall(postInstall))
         }
     }
 }

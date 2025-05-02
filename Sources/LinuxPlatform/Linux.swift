@@ -275,12 +275,11 @@ public struct Linux: Platform {
             try await fs.withTemporary(files: tmpFile) {
                 try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
                 if let mockedHomeDir = ctx.mockedHomeDir {
-                    try self.runProgram(
-                        "gpg", "--import", "\(tmpFile)", quiet: true,
-                        env: ["GNUPGHOME": (mockedHomeDir / ".gnupg").string]
-                    )
+                    var env = ProcessInfo.processInfo.environment
+                    env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
+                    try await sys.gpg()._import(keys: tmpFile).run(self, env: env, quiet: true)
                 } else {
-                    try self.runProgram("gpg", "--import", "\(tmpFile)", quiet: true)
+                    try await sys.gpg()._import(keys: tmpFile).run(self, quiet: true)
                 }
             }
         }
@@ -417,12 +416,11 @@ public struct Linux: Platform {
             await ctx.print("Verifying toolchain signature...")
             do {
                 if let mockedHomeDir = ctx.mockedHomeDir {
-                    try self.runProgram(
-                        "gpg", "--verify", "\(sigFile)", "\(archive)", quiet: false,
-                        env: ["GNUPGHOME": (mockedHomeDir / ".gnupg").string]
-                    )
+                    var env = ProcessInfo.processInfo.environment
+                    env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
+                    try await sys.gpg().verify(detachedSignature: sigFile, signedData: archive).run(self, env: env, quiet: false)
                 } else {
-                    try self.runProgram("gpg", "--verify", "\(sigFile)", "\(archive)", quiet: !verbose)
+                    try await sys.gpg().verify(detachedSignature: sigFile, signedData: archive).run(self, quiet: !verbose)
                 }
             } catch {
                 throw SwiftlyError(message: "Signature verification failed: \(error).")
@@ -447,12 +445,11 @@ public struct Linux: Platform {
             await ctx.print("Verifying swiftly signature...")
             do {
                 if let mockedHomeDir = ctx.mockedHomeDir {
-                    try self.runProgram(
-                        "gpg", "--verify", "\(sigFile)", "\(archive)", quiet: false,
-                        env: ["GNUPGHOME": (mockedHomeDir / ".gnupg").string]
-                    )
+                    var env = ProcessInfo.processInfo.environment
+                    env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
+                    try await sys.gpg().verify(detachedSignature: sigFile, signedData: archive).run(self, env: env, quiet: false)
                 } else {
-                    try self.runProgram("gpg", "--verify", "\(sigFile)", "\(archive)", quiet: !verbose)
+                    try await sys.gpg().verify(detachedSignature: sigFile, signedData: archive).run(self, quiet: !verbose)
                 }
             } catch {
                 throw SwiftlyError(message: "Signature verification failed: \(error).")

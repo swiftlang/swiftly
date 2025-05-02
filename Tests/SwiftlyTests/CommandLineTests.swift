@@ -1,3 +1,4 @@
+import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
 import SystemPackage
@@ -110,5 +111,137 @@ public struct CommandLineTests {
         try await #expect(throws: Error.self) {
             try await sys.git(workingDir: tmp).diffIndex(.quiet, treeIsh: "HEAD").run(Swiftly.currentPlatform)
         }
+    }
+
+    @Test func testTarModel() {
+        var config = sys.tar(.directory("/some/cool/stuff")).create(.compressed, .archive("abc.tgz"), files: "a", "b").config()
+        #expect(String(describing: config) == "tar -C /some/cool/stuff -c -z --file abc.tgz a b")
+
+        config = sys.tar().create(.archive("myarchive.tar")).config()
+        #expect(String(describing: config) == "tar -c --file myarchive.tar")
+
+        config = sys.tar(.directory("/this/is/the/place")).extract(.compressed, .archive("def.tgz")).config()
+        #expect(String(describing: config) == "tar -C /this/is/the/place -x -z --file def.tgz")
+
+        config = sys.tar().extract(.archive("somearchive.tar")).config()
+        #expect(String(describing: config) == "tar -x --file somearchive.tar")
+    }
+
+    @Test(
+        .tags(.medium),
+        .enabled {
+            try await sys.TarCommand.defaultExecutable.exists()
+        }
+    )
+    func testTar() async throws {
+        let tmp = fs.mktemp()
+        try await fs.mkdir(atPath: tmp)
+        let readme = "README.md"
+        try await "README".write(to: tmp / readme, atomically: true)
+
+        let arch = fs.mktemp(ext: "tar")
+        let archCompressed = fs.mktemp(ext: "tgz")
+
+        try await sys.tar(.directory(tmp)).create(.verbose, .archive(arch), files: FilePath(readme)).run(Swiftly.currentPlatform)
+        try await sys.tar(.directory(tmp)).create(.verbose, .compressed, .archive(archCompressed), files: FilePath(readme)).run(Swiftly.currentPlatform)
+
+        let tmp2 = fs.mktemp()
+        try await fs.mkdir(atPath: tmp2)
+
+        try await sys.tar(.directory(tmp2)).extract(.verbose, .archive(arch)).run(Swiftly.currentPlatform)
+
+        let contents = try await String(contentsOf: tmp2 / readme, encoding: .utf8)
+        #expect(contents == "README")
+
+        let tmp3 = fs.mktemp()
+        try await fs.mkdir(atPath: tmp3)
+
+        try await sys.tar(.directory(tmp3)).extract(.verbose, .compressed, .archive(archCompressed)).run(Swiftly.currentPlatform)
+
+        let contents2 = try await String(contentsOf: tmp3 / readme, encoding: .utf8)
+        #expect(contents2 == "README")
+    }
+
+    @Test func testSwiftModel() async throws {
+        var config = sys.swift().package().reset().config()
+        #expect(String(describing: config) == "swift package reset")
+
+        config = sys.swift().package().clean().config()
+        #expect(String(describing: config) == "swift package clean")
+
+        config = sys.swift().sdk().install("path/to/bundle", checksum: "deadbeef").config()
+        #expect(String(describing: config) == "swift sdk install path/to/bundle --checksum=deadbeef")
+
+        config = sys.swift().sdk().remove("some.bundle").config()
+        #expect(String(describing: config) == "swift sdk remove some.bundle")
+
+        config = sys.swift().build(.arch("x86_64"), .configuration("release"), .pkgConfigPath("path/to/pc"), .swiftSdk("sdk.id"), .staticSwiftStdlib, .product("product1")).config()
+        #expect(String(describing: config) == "swift build --arch=x86_64 --configuration=release --pkg-config-path=path/to/pc --swift-sdk=sdk.id --static-swift-stdlib --product=product1")
+
+        config = sys.swift().build().config()
+        #expect(String(describing: config) == "swift build")
+    }
+
+    @Test(
+        .tags(.medium),
+        .enabled {
+            try await sys.SwiftCommand.defaultExecutable.exists()
+        }
+    )
+    func testSwift() async throws {
+        let tmp = fs.mktemp()
+        try await fs.mkdir(atPath: tmp)
+        try await sys.swift().package()._init(.packagePath(tmp), .type("executable")).run(Swiftly.currentPlatform)
+        try await sys.swift().build(.packagePath(tmp), .configuration("release"))
+    }
+
+    @Test func testMake() async throws {
+        var config = sys.make().install().config()
+        #expect(String(describing: config) == "make install")
+    }
+
+    @Test func testStrip() async throws {
+        var config = sys.strip(names: FilePath("foo")).config()
+        #expect(String(describing: config) == "strip foo")
+    }
+
+    @Test func testSha256Sum() async throws {
+        var config = sys.sha256sum(files: FilePath("abcde")).config()
+        #expect(String(describing: config) == "sha256sum abcde")
+    }
+
+    @Test func testProductBuild() async throws {
+        var config = sys.productbuild().synthesize(package: FilePath("mypkg"), distributionOutputPath: FilePath("distribution")).config()
+        #expect(String(describing: config) == "productbuild --synthesize --package mypkg distribution")
+
+        config = sys.productbuild().distribution(distPath: FilePath("mydist"), productOutputPath: FilePath("product")).config()
+        #expect(String(describing: config) == "productbuild --distribution mydist product")
+
+        config = sys.productbuild().distribution(.packagePath(FilePath("pkgpath")), .sign("mycert"), distPath: FilePath("mydist"), productOutputPath: FilePath("myproduct")).config()
+        #expect(String(describing: config) == "productbuild --distribution mydist --package-path pkgpath --sign mycert myproduct")
+    }
+
+    @Test func testGpg() async throws {
+        var config = sys.gpg()._import(keys: FilePath("somekeys.asc")).config()
+        #expect(String(describing: config) == "gpg --import somekeys.asc")
+
+        config = sys.gpg().verify(detachedSignature: FilePath("file.sig"), signedData: FilePath("file")).config()
+        #expect(String(describing: config) == "gpg --verify file.sig file")
+    }
+
+    @Test func testPkgutil() async throws {
+        var config = sys.pkgutil(.verbose).checkSignature(pkgPath: FilePath("path/to/my.pkg")).config()
+        #expect(String(describing: config) == "pkgutil --verbose --check-signature path/to/my.pkg")
+
+        config = sys.pkgutil(.verbose).expand(pkgPath: FilePath("path/to/my.pkg"), dirPath: FilePath("expand/to/here")).config()
+        #expect(String(describing: config) == "pkgutil --verbose --expand path/to/my.pkg expand/to/here")
+
+        config = sys.pkgutil(.volume("/Users/foo")).forget(packageId: "com.example.pkg").config()
+        #expect(String(describing: config) == "pkgutil --volume /Users/foo --forget com.example.pkg")
+    }
+
+    @Test func testInstaller() async throws {
+        var config = sys.installer(.verbose, pkg: FilePath("path/to/my.pkg"), target: "CurrentUserHomeDirectory").config()
+        #expect(String(describing: config) == "installer -verbose -pkg path/to/my.pkg -target CurrentUserHomeDirectory")
     }
 }

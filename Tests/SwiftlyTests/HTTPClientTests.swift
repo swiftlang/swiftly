@@ -19,7 +19,7 @@ import Testing
             }
 
             try await withGpg { runGpg in
-                try runGpg(["--import", "\(tmpFile)"])
+                try await runGpg(sys.gpg()._import(keys: tmpFile))
             }
         }
     }
@@ -47,8 +47,8 @@ import Testing
 
             try await withGpg { runGpg in
                 try await httpClient.getGpgKeys().download(to: keysFile)
-                try runGpg(["--import", "\(keysFile)"])
-                try runGpg(["--verify", "\(tmpFileSignature)", "\(tmpFile)"])
+                try await runGpg(sys.gpg()._import(keys: keysFile))
+                try await runGpg(sys.gpg().verify(detachedSignature: tmpFileSignature, signedData: tmpFile))
             }
         }
     }
@@ -76,8 +76,8 @@ import Testing
 
             try await withGpg { runGpg in
                 try await httpClient.getGpgKeys().download(to: keysFile)
-                try runGpg(["--import", "\(keysFile)"])
-                try runGpg(["--verify", "\(tmpFileSignature)", "\(tmpFile)"])
+                try await runGpg(sys.gpg()._import(keys: keysFile))
+                try await runGpg(sys.gpg().verify(detachedSignature: tmpFileSignature, signedData: tmpFile))
             }
         }
     }
@@ -126,15 +126,17 @@ import Testing
     }
 }
 
-private func withGpg(_ body: (([String]) throws -> Void) async throws -> Void) async throws {
+private func withGpg(_ body: ((Runnable) async throws -> Void) async throws -> Void) async throws {
 #if os(Linux)
     // With linux, we can ask gpg to try an import to see if the file is valid
     // in a sandbox home directory to avoid contaminating the system
     let gpgHome = fs.mktemp()
     try await fs.mkdir(.parents, atPath: gpgHome)
     try await fs.withTemporary(files: gpgHome) {
-        func runGpg(arguments: [String]) throws {
-            try Swiftly.currentPlatform.runProgram(["gpg"] + arguments, quiet: false, env: ["GNUPGHOME": gpgHome.string])
+        func runGpg(_ runnable: Runnable) async throws {
+            var env = ProcessInfo.processInfo.environment
+            env["GNUPGHOME"] = gpgHome.string
+            try await runnable.run(Swiftly.currentPlatform, env: env, quiet: false)
         }
 
         try await body(runGpg)

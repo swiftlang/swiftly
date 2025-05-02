@@ -18,7 +18,7 @@ import Testing
         return (mockedToolchainFile, version, tmpDir)
     }
 
-    @Test(.testHome()) func install() async throws {
+    @Test(.testHome(), .mockedSwiftlyVersion()) func install() async throws {
         // GIVEN: a toolchain has been downloaded
         var (mockedToolchainFile, version, tmpDir) = try await self.mockToolchainDownload(version: "5.7.1")
         var cleanup = [tmpDir]
@@ -53,7 +53,7 @@ import Testing
         #expect(2 == toolchains.count)
     }
 
-    @Test(.testHome()) func uninstall() async throws {
+    @Test(.testHome(), .mockedSwiftlyVersion()) func uninstall() async throws {
         // GIVEN: toolchains have been downloaded, and installed
         var (mockedToolchainFile, version, tmpDir) = try await self.mockToolchainDownload(version: "5.8.0")
         var cleanup = [tmpDir]
@@ -89,6 +89,7 @@ import Testing
 
 #if os(macOS) || os(Linux)
     @Test(
+        .mockedSwiftlyVersion(),
         .mockHomeToolchains(),
         arguments: [
             "/a/b/c:SWIFTLY_BIN_DIR:/d/e/f",

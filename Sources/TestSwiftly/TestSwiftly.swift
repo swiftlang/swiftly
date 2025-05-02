@@ -96,7 +96,7 @@ struct TestSwiftly: AsyncParsableCommand {
 
         print("Extracting swiftly release")
 #if os(Linux)
-        try await sys.tar().extract(.verbose, .compressed, .file(swiftlyArchive)).run(currentPlatform, quiet: false)
+        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchive)).run(currentPlatform, quiet: false)
 #elseif os(macOS)
         try await sys.installer(.verbose, pkg: swiftlyArchive, target: "CurrentUserHomeDirectory").run(currentPlatform, quiet: false)
 #endif

@@ -236,7 +236,12 @@ public struct CommandLineTests {
         config = sys.pkgutil(.verbose).expand(pkgPath: FilePath("path/to/my.pkg"), dirPath: FilePath("expand/to/here")).config()
         #expect(String(describing: config) == "pkgutil --verbose --expand path/to/my.pkg expand/to/here")
 
-        config = sys.pkgutil(.volume("CurrentUserHomeDirectory")).forget(packageId: "com.example.pkg").config()
-        #expect(String(describing: config) == "pkgutil --volume CurrentUserHomeDirectory --forget com.example.pkg")
+        config = sys.pkgutil(.volume("/Users/foo")).forget(packageId: "com.example.pkg").config()
+        #expect(String(describing: config) == "pkgutil --volume /Users/foo --forget com.example.pkg")
+    }
+
+    @Test func testInstaller() async throws {
+        var config = sys.installer(.verbose, pkg: FilePath("path/to/my.pkg"), target: "CurrentUserHomeDirectory").config()
+        #expect(String(describing: config) == "installer -verbose -pkg path/to/my.pkg -target CurrentUserHomeDirectory")
     }
 }

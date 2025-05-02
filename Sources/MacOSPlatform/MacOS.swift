@@ -70,10 +70,8 @@ public struct MacOS: Platform {
         if toolchainsDir == self.defaultToolchainsDirectory {
             // If the toolchains go into the default user location then we use the installer to install them
             await ctx.print("Installing package in user home directory...")
-            try runProgram(
-                "installer", "-verbose", "-pkg", "\(tmpFile)", "-target", "CurrentUserHomeDirectory",
-                quiet: !verbose
-            )
+
+            try await sys.installer(.verbose, pkg: tmpFile, target: "CurrentUserHomeDirectory").run(self, quiet: !verbose)
         } else {
             // Otherwise, we extract the pkg into the requested toolchains directory.
             await ctx.print("Expanding pkg...")

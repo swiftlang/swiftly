@@ -116,7 +116,3 @@ swiftenv is an existing Swift version manager which already has much of the func
 - swiftly has built in support for updating toolchains.
 
 - swiftly is optimized for ease of installation. In addition, swiftly doesn't require any system dependencies to be installed on the user's system. While swiftenv is also relatively easy to install, it does involve cloning a git repository or using Homebrew, and it requires a few system dependencies (e.g. bash, curl, tar).
-
-```
-
-```

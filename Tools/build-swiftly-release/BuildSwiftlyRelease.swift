@@ -1,4 +1,5 @@
 import ArgumentParser
+import AsyncHTTPClient
 import Foundation
 import SwiftlyCore
 import SystemPackage
@@ -142,9 +143,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
     }
 
     func buildLinuxRelease() async throws {
-        // TODO: turn these into checks that the system meets the criteria for being capable of using the toolchain + checking for packages, not tools
-        let curl = try await self.assertTool("curl", message: "Please install curl with `yum install curl`")
-
         try await self.checkGitRepoStatus()
 
         // Start with a fresh SwiftPM package
@@ -162,7 +160,20 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? FileManager.default.createDirectory(atPath: pkgConfigPath, withIntermediateDirectories: true)
 
         try? FileManager.default.removeItem(atPath: libArchivePath)
-        try currentPlatform.runProgram(curl, "-L", "-o", "\(buildCheckoutsDir + "/libarchive-\(libArchiveVersion).tar.gz")", "--remote-name", "--location", "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
+
+        // Download libarchive
+        let libarchiveRequest = HTTPClientRequest(url: "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
+        let libarchiveResponse = try await HTTPClient.shared.execute(libarchiveRequest, timeout: .seconds(60))
+        guard libarchiveResponse.status == .ok else {
+            throw Error(message: "Download failed with status: \(libarchiveResponse.status)")
+        }
+        let buf = try await libarchiveResponse.body.collect(upTo: 20 * 1024 * 1024)
+        guard let contents = buf.getBytes(at: 0, length: buf.readableBytes) else {
+            throw Error(message: "Unable to read all of the bytes")
+        }
+        let data = Data(contents)
+        try data.write(to: FilePath(buildCheckoutsDir + "/libarchive-\(libArchiveVersion).tar.gz"))
+
         let libArchiveTarShaActual = try await sys.sha256sum(files: FilePath("\(buildCheckoutsDir)/libarchive-\(libArchiveVersion).tar.gz")).output(currentPlatform)
         guard let libArchiveTarShaActual, libArchiveTarShaActual.starts(with: libArchiveTarSha) else {
             let shaActual = libArchiveTarShaActual ?? "none"

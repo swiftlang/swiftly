@@ -93,8 +93,6 @@ extension SystemCommand.DsclCommand.ReadCommand: Output {
     }
 }
 
-// Create or operate on universal files
-// See lipo(1) for details
 extension SystemCommand {
     // Create or operate on universal files
     // See lipo(1) for details

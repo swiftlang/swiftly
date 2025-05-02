@@ -922,7 +922,7 @@ extension SystemCommand {
                 case arch(String)
                 case configuration(String)
                 case packagePath(FilePath)
-                case pkgConfigPath(String)
+                case pkgConfigPath(FilePath)
                 case product(String)
                 case swiftSdk(String)
                 case staticSwiftStdlib

@@ -261,7 +261,7 @@ struct Install: SwiftlyCommand {
 
         await ctx.print("Installing \(version)")
 
-        let tmpFile = fs.mktemp()
+        let tmpFile = fs.mktemp(ext: ".\(Swiftly.currentPlatform.toolchainFileExtension)")
         try await fs.create(file: tmpFile, contents: nil)
         return try await fs.withTemporary(files: tmpFile) {
             var platformString = config.platform.name

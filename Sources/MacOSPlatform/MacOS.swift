@@ -70,10 +70,8 @@ public struct MacOS: Platform {
         if toolchainsDir == self.defaultToolchainsDirectory {
             // If the toolchains go into the default user location then we use the installer to install them
             await ctx.print("Installing package in user home directory...")
-            try runProgram(
-                "installer", "-verbose", "-pkg", "\(tmpFile)", "-target", "CurrentUserHomeDirectory",
-                quiet: !verbose
-            )
+
+            try await sys.installer(.verbose, pkg: tmpFile, target: "CurrentUserHomeDirectory").run(self, quiet: !verbose)
         } else {
             // Otherwise, we extract the pkg into the requested toolchains directory.
             await ctx.print("Expanding pkg...")
@@ -86,7 +84,7 @@ public struct MacOS: Platform {
 
             await ctx.print("Checking package signature...")
             do {
-                try runProgram("pkgutil", "--check-signature", "\(tmpFile)", quiet: !verbose)
+                try await sys.pkgutil().checkSignature(pkgPath: tmpFile).run(self, quiet: !verbose)
             } catch {
                 // If this is not a test that uses mocked toolchains then we must throw this error and abort installation
                 guard ctx.mockedHomeDir != nil else {
@@ -96,7 +94,7 @@ public struct MacOS: Platform {
                 // We permit the signature verification to fail during testing
                 await ctx.print("Signature verification failed, which is allowable during testing with mocked toolchains")
             }
-            try runProgram("pkgutil", "--verbose", "--expand", "\(tmpFile)", "\(tmpDir)", quiet: !verbose)
+            try await sys.pkgutil(.verbose).expand(pkgPath: tmpFile, dirPath: tmpDir).run(self, quiet: !verbose)
 
             // There's a slight difference in the location of the special Payload file between official swift packages
             // and the ones that are mocked here in the test framework.
@@ -106,7 +104,7 @@ public struct MacOS: Platform {
             }
 
             await ctx.print("Untarring pkg Payload...")
-            try runProgram("tar", "-C", "\(toolchainDir)", "-xvf", "\(payload)", quiet: !verbose)
+            try await sys.tar(.directory(toolchainDir)).extract(.verbose, .archive(payload)).run(self, quiet: !verbose)
         }
     }
 
@@ -119,8 +117,11 @@ public struct MacOS: Platform {
 
         if ctx.mockedHomeDir == nil {
             await ctx.print("Extracting the swiftly package...")
-            try runProgram("installer", "-pkg", "\(archive)", "-target", "CurrentUserHomeDirectory")
-            try? runProgram("pkgutil", "--volume", "\(userHomeDir)", "--forget", "org.swift.swiftly")
+            try await sys.installer(
+                pkg: archive,
+                target: "CurrentUserHomeDirectory"
+            )
+            try? await sys.pkgutil(.volume(userHomeDir)).forget(packageId: "org.swift.swiftly").run(self)
         } else {
             let installDir = userHomeDir / ".swiftly"
             try await fs.mkdir(.parents, atPath: installDir)
@@ -128,7 +129,7 @@ public struct MacOS: Platform {
             // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
             //  the installer will not install to an arbitrary path, only a volume or user home directory.
             let tmpDir = fs.mktemp()
-            try runProgram("pkgutil", "--expand", "\(archive)", "\(tmpDir)")
+            try await sys.pkgutil().expand(pkgPath: archive, dirPath: tmpDir).run(self)
 
             // There's a slight difference in the location of the special Payload file between official swift packages
             // and the ones that are mocked here in the test framework.
@@ -138,7 +139,7 @@ public struct MacOS: Platform {
             }
 
             await ctx.print("Extracting the swiftly package into \(installDir)...")
-            try runProgram("tar", "-C", "\(installDir)", "-xvf", "\(payload)", quiet: false)
+            try await sys.tar(.directory(installDir)).extract(.verbose, .archive(payload)).run(self, quiet: false)
         }
 
         try self.runProgram((userHomeDir / ".swiftly/bin/swiftly").string, "init")
@@ -161,9 +162,7 @@ public struct MacOS: Platform {
 
         try await fs.remove(atPath: toolchainDir)
 
-        try? runProgram(
-            "pkgutil", "--volume", "\(fs.home)", "--forget", pkgInfo.CFBundleIdentifier, quiet: !verbose
-        )
+        try? await sys.pkgutil(.volume(fs.home)).forget(packageId: pkgInfo.CFBundleIdentifier).run(self, quiet: !verbose)
     }
 
     public func getExecutableName() -> String {

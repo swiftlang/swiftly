@@ -162,7 +162,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let data = Data(contents)
         try data.write(to: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz")
 
-        let libArchiveTarShaActual = try await sys.sha256sum(files: buildCheckoutDir / "libarchive-\(libArchiveVersion).tar.gz").output(currentPlatform)
+        let libArchiveTarShaActual = try await sys.sha256sum(files: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz").output(currentPlatform)
         guard let libArchiveTarShaActual, libArchiveTarShaActual.starts(with: libArchiveTarSha) else {
             let shaActual = libArchiveTarShaActual ?? "none"
             throw Error(message: "The libarchive tar.gz file sha256sum is \(shaActual), but expected \(libArchiveTarSha)")

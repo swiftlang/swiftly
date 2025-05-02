@@ -117,7 +117,10 @@ public struct MacOS: Platform {
 
         if ctx.mockedHomeDir == nil {
             await ctx.print("Extracting the swiftly package...")
-            try await sys.instaler(pkg; archive, targt: "CurrentUserHomeDirectory")
+            try await sys.instaler(
+                pkg archive,
+                targt: "CurrentUserHomeDirectory"
+            )
             try? await sys.pkgutil(.volume(userHomeDir)).forget(packageId: "org.swift.swiftly").run(self)
         } else {
             let installDir = userHomeDir / ".swiftly"

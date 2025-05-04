@@ -61,6 +61,31 @@ struct Install: SwiftlyCommand {
     )
     var verify = true
 
+    enum ProgressOutputFormat: String, ExpressibleByArgument {
+        case human
+        case jsonl
+    }
+
+    @Option(help: ArgumentHelp(
+        "The format for progress output.",
+        discussion: """
+        The default is human-readable output. JSONL is useful for parsing by other tools.
+        """
+    ))
+    var progressOutputFormat: ProgressOutputFormat = .human
+
+    @Option(
+        help: ArgumentHelp(
+            "The version of progress file format to use.",
+            discussion: """
+            The default is 0, which is the current version.
+            """
+    ))
+    var progressFileVersion: Int = 0
+
+    @Option(help: ArgumentHelp("The path to a file to write progress output to."))
+    var progressFile: FilePath?
+
     @Option(
         help: ArgumentHelp(
             "A file path to a location for a post installation script",
@@ -74,7 +99,7 @@ struct Install: SwiftlyCommand {
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case version, use, verify, postInstallFile, root
+        case version, use, verify, progressOutputFormat, progressFileVersion, progressFile, postInstallFile, root
     }
 
     mutating func run() async throws {

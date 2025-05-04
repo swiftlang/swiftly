@@ -3,8 +3,6 @@ import ArgumentParser
 import Foundation
 import SwiftlyCore
 import SystemPackage
-@preconcurrency import TSCBasic
-import TSCUtility
 
 struct Install: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
@@ -123,7 +121,8 @@ struct Install: SwiftlyCommand {
             useInstalledToolchain: self.use,
             verifySignature: self.verify,
             verbose: self.root.verbose,
-            assumeYes: self.root.assumeYes
+            assumeYes: self.root.assumeYes,
+            outputFormat: self.progressOutputFormat
         )
 
         let shell =
@@ -269,7 +268,8 @@ struct Install: SwiftlyCommand {
         useInstalledToolchain: Bool,
         verifySignature: Bool,
         verbose: Bool,
-        assumeYes: Bool
+        assumeYes: Bool,
+        outputFormat: ProgressOutputFormat = .human
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
             await ctx.print("\(version) is already installed.")
@@ -317,10 +317,13 @@ struct Install: SwiftlyCommand {
                 }
             }
 
-            let animation = PercentProgressAnimation(
-                stream: stdoutStream,
-                header: "Downloading \(version)"
-            )
+            let progressReporter: ProgressReporter
+            switch outputFormat {
+            case .human:
+                progressReporter = PercentProgressReporter()
+            case .jsonl:
+                progressReporter = JSONLineProgressReporter()
+            }
 
             var lastUpdate = Date()
 
@@ -346,21 +349,20 @@ struct Install: SwiftlyCommand {
 
                         lastUpdate = Date()
 
-                        animation.update(
+                        progressReporter.update(
                             step: progress.receivedBytes,
                             total: progress.totalBytes!,
-                            text:
-                            "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
+                            text: "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
                         )
                     }
                 )
             } catch let notFound as DownloadNotFoundError {
                 throw SwiftlyError(message: "\(version) does not exist at URL \(notFound.url), exiting")
             } catch {
-                animation.complete(success: false)
+                progressReporter.complete(success: true)
                 throw error
             }
-            animation.complete(success: true)
+            progressReporter.complete(success: true)
 
             if verifySignature {
                 try await Swiftly.currentPlatform.verifyToolchainSignature(

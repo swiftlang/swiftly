@@ -30,10 +30,19 @@ struct SelfUninstall: SwiftlyCommand {
             )
         }
 
-        let _ = try await Self.execute(ctx, verbose: self.root.verbose)
+        try await Self.execute(ctx, verbose: self.root.verbose)
     }
 
     public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool) async throws {
+        await ctx.print("""
+        You are about to uninstall swiftly. 
+        This will remove the swiftly binary and all the files in the swiftly home directory. 
+        This action is irreversible.
+        """)
+
+        guard await ctx.promptForConfirmation(defaultBehavior: true) else {
+            throw SwiftlyError(message: "swiftly installation has been cancelled")
+        }
         await ctx.print("Uninstalling swiftly...")
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx)

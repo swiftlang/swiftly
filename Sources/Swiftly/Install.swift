@@ -123,7 +123,8 @@ struct Install: SwiftlyCommand {
             verifySignature: self.verify,
             verbose: self.root.verbose,
             assumeYes: self.root.assumeYes,
-            outputFormat: self.progressOutputFormat
+            outputFormat: self.progressOutputFormat,
+            progressFile: self.progressFile,
         )
 
         let shell =
@@ -270,7 +271,8 @@ struct Install: SwiftlyCommand {
         verifySignature: Bool,
         verbose: Bool,
         assumeYes: Bool,
-        outputFormat: ProgressOutputFormat = .human
+        outputFormat: ProgressOutputFormat = .human,
+        progressFile: FilePath? = nil
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
             await ctx.print("\(version) is already installed.")
@@ -326,7 +328,9 @@ struct Install: SwiftlyCommand {
                     header: "Downloading \(version)"
                 )
             case .jsonl:
-                progressReporter = JSONLineProgressReporter()
+                progressReporter = JSONLineProgressReporter(
+                    toFile: progressFile
+                )
             }
 
             var lastUpdate = Date()
@@ -489,7 +493,6 @@ struct Install: SwiftlyCommand {
     }
 }
 
-
 public protocol ProgressReporter {
     func update(step: Int, total: Int, text: String?)
     func complete(success: Bool)
@@ -503,7 +506,37 @@ struct ProgressMessage: Codable {
 }
 
 public struct JSONLineProgressReporter: ProgressReporter {
-    public init() {}
+    private var fileHandle: FileHandle?
+
+    public init(toFile path: FilePath?) {
+        if let path {
+            do {
+                let url = URL(fileURLWithPath: path.string)
+                self.fileHandle = try FileHandle(forWritingTo: url)
+                try self.fileHandle?.seekToEnd()
+            } catch {
+                self.fileHandle = nil
+            }
+        } else {
+            self.fileHandle = nil
+        }
+    }
+
+    private func emit(_ object: [String: Any]) {
+        guard
+            let data = try? JSONSerialization.data(withJSONObject: object),
+            let jsonLine = (String(data: data, encoding: .utf8)?.appending("\n")),
+            let fileData = jsonLine.data(using: .utf8)
+        else {
+            return
+        }
+
+        if let handle = fileHandle {
+            try? handle.write(contentsOf: fileData)
+        } else {
+            print(jsonLine)
+        }
+    }
 
     public func update(step: Int, total: Int, text: String?) {
         var payload: [String: Any] = [
@@ -511,14 +544,8 @@ public struct JSONLineProgressReporter: ProgressReporter {
             "receivedBytes": step,
             "totalBytes": total,
         ]
-        if let text {
-            payload["text"] = text
-        }
-        if let data = try? JSONSerialization.data(withJSONObject: payload),
-           let jsonString = String(data: data, encoding: .utf8)
-        {
-            print(jsonString)
-        }
+        if let text { payload["text"] = text }
+        emit(payload)
     }
 
     public func complete(success: Bool) {
@@ -526,11 +553,7 @@ public struct JSONLineProgressReporter: ProgressReporter {
             "type": "complete",
             "success": success,
         ]
-        if let data = try? JSONSerialization.data(withJSONObject: payload),
-           let jsonString = String(data: data, encoding: .utf8)
-        {
-            print(jsonString)
-        }
+        emit(payload)
     }
 }
 

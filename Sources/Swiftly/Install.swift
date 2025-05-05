@@ -3,7 +3,8 @@ import ArgumentParser
 import Foundation
 import SwiftlyCore
 import SystemPackage
-
+@preconcurrency import TSCBasic
+import TSCUtility
 struct Install: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
         abstract: "Install a new toolchain."
@@ -78,7 +79,7 @@ struct Install: SwiftlyCommand {
             discussion: """
             The default is 0, which is the current version.
             """
-    ))
+        ))
     var progressFileVersion: Int = 0
 
     @Option(help: ArgumentHelp("The path to a file to write progress output to."))
@@ -320,7 +321,10 @@ struct Install: SwiftlyCommand {
             let progressReporter: ProgressReporter
             switch outputFormat {
             case .human:
-                progressReporter = PercentProgressReporter()
+                progressReporter = PercentProgressReporter(
+                    stream: stdoutStream,
+                    header: "Downloading \(version)"
+                )
             case .jsonl:
                 progressReporter = JSONLineProgressReporter()
             }
@@ -484,3 +488,65 @@ struct Install: SwiftlyCommand {
         }
     }
 }
+
+
+public protocol ProgressReporter {
+    func update(step: Int, total: Int, text: String?)
+    func complete(success: Bool)
+}
+
+struct ProgressMessage: Codable {
+    let type: String
+    let receivedBytes: Int
+    let totalBytes: Int
+    let text: String?
+}
+
+public struct JSONLineProgressReporter: ProgressReporter {
+    public init() {}
+
+    public func update(step: Int, total: Int, text: String?) {
+        var payload: [String: Any] = [
+            "type": "progress",
+            "receivedBytes": step,
+            "totalBytes": total,
+        ]
+        if let text {
+            payload["text"] = text
+        }
+        if let data = try? JSONSerialization.data(withJSONObject: payload),
+           let jsonString = String(data: data, encoding: .utf8)
+        {
+            print(jsonString)
+        }
+    }
+
+    public func complete(success: Bool) {
+        let payload: [String: Any] = [
+            "type": "complete",
+            "success": success,
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: payload),
+           let jsonString = String(data: data, encoding: .utf8)
+        {
+            print(jsonString)
+        }
+    }
+}
+
+public struct PercentProgressReporter: ProgressReporter {
+    private let animation: PercentProgressAnimation
+
+    public init(stream: OutputByteStream, header: String) {
+        self.animation = PercentProgressAnimation(stream: stream, header: header)
+    }
+
+    public func update(step: Int, total: Int, text: String?) {
+        self.animation.update(step: step, total: total, text: text ?? "")
+    }
+
+    public func complete(success: Bool) {
+        self.animation.complete(success: success)
+    }
+}
+

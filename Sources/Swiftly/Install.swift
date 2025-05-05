@@ -125,6 +125,7 @@ struct Install: SwiftlyCommand {
             assumeYes: self.root.assumeYes,
             outputFormat: self.progressOutputFormat,
             progressFile: self.progressFile,
+            progressFileVersion: self.progressFileVersion
         )
 
         let shell =
@@ -272,7 +273,8 @@ struct Install: SwiftlyCommand {
         verbose: Bool,
         assumeYes: Bool,
         outputFormat: ProgressOutputFormat = .human,
-        progressFile: FilePath? = nil
+        progressFile: FilePath? = nil,
+        progressFileVersion: Int = 0
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
             await ctx.print("\(version) is already installed.")
@@ -329,7 +331,8 @@ struct Install: SwiftlyCommand {
                 )
             case .jsonl:
                 progressReporter = JSONLineProgressReporter(
-                    toFile: progressFile
+                    toFile: progressFile,
+                    progressFileVersion: progressFileVersion
                 )
             }
 
@@ -507,8 +510,14 @@ struct ProgressMessage: Codable {
 
 public struct JSONLineProgressReporter: ProgressReporter {
     private var fileHandle: FileHandle?
+    private let progressFileVersion: Int
 
-    public init(toFile path: FilePath?) {
+    public init(toFile path: FilePath?, progressFileVersion: Int) {
+        if progressFileVersion != 0 {
+            print("Warning: JSONL progress file version \(progressFileVersion) is not supported. Defaulting to version 0.")
+        }
+
+        self.progressFileVersion = progressFileVersion
         if let path {
             do {
                 let url = URL(fileURLWithPath: path.string)
@@ -540,12 +549,13 @@ public struct JSONLineProgressReporter: ProgressReporter {
 
     public func update(step: Int, total: Int, text: String?) {
         var payload: [String: Any] = [
+            "version": progressFileVersion,
             "type": "progress",
             "receivedBytes": step,
             "totalBytes": total,
         ]
         if let text { payload["text"] = text }
-        emit(payload)
+        self.emit(payload)
     }
 
     public func complete(success: Bool) {
@@ -553,7 +563,7 @@ public struct JSONLineProgressReporter: ProgressReporter {
             "type": "complete",
             "success": success,
         ]
-        emit(payload)
+        self.emit(payload)
     }
 }
 
@@ -572,4 +582,3 @@ public struct PercentProgressReporter: ProgressReporter {
         self.animation.complete(success: success)
     }
 }
-

@@ -293,11 +293,19 @@ struct GenerateCommandModels: AsyncParsableCommand {
 
         private func argSwitchCase(_ arg: ArgumentInfoV0) -> String {
             let flag = arg.kind == .flag
-            let dashes = (self.cmdExt.optionsSingleDash ?? false) ? "-" : "--"
+            var name: String?
+            if let longName = arg.names?.filter { $0.kind == .long }.first?.name {
+                let dashes = (self.cmdExt.optionsSingleDash ?? false) ? "-" : "--"
+                name = dashes + longName
+            } else if let shortName = arg.names?.filter { $0.kind == .short }.first?.name {
+                name = "-" + shortName
+            }
+
+            guard let name else { fatalError("Unable to find a suitable argument name for \(arg)") }
 
             return """
             case .\(arg.asSwiftName)\(!flag ? "(let \(arg.asSwiftName))" : ""):
-                ["\(dashes)\(arg.names!.filter { $0.kind == .long }.first!.name)"\(!flag ? ", String(describing: \(arg.asSwiftName))" : "")]
+                ["\(name)"\(!flag ? ", String(describing: \(arg.asSwiftName))" : "")]
             """.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n        ")
         }
 
@@ -343,7 +351,11 @@ struct GenerateCommandModels: AsyncParsableCommand {
 
         let swiftName = command.commandName.replacingOccurrences(of: "-", with: "")
 
-        let funcName = swiftName
+        var funcName = swiftName
+        if funcName == "init" {
+            // TODO: handle all of Swift's keywords here
+            funcName = "_init"
+        }
         let structName = "\(swiftName)Command"
 
         func indent(_ level: Int) -> String { String(repeating: " ", count: level * 4) }

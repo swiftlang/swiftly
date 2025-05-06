@@ -64,43 +64,43 @@ public struct CommandLineTests {
     }
 
     @Test func testGitModel() {
-        var config = sys.git().log(.maxCount(1), .pretty("format:%d")).config()
-        #expect(String(describing: config) == "git log --max-count=1 --pretty=format:%d")
+        var config = sys.git().log(.max_count("1"), .pretty("format:%d")).config()
+        #expect(String(describing: config) == "git log --max-count 1 --pretty format:%d")
 
         config = sys.git().log().config()
         #expect(String(describing: config) == "git log")
 
         config = sys.git().log(.pretty("foo")).config()
-        #expect(String(describing: config) == "git log --pretty=foo")
+        #expect(String(describing: config) == "git log --pretty foo")
 
-        config = sys.git().diffIndex(.quiet, treeIsh: "HEAD").config()
+        config = sys.git().diffindex(.quiet, tree_ish: "HEAD").config()
         #expect(String(describing: config) == "git diff-index --quiet HEAD")
 
-        config = sys.git().diffIndex(treeIsh: "main").config()
+        config = sys.git().diffindex(tree_ish: "main").config()
         #expect(String(describing: config) == "git diff-index main")
     }
 
     @Test(
         .tags(.medium),
         .enabled {
-            try await sys.GitCommand.defaultExecutable.exists()
+            try await sys.gitCommand.defaultExecutable.exists()
         }
     )
     func testGit() async throws {
         // GIVEN a simple git repository
         let tmp = fs.mktemp()
         try await fs.mkdir(atPath: tmp)
-        try await sys.git(workingDir: tmp)._init().run(Swiftly.currentPlatform)
+        try await sys.git(.workingDir(tmp))._init().run(Swiftly.currentPlatform)
 
         // AND a simple history
         try "Some text".write(to: tmp / "foo.txt", atomically: true)
         try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "add", "foo.txt")
         try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "config", "user.email", "user@example.com")
-        try await sys.git(workingDir: tmp).commit(.message("Initial commit")).run(Swiftly.currentPlatform)
-        try await sys.git(workingDir: tmp).diffIndex(.quiet, treeIsh: "HEAD").run(Swiftly.currentPlatform)
+        try await sys.git(.workingDir(tmp)).commit(.message("Initial commit")).run(Swiftly.currentPlatform)
+        try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run(Swiftly.currentPlatform)
 
         // WHEN inspecting the log
-        let log = try await sys.git(workingDir: tmp).log(.maxCount(1)).output(Swiftly.currentPlatform)!
+        let log = try await sys.git(.workingDir(tmp)).log(.max_count("1")).output(Swiftly.currentPlatform)!
         // THEN it is not empty
         #expect(log != "")
 
@@ -109,7 +109,7 @@ public struct CommandLineTests {
 
         // THEN diff index finds a change
         try await #expect(throws: Error.self) {
-            try await sys.git(workingDir: tmp).diffIndex(.quiet, treeIsh: "HEAD").run(Swiftly.currentPlatform)
+            try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run(Swiftly.currentPlatform)
         }
     }
 

@@ -110,12 +110,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             return
         }
 
-        guard let gitTags = try await sys.git().log(.maxCount(1), .pretty("format:%d")).output(currentPlatform), gitTags.contains("tag: \(self.version)") else {
+        guard let gitTags = try await sys.git().log(.max_count("1"), .pretty("format:%d")).output(currentPlatform), gitTags.contains("tag: \(self.version)") else {
             throw Error(message: "Git repo is not yet tagged for release \(self.version). Please tag this commit with that version and push it to GitHub.")
         }
 
         do {
-            try await sys.git().diffIndex(.quiet, treeIsh: "HEAD").run(currentPlatform)
+            try await sys.git().diffindex(.quiet, tree_ish: "HEAD").run(currentPlatform)
         } catch {
             throw Error(message: "Git repo has local changes. First commit these changes, tag the commit with release \(self.version) and push the tag to GitHub.")
         }

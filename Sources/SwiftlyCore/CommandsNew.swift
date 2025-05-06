@@ -100,6 +100,225 @@ extension SystemCommand {
 }
 
 extension SystemCommand {
+    // the stupid content tracker. See git(1) for more information.
+    public static func git(executable: Executable = gitCommand.defaultExecutable, _ options: gitCommand.Option...) -> gitCommand {
+        Self.git(executable: executable, options)
+    }
+
+    // the stupid content tracker. See git(1) for more information.
+    public static func git(executable: Executable = gitCommand.defaultExecutable, _ options: [gitCommand.Option]) -> gitCommand {
+        gitCommand(executable: executable, options)
+    }
+
+    public struct gitCommand {
+        public static var defaultExecutable: Executable { .name("git") }
+        public var executable: Executable
+        public var options: [Option]
+
+        public enum Option {
+            case workingDir(FilePath)
+
+            public func args() -> [String] {
+                switch self {
+                case let .workingDir(workingDir):
+                    ["-C", String(describing: workingDir)]
+                }
+            }
+        }
+
+        public init(executable: Executable, _ options: [gitCommand.Option]) {
+            self.executable = executable
+            self.options = options
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            for opt in self.options {
+                args.append(contentsOf: opt.args())
+            }
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func _init() -> initCommand {
+            initCommand(parent: self)
+        }
+
+        public struct initCommand {
+            public var parent: gitCommand
+
+            public init(parent: gitCommand) {
+                self.parent = parent
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("init")
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func commit(_ options: commitCommand.Option...) -> commitCommand {
+            self.commit(options)
+        }
+
+        public func commit(_ options: [commitCommand.Option]) -> commitCommand {
+            commitCommand(parent: self, options)
+        }
+
+        public struct commitCommand {
+            public var parent: gitCommand
+            public var options: [Option]
+
+            public enum Option {
+                case allow_empty
+                case allow_empty_message
+                case message(String)
+
+                public func args() -> [String] {
+                    switch self {
+                    case .allow_empty:
+                        ["--allow-empty"]
+                    case .allow_empty_message:
+                        ["--allow-empty-message"]
+                    case let .message(message):
+                        ["--message", String(describing: message)]
+                    }
+                }
+            }
+
+            public init(parent: gitCommand, _ options: [commitCommand.Option]) {
+                self.parent = parent
+                self.options = options
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("commit")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func log(_ options: logCommand.Option...) -> logCommand {
+            self.log(options)
+        }
+
+        public func log(_ options: [logCommand.Option]) -> logCommand {
+            logCommand(parent: self, options)
+        }
+
+        public struct logCommand {
+            public var parent: gitCommand
+            public var options: [Option]
+
+            public enum Option {
+                case max_count(String)
+                case pretty(String)
+
+                public func args() -> [String] {
+                    switch self {
+                    case let .max_count(max_count):
+                        ["--max-count", String(describing: max_count)]
+                    case let .pretty(pretty):
+                        ["--pretty", String(describing: pretty)]
+                    }
+                }
+            }
+
+            public init(parent: gitCommand, _ options: [logCommand.Option]) {
+                self.parent = parent
+                self.options = options
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("log")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func diffindex(_ options: diffindexCommand.Option..., tree_ish: String) -> diffindexCommand {
+            self.diffindex(options, tree_ish: tree_ish)
+        }
+
+        public func diffindex(_ options: [diffindexCommand.Option], tree_ish: String) -> diffindexCommand {
+            diffindexCommand(parent: self, options, tree_ish: tree_ish)
+        }
+
+        public struct diffindexCommand {
+            public var parent: gitCommand
+            public var options: [Option]
+            public var tree_ish: String
+
+            public enum Option {
+                case quiet
+
+                public func args() -> [String] {
+                    switch self {
+                    case .quiet:
+                        ["--quiet"]
+                    }
+                }
+            }
+
+            public init(parent: gitCommand, _ options: [diffindexCommand.Option], tree_ish: String) {
+                self.parent = parent
+                self.options = options
+                self.tree_ish = tree_ish
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("diff-index")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+                args += [self.tree_ish.description]
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand {
     // Create or operate on universal files. See lipo(1) for more information.
     public static func lipo(executable: Executable = lipoCommand.defaultExecutable, input_file: FilePath...) -> lipoCommand {
         Self.lipo(executable: executable, input_file: input_file)

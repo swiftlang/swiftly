@@ -511,3 +511,156 @@ extension SystemCommand {
         }
     }
 }
+
+extension SystemCommand {
+    // manipulate tape archives. See tar(1) for more information.
+    public static func tar(executable: Executable = tarCommand.defaultExecutable, _ options: tarCommand.Option...) -> tarCommand {
+        Self.tar(executable: executable, options)
+    }
+
+    // manipulate tape archives. See tar(1) for more information.
+    public static func tar(executable: Executable = tarCommand.defaultExecutable, _ options: [tarCommand.Option]) -> tarCommand {
+        tarCommand(executable: executable, options)
+    }
+
+    public struct tarCommand {
+        public static var defaultExecutable: Executable { .name("tar") }
+        public var executable: Executable
+        public var options: [Option]
+
+        public enum Option {
+            case directory(FilePath)
+
+            public func args() -> [String] {
+                switch self {
+                case let .directory(directory):
+                    ["-C", String(describing: directory)]
+                }
+            }
+        }
+
+        public init(executable: Executable, _ options: [tarCommand.Option]) {
+            self.executable = executable
+            self.options = options
+        }
+
+        public func config() -> Configuration {
+            var args: [String] = []
+
+            for opt in self.options {
+                args.append(contentsOf: opt.args())
+            }
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(args),
+                environment: .inherit
+            )
+        }
+
+        public func create(_ options: createCommand.Option..., files: [FilePath]?) -> createCommand {
+            self.create(options, files: files)
+        }
+
+        public func create(_ options: [createCommand.Option], files: [FilePath]?) -> createCommand {
+            createCommand(parent: self, options, files: files)
+        }
+
+        public struct createCommand {
+            public var parent: tarCommand
+            public var options: [Option]
+            public var files: [FilePath]?
+
+            public enum Option {
+                case archive(FilePath)
+                case compressed
+                case verbose
+
+                public func args() -> [String] {
+                    switch self {
+                    case let .archive(archive):
+                        ["--file", String(describing: archive)]
+                    case .compressed:
+                        ["-z"]
+                    case .verbose:
+                        ["-v"]
+                    }
+                }
+            }
+
+            public init(parent: tarCommand, _ options: [createCommand.Option], files: [FilePath]?) {
+                self.parent = parent
+                self.options = options
+                self.files = files
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--create")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+                if let files = self.files { args += files.map(\.description) }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+
+        public func extract(_ options: extractCommand.Option...) -> extractCommand {
+            self.extract(options)
+        }
+
+        public func extract(_ options: [extractCommand.Option]) -> extractCommand {
+            extractCommand(parent: self, options)
+        }
+
+        public struct extractCommand {
+            public var parent: tarCommand
+            public var options: [Option]
+
+            public enum Option {
+                case archive(FilePath)
+                case compressed
+                case verbose
+
+                public func args() -> [String] {
+                    switch self {
+                    case let .archive(archive):
+                        ["--file", String(describing: archive)]
+                    case .compressed:
+                        ["-z"]
+                    case .verbose:
+                        ["-v"]
+                    }
+                }
+            }
+
+            public init(parent: tarCommand, _ options: [extractCommand.Option]) {
+                self.parent = parent
+                self.options = options
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var args = c.arguments.storage.map(\.description)
+
+                args.append("--extract")
+
+                for opt in self.options {
+                    args.append(contentsOf: opt.args())
+                }
+
+                c.arguments = .init(args)
+
+                return c
+            }
+        }
+    }
+}

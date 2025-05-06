@@ -247,7 +247,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let releaseArchive = releaseDir / "swiftly-\(version)-x86_64.tar.gz"
 #endif
 
-        try await sys.tar(.directory(releaseDir)).create(.compressed, .archive(releaseArchive), files: "swiftly", "LICENSE.txt").run(currentPlatform)
+        try await sys.tar(.directory(releaseDir)).create(.compressed, .archive(releaseArchive), files: ["swiftly", "LICENSE.txt"]).run(currentPlatform)
 
         print(releaseArchive)
 
@@ -261,7 +261,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 #endif
 
             try await sys.swift().build(.swiftSdk("\(arch)-swift-linux-musl"), .product("test-swiftly"), .pkgConfigPath(pkgConfigPath / "lib/pkgconfig"), .staticSwiftStdlib, .configuration("debug")).run(currentPlatform)
-            try await sys.tar(.directory(debugDir)).create(.compressed, .archive(testArchive), files: "test-swiftly").run(currentPlatform)
+            try await sys.tar(.directory(debugDir)).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).run(currentPlatform)
 
             print(testArchive)
         }
@@ -352,7 +352,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             .create(.output(swiftlyBinDir / "swiftly"))
             .runEcho(currentPlatform)
 
-            try await sys.tar(.directory(".build/x86_64-apple-macosx/debug")).create(.compressed, .archive(testArchive), files: "test-swiftly").run(currentPlatform)
+            try await sys.tar(.directory(".build/x86_64-apple-macosx/debug")).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).run(currentPlatform)
 
             print(testArchive)
         }

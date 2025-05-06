@@ -114,23 +114,23 @@ public struct CommandLineTests {
     }
 
     @Test func testTarModel() {
-        var config = sys.tar(.directory("/some/cool/stuff")).create(.compressed, .archive("abc.tgz"), files: "a", "b").config()
-        #expect(String(describing: config) == "tar -C /some/cool/stuff -c -z --file abc.tgz a b")
+        var config = sys.tar(.directory("/some/cool/stuff")).create(.compressed, .archive("abc.tgz"), files: ["a", "b"]).config()
+        #expect(String(describing: config) == "tar -C /some/cool/stuff --create -z --file abc.tgz a b")
 
-        config = sys.tar().create(.archive("myarchive.tar")).config()
-        #expect(String(describing: config) == "tar -c --file myarchive.tar")
+        config = sys.tar().create(.archive("myarchive.tar"), files: nil).config()
+        #expect(String(describing: config) == "tar --create --file myarchive.tar")
 
         config = sys.tar(.directory("/this/is/the/place")).extract(.compressed, .archive("def.tgz")).config()
-        #expect(String(describing: config) == "tar -C /this/is/the/place -x -z --file def.tgz")
+        #expect(String(describing: config) == "tar -C /this/is/the/place --extract -z --file def.tgz")
 
         config = sys.tar().extract(.archive("somearchive.tar")).config()
-        #expect(String(describing: config) == "tar -x --file somearchive.tar")
+        #expect(String(describing: config) == "tar --extract --file somearchive.tar")
     }
 
     @Test(
         .tags(.medium),
         .enabled {
-            try await sys.TarCommand.defaultExecutable.exists()
+            try await sys.tarCommand.defaultExecutable.exists()
         }
     )
     func testTar() async throws {
@@ -142,8 +142,8 @@ public struct CommandLineTests {
         let arch = fs.mktemp(ext: "tar")
         let archCompressed = fs.mktemp(ext: "tgz")
 
-        try await sys.tar(.directory(tmp)).create(.verbose, .archive(arch), files: FilePath(readme)).run(Swiftly.currentPlatform)
-        try await sys.tar(.directory(tmp)).create(.verbose, .compressed, .archive(archCompressed), files: FilePath(readme)).run(Swiftly.currentPlatform)
+        try await sys.tar(.directory(tmp)).create(.verbose, .archive(arch), files: [FilePath(readme)]).run(Swiftly.currentPlatform)
+        try await sys.tar(.directory(tmp)).create(.verbose, .compressed, .archive(archCompressed), files: [FilePath(readme)]).run(Swiftly.currentPlatform)
 
         let tmp2 = fs.mktemp()
         try await fs.mkdir(atPath: tmp2)

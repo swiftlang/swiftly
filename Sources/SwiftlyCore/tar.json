@@ -1,0 +1,156 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "tar",
+    "abstract": "manipulate tape archives. See tar(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "names": [
+          {
+            "kind": "short",
+            "name": "C"
+          }
+        ],
+        "preferredName": {
+          "kind": "short",
+          "name": "C"
+        },
+        "valueName": "directory",
+        "isOptional": true,
+        "isRepeating": false,
+        "kind": "option",
+        "shouldDisplay": true
+      }
+    ],
+    "subcommands": [
+      {
+        "commandName": "--create",
+        "superCommands": [
+          "tar"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "names": [
+              {
+                "kind": "long",
+                "name": "file"
+              }
+            ],
+            "preferredName": {
+              "kind": "long",
+              "name": "file"
+            },
+            "valueName": "archive",
+            "shouldDisplay": true,
+            "kind": "option",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "names": [
+              {
+                "kind": "short",
+                "name": "z"
+              }
+            ],
+            "preferredName": {
+              "kind": "short",
+              "name": "z"
+            },
+            "valueName": "compressed",
+            "shouldDisplay": true,
+            "kind": "flag",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "names": [
+              {
+                "kind": "short",
+                "name": "v"
+              }
+            ],
+            "preferredName": {
+              "kind": "short",
+              "name": "v"
+            },
+            "valueName": "verbose",
+            "shouldDisplay": true,
+            "kind": "flag",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "valueName": "files",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": true,
+            "isRepeating": true
+          }
+        ]
+      },
+      {
+        "commandName": "--extract",
+        "superCommands": [
+          "tar"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "names": [
+              {
+                "kind": "long",
+                "name": "file"
+              }
+            ],
+            "preferredName": {
+              "kind": "long",
+              "name": "file"
+            },
+            "valueName": "archive",
+            "shouldDisplay": true,
+            "kind": "option",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "names": [
+              {
+                "kind": "short",
+                "name": "z"
+              }
+            ],
+            "preferredName": {
+              "kind": "short",
+              "name": "z"
+            },
+            "valueName": "compressed",
+            "shouldDisplay": true,
+            "kind": "flag",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "names": [
+              {
+                "kind": "short",
+                "name": "v"
+              }
+            ],
+            "preferredName": {
+              "kind": "short",
+              "name": "v"
+            },
+            "valueName": "verbose",
+            "shouldDisplay": true,
+            "kind": "flag",
+            "isOptional": true,
+            "isRepeating": false
+          }
+        ]
+      }
+    ]
+  }
+}

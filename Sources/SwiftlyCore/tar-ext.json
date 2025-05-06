@@ -1,0 +1,20 @@
+{
+  "arguments": [
+    {
+      "path": "directory",
+      "type": "file"
+    },
+    {
+      "path": "--extract.archive",
+      "type": "file"
+    },
+    {
+      "path": "--create.archive",
+      "type": "file"
+    },
+    {
+      "path": "--create.files",
+      "type": "file"
+    }
+  ]
+}

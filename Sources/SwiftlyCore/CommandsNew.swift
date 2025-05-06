@@ -563,6 +563,41 @@ extension SystemCommand {
 }
 
 extension SystemCommand {
+    // remove symbols. See strip(1) for more information.
+    public static func strip(executable: Executable = stripCommand.defaultExecutable, name: FilePath...) -> stripCommand {
+        Self.strip(executable: executable, name: name)
+    }
+
+    // remove symbols. See strip(1) for more information.
+    public static func strip(executable: Executable = stripCommand.defaultExecutable, name: [FilePath]) -> stripCommand {
+        stripCommand(executable: executable, name: name)
+    }
+
+    public struct stripCommand {
+        public static var defaultExecutable: Executable { .name("strip") }
+        public var executable: Executable
+        public var name: [FilePath]
+
+        public init(executable: Executable, name: [FilePath]) {
+            self.executable = executable
+            self.name = name
+        }
+
+        public func config() -> Configuration {
+            var genArgs: [String] = []
+
+            genArgs += self.name.map(\.description)
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(genArgs),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand {
     // Swift compiler
     public static func swift(executable: Executable = swiftCommand.defaultExecutable) -> swiftCommand {
         swiftCommand(executable: executable)

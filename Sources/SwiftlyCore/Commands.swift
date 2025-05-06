@@ -53,46 +53,7 @@ extension SystemCommand.swiftCommand.buildCommand: Runnable {}
 extension SystemCommand.makeCommand: Runnable {}
 extension SystemCommand.makeCommand.installCommand: Runnable {}
 
-extension SystemCommand {
-    // remove symbols
-    // See strip(1) for more information.
-    public static func strip(executable: Executable = StripCommand.defaultExecutable, names: FilePath...) -> StripCommand {
-        self.strip(executable: executable, names: names)
-    }
-
-    // remove symbols
-    // See strip(1) for more information.
-    public static func strip(executable: Executable = StripCommand.defaultExecutable, names: [FilePath]) -> StripCommand {
-        StripCommand(executable: executable, names: names)
-    }
-
-    public struct StripCommand {
-        public static var defaultExecutable: Executable { .name("strip") }
-
-        public var executable: Executable
-
-        public var names: [FilePath]
-
-        public init(executable: Executable, names: [FilePath]) {
-            self.executable = executable
-            self.names = names
-        }
-
-        public func config() -> Configuration {
-            var args: [String] = []
-
-            args.append(contentsOf: self.names.map(\.string))
-
-            return Configuration(
-                executable: self.executable,
-                arguments: Arguments(args),
-                environment: .inherit
-            )
-        }
-    }
-}
-
-extension SystemCommand.StripCommand: Runnable {}
+extension SystemCommand.stripCommand: Runnable {}
 
 extension SystemCommand.sha256sumCommand: Output {}
 

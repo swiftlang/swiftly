@@ -237,7 +237,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let releaseDir = cwd / ".build/release"
 
         // Strip the symbols from the binary to decrease its size
-        try await sys.strip(names: releaseDir / "swiftly").run(currentPlatform)
+        try await sys.strip(name: releaseDir / "swiftly").run(currentPlatform)
 
         try await self.collectLicenses(releaseDir)
 
@@ -276,7 +276,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         for arch in ["x86_64", "arm64"] {
             try await sys.swift().build(.product("swiftly"), .configuration("release"), .arch("\(arch)")).run(currentPlatform)
-            try await sys.strip(names: FilePath(".build") / "\(arch)-apple-macosx/release/swiftly").run(currentPlatform)
+            try await sys.strip(name: FilePath(".build") / "\(arch)-apple-macosx/release/swiftly").run(currentPlatform)
         }
 
         let swiftlyBinDir = fs.cwd / ".build/release/.swiftly/bin"
@@ -341,7 +341,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         if self.test {
             for arch in ["x86_64", "arm64"] {
                 try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("\(arch)")).runEcho(currentPlatform)
-                try await sys.strip(names: ".build" / "\(arch)-apple-macosx/release/swiftly").runEcho(currentPlatform)
+                try await sys.strip(name: ".build" / "\(arch)-apple-macosx/release/swiftly").runEcho(currentPlatform)
             }
 
             let testArchive = releaseDir / "test-swiftly-macos.tar.gz"

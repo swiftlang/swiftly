@@ -201,7 +201,7 @@ public struct CommandLineTests {
     }
 
     @Test func testStrip() async throws {
-        var config = sys.strip(names: FilePath("foo")).config()
+        var config = sys.strip(name: FilePath("foo")).config()
         #expect(String(describing: config) == "strip foo")
     }
 

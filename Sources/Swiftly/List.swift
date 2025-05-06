@@ -33,6 +33,9 @@ struct List: SwiftlyCommand {
     ))
     var toolchainSelector: String?
 
+    @Flag(name: .shortAndLong, help: "Print the location of the toolchains prefixed with the version <x.y.z> - <path/to/toolchain>.")
+    var printLocation: Bool = false
+
     internal mutating func run() async throws {
         try validateSwiftly()
         let selector = try self.toolchainSelector.map { input in
@@ -42,6 +45,14 @@ struct List: SwiftlyCommand {
         var config = try Config.load()
 
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
+
+        guard !self.printLocation else {
+            for toolchain in toolchains {
+                SwiftlyCore.print("\(toolchain.name) - \(Swiftly.currentPlatform.findToolchainLocation(toolchain).path)")
+            }
+
+            return
+        }
         let (inUse, _) = try await selectToolchain(config: &config)
 
         let printToolchain = { (toolchain: ToolchainVersion) in

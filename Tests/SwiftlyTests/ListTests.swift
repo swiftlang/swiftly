@@ -43,7 +43,7 @@ final class ListTests: SwiftlyTests {
         }
 
         var list = try self.parseCommand(List.self, args)
-        let output = try await list.runWithMockedIO()
+        var output = try await list.runWithMockedIO()
 
         let parsedToolchains = output.compactMap { outputLine in
             Self.allToolchains.first {
@@ -54,6 +54,20 @@ final class ListTests: SwiftlyTests {
         // Ensure extra toolchains weren't accidentally included in the output.
         guard parsedToolchains.count == output.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") }).count else {
             throw SwiftlyTestError(message: "unexpected listed toolchains in \(output)")
+        }
+
+        // Check that the print location flag runs as expected
+        list = try self.parseCommand(List.self, args + ["--print-location"])
+        output = try await list.runWithMockedIO()
+
+        let toolchainLocations = output.compactMap { outputLine in
+            Self.allToolchains.first {
+                outputLine.contains("\($0.name) - \(Swiftly.currentPlatform.findToolchainLocation($0).path)")
+            }
+        }
+
+        guard toolchainLocations.count == parsedToolchains.count else {
+            throw SwiftlyTestError(message: "list --print-location didn't yield the same toolchains as plain list")
         }
 
         return parsedToolchains

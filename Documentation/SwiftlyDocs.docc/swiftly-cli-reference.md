@@ -281,7 +281,7 @@ Finally, all installed toolchains can be uninstalled by specifying 'all':
 List installed toolchains.
 
 ```
-swiftly list [<toolchain-selector>] [--version] [--help]
+swiftly list [<toolchain-selector>] [--print-location] [--version] [--help]
 ```
 
 **toolchain-selector:**
@@ -305,6 +305,11 @@ The installed snapshots for a given devlopment branch can be listed by specifyin
 
     $ swiftly list main-snapshot
     $ swiftly list 5.7-snapshot
+
+
+**--print-location:**
+
+*Print the location of the toolchains prefixed with the version <x.y.z> - <path/to/toolchain>.*
 
 
 **--version:**

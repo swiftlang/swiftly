@@ -1,0 +1,13 @@
+{
+  "optionsSingleDash": true,
+  "arguments": [
+    {
+      "path": "input_file",
+      "type": "file"
+    },
+    {
+      "path": "-create.output",
+      "type": "file"
+    }
+  ]
+}

@@ -191,7 +191,7 @@ public struct MacOS: Platform {
     }
 
     public func getShell() async throws -> String {
-        for (key, value) in try await sys.dscl(datasource: ".").read(path: fs.home, keys: "UserShell").properties(self) {
+        for (key, value) in try await sys.dscl(datasource: ".").read(path: fs.home, key: ["UserShell"]).properties(self) {
             return value
         }
 

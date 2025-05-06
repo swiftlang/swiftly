@@ -9,11 +9,11 @@ public typealias sys = SystemCommand
 @Suite
 public struct CommandLineTests {
     @Test func testDsclModel() {
-        var config = sys.dscl(datasource: ".").read(path: .init("/Users/swiftly"), keys: "UserShell").config()
+        var config = sys.dscl(datasource: ".").read(path: .init("/Users/swiftly"), key: ["UserShell"]).config()
         #expect(config.executable == .name("dscl"))
         #expect(config.arguments.storage.map(\.description) == [".", "-read", "/Users/swiftly", "UserShell"])
 
-        config = sys.dscl(datasource: ".").read(path: .init("/Users/swiftly"), keys: "UserShell", "Picture").config()
+        config = sys.dscl(datasource: ".").read(path: .init("/Users/swiftly"), key: ["UserShell", "Picture"]).config()
         #expect(config.executable == .name("dscl"))
         #expect(config.arguments.storage.map(\.description) == [".", "-read", "/Users/swiftly", "UserShell", "Picture"])
     }
@@ -21,45 +21,45 @@ public struct CommandLineTests {
     @Test(
         .tags(.medium),
         .enabled {
-            try await sys.DsclCommand.defaultExecutable.exists()
+            try await sys.dsclCommand.defaultExecutable.exists()
         }
     )
     func testDscl() async throws {
-        let properties = try await sys.dscl(datasource: ".").read(path: fs.home, keys: "UserShell").properties(Swiftly.currentPlatform)
+        let properties = try await sys.dscl(datasource: ".").read(path: fs.home, key: ["UserShell"]).properties(Swiftly.currentPlatform)
         #expect(properties.count == 1) // Only one shell for the current user
         #expect(properties[0].key == "UserShell") // The one property key should be the one that is requested
     }
 
     @Test func testLipo() {
-        var config = sys.lipo(inputFiles: "swiftly1", "swiftly2").create(output: "swiftly-universal").config()
+        var config = sys.lipo(input_file: "swiftly1", "swiftly2").create(.output("swiftly-universal")).config()
 
         #expect(config.executable == .name("lipo"))
         #expect(config.arguments.storage.map(\.description) == ["swiftly1", "swiftly2", "-create", "-output", "swiftly-universal"])
 
-        config = sys.lipo(inputFiles: "swiftly").create(output: "swiftly-universal-with-one-arch").config()
+        config = sys.lipo(input_file: "swiftly").create(.output("swiftly-universal-with-one-arch")).config()
         #expect(config.executable == .name("lipo"))
         #expect(config.arguments.storage.map(\.description) == ["swiftly", "-create", "-output", "swiftly-universal-with-one-arch"])
     }
 
     @Test func testPkgbuild() {
-        var config = sys.pkgbuild(root: "mypath", packageOutputPath: "outputDir").config()
+        var config = sys.pkgbuild(.root("mypath"), package_output_path: "outputDir").config()
         #expect(String(describing: config) == "pkgbuild --root mypath outputDir")
 
-        config = sys.pkgbuild(.version("1234"), root: "somepath", packageOutputPath: "output").config()
+        config = sys.pkgbuild(.version("1234"), .root("somepath"), package_output_path: "output").config()
         #expect(String(describing: config) == "pkgbuild --version 1234 --root somepath output")
 
-        config = sys.pkgbuild(.installLocation("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .sign("mycert"), root: "someroot", packageOutputPath: "my.pkg").config()
+        config = sys.pkgbuild(.install_location("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .sign("mycert"), .root("someroot"), package_output_path: "my.pkg").config()
         #expect(String(describing: config) == "pkgbuild --install-location /usr/local --version 1.0.0 --identifier org.foo.bar --sign mycert --root someroot my.pkg")
 
-        config = sys.pkgbuild(.installLocation("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), root: "someroot", packageOutputPath: "my.pkg").config()
+        config = sys.pkgbuild(.install_location("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .root("someroot"), package_output_path: "my.pkg").config()
         #expect(String(describing: config) == "pkgbuild --install-location /usr/local --version 1.0.0 --identifier org.foo.bar --root someroot my.pkg")
     }
 
     @Test func testGetent() {
-        var config = sys.getent(database: "passwd", keys: "swiftly").config()
+        var config = sys.getent(database: "passwd", key: "swiftly").config()
         #expect(String(describing: config) == "getent passwd swiftly")
 
-        config = sys.getent(database: "foo", keys: "abc", "def").config()
+        config = sys.getent(database: "foo", key: "abc", "def").config()
         #expect(String(describing: config) == "getent foo abc def")
     }
 

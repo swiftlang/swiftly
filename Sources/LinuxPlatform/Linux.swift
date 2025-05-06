@@ -603,7 +603,7 @@ public struct Linux: Platform {
 
     public func getShell() async throws -> String {
         let userName = ProcessInfo.processInfo.userName
-        if let entry = try await sys.getent(database: "passwd", keys: userName).entries(self).first {
+        if let entry = try await sys.getent(database: "passwd", key: userName).entries(self).first {
             if let shell = entry.last { return shell }
         }
 

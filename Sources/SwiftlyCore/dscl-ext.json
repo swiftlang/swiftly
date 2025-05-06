@@ -1,0 +1,8 @@
+{
+  "arguments": [
+    {
+      "path": "-read.path",
+      "type": "file"
+    }
+  ]
+}

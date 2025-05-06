@@ -283,9 +283,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? await fs.mkdir(.parents, atPath: swiftlyBinDir)
 
         try await sys.lipo(
-            inputFiles: ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly"
+            input_file: ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly"
         )
-        .create(output: swiftlyBinDir / "swiftly")
+        .create(.output(swiftlyBinDir / "swiftly"))
         .runEcho(currentPlatform)
 
         let swiftlyLicenseDir = fs.cwd / ".build/release/.swiftly/license"
@@ -299,20 +299,20 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         if let cert {
             try await sys.pkgbuild(
-                .installLocation(".swiftly"),
+                .install_location(".swiftly"),
                 .version(self.version),
                 .identifier(identifier),
                 .sign(cert),
-                root: swiftlyBinDir.parent,
-                packageOutputPath: releaseDir / "swiftly-\(self.version).pkg"
+                .root(swiftlyBinDir.parent),
+                package_output_path: releaseDir / "swiftly-\(self.version).pkg"
             ).runEcho(currentPlatform)
         } else {
             try await sys.pkgbuild(
-                .installLocation(".swiftly"),
+                .install_location(".swiftly"),
                 .version(self.version),
                 .identifier(identifier),
-                root: swiftlyBinDir.parent,
-                packageOutputPath: releaseDir / "swiftly-\(self.version).pkg"
+                .root(swiftlyBinDir.parent),
+                package_output_path: releaseDir / "swiftly-\(self.version).pkg"
             ).runEcho(currentPlatform)
         }
 
@@ -347,9 +347,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             let testArchive = releaseDir / "test-swiftly-macos.tar.gz"
 
             try await sys.lipo(
-                inputFiles: ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly"
+                input_file: ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly"
             )
-            .create(output: swiftlyBinDir / "swiftly")
+            .create(.output(swiftlyBinDir / "swiftly"))
             .runEcho(currentPlatform)
 
             try await sys.tar(.directory(".build/x86_64-apple-macosx/debug")).create(.compressed, .archive(testArchive), files: "test-swiftly").run(currentPlatform)

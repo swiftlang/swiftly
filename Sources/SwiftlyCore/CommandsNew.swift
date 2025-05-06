@@ -399,6 +399,56 @@ extension SystemCommand {
 }
 
 extension SystemCommand {
+    // make utility to maintain groups of programs. See make(1) for more information.
+    public static func make(executable: Executable = makeCommand.defaultExecutable) -> makeCommand {
+        makeCommand(executable: executable)
+    }
+
+    public struct makeCommand {
+        public static var defaultExecutable: Executable { .name("make") }
+        public var executable: Executable
+
+        public init(executable: Executable) {
+            self.executable = executable
+        }
+
+        public func config() -> Configuration {
+            var genArgs: [String] = []
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(genArgs),
+                environment: .inherit
+            )
+        }
+
+        public func install() -> installCommand {
+            installCommand(parent: self)
+        }
+
+        public struct installCommand {
+            public var parent: makeCommand
+
+            public init(parent: makeCommand) {
+                self.parent = parent
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("install")
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand {
     // Build a macOS Installer component package from on-disk files. See pkgbuild(1) for more information.
     public static func pkgbuild(executable: Executable = pkgbuildCommand.defaultExecutable, _ options: pkgbuildCommand.Option..., package_output_path: FilePath) -> pkgbuildCommand {
         Self.pkgbuild(executable: executable, options, package_output_path: package_output_path)

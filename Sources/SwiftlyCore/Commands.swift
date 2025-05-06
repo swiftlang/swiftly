@@ -50,60 +50,8 @@ extension SystemCommand.swiftCommand.sdkCommand.installCommand: Runnable {}
 extension SystemCommand.swiftCommand.sdkCommand.removeCommand: Runnable {}
 extension SystemCommand.swiftCommand.buildCommand: Runnable {}
 
-extension SystemCommand {
-    // make utility to maintain groups of programs
-    // See make(1) for more information.
-    public static func make(executable: Executable = MakeCommand.defaultExecutable) -> MakeCommand {
-        MakeCommand(executable: executable)
-    }
-
-    public struct MakeCommand {
-        public static var defaultExecutable: Executable { .name("make") }
-
-        public var executable: Executable
-
-        public init(executable: Executable) {
-            self.executable = executable
-        }
-
-        public func config() -> Configuration {
-            var args: [String] = []
-
-            return Configuration(
-                executable: self.executable,
-                arguments: Arguments(args),
-                environment: .inherit
-            )
-        }
-
-        public func install() -> InstallCommand {
-            InstallCommand(self)
-        }
-
-        public struct InstallCommand {
-            var make: MakeCommand
-
-            init(_ make: MakeCommand) {
-                self.make = make
-            }
-
-            public func config() -> Configuration {
-                var c = self.make.config()
-
-                var args = c.arguments.storage.map(\.description)
-
-                args.append("install")
-
-                c.arguments = .init(args)
-
-                return c
-            }
-        }
-    }
-}
-
-extension SystemCommand.MakeCommand: Runnable {}
-extension SystemCommand.MakeCommand.InstallCommand: Runnable {}
+extension SystemCommand.makeCommand: Runnable {}
+extension SystemCommand.makeCommand.installCommand: Runnable {}
 
 extension SystemCommand {
     // remove symbols

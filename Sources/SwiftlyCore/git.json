@@ -1,0 +1,172 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "git",
+    "abstract": "the stupid content tracker. See git(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "names": [
+          {
+            "kind": "short",
+            "name": "C"
+          }
+        ],
+        "preferredName": {
+          "kind": "short",
+          "name": "C"
+        },
+        "valueName": "workingDir",
+        "isOptional": true,
+        "isRepeating": false,
+        "kind": "option",
+        "shouldDisplay": true
+      }
+    ],
+    "subcommands": [
+      {
+        "commandName": "init",
+        "superCommands": [
+          "git"
+        ],
+        "shouldDisplay": true,
+      },
+      {
+        "commandName": "commit",
+        "superCommands": [
+          "git"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "names": [
+              {
+                "kind": "long",
+                "name": "allow-empty"
+              }
+            ],
+            "preferredName": {
+              "kind": "long",
+              "name": "allow-empty"
+            },
+            "valueName": "allow-empty",
+            "shouldDisplay": true,
+            "kind": "flag",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "names": [
+              {
+                "kind": "long",
+                "name": "allow-empty-message"
+              }
+            ],
+            "preferredName": {
+              "kind": "long",
+              "name": "allow-empty-message"
+            },
+            "valueName": "allow-empty-message",
+            "shouldDisplay": true,
+            "kind": "flag",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "names": [
+              {
+                "kind": "long",
+                "name": "message"
+              }
+            ],
+            "preferredName": {
+              "kind": "long",
+              "name": "message"
+            },
+            "valueName": "message",
+            "shouldDisplay": true,
+            "kind": "option",
+            "isOptional": true,
+            "isRepeating": true
+          }
+        ]
+      },
+      {
+        "commandName": "log",
+        "superCommands": [
+          "git"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "names": [
+              {
+                "kind": "long",
+                "name": "max-count"
+              }
+            ],
+            "preferredName": {
+              "kind": "long",
+              "name": "max-count"
+            },
+            "valueName": "max-count",
+            "shouldDisplay": true,
+            "kind": "option",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "names": [
+              {
+                "kind": "long",
+                "name": "pretty"
+              }
+            ],
+            "preferredName": {
+              "kind": "long",
+              "name": "pretty"
+            },
+            "valueName": "pretty",
+            "shouldDisplay": true,
+            "kind": "option",
+            "isOptional": true,
+            "isRepeating": true
+          }
+        ]
+      },
+      {
+        "commandName": "diff-index",
+        "superCommands": [
+          "git"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "names": [
+              {
+                "kind": "long",
+                "name": "quiet"
+              }
+            ],
+            "preferredName": {
+              "kind": "long",
+              "name": "quiet"
+            },
+            "valueName": "quiet",
+            "shouldDisplay": true,
+	    "kind": "flag",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "valueName": "tree-ish",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": false,
+            "isRepeating": false
+          }
+        ]
+      }
+    ]
+  }
+}

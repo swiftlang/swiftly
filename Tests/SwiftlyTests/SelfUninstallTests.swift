@@ -36,7 +36,7 @@ import Testing
         "/bin/bash",
         "/bin/zsh",
         "/bin/fish",
-    ]) func removesEntryFromShellProfile(_ shell: String) async throws {
+    ]) func removesEntryFromShellProfile(_: String) async throws {
         #expect(true)
     }
 }

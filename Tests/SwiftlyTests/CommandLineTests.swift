@@ -169,14 +169,14 @@ public struct CommandLineTests {
         config = sys.swift().package().clean().config()
         #expect(String(describing: config) == "swift package clean")
 
-        config = sys.swift().sdk().install("path/to/bundle", checksum: "deadbeef").config()
-        #expect(String(describing: config) == "swift sdk install path/to/bundle --checksum=deadbeef")
+        config = sys.swift().sdk().install(.checksum("deadbeef"), bundle_path_or_url: "path/to/bundle").config()
+        #expect(String(describing: config) == "swift sdk install --checksum deadbeef path/to/bundle")
 
-        config = sys.swift().sdk().remove("some.bundle").config()
+        config = sys.swift().sdk().remove([], sdk_id_or_bundle_name: "some.bundle").config()
         #expect(String(describing: config) == "swift sdk remove some.bundle")
 
-        config = sys.swift().build(.arch("x86_64"), .configuration("release"), .pkgConfigPath("path/to/pc"), .swiftSdk("sdk.id"), .staticSwiftStdlib, .product("product1")).config()
-        #expect(String(describing: config) == "swift build --arch=x86_64 --configuration=release --pkg-config-path=path/to/pc --swift-sdk=sdk.id --static-swift-stdlib --product=product1")
+        config = sys.swift().build(.arch("x86_64"), .configuration("release"), .pkg_config_path("path/to/pc"), .swift_sdk("sdk.id"), .static_swift_stdlib, .product("product1")).config()
+        #expect(String(describing: config) == "swift build --arch x86_64 --configuration release --pkg-config-path path/to/pc --swift-sdk sdk.id --static-swift-stdlib --product product1")
 
         config = sys.swift().build().config()
         #expect(String(describing: config) == "swift build")
@@ -185,14 +185,14 @@ public struct CommandLineTests {
     @Test(
         .tags(.medium),
         .enabled {
-            try await sys.SwiftCommand.defaultExecutable.exists()
+            try await sys.swiftCommand.defaultExecutable.exists()
         }
     )
     func testSwift() async throws {
         let tmp = fs.mktemp()
         try await fs.mkdir(atPath: tmp)
-        try await sys.swift().package()._init(.packagePath(tmp), .type("executable")).run(Swiftly.currentPlatform)
-        try await sys.swift().build(.packagePath(tmp), .configuration("release"))
+        try await sys.swift().package()._init(.package_path(tmp), .type("executable")).run(Swiftly.currentPlatform)
+        try await sys.swift().build(.package_path(tmp), .configuration("release"))
     }
 
     @Test func testMake() async throws {

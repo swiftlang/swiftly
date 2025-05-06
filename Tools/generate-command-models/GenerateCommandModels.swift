@@ -246,11 +246,11 @@ struct GenerateCommandModels: AsyncParsableCommand {
             self.argInfos.map {
                 $0.isOptional ?
                     $0.isRepeating ?
-                    "if let \($0.asSwiftName) = self.\($0.asSwiftName) { args += \($0.asSwiftName).map(\\.description)  }" :
-                    "if let \($0.asSwiftName) = self.\($0.asSwiftName) { args += [\($0.asSwiftName).description] }" :
+                    "if let \($0.asSwiftName) = self.\($0.asSwiftName) { genArgs += \($0.asSwiftName).map(\\.description)  }" :
+                    "if let \($0.asSwiftName) = self.\($0.asSwiftName) { genArgs += [\($0.asSwiftName).description] }" :
                     $0.isRepeating ?
-                    "args += self.\($0.asSwiftName).map(\\.description)" :
-                    "args += [self.\($0.asSwiftName).description]"
+                    "genArgs += self.\($0.asSwiftName).map(\\.description)" :
+                    "genArgs += [self.\($0.asSwiftName).description]"
             }
         }
     }
@@ -299,6 +299,8 @@ struct GenerateCommandModels: AsyncParsableCommand {
                 name = dashes + longName
             } else if let shortName = arg.names?.filter { $0.kind == .short }.first?.name {
                 name = "-" + shortName
+            } else if let longNameWithSingleDash = arg.names?.filter { $0.kind == .longWithSingleDash }.first?.name {
+                name = "-" + longNameWithSingleDash
             }
 
             guard let name else { fatalError("Unable to find a suitable argument name for \(arg)") }
@@ -330,7 +332,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
 
             return """
             for opt in self.options {
-                args.append(contentsOf: opt.args())
+                genArgs.append(contentsOf: opt.args())
             }
             """.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
         }
@@ -398,7 +400,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
         if path.count == 0 {
             configFunc = """
             public func config() -> Configuration {
-                var args: [String] = []
+                var genArgs: [String] = []
 
                 \((
                     options.asArgs +
@@ -407,7 +409,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
 
                 return Configuration(
                     executable: self.executable,
-                    arguments: Arguments(args),
+                    arguments: Arguments(genArgs),
                     environment: .inherit
                 )
             }
@@ -417,16 +419,16 @@ struct GenerateCommandModels: AsyncParsableCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\\.description)
+                var genArgs = c.arguments.storage.map(\\.description)
 
-                args.append("\(execName)")
+                genArgs.append("\(execName)")
 
                 \((
                     options.asArgs +
                         vars.asArgs
                 ).joined(separator: "\n" + indent(1)))
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }

@@ -17,13 +17,13 @@ extension SystemCommand {
         }
 
         public func config() -> Configuration {
-            var args: [String] = []
+            var genArgs: [String] = []
 
-            if let datasource = self.datasource { args += [datasource.description] }
+            if let datasource = self.datasource { genArgs += [datasource.description] }
 
             return Configuration(
                 executable: self.executable,
-                arguments: Arguments(args),
+                arguments: Arguments(genArgs),
                 environment: .inherit
             )
         }
@@ -46,14 +46,14 @@ extension SystemCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\.description)
+                var genArgs = c.arguments.storage.map(\.description)
 
-                args.append("-read")
+                genArgs.append("-read")
 
-                if let path = self.path { args += [path.description] }
-                if let key = self.key { args += key.map(\.description) }
+                if let path = self.path { genArgs += [path.description] }
+                if let key = self.key { genArgs += key.map(\.description) }
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }
@@ -85,14 +85,14 @@ extension SystemCommand {
         }
 
         public func config() -> Configuration {
-            var args: [String] = []
+            var genArgs: [String] = []
 
-            args += [self.database.description]
-            args += self.key.map(\.description)
+            genArgs += [self.database.description]
+            genArgs += self.key.map(\.description)
 
             return Configuration(
                 executable: self.executable,
-                arguments: Arguments(args),
+                arguments: Arguments(genArgs),
                 environment: .inherit
             )
         }
@@ -132,15 +132,15 @@ extension SystemCommand {
         }
 
         public func config() -> Configuration {
-            var args: [String] = []
+            var genArgs: [String] = []
 
             for opt in self.options {
-                args.append(contentsOf: opt.args())
+                genArgs.append(contentsOf: opt.args())
             }
 
             return Configuration(
                 executable: self.executable,
-                arguments: Arguments(args),
+                arguments: Arguments(genArgs),
                 environment: .inherit
             )
         }
@@ -159,11 +159,11 @@ extension SystemCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\.description)
+                var genArgs = c.arguments.storage.map(\.description)
 
-                args.append("init")
+                genArgs.append("init")
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }
@@ -206,15 +206,15 @@ extension SystemCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\.description)
+                var genArgs = c.arguments.storage.map(\.description)
 
-                args.append("commit")
+                genArgs.append("commit")
 
                 for opt in self.options {
-                    args.append(contentsOf: opt.args())
+                    genArgs.append(contentsOf: opt.args())
                 }
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }
@@ -254,15 +254,15 @@ extension SystemCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\.description)
+                var genArgs = c.arguments.storage.map(\.description)
 
-                args.append("log")
+                genArgs.append("log")
 
                 for opt in self.options {
-                    args.append(contentsOf: opt.args())
+                    genArgs.append(contentsOf: opt.args())
                 }
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }
@@ -301,16 +301,16 @@ extension SystemCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\.description)
+                var genArgs = c.arguments.storage.map(\.description)
 
-                args.append("diff-index")
+                genArgs.append("diff-index")
 
                 for opt in self.options {
-                    args.append(contentsOf: opt.args())
+                    genArgs.append(contentsOf: opt.args())
                 }
-                args += [self.tree_ish.description]
+                genArgs += [self.tree_ish.description]
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }
@@ -340,13 +340,13 @@ extension SystemCommand {
         }
 
         public func config() -> Configuration {
-            var args: [String] = []
+            var genArgs: [String] = []
 
-            args += self.input_file.map(\.description)
+            genArgs += self.input_file.map(\.description)
 
             return Configuration(
                 executable: self.executable,
-                arguments: Arguments(args),
+                arguments: Arguments(genArgs),
                 environment: .inherit
             )
         }
@@ -382,15 +382,15 @@ extension SystemCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\.description)
+                var genArgs = c.arguments.storage.map(\.description)
 
-                args.append("-create")
+                genArgs.append("-create")
 
                 for opt in self.options {
-                    args.append(contentsOf: opt.args())
+                    genArgs.append(contentsOf: opt.args())
                 }
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }
@@ -445,16 +445,16 @@ extension SystemCommand {
         }
 
         public func config() -> Configuration {
-            var args: [String] = []
+            var genArgs: [String] = []
 
             for opt in self.options {
-                args.append(contentsOf: opt.args())
+                genArgs.append(contentsOf: opt.args())
             }
-            args += [self.package_output_path.description]
+            genArgs += [self.package_output_path.description]
 
             return Configuration(
                 executable: self.executable,
-                arguments: Arguments(args),
+                arguments: Arguments(genArgs),
                 environment: .inherit
             )
         }
@@ -496,18 +496,10119 @@ extension SystemCommand {
         }
 
         public func config() -> Configuration {
-            var args: [String] = []
+            var genArgs: [String] = []
 
             for opt in self.options {
-                args.append(contentsOf: opt.args())
+                genArgs.append(contentsOf: opt.args())
             }
-            args += self.files.map(\.description)
+            genArgs += self.files.map(\.description)
 
             return Configuration(
                 executable: self.executable,
-                arguments: Arguments(args),
+                arguments: Arguments(genArgs),
                 environment: .inherit
             )
+        }
+    }
+}
+
+extension SystemCommand {
+    // Swift compiler
+    public static func swift(executable: Executable = swiftCommand.defaultExecutable) -> swiftCommand {
+        swiftCommand(executable: executable)
+    }
+
+    public struct swiftCommand {
+        public static var defaultExecutable: Executable { .name("swift") }
+        public var executable: Executable
+
+        public init(executable: Executable) {
+            self.executable = executable
+        }
+
+        public func config() -> Configuration {
+            var genArgs: [String] = []
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(genArgs),
+                environment: .inherit
+            )
+        }
+
+        // Build sources into binary products
+        public func build(_ options: buildCommand.Option...) -> buildCommand {
+            self.build(options)
+        }
+
+        // Build sources into binary products
+        public func build(_ options: [buildCommand.Option]) -> buildCommand {
+            buildCommand(parent: self, options)
+        }
+
+        public struct buildCommand {
+            public var parent: swiftCommand
+            public var options: [Option]
+
+            public enum Option {
+                case package_path(FilePath)
+                case cache_path(String)
+                case config_path(String)
+                case security_path(String)
+                case scratch_path(String)
+                case build_path(String)
+                case multiroot_data_file(String)
+                case destination(String)
+                case experimental_swift_sdks_path(String)
+                case swift_sdks_path(String)
+                case toolset(String)
+                case pkg_config_path(FilePath)
+                case ignore_lock
+                case enable_dependency_cache
+                case disable_package_manifest_caching
+                case enable_build_manifest_caching
+                case manifest_cache(String)
+                case enable_experimental_prebuilts
+                case experimental_prebuilts_download_url(String)
+                case experimental_prebuilts_root_cert(String)
+                case verbose
+                case very_verbose
+                case quiet
+                case disable_sandbox
+                case netrc
+                case enable_netrc
+                case netrc_file(String)
+                case enable_keychain
+                case resolver_fingerprint_checking(String)
+                case resolver_signing_entity_checking(String)
+                case enable_signature_validation
+                case enable_prefetching
+                case force_resolved_versions
+                case skip_update
+                case disable_scm_to_registry_transformation
+                case use_registry_identity_for_scm
+                case replace_scm_with_registry
+                case default_registry_url(String)
+                case configuration(String)
+                case Xcc(String)
+                case Xswiftc(String)
+                case Xlinker(String)
+                case Xcxx(String)
+                case Xxcbuild(String)
+                case Xbuild_tools_swiftc(String)
+                case Xmanifest(String)
+                case triple(String)
+                case sdk(String)
+                case toolchain(String)
+                case arch(String)
+                case experimental_swift_sdk(String)
+                case swift_sdk(String)
+                case sanitize(String)
+                case auto_index_store
+                case experimental_prepare_for_indexing
+                case experimental_prepare_for_indexing_no_lazy
+                case enable_parseable_module_interfaces
+                case jobs(String)
+                case use_integrated_swift_driver
+                case explicit_target_dependency_import_check(String)
+                case experimental_explicit_module_build
+                case build_system(String)
+                case debug_info_format(String)
+                case enable_test_discovery
+                case experimental_test_entry_point_path(String)
+                case experimental_lto_mode(String)
+                case enable_get_task_allow_entitlement
+                case omit_frame_pointers
+                case enable_dead_strip
+                case disable_local_rpath
+                case build_tests
+                case enable_code_coverage
+                case show_bin_path
+                case print_manifest_job_graph
+                case target(String)
+                case product(String)
+                case enable_xctest
+                case enable_swift_testing
+                case enable_experimental_swift_testing
+                case traits(String)
+                case enable_all_traits
+                case disable_default_traits
+                case static_swift_stdlib
+                case version
+                case help
+
+                public func args() -> [String] {
+                    switch self {
+                    case let .package_path(package_path):
+                        ["--package-path", String(describing: package_path)]
+                    case let .cache_path(cache_path):
+                        ["--cache-path", String(describing: cache_path)]
+                    case let .config_path(config_path):
+                        ["--config-path", String(describing: config_path)]
+                    case let .security_path(security_path):
+                        ["--security-path", String(describing: security_path)]
+                    case let .scratch_path(scratch_path):
+                        ["--scratch-path", String(describing: scratch_path)]
+                    case let .build_path(build_path):
+                        ["--build-path", String(describing: build_path)]
+                    case let .multiroot_data_file(multiroot_data_file):
+                        ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                    case let .destination(destination):
+                        ["--destination", String(describing: destination)]
+                    case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                        ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                    case let .swift_sdks_path(swift_sdks_path):
+                        ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                    case let .toolset(toolset):
+                        ["--toolset", String(describing: toolset)]
+                    case let .pkg_config_path(pkg_config_path):
+                        ["--pkg-config-path", String(describing: pkg_config_path)]
+                    case .ignore_lock:
+                        ["--ignore-lock"]
+                    case .enable_dependency_cache:
+                        ["--enable-dependency-cache"]
+                    case .disable_package_manifest_caching:
+                        ["--disable-package-manifest-caching"]
+                    case .enable_build_manifest_caching:
+                        ["--enable-build-manifest-caching"]
+                    case let .manifest_cache(manifest_cache):
+                        ["--manifest-cache", String(describing: manifest_cache)]
+                    case .enable_experimental_prebuilts:
+                        ["--enable-experimental-prebuilts"]
+                    case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                        ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                    case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                        ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                    case .verbose:
+                        ["--verbose"]
+                    case .very_verbose:
+                        ["--very-verbose"]
+                    case .quiet:
+                        ["--quiet"]
+                    case .disable_sandbox:
+                        ["--disable-sandbox"]
+                    case .netrc:
+                        ["--netrc"]
+                    case .enable_netrc:
+                        ["--enable-netrc"]
+                    case let .netrc_file(netrc_file):
+                        ["--netrc-file", String(describing: netrc_file)]
+                    case .enable_keychain:
+                        ["--enable-keychain"]
+                    case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                        ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                    case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                        ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                    case .enable_signature_validation:
+                        ["--enable-signature-validation"]
+                    case .enable_prefetching:
+                        ["--enable-prefetching"]
+                    case .force_resolved_versions:
+                        ["--force-resolved-versions"]
+                    case .skip_update:
+                        ["--skip-update"]
+                    case .disable_scm_to_registry_transformation:
+                        ["--disable-scm-to-registry-transformation"]
+                    case .use_registry_identity_for_scm:
+                        ["--use-registry-identity-for-scm"]
+                    case .replace_scm_with_registry:
+                        ["--replace-scm-with-registry"]
+                    case let .default_registry_url(default_registry_url):
+                        ["--default-registry-url", String(describing: default_registry_url)]
+                    case let .configuration(configuration):
+                        ["--configuration", String(describing: configuration)]
+                    case let .Xcc(Xcc):
+                        ["-Xcc", String(describing: Xcc)]
+                    case let .Xswiftc(Xswiftc):
+                        ["-Xswiftc", String(describing: Xswiftc)]
+                    case let .Xlinker(Xlinker):
+                        ["-Xlinker", String(describing: Xlinker)]
+                    case let .Xcxx(Xcxx):
+                        ["-Xcxx", String(describing: Xcxx)]
+                    case let .Xxcbuild(Xxcbuild):
+                        ["-Xxcbuild", String(describing: Xxcbuild)]
+                    case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                        ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                    case let .Xmanifest(Xmanifest):
+                        ["-Xmanifest", String(describing: Xmanifest)]
+                    case let .triple(triple):
+                        ["--triple", String(describing: triple)]
+                    case let .sdk(sdk):
+                        ["--sdk", String(describing: sdk)]
+                    case let .toolchain(toolchain):
+                        ["--toolchain", String(describing: toolchain)]
+                    case let .arch(arch):
+                        ["--arch", String(describing: arch)]
+                    case let .experimental_swift_sdk(experimental_swift_sdk):
+                        ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                    case let .swift_sdk(swift_sdk):
+                        ["--swift-sdk", String(describing: swift_sdk)]
+                    case let .sanitize(sanitize):
+                        ["--sanitize", String(describing: sanitize)]
+                    case .auto_index_store:
+                        ["--auto-index-store"]
+                    case .experimental_prepare_for_indexing:
+                        ["--experimental-prepare-for-indexing"]
+                    case .experimental_prepare_for_indexing_no_lazy:
+                        ["--experimental-prepare-for-indexing-no-lazy"]
+                    case .enable_parseable_module_interfaces:
+                        ["--enable-parseable-module-interfaces"]
+                    case let .jobs(jobs):
+                        ["--jobs", String(describing: jobs)]
+                    case .use_integrated_swift_driver:
+                        ["--use-integrated-swift-driver"]
+                    case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                        ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                    case .experimental_explicit_module_build:
+                        ["--experimental-explicit-module-build"]
+                    case let .build_system(build_system):
+                        ["--build-system", String(describing: build_system)]
+                    case let .debug_info_format(debug_info_format):
+                        ["-debug-info-format", String(describing: debug_info_format)]
+                    case .enable_test_discovery:
+                        ["--enable-test-discovery"]
+                    case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                        ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                    case let .experimental_lto_mode(experimental_lto_mode):
+                        ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                    case .enable_get_task_allow_entitlement:
+                        ["--enable-get-task-allow-entitlement"]
+                    case .omit_frame_pointers:
+                        ["--omit-frame-pointers"]
+                    case .enable_dead_strip:
+                        ["--enable-dead-strip"]
+                    case .disable_local_rpath:
+                        ["--disable-local-rpath"]
+                    case .build_tests:
+                        ["--build-tests"]
+                    case .enable_code_coverage:
+                        ["--enable-code-coverage"]
+                    case .show_bin_path:
+                        ["--show-bin-path"]
+                    case .print_manifest_job_graph:
+                        ["--print-manifest-job-graph"]
+                    case let .target(target):
+                        ["--target", String(describing: target)]
+                    case let .product(product):
+                        ["--product", String(describing: product)]
+                    case .enable_xctest:
+                        ["--enable-xctest"]
+                    case .enable_swift_testing:
+                        ["--enable-swift-testing"]
+                    case .enable_experimental_swift_testing:
+                        ["--enable-experimental-swift-testing"]
+                    case let .traits(traits):
+                        ["--traits", String(describing: traits)]
+                    case .enable_all_traits:
+                        ["--enable-all-traits"]
+                    case .disable_default_traits:
+                        ["--disable-default-traits"]
+                    case .static_swift_stdlib:
+                        ["--static-swift-stdlib"]
+                    case .version:
+                        ["--version"]
+                    case .help:
+                        ["--help"]
+                    }
+                }
+            }
+
+            public init(parent: swiftCommand, _ options: [buildCommand.Option]) {
+                self.parent = parent
+                self.options = options
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("build")
+
+                for opt in self.options {
+                    genArgs.append(contentsOf: opt.args())
+                }
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+        }
+
+        // Perform operations on Swift packages
+        public func package(_ options: packageCommand.Option...) -> packageCommand {
+            self.package(options)
+        }
+
+        // Perform operations on Swift packages
+        public func package(_ options: [packageCommand.Option]) -> packageCommand {
+            packageCommand(parent: self, options)
+        }
+
+        public struct packageCommand {
+            public var parent: swiftCommand
+            public var options: [Option]
+
+            public enum Option {
+                case package_path(String)
+                case cache_path(String)
+                case config_path(String)
+                case security_path(String)
+                case scratch_path(String)
+                case build_path(String)
+                case multiroot_data_file(String)
+                case destination(String)
+                case experimental_swift_sdks_path(String)
+                case swift_sdks_path(String)
+                case toolset(String)
+                case pkg_config_path(String)
+                case ignore_lock
+                case enable_dependency_cache
+                case disable_package_manifest_caching
+                case enable_build_manifest_caching
+                case manifest_cache(String)
+                case enable_experimental_prebuilts
+                case experimental_prebuilts_download_url(String)
+                case experimental_prebuilts_root_cert(String)
+                case verbose
+                case very_verbose
+                case quiet
+                case disable_sandbox
+                case netrc
+                case enable_netrc
+                case netrc_file(String)
+                case enable_keychain
+                case resolver_fingerprint_checking(String)
+                case resolver_signing_entity_checking(String)
+                case enable_signature_validation
+                case enable_prefetching
+                case force_resolved_versions
+                case skip_update
+                case disable_scm_to_registry_transformation
+                case use_registry_identity_for_scm
+                case replace_scm_with_registry
+                case default_registry_url(String)
+                case configuration(String)
+                case Xcc(String)
+                case Xswiftc(String)
+                case Xlinker(String)
+                case Xcxx(String)
+                case Xxcbuild(String)
+                case Xbuild_tools_swiftc(String)
+                case Xmanifest(String)
+                case triple(String)
+                case sdk(String)
+                case toolchain(String)
+                case arch(String)
+                case experimental_swift_sdk(String)
+                case swift_sdk(String)
+                case sanitize(String)
+                case auto_index_store
+                case experimental_prepare_for_indexing
+                case experimental_prepare_for_indexing_no_lazy
+                case enable_parseable_module_interfaces
+                case jobs(String)
+                case use_integrated_swift_driver
+                case explicit_target_dependency_import_check(String)
+                case experimental_explicit_module_build
+                case build_system(String)
+                case debug_info_format(String)
+                case enable_test_discovery
+                case experimental_test_entry_point_path(String)
+                case experimental_lto_mode(String)
+                case enable_get_task_allow_entitlement
+                case omit_frame_pointers
+                case enable_dead_strip
+                case disable_local_rpath
+                case version
+                case help
+
+                public func args() -> [String] {
+                    switch self {
+                    case let .package_path(package_path):
+                        ["--package-path", String(describing: package_path)]
+                    case let .cache_path(cache_path):
+                        ["--cache-path", String(describing: cache_path)]
+                    case let .config_path(config_path):
+                        ["--config-path", String(describing: config_path)]
+                    case let .security_path(security_path):
+                        ["--security-path", String(describing: security_path)]
+                    case let .scratch_path(scratch_path):
+                        ["--scratch-path", String(describing: scratch_path)]
+                    case let .build_path(build_path):
+                        ["--build-path", String(describing: build_path)]
+                    case let .multiroot_data_file(multiroot_data_file):
+                        ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                    case let .destination(destination):
+                        ["--destination", String(describing: destination)]
+                    case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                        ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                    case let .swift_sdks_path(swift_sdks_path):
+                        ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                    case let .toolset(toolset):
+                        ["--toolset", String(describing: toolset)]
+                    case let .pkg_config_path(pkg_config_path):
+                        ["--pkg-config-path", String(describing: pkg_config_path)]
+                    case .ignore_lock:
+                        ["--ignore-lock"]
+                    case .enable_dependency_cache:
+                        ["--enable-dependency-cache"]
+                    case .disable_package_manifest_caching:
+                        ["--disable-package-manifest-caching"]
+                    case .enable_build_manifest_caching:
+                        ["--enable-build-manifest-caching"]
+                    case let .manifest_cache(manifest_cache):
+                        ["--manifest-cache", String(describing: manifest_cache)]
+                    case .enable_experimental_prebuilts:
+                        ["--enable-experimental-prebuilts"]
+                    case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                        ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                    case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                        ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                    case .verbose:
+                        ["--verbose"]
+                    case .very_verbose:
+                        ["--very-verbose"]
+                    case .quiet:
+                        ["--quiet"]
+                    case .disable_sandbox:
+                        ["--disable-sandbox"]
+                    case .netrc:
+                        ["--netrc"]
+                    case .enable_netrc:
+                        ["--enable-netrc"]
+                    case let .netrc_file(netrc_file):
+                        ["--netrc-file", String(describing: netrc_file)]
+                    case .enable_keychain:
+                        ["--enable-keychain"]
+                    case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                        ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                    case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                        ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                    case .enable_signature_validation:
+                        ["--enable-signature-validation"]
+                    case .enable_prefetching:
+                        ["--enable-prefetching"]
+                    case .force_resolved_versions:
+                        ["--force-resolved-versions"]
+                    case .skip_update:
+                        ["--skip-update"]
+                    case .disable_scm_to_registry_transformation:
+                        ["--disable-scm-to-registry-transformation"]
+                    case .use_registry_identity_for_scm:
+                        ["--use-registry-identity-for-scm"]
+                    case .replace_scm_with_registry:
+                        ["--replace-scm-with-registry"]
+                    case let .default_registry_url(default_registry_url):
+                        ["--default-registry-url", String(describing: default_registry_url)]
+                    case let .configuration(configuration):
+                        ["--configuration", String(describing: configuration)]
+                    case let .Xcc(Xcc):
+                        ["-Xcc", String(describing: Xcc)]
+                    case let .Xswiftc(Xswiftc):
+                        ["-Xswiftc", String(describing: Xswiftc)]
+                    case let .Xlinker(Xlinker):
+                        ["-Xlinker", String(describing: Xlinker)]
+                    case let .Xcxx(Xcxx):
+                        ["-Xcxx", String(describing: Xcxx)]
+                    case let .Xxcbuild(Xxcbuild):
+                        ["-Xxcbuild", String(describing: Xxcbuild)]
+                    case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                        ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                    case let .Xmanifest(Xmanifest):
+                        ["-Xmanifest", String(describing: Xmanifest)]
+                    case let .triple(triple):
+                        ["--triple", String(describing: triple)]
+                    case let .sdk(sdk):
+                        ["--sdk", String(describing: sdk)]
+                    case let .toolchain(toolchain):
+                        ["--toolchain", String(describing: toolchain)]
+                    case let .arch(arch):
+                        ["--arch", String(describing: arch)]
+                    case let .experimental_swift_sdk(experimental_swift_sdk):
+                        ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                    case let .swift_sdk(swift_sdk):
+                        ["--swift-sdk", String(describing: swift_sdk)]
+                    case let .sanitize(sanitize):
+                        ["--sanitize", String(describing: sanitize)]
+                    case .auto_index_store:
+                        ["--auto-index-store"]
+                    case .experimental_prepare_for_indexing:
+                        ["--experimental-prepare-for-indexing"]
+                    case .experimental_prepare_for_indexing_no_lazy:
+                        ["--experimental-prepare-for-indexing-no-lazy"]
+                    case .enable_parseable_module_interfaces:
+                        ["--enable-parseable-module-interfaces"]
+                    case let .jobs(jobs):
+                        ["--jobs", String(describing: jobs)]
+                    case .use_integrated_swift_driver:
+                        ["--use-integrated-swift-driver"]
+                    case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                        ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                    case .experimental_explicit_module_build:
+                        ["--experimental-explicit-module-build"]
+                    case let .build_system(build_system):
+                        ["--build-system", String(describing: build_system)]
+                    case let .debug_info_format(debug_info_format):
+                        ["-debug-info-format", String(describing: debug_info_format)]
+                    case .enable_test_discovery:
+                        ["--enable-test-discovery"]
+                    case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                        ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                    case let .experimental_lto_mode(experimental_lto_mode):
+                        ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                    case .enable_get_task_allow_entitlement:
+                        ["--enable-get-task-allow-entitlement"]
+                    case .omit_frame_pointers:
+                        ["--omit-frame-pointers"]
+                    case .enable_dead_strip:
+                        ["--enable-dead-strip"]
+                    case .disable_local_rpath:
+                        ["--disable-local-rpath"]
+                    case .version:
+                        ["--version"]
+                    case .help:
+                        ["--help"]
+                    }
+                }
+            }
+
+            public init(parent: swiftCommand, _ options: [packageCommand.Option]) {
+                self.parent = parent
+                self.options = options
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("package")
+
+                for opt in self.options {
+                    genArgs.append(contentsOf: opt.args())
+                }
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+
+            // Add a package dependency to the manifest
+            public func adddependency(_ options: adddependencyCommand.Option..., dependency: String) -> adddependencyCommand {
+                self.adddependency(options, dependency: dependency)
+            }
+
+            // Add a package dependency to the manifest
+            public func adddependency(_ options: [adddependencyCommand.Option], dependency: String) -> adddependencyCommand {
+                adddependencyCommand(parent: self, options, dependency: dependency)
+            }
+
+            public struct adddependencyCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var dependency: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case exact(String)
+                    case revision(String)
+                    case branch(String)
+                    case from(String)
+                    case up_to_next_minor_from(String)
+                    case to(String)
+                    case type(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .exact(exact):
+                            ["--exact", String(describing: exact)]
+                        case let .revision(revision):
+                            ["--revision", String(describing: revision)]
+                        case let .branch(branch):
+                            ["--branch", String(describing: branch)]
+                        case let .from(from):
+                            ["--from", String(describing: from)]
+                        case let .up_to_next_minor_from(up_to_next_minor_from):
+                            ["--up-to-next-minor-from", String(describing: up_to_next_minor_from)]
+                        case let .to(to):
+                            ["--to", String(describing: to)]
+                        case let .type(type):
+                            ["--type", String(describing: type)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [adddependencyCommand.Option], dependency: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.dependency = dependency
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("add-dependency")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.dependency.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Add a new product to the manifest
+            public func addproduct(_ options: addproductCommand.Option..., name: String) -> addproductCommand {
+                self.addproduct(options, name: name)
+            }
+
+            // Add a new product to the manifest
+            public func addproduct(_ options: [addproductCommand.Option], name: String) -> addproductCommand {
+                addproductCommand(parent: self, options, name: name)
+            }
+
+            public struct addproductCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var name: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case type(String)
+                    case targets(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .type(type):
+                            ["--type", String(describing: type)]
+                        case let .targets(targets):
+                            ["--targets", String(describing: targets)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [addproductCommand.Option], name: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.name = name
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("add-product")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.name.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Add a new target to the manifest
+            public func addtarget(_ options: addtargetCommand.Option..., name: String) -> addtargetCommand {
+                self.addtarget(options, name: name)
+            }
+
+            // Add a new target to the manifest
+            public func addtarget(_ options: [addtargetCommand.Option], name: String) -> addtargetCommand {
+                addtargetCommand(parent: self, options, name: name)
+            }
+
+            public struct addtargetCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var name: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case type(String)
+                    case dependencies(String)
+                    case url(String)
+                    case path(String)
+                    case checksum(String)
+                    case testing_library(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .type(type):
+                            ["--type", String(describing: type)]
+                        case let .dependencies(dependencies):
+                            ["--dependencies", String(describing: dependencies)]
+                        case let .url(url):
+                            ["--url", String(describing: url)]
+                        case let .path(path):
+                            ["--path", String(describing: path)]
+                        case let .checksum(checksum):
+                            ["--checksum", String(describing: checksum)]
+                        case let .testing_library(testing_library):
+                            ["--testing-library", String(describing: testing_library)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [addtargetCommand.Option], name: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.name = name
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("add-target")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.name.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Add a new target dependency to the manifest
+            public func addtargetdependency(_ options: addtargetdependencyCommand.Option..., dependency_name: String, target_name: String) -> addtargetdependencyCommand {
+                self.addtargetdependency(options, dependency_name: dependency_name, target_name: target_name)
+            }
+
+            // Add a new target dependency to the manifest
+            public func addtargetdependency(_ options: [addtargetdependencyCommand.Option], dependency_name: String, target_name: String) -> addtargetdependencyCommand {
+                addtargetdependencyCommand(parent: self, options, dependency_name: dependency_name, target_name: target_name)
+            }
+
+            public struct addtargetdependencyCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var dependency_name: String
+                public var target_name: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case package(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .package(package):
+                            ["--package", String(describing: package)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [addtargetdependencyCommand.Option], dependency_name: String, target_name: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.dependency_name = dependency_name
+                    self.target_name = target_name
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("add-target-dependency")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.dependency_name.description]
+                    genArgs += [self.target_name.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Delete build artifacts
+            public func clean(_ options: cleanCommand.Option...) -> cleanCommand {
+                self.clean(options)
+            }
+
+            // Delete build artifacts
+            public func clean(_ options: [cleanCommand.Option]) -> cleanCommand {
+                cleanCommand(parent: self, options)
+            }
+
+            public struct cleanCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [cleanCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("clean")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Purge the global repository cache.
+            public func purgecache(_ options: purgecacheCommand.Option...) -> purgecacheCommand {
+                self.purgecache(options)
+            }
+
+            // Purge the global repository cache.
+            public func purgecache(_ options: [purgecacheCommand.Option]) -> purgecacheCommand {
+                purgecacheCommand(parent: self, options)
+            }
+
+            public struct purgecacheCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [purgecacheCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("purge-cache")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Reset the complete cache/build directory
+            public func reset(_ options: resetCommand.Option...) -> resetCommand {
+                self.reset(options)
+            }
+
+            // Reset the complete cache/build directory
+            public func reset(_ options: [resetCommand.Option]) -> resetCommand {
+                resetCommand(parent: self, options)
+            }
+
+            public struct resetCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [resetCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("reset")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Update package dependencies
+            public func update(_ options: updateCommand.Option..., packages: [String]?) -> updateCommand {
+                self.update(options, packages: packages)
+            }
+
+            // Update package dependencies
+            public func update(_ options: [updateCommand.Option], packages: [String]?) -> updateCommand {
+                updateCommand(parent: self, options, packages: packages)
+            }
+
+            public struct updateCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var packages: [String]?
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case dry_run
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .dry_run:
+                            ["--dry-run"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [updateCommand.Option], packages: [String]?) {
+                    self.parent = parent
+                    self.options = options
+                    self.packages = packages
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("update")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    if let packages = self.packages { genArgs += packages.map(\.description) }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Describe the current package
+            public func describe(_ options: describeCommand.Option...) -> describeCommand {
+                self.describe(options)
+            }
+
+            // Describe the current package
+            public func describe(_ options: [describeCommand.Option]) -> describeCommand {
+                describeCommand(parent: self, options)
+            }
+
+            public struct describeCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case type(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .type(type):
+                            ["--type", String(describing: type)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [describeCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("describe")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Initialize a new package
+            public func _init(_ options: initCommand.Option...) -> initCommand {
+                self._init(options)
+            }
+
+            // Initialize a new package
+            public func _init(_ options: [initCommand.Option]) -> initCommand {
+                initCommand(parent: self, options)
+            }
+
+            public struct initCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(FilePath)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case type(String)
+                    case enable_xctest
+                    case enable_swift_testing
+                    case enable_experimental_swift_testing
+                    case name(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .type(type):
+                            ["--type", String(describing: type)]
+                        case .enable_xctest:
+                            ["--enable-xctest"]
+                        case .enable_swift_testing:
+                            ["--enable-swift-testing"]
+                        case .enable_experimental_swift_testing:
+                            ["--enable-experimental-swift-testing"]
+                        case let .name(name):
+                            ["--name", String(describing: name)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [initCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("init")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            public func _format(_ options: _formatCommand.Option..., swift_format_flags: [String]?) -> _formatCommand {
+                self._format(options, swift_format_flags: swift_format_flags)
+            }
+
+            public func _format(_ options: [_formatCommand.Option], swift_format_flags: [String]?) -> _formatCommand {
+                _formatCommand(parent: self, options, swift_format_flags: swift_format_flags)
+            }
+
+            public struct _formatCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var swift_format_flags: [String]?
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [_formatCommand.Option], swift_format_flags: [String]?) {
+                    self.parent = parent
+                    self.options = options
+                    self.swift_format_flags = swift_format_flags
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("_format")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    if let swift_format_flags = self.swift_format_flags { genArgs += swift_format_flags.map(\.description) }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Offers the ability to install executable products of the current package.
+            public func experimentalinstall(_ options: experimentalinstallCommand.Option...) -> experimentalinstallCommand {
+                self.experimentalinstall(options)
+            }
+
+            // Offers the ability to install executable products of the current package.
+            public func experimentalinstall(_ options: [experimentalinstallCommand.Option]) -> experimentalinstallCommand {
+                experimentalinstallCommand(parent: self, options)
+            }
+
+            public struct experimentalinstallCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case product(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .product(product):
+                            ["--product", String(describing: product)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [experimentalinstallCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("experimental-install")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Offers the ability to uninstall executable products previously installed by `swift package experimental-install`.
+            public func experimentaluninstall(_ options: experimentaluninstallCommand.Option..., name: String) -> experimentaluninstallCommand {
+                self.experimentaluninstall(options, name: name)
+            }
+
+            // Offers the ability to uninstall executable products previously installed by `swift package experimental-install`.
+            public func experimentaluninstall(_ options: [experimentaluninstallCommand.Option], name: String) -> experimentaluninstallCommand {
+                experimentaluninstallCommand(parent: self, options, name: name)
+            }
+
+            public struct experimentaluninstallCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var name: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [experimentaluninstallCommand.Option], name: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.name = name
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("experimental-uninstall")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.name.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Diagnose API-breaking changes to Swift modules in a package
+            public func diagnoseapibreakingchanges(_ options: diagnoseapibreakingchangesCommand.Option..., treeish: String) -> diagnoseapibreakingchangesCommand {
+                self.diagnoseapibreakingchanges(options, treeish: treeish)
+            }
+
+            // Diagnose API-breaking changes to Swift modules in a package
+            public func diagnoseapibreakingchanges(_ options: [diagnoseapibreakingchangesCommand.Option], treeish: String) -> diagnoseapibreakingchangesCommand {
+                diagnoseapibreakingchangesCommand(parent: self, options, treeish: treeish)
+            }
+
+            public struct diagnoseapibreakingchangesCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var treeish: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case breakage_allowlist_path(String)
+                    case products(String)
+                    case targets(String)
+                    case traits(String)
+                    case enable_all_traits
+                    case disable_default_traits
+                    case baseline_dir(String)
+                    case regenerate_baseline
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .breakage_allowlist_path(breakage_allowlist_path):
+                            ["--breakage-allowlist-path", String(describing: breakage_allowlist_path)]
+                        case let .products(products):
+                            ["--products", String(describing: products)]
+                        case let .targets(targets):
+                            ["--targets", String(describing: targets)]
+                        case let .traits(traits):
+                            ["--traits", String(describing: traits)]
+                        case .enable_all_traits:
+                            ["--enable-all-traits"]
+                        case .disable_default_traits:
+                            ["--disable-default-traits"]
+                        case let .baseline_dir(baseline_dir):
+                            ["--baseline-dir", String(describing: baseline_dir)]
+                        case .regenerate_baseline:
+                            ["--regenerate-baseline"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [diagnoseapibreakingchangesCommand.Option], treeish: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.treeish = treeish
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("diagnose-api-breaking-changes")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.treeish.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Deprecated - use `swift package diagnose-api-breaking-changes` instead
+            public func experimentalapidiff(_ options: experimentalapidiffCommand.Option..., args: [String]?) -> experimentalapidiffCommand {
+                self.experimentalapidiff(options, args: args)
+            }
+
+            // Deprecated - use `swift package diagnose-api-breaking-changes` instead
+            public func experimentalapidiff(_ options: [experimentalapidiffCommand.Option], args: [String]?) -> experimentalapidiffCommand {
+                experimentalapidiffCommand(parent: self, options, args: args)
+            }
+
+            public struct experimentalapidiffCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var args: [String]?
+
+                public enum Option {
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [experimentalapidiffCommand.Option], args: [String]?) {
+                    self.parent = parent
+                    self.options = options
+                    self.args = args
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("experimental-api-diff")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    if let args = self.args { genArgs += args.map(\.description) }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Dump Symbol Graph
+            public func dumpsymbolgraph(_ options: dumpsymbolgraphCommand.Option...) -> dumpsymbolgraphCommand {
+                self.dumpsymbolgraph(options)
+            }
+
+            // Dump Symbol Graph
+            public func dumpsymbolgraph(_ options: [dumpsymbolgraphCommand.Option]) -> dumpsymbolgraphCommand {
+                dumpsymbolgraphCommand(parent: self, options)
+            }
+
+            public struct dumpsymbolgraphCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case pretty_print
+                    case skip_synthesized_members
+                    case minimum_access_level(String)
+                    case skip_inherited_docs
+                    case include_spi_symbols
+                    case emit_extension_block_symbols
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .pretty_print:
+                            ["--pretty-print"]
+                        case .skip_synthesized_members:
+                            ["--skip-synthesized-members"]
+                        case let .minimum_access_level(minimum_access_level):
+                            ["--minimum-access-level", String(describing: minimum_access_level)]
+                        case .skip_inherited_docs:
+                            ["--skip-inherited-docs"]
+                        case .include_spi_symbols:
+                            ["--include-spi-symbols"]
+                        case .emit_extension_block_symbols:
+                            ["--emit-extension-block-symbols"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [dumpsymbolgraphCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("dump-symbol-graph")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            public func dumppif(_ options: dumppifCommand.Option...) -> dumppifCommand {
+                self.dumppif(options)
+            }
+
+            public func dumppif(_ options: [dumppifCommand.Option]) -> dumppifCommand {
+                dumppifCommand(parent: self, options)
+            }
+
+            public struct dumppifCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case preserve_structure
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .preserve_structure:
+                            ["--preserve-structure"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [dumppifCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("dump-pif")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Print parsed Package.swift as JSON
+            public func dumppackage(_ options: dumppackageCommand.Option...) -> dumppackageCommand {
+                self.dumppackage(options)
+            }
+
+            // Print parsed Package.swift as JSON
+            public func dumppackage(_ options: [dumppackageCommand.Option]) -> dumppackageCommand {
+                dumppackageCommand(parent: self, options)
+            }
+
+            public struct dumppackageCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [dumppackageCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("dump-package")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Put a package in editable mode
+            public func edit(_ options: editCommand.Option..., package_identity: String) -> editCommand {
+                self.edit(options, package_identity: package_identity)
+            }
+
+            // Put a package in editable mode
+            public func edit(_ options: [editCommand.Option], package_identity: String) -> editCommand {
+                editCommand(parent: self, options, package_identity: package_identity)
+            }
+
+            public struct editCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var package_identity: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case revision(String)
+                    case branch(String)
+                    case path(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .revision(revision):
+                            ["--revision", String(describing: revision)]
+                        case let .branch(branch):
+                            ["--branch", String(describing: branch)]
+                        case let .path(path):
+                            ["--path", String(describing: path)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [editCommand.Option], package_identity: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.package_identity = package_identity
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("edit")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.package_identity.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Remove a package from editable mode
+            public func unedit(_ options: uneditCommand.Option..., package_identity: String) -> uneditCommand {
+                self.unedit(options, package_identity: package_identity)
+            }
+
+            // Remove a package from editable mode
+            public func unedit(_ options: [uneditCommand.Option], package_identity: String) -> uneditCommand {
+                uneditCommand(parent: self, options, package_identity: package_identity)
+            }
+
+            public struct uneditCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var package_identity: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case force
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .force:
+                            ["--force"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [uneditCommand.Option], package_identity: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.package_identity = package_identity
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("unedit")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.package_identity.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Manipulate configuration of the package
+            public func config(_ options: configCommand.Option...) -> configCommand {
+                self.config(options)
+            }
+
+            // Manipulate configuration of the package
+            public func config(_ options: [configCommand.Option]) -> configCommand {
+                configCommand(parent: self, options)
+            }
+
+            public struct configCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [configCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("config")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+
+                // Set a mirror for a dependency
+                public func setmirror(_ options: setmirrorCommand.Option...) -> setmirrorCommand {
+                    self.setmirror(options)
+                }
+
+                // Set a mirror for a dependency
+                public func setmirror(_ options: [setmirrorCommand.Option]) -> setmirrorCommand {
+                    setmirrorCommand(parent: self, options)
+                }
+
+                public struct setmirrorCommand {
+                    public var parent: configCommand
+                    public var options: [Option]
+
+                    public enum Option {
+                        case package_path(String)
+                        case cache_path(String)
+                        case config_path(String)
+                        case security_path(String)
+                        case scratch_path(String)
+                        case build_path(String)
+                        case multiroot_data_file(String)
+                        case destination(String)
+                        case experimental_swift_sdks_path(String)
+                        case swift_sdks_path(String)
+                        case toolset(String)
+                        case pkg_config_path(String)
+                        case ignore_lock
+                        case enable_dependency_cache
+                        case disable_package_manifest_caching
+                        case enable_build_manifest_caching
+                        case manifest_cache(String)
+                        case enable_experimental_prebuilts
+                        case experimental_prebuilts_download_url(String)
+                        case experimental_prebuilts_root_cert(String)
+                        case verbose
+                        case very_verbose
+                        case quiet
+                        case disable_sandbox
+                        case netrc
+                        case enable_netrc
+                        case netrc_file(String)
+                        case enable_keychain
+                        case resolver_fingerprint_checking(String)
+                        case resolver_signing_entity_checking(String)
+                        case enable_signature_validation
+                        case enable_prefetching
+                        case force_resolved_versions
+                        case skip_update
+                        case disable_scm_to_registry_transformation
+                        case use_registry_identity_for_scm
+                        case replace_scm_with_registry
+                        case default_registry_url(String)
+                        case configuration(String)
+                        case Xcc(String)
+                        case Xswiftc(String)
+                        case Xlinker(String)
+                        case Xcxx(String)
+                        case Xxcbuild(String)
+                        case Xbuild_tools_swiftc(String)
+                        case Xmanifest(String)
+                        case triple(String)
+                        case sdk(String)
+                        case toolchain(String)
+                        case arch(String)
+                        case experimental_swift_sdk(String)
+                        case swift_sdk(String)
+                        case sanitize(String)
+                        case auto_index_store
+                        case experimental_prepare_for_indexing
+                        case experimental_prepare_for_indexing_no_lazy
+                        case enable_parseable_module_interfaces
+                        case jobs(String)
+                        case use_integrated_swift_driver
+                        case explicit_target_dependency_import_check(String)
+                        case experimental_explicit_module_build
+                        case build_system(String)
+                        case debug_info_format(String)
+                        case enable_test_discovery
+                        case experimental_test_entry_point_path(String)
+                        case experimental_lto_mode(String)
+                        case enable_get_task_allow_entitlement
+                        case omit_frame_pointers
+                        case enable_dead_strip
+                        case disable_local_rpath
+                        case package_url(String)
+                        case original_url(String)
+                        case mirror_url(String)
+                        case original(String)
+                        case mirror(String)
+                        case version
+                        case help
+
+                        public func args() -> [String] {
+                            switch self {
+                            case let .package_path(package_path):
+                                ["--package-path", String(describing: package_path)]
+                            case let .cache_path(cache_path):
+                                ["--cache-path", String(describing: cache_path)]
+                            case let .config_path(config_path):
+                                ["--config-path", String(describing: config_path)]
+                            case let .security_path(security_path):
+                                ["--security-path", String(describing: security_path)]
+                            case let .scratch_path(scratch_path):
+                                ["--scratch-path", String(describing: scratch_path)]
+                            case let .build_path(build_path):
+                                ["--build-path", String(describing: build_path)]
+                            case let .multiroot_data_file(multiroot_data_file):
+                                ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                            case let .destination(destination):
+                                ["--destination", String(describing: destination)]
+                            case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                                ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                            case let .swift_sdks_path(swift_sdks_path):
+                                ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                            case let .toolset(toolset):
+                                ["--toolset", String(describing: toolset)]
+                            case let .pkg_config_path(pkg_config_path):
+                                ["--pkg-config-path", String(describing: pkg_config_path)]
+                            case .ignore_lock:
+                                ["--ignore-lock"]
+                            case .enable_dependency_cache:
+                                ["--enable-dependency-cache"]
+                            case .disable_package_manifest_caching:
+                                ["--disable-package-manifest-caching"]
+                            case .enable_build_manifest_caching:
+                                ["--enable-build-manifest-caching"]
+                            case let .manifest_cache(manifest_cache):
+                                ["--manifest-cache", String(describing: manifest_cache)]
+                            case .enable_experimental_prebuilts:
+                                ["--enable-experimental-prebuilts"]
+                            case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                                ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                            case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                                ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                            case .verbose:
+                                ["--verbose"]
+                            case .very_verbose:
+                                ["--very-verbose"]
+                            case .quiet:
+                                ["--quiet"]
+                            case .disable_sandbox:
+                                ["--disable-sandbox"]
+                            case .netrc:
+                                ["--netrc"]
+                            case .enable_netrc:
+                                ["--enable-netrc"]
+                            case let .netrc_file(netrc_file):
+                                ["--netrc-file", String(describing: netrc_file)]
+                            case .enable_keychain:
+                                ["--enable-keychain"]
+                            case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                                ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                            case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                                ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                            case .enable_signature_validation:
+                                ["--enable-signature-validation"]
+                            case .enable_prefetching:
+                                ["--enable-prefetching"]
+                            case .force_resolved_versions:
+                                ["--force-resolved-versions"]
+                            case .skip_update:
+                                ["--skip-update"]
+                            case .disable_scm_to_registry_transformation:
+                                ["--disable-scm-to-registry-transformation"]
+                            case .use_registry_identity_for_scm:
+                                ["--use-registry-identity-for-scm"]
+                            case .replace_scm_with_registry:
+                                ["--replace-scm-with-registry"]
+                            case let .default_registry_url(default_registry_url):
+                                ["--default-registry-url", String(describing: default_registry_url)]
+                            case let .configuration(configuration):
+                                ["--configuration", String(describing: configuration)]
+                            case let .Xcc(Xcc):
+                                ["-Xcc", String(describing: Xcc)]
+                            case let .Xswiftc(Xswiftc):
+                                ["-Xswiftc", String(describing: Xswiftc)]
+                            case let .Xlinker(Xlinker):
+                                ["-Xlinker", String(describing: Xlinker)]
+                            case let .Xcxx(Xcxx):
+                                ["-Xcxx", String(describing: Xcxx)]
+                            case let .Xxcbuild(Xxcbuild):
+                                ["-Xxcbuild", String(describing: Xxcbuild)]
+                            case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                                ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                            case let .Xmanifest(Xmanifest):
+                                ["-Xmanifest", String(describing: Xmanifest)]
+                            case let .triple(triple):
+                                ["--triple", String(describing: triple)]
+                            case let .sdk(sdk):
+                                ["--sdk", String(describing: sdk)]
+                            case let .toolchain(toolchain):
+                                ["--toolchain", String(describing: toolchain)]
+                            case let .arch(arch):
+                                ["--arch", String(describing: arch)]
+                            case let .experimental_swift_sdk(experimental_swift_sdk):
+                                ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                            case let .swift_sdk(swift_sdk):
+                                ["--swift-sdk", String(describing: swift_sdk)]
+                            case let .sanitize(sanitize):
+                                ["--sanitize", String(describing: sanitize)]
+                            case .auto_index_store:
+                                ["--auto-index-store"]
+                            case .experimental_prepare_for_indexing:
+                                ["--experimental-prepare-for-indexing"]
+                            case .experimental_prepare_for_indexing_no_lazy:
+                                ["--experimental-prepare-for-indexing-no-lazy"]
+                            case .enable_parseable_module_interfaces:
+                                ["--enable-parseable-module-interfaces"]
+                            case let .jobs(jobs):
+                                ["--jobs", String(describing: jobs)]
+                            case .use_integrated_swift_driver:
+                                ["--use-integrated-swift-driver"]
+                            case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                                ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                            case .experimental_explicit_module_build:
+                                ["--experimental-explicit-module-build"]
+                            case let .build_system(build_system):
+                                ["--build-system", String(describing: build_system)]
+                            case let .debug_info_format(debug_info_format):
+                                ["-debug-info-format", String(describing: debug_info_format)]
+                            case .enable_test_discovery:
+                                ["--enable-test-discovery"]
+                            case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                                ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                            case let .experimental_lto_mode(experimental_lto_mode):
+                                ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                            case .enable_get_task_allow_entitlement:
+                                ["--enable-get-task-allow-entitlement"]
+                            case .omit_frame_pointers:
+                                ["--omit-frame-pointers"]
+                            case .enable_dead_strip:
+                                ["--enable-dead-strip"]
+                            case .disable_local_rpath:
+                                ["--disable-local-rpath"]
+                            case let .package_url(package_url):
+                                ["--package-url", String(describing: package_url)]
+                            case let .original_url(original_url):
+                                ["--original-url", String(describing: original_url)]
+                            case let .mirror_url(mirror_url):
+                                ["--mirror-url", String(describing: mirror_url)]
+                            case let .original(original):
+                                ["--original", String(describing: original)]
+                            case let .mirror(mirror):
+                                ["--mirror", String(describing: mirror)]
+                            case .version:
+                                ["--version"]
+                            case .help:
+                                ["--help"]
+                            }
+                        }
+                    }
+
+                    public init(parent: configCommand, _ options: [setmirrorCommand.Option]) {
+                        self.parent = parent
+                        self.options = options
+                    }
+
+                    public func config() -> Configuration {
+                        var c = self.parent.config()
+
+                        var genArgs = c.arguments.storage.map(\.description)
+
+                        genArgs.append("set-mirror")
+
+                        for opt in self.options {
+                            genArgs.append(contentsOf: opt.args())
+                        }
+
+                        c.arguments = .init(genArgs)
+
+                        return c
+                    }
+                }
+
+                // Remove an existing mirror
+                public func unsetmirror(_ options: unsetmirrorCommand.Option...) -> unsetmirrorCommand {
+                    self.unsetmirror(options)
+                }
+
+                // Remove an existing mirror
+                public func unsetmirror(_ options: [unsetmirrorCommand.Option]) -> unsetmirrorCommand {
+                    unsetmirrorCommand(parent: self, options)
+                }
+
+                public struct unsetmirrorCommand {
+                    public var parent: configCommand
+                    public var options: [Option]
+
+                    public enum Option {
+                        case package_path(String)
+                        case cache_path(String)
+                        case config_path(String)
+                        case security_path(String)
+                        case scratch_path(String)
+                        case build_path(String)
+                        case multiroot_data_file(String)
+                        case destination(String)
+                        case experimental_swift_sdks_path(String)
+                        case swift_sdks_path(String)
+                        case toolset(String)
+                        case pkg_config_path(String)
+                        case ignore_lock
+                        case enable_dependency_cache
+                        case disable_package_manifest_caching
+                        case enable_build_manifest_caching
+                        case manifest_cache(String)
+                        case enable_experimental_prebuilts
+                        case experimental_prebuilts_download_url(String)
+                        case experimental_prebuilts_root_cert(String)
+                        case verbose
+                        case very_verbose
+                        case quiet
+                        case disable_sandbox
+                        case netrc
+                        case enable_netrc
+                        case netrc_file(String)
+                        case enable_keychain
+                        case resolver_fingerprint_checking(String)
+                        case resolver_signing_entity_checking(String)
+                        case enable_signature_validation
+                        case enable_prefetching
+                        case force_resolved_versions
+                        case skip_update
+                        case disable_scm_to_registry_transformation
+                        case use_registry_identity_for_scm
+                        case replace_scm_with_registry
+                        case default_registry_url(String)
+                        case configuration(String)
+                        case Xcc(String)
+                        case Xswiftc(String)
+                        case Xlinker(String)
+                        case Xcxx(String)
+                        case Xxcbuild(String)
+                        case Xbuild_tools_swiftc(String)
+                        case Xmanifest(String)
+                        case triple(String)
+                        case sdk(String)
+                        case toolchain(String)
+                        case arch(String)
+                        case experimental_swift_sdk(String)
+                        case swift_sdk(String)
+                        case sanitize(String)
+                        case auto_index_store
+                        case experimental_prepare_for_indexing
+                        case experimental_prepare_for_indexing_no_lazy
+                        case enable_parseable_module_interfaces
+                        case jobs(String)
+                        case use_integrated_swift_driver
+                        case explicit_target_dependency_import_check(String)
+                        case experimental_explicit_module_build
+                        case build_system(String)
+                        case debug_info_format(String)
+                        case enable_test_discovery
+                        case experimental_test_entry_point_path(String)
+                        case experimental_lto_mode(String)
+                        case enable_get_task_allow_entitlement
+                        case omit_frame_pointers
+                        case enable_dead_strip
+                        case disable_local_rpath
+                        case package_url(String)
+                        case original_url(String)
+                        case mirror_url(String)
+                        case original(String)
+                        case mirror(String)
+                        case version
+                        case help
+
+                        public func args() -> [String] {
+                            switch self {
+                            case let .package_path(package_path):
+                                ["--package-path", String(describing: package_path)]
+                            case let .cache_path(cache_path):
+                                ["--cache-path", String(describing: cache_path)]
+                            case let .config_path(config_path):
+                                ["--config-path", String(describing: config_path)]
+                            case let .security_path(security_path):
+                                ["--security-path", String(describing: security_path)]
+                            case let .scratch_path(scratch_path):
+                                ["--scratch-path", String(describing: scratch_path)]
+                            case let .build_path(build_path):
+                                ["--build-path", String(describing: build_path)]
+                            case let .multiroot_data_file(multiroot_data_file):
+                                ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                            case let .destination(destination):
+                                ["--destination", String(describing: destination)]
+                            case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                                ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                            case let .swift_sdks_path(swift_sdks_path):
+                                ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                            case let .toolset(toolset):
+                                ["--toolset", String(describing: toolset)]
+                            case let .pkg_config_path(pkg_config_path):
+                                ["--pkg-config-path", String(describing: pkg_config_path)]
+                            case .ignore_lock:
+                                ["--ignore-lock"]
+                            case .enable_dependency_cache:
+                                ["--enable-dependency-cache"]
+                            case .disable_package_manifest_caching:
+                                ["--disable-package-manifest-caching"]
+                            case .enable_build_manifest_caching:
+                                ["--enable-build-manifest-caching"]
+                            case let .manifest_cache(manifest_cache):
+                                ["--manifest-cache", String(describing: manifest_cache)]
+                            case .enable_experimental_prebuilts:
+                                ["--enable-experimental-prebuilts"]
+                            case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                                ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                            case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                                ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                            case .verbose:
+                                ["--verbose"]
+                            case .very_verbose:
+                                ["--very-verbose"]
+                            case .quiet:
+                                ["--quiet"]
+                            case .disable_sandbox:
+                                ["--disable-sandbox"]
+                            case .netrc:
+                                ["--netrc"]
+                            case .enable_netrc:
+                                ["--enable-netrc"]
+                            case let .netrc_file(netrc_file):
+                                ["--netrc-file", String(describing: netrc_file)]
+                            case .enable_keychain:
+                                ["--enable-keychain"]
+                            case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                                ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                            case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                                ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                            case .enable_signature_validation:
+                                ["--enable-signature-validation"]
+                            case .enable_prefetching:
+                                ["--enable-prefetching"]
+                            case .force_resolved_versions:
+                                ["--force-resolved-versions"]
+                            case .skip_update:
+                                ["--skip-update"]
+                            case .disable_scm_to_registry_transformation:
+                                ["--disable-scm-to-registry-transformation"]
+                            case .use_registry_identity_for_scm:
+                                ["--use-registry-identity-for-scm"]
+                            case .replace_scm_with_registry:
+                                ["--replace-scm-with-registry"]
+                            case let .default_registry_url(default_registry_url):
+                                ["--default-registry-url", String(describing: default_registry_url)]
+                            case let .configuration(configuration):
+                                ["--configuration", String(describing: configuration)]
+                            case let .Xcc(Xcc):
+                                ["-Xcc", String(describing: Xcc)]
+                            case let .Xswiftc(Xswiftc):
+                                ["-Xswiftc", String(describing: Xswiftc)]
+                            case let .Xlinker(Xlinker):
+                                ["-Xlinker", String(describing: Xlinker)]
+                            case let .Xcxx(Xcxx):
+                                ["-Xcxx", String(describing: Xcxx)]
+                            case let .Xxcbuild(Xxcbuild):
+                                ["-Xxcbuild", String(describing: Xxcbuild)]
+                            case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                                ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                            case let .Xmanifest(Xmanifest):
+                                ["-Xmanifest", String(describing: Xmanifest)]
+                            case let .triple(triple):
+                                ["--triple", String(describing: triple)]
+                            case let .sdk(sdk):
+                                ["--sdk", String(describing: sdk)]
+                            case let .toolchain(toolchain):
+                                ["--toolchain", String(describing: toolchain)]
+                            case let .arch(arch):
+                                ["--arch", String(describing: arch)]
+                            case let .experimental_swift_sdk(experimental_swift_sdk):
+                                ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                            case let .swift_sdk(swift_sdk):
+                                ["--swift-sdk", String(describing: swift_sdk)]
+                            case let .sanitize(sanitize):
+                                ["--sanitize", String(describing: sanitize)]
+                            case .auto_index_store:
+                                ["--auto-index-store"]
+                            case .experimental_prepare_for_indexing:
+                                ["--experimental-prepare-for-indexing"]
+                            case .experimental_prepare_for_indexing_no_lazy:
+                                ["--experimental-prepare-for-indexing-no-lazy"]
+                            case .enable_parseable_module_interfaces:
+                                ["--enable-parseable-module-interfaces"]
+                            case let .jobs(jobs):
+                                ["--jobs", String(describing: jobs)]
+                            case .use_integrated_swift_driver:
+                                ["--use-integrated-swift-driver"]
+                            case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                                ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                            case .experimental_explicit_module_build:
+                                ["--experimental-explicit-module-build"]
+                            case let .build_system(build_system):
+                                ["--build-system", String(describing: build_system)]
+                            case let .debug_info_format(debug_info_format):
+                                ["-debug-info-format", String(describing: debug_info_format)]
+                            case .enable_test_discovery:
+                                ["--enable-test-discovery"]
+                            case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                                ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                            case let .experimental_lto_mode(experimental_lto_mode):
+                                ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                            case .enable_get_task_allow_entitlement:
+                                ["--enable-get-task-allow-entitlement"]
+                            case .omit_frame_pointers:
+                                ["--omit-frame-pointers"]
+                            case .enable_dead_strip:
+                                ["--enable-dead-strip"]
+                            case .disable_local_rpath:
+                                ["--disable-local-rpath"]
+                            case let .package_url(package_url):
+                                ["--package-url", String(describing: package_url)]
+                            case let .original_url(original_url):
+                                ["--original-url", String(describing: original_url)]
+                            case let .mirror_url(mirror_url):
+                                ["--mirror-url", String(describing: mirror_url)]
+                            case let .original(original):
+                                ["--original", String(describing: original)]
+                            case let .mirror(mirror):
+                                ["--mirror", String(describing: mirror)]
+                            case .version:
+                                ["--version"]
+                            case .help:
+                                ["--help"]
+                            }
+                        }
+                    }
+
+                    public init(parent: configCommand, _ options: [unsetmirrorCommand.Option]) {
+                        self.parent = parent
+                        self.options = options
+                    }
+
+                    public func config() -> Configuration {
+                        var c = self.parent.config()
+
+                        var genArgs = c.arguments.storage.map(\.description)
+
+                        genArgs.append("unset-mirror")
+
+                        for opt in self.options {
+                            genArgs.append(contentsOf: opt.args())
+                        }
+
+                        c.arguments = .init(genArgs)
+
+                        return c
+                    }
+                }
+
+                // Print mirror configuration for the given package dependency
+                public func getmirror(_ options: getmirrorCommand.Option...) -> getmirrorCommand {
+                    self.getmirror(options)
+                }
+
+                // Print mirror configuration for the given package dependency
+                public func getmirror(_ options: [getmirrorCommand.Option]) -> getmirrorCommand {
+                    getmirrorCommand(parent: self, options)
+                }
+
+                public struct getmirrorCommand {
+                    public var parent: configCommand
+                    public var options: [Option]
+
+                    public enum Option {
+                        case package_path(String)
+                        case cache_path(String)
+                        case config_path(String)
+                        case security_path(String)
+                        case scratch_path(String)
+                        case build_path(String)
+                        case multiroot_data_file(String)
+                        case destination(String)
+                        case experimental_swift_sdks_path(String)
+                        case swift_sdks_path(String)
+                        case toolset(String)
+                        case pkg_config_path(String)
+                        case ignore_lock
+                        case enable_dependency_cache
+                        case disable_package_manifest_caching
+                        case enable_build_manifest_caching
+                        case manifest_cache(String)
+                        case enable_experimental_prebuilts
+                        case experimental_prebuilts_download_url(String)
+                        case experimental_prebuilts_root_cert(String)
+                        case verbose
+                        case very_verbose
+                        case quiet
+                        case disable_sandbox
+                        case netrc
+                        case enable_netrc
+                        case netrc_file(String)
+                        case enable_keychain
+                        case resolver_fingerprint_checking(String)
+                        case resolver_signing_entity_checking(String)
+                        case enable_signature_validation
+                        case enable_prefetching
+                        case force_resolved_versions
+                        case skip_update
+                        case disable_scm_to_registry_transformation
+                        case use_registry_identity_for_scm
+                        case replace_scm_with_registry
+                        case default_registry_url(String)
+                        case configuration(String)
+                        case Xcc(String)
+                        case Xswiftc(String)
+                        case Xlinker(String)
+                        case Xcxx(String)
+                        case Xxcbuild(String)
+                        case Xbuild_tools_swiftc(String)
+                        case Xmanifest(String)
+                        case triple(String)
+                        case sdk(String)
+                        case toolchain(String)
+                        case arch(String)
+                        case experimental_swift_sdk(String)
+                        case swift_sdk(String)
+                        case sanitize(String)
+                        case auto_index_store
+                        case experimental_prepare_for_indexing
+                        case experimental_prepare_for_indexing_no_lazy
+                        case enable_parseable_module_interfaces
+                        case jobs(String)
+                        case use_integrated_swift_driver
+                        case explicit_target_dependency_import_check(String)
+                        case experimental_explicit_module_build
+                        case build_system(String)
+                        case debug_info_format(String)
+                        case enable_test_discovery
+                        case experimental_test_entry_point_path(String)
+                        case experimental_lto_mode(String)
+                        case enable_get_task_allow_entitlement
+                        case omit_frame_pointers
+                        case enable_dead_strip
+                        case disable_local_rpath
+                        case package_url(String)
+                        case original_url(String)
+                        case original(String)
+                        case version
+                        case help
+
+                        public func args() -> [String] {
+                            switch self {
+                            case let .package_path(package_path):
+                                ["--package-path", String(describing: package_path)]
+                            case let .cache_path(cache_path):
+                                ["--cache-path", String(describing: cache_path)]
+                            case let .config_path(config_path):
+                                ["--config-path", String(describing: config_path)]
+                            case let .security_path(security_path):
+                                ["--security-path", String(describing: security_path)]
+                            case let .scratch_path(scratch_path):
+                                ["--scratch-path", String(describing: scratch_path)]
+                            case let .build_path(build_path):
+                                ["--build-path", String(describing: build_path)]
+                            case let .multiroot_data_file(multiroot_data_file):
+                                ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                            case let .destination(destination):
+                                ["--destination", String(describing: destination)]
+                            case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                                ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                            case let .swift_sdks_path(swift_sdks_path):
+                                ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                            case let .toolset(toolset):
+                                ["--toolset", String(describing: toolset)]
+                            case let .pkg_config_path(pkg_config_path):
+                                ["--pkg-config-path", String(describing: pkg_config_path)]
+                            case .ignore_lock:
+                                ["--ignore-lock"]
+                            case .enable_dependency_cache:
+                                ["--enable-dependency-cache"]
+                            case .disable_package_manifest_caching:
+                                ["--disable-package-manifest-caching"]
+                            case .enable_build_manifest_caching:
+                                ["--enable-build-manifest-caching"]
+                            case let .manifest_cache(manifest_cache):
+                                ["--manifest-cache", String(describing: manifest_cache)]
+                            case .enable_experimental_prebuilts:
+                                ["--enable-experimental-prebuilts"]
+                            case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                                ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                            case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                                ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                            case .verbose:
+                                ["--verbose"]
+                            case .very_verbose:
+                                ["--very-verbose"]
+                            case .quiet:
+                                ["--quiet"]
+                            case .disable_sandbox:
+                                ["--disable-sandbox"]
+                            case .netrc:
+                                ["--netrc"]
+                            case .enable_netrc:
+                                ["--enable-netrc"]
+                            case let .netrc_file(netrc_file):
+                                ["--netrc-file", String(describing: netrc_file)]
+                            case .enable_keychain:
+                                ["--enable-keychain"]
+                            case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                                ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                            case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                                ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                            case .enable_signature_validation:
+                                ["--enable-signature-validation"]
+                            case .enable_prefetching:
+                                ["--enable-prefetching"]
+                            case .force_resolved_versions:
+                                ["--force-resolved-versions"]
+                            case .skip_update:
+                                ["--skip-update"]
+                            case .disable_scm_to_registry_transformation:
+                                ["--disable-scm-to-registry-transformation"]
+                            case .use_registry_identity_for_scm:
+                                ["--use-registry-identity-for-scm"]
+                            case .replace_scm_with_registry:
+                                ["--replace-scm-with-registry"]
+                            case let .default_registry_url(default_registry_url):
+                                ["--default-registry-url", String(describing: default_registry_url)]
+                            case let .configuration(configuration):
+                                ["--configuration", String(describing: configuration)]
+                            case let .Xcc(Xcc):
+                                ["-Xcc", String(describing: Xcc)]
+                            case let .Xswiftc(Xswiftc):
+                                ["-Xswiftc", String(describing: Xswiftc)]
+                            case let .Xlinker(Xlinker):
+                                ["-Xlinker", String(describing: Xlinker)]
+                            case let .Xcxx(Xcxx):
+                                ["-Xcxx", String(describing: Xcxx)]
+                            case let .Xxcbuild(Xxcbuild):
+                                ["-Xxcbuild", String(describing: Xxcbuild)]
+                            case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                                ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                            case let .Xmanifest(Xmanifest):
+                                ["-Xmanifest", String(describing: Xmanifest)]
+                            case let .triple(triple):
+                                ["--triple", String(describing: triple)]
+                            case let .sdk(sdk):
+                                ["--sdk", String(describing: sdk)]
+                            case let .toolchain(toolchain):
+                                ["--toolchain", String(describing: toolchain)]
+                            case let .arch(arch):
+                                ["--arch", String(describing: arch)]
+                            case let .experimental_swift_sdk(experimental_swift_sdk):
+                                ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                            case let .swift_sdk(swift_sdk):
+                                ["--swift-sdk", String(describing: swift_sdk)]
+                            case let .sanitize(sanitize):
+                                ["--sanitize", String(describing: sanitize)]
+                            case .auto_index_store:
+                                ["--auto-index-store"]
+                            case .experimental_prepare_for_indexing:
+                                ["--experimental-prepare-for-indexing"]
+                            case .experimental_prepare_for_indexing_no_lazy:
+                                ["--experimental-prepare-for-indexing-no-lazy"]
+                            case .enable_parseable_module_interfaces:
+                                ["--enable-parseable-module-interfaces"]
+                            case let .jobs(jobs):
+                                ["--jobs", String(describing: jobs)]
+                            case .use_integrated_swift_driver:
+                                ["--use-integrated-swift-driver"]
+                            case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                                ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                            case .experimental_explicit_module_build:
+                                ["--experimental-explicit-module-build"]
+                            case let .build_system(build_system):
+                                ["--build-system", String(describing: build_system)]
+                            case let .debug_info_format(debug_info_format):
+                                ["-debug-info-format", String(describing: debug_info_format)]
+                            case .enable_test_discovery:
+                                ["--enable-test-discovery"]
+                            case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                                ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                            case let .experimental_lto_mode(experimental_lto_mode):
+                                ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                            case .enable_get_task_allow_entitlement:
+                                ["--enable-get-task-allow-entitlement"]
+                            case .omit_frame_pointers:
+                                ["--omit-frame-pointers"]
+                            case .enable_dead_strip:
+                                ["--enable-dead-strip"]
+                            case .disable_local_rpath:
+                                ["--disable-local-rpath"]
+                            case let .package_url(package_url):
+                                ["--package-url", String(describing: package_url)]
+                            case let .original_url(original_url):
+                                ["--original-url", String(describing: original_url)]
+                            case let .original(original):
+                                ["--original", String(describing: original)]
+                            case .version:
+                                ["--version"]
+                            case .help:
+                                ["--help"]
+                            }
+                        }
+                    }
+
+                    public init(parent: configCommand, _ options: [getmirrorCommand.Option]) {
+                        self.parent = parent
+                        self.options = options
+                    }
+
+                    public func config() -> Configuration {
+                        var c = self.parent.config()
+
+                        var genArgs = c.arguments.storage.map(\.description)
+
+                        genArgs.append("get-mirror")
+
+                        for opt in self.options {
+                            genArgs.append(contentsOf: opt.args())
+                        }
+
+                        c.arguments = .init(genArgs)
+
+                        return c
+                    }
+                }
+            }
+
+            // Resolve package dependencies
+            public func resolve(_ options: resolveCommand.Option..., package_name: String? = nil) -> resolveCommand {
+                self.resolve(options, package_name: package_name)
+            }
+
+            // Resolve package dependencies
+            public func resolve(_ options: [resolveCommand.Option], package_name: String? = nil) -> resolveCommand {
+                resolveCommand(parent: self, options, package_name: package_name)
+            }
+
+            public struct resolveCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var package_name: String?
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version(String)
+                    case branch(String)
+                    case revision(String)
+                    case version2
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .version(version):
+                            ["--version", String(describing: version)]
+                        case let .branch(branch):
+                            ["--branch", String(describing: branch)]
+                        case let .revision(revision):
+                            ["--revision", String(describing: revision)]
+                        case .version2:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [resolveCommand.Option], package_name: String? = nil) {
+                    self.parent = parent
+                    self.options = options
+                    self.package_name = package_name
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("resolve")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    if let package_name = self.package_name { genArgs += [package_name.description] }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            public func fetch(_ options: fetchCommand.Option..., package_name: String? = nil) -> fetchCommand {
+                self.fetch(options, package_name: package_name)
+            }
+
+            public func fetch(_ options: [fetchCommand.Option], package_name: String? = nil) -> fetchCommand {
+                fetchCommand(parent: self, options, package_name: package_name)
+            }
+
+            public struct fetchCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var package_name: String?
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version2(String)
+                    case branch(String)
+                    case revision(String)
+                    case version3
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .version2(version2):
+                            ["--version", String(describing: version2)]
+                        case let .branch(branch):
+                            ["--branch", String(describing: branch)]
+                        case let .revision(revision):
+                            ["--revision", String(describing: revision)]
+                        case .version3:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [fetchCommand.Option], package_name: String? = nil) {
+                    self.parent = parent
+                    self.options = options
+                    self.package_name = package_name
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("fetch")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    if let package_name = self.package_name { genArgs += [package_name.description] }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Print the resolved dependency graph
+            public func showdependencies(_ options: showdependenciesCommand.Option...) -> showdependenciesCommand {
+                self.showdependencies(options)
+            }
+
+            // Print the resolved dependency graph
+            public func showdependencies(_ options: [showdependenciesCommand.Option]) -> showdependenciesCommand {
+                showdependenciesCommand(parent: self, options)
+            }
+
+            public struct showdependenciesCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case format(String)
+                    case output_path(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .format(format):
+                            ["--format", String(describing: format)]
+                        case let .output_path(output_path):
+                            ["--output-path", String(describing: output_path)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [showdependenciesCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("show-dependencies")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // List the available executables from this package.
+            public func showexecutables(_ options: showexecutablesCommand.Option...) -> showexecutablesCommand {
+                self.showexecutables(options)
+            }
+
+            // List the available executables from this package.
+            public func showexecutables(_ options: [showexecutablesCommand.Option]) -> showexecutablesCommand {
+                showexecutablesCommand(parent: self, options)
+            }
+
+            public struct showexecutablesCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case format(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .format(format):
+                            ["--format", String(describing: format)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [showexecutablesCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("show-executables")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Manipulate tools version of the current package
+            public func toolsversion(_ options: toolsversionCommand.Option...) -> toolsversionCommand {
+                self.toolsversion(options)
+            }
+
+            // Manipulate tools version of the current package
+            public func toolsversion(_ options: [toolsversionCommand.Option]) -> toolsversionCommand {
+                toolsversionCommand(parent: self, options)
+            }
+
+            public struct toolsversionCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case set_current
+                    case set(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .set_current:
+                            ["--set-current"]
+                        case let .set(set):
+                            ["--set", String(describing: set)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [toolsversionCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("tools-version")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Compute the checksum for a binary artifact.
+            public func computechecksum(_ options: computechecksumCommand.Option..., path: String) -> computechecksumCommand {
+                self.computechecksum(options, path: path)
+            }
+
+            // Compute the checksum for a binary artifact.
+            public func computechecksum(_ options: [computechecksumCommand.Option], path: String) -> computechecksumCommand {
+                computechecksumCommand(parent: self, options, path: path)
+            }
+
+            public struct computechecksumCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var path: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [computechecksumCommand.Option], path: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.path = path
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("compute-checksum")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.path.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Create a source archive for the package
+            public func archivesource(_ options: archivesourceCommand.Option...) -> archivesourceCommand {
+                self.archivesource(options)
+            }
+
+            // Create a source archive for the package
+            public func archivesource(_ options: [archivesourceCommand.Option]) -> archivesourceCommand {
+                archivesourceCommand(parent: self, options)
+            }
+
+            public struct archivesourceCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case output(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case let .output(output):
+                            ["--output", String(describing: output)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [archivesourceCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("archive-source")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Completion command (for shell completions)
+            public func completiontool(_ options: completiontoolCommand.Option..., mode: String) -> completiontoolCommand {
+                self.completiontool(options, mode: mode)
+            }
+
+            // Completion command (for shell completions)
+            public func completiontool(_ options: [completiontoolCommand.Option], mode: String) -> completiontoolCommand {
+                completiontoolCommand(parent: self, options, mode: mode)
+            }
+
+            public struct completiontoolCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var mode: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [completiontoolCommand.Option], mode: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.mode = mode
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("completion-tool")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.mode.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Invoke a command plugin or perform other actions on command plugins
+            public func plugin(_ options: pluginCommand.Option..., command: String? = nil, arguments: [String]?) -> pluginCommand {
+                self.plugin(options, command: command, arguments: arguments)
+            }
+
+            // Invoke a command plugin or perform other actions on command plugins
+            public func plugin(_ options: [pluginCommand.Option], command: String? = nil, arguments: [String]?) -> pluginCommand {
+                pluginCommand(parent: self, options, command: command, arguments: arguments)
+            }
+
+            public struct pluginCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var command: String?
+                public var arguments: [String]?
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case list
+                    case allow_writing_to_package_directory
+                    case allow_writing_to_directory(String)
+                    case allow_network_connections(String)
+                    case package(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .list:
+                            ["--list"]
+                        case .allow_writing_to_package_directory:
+                            ["--allow-writing-to-package-directory"]
+                        case let .allow_writing_to_directory(allow_writing_to_directory):
+                            ["--allow-writing-to-directory", String(describing: allow_writing_to_directory)]
+                        case let .allow_network_connections(allow_network_connections):
+                            ["--allow-network-connections", String(describing: allow_network_connections)]
+                        case let .package(package):
+                            ["--package", String(describing: package)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [pluginCommand.Option], command: String? = nil, arguments: [String]?) {
+                    self.parent = parent
+                    self.options = options
+                    self.command = command
+                    self.arguments = arguments
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("plugin")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    if let command = self.command { genArgs += [command.description] }
+                    if let arguments = self.arguments { genArgs += arguments.map(\.description) }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            public func defaultcommand(_ options: defaultcommandCommand.Option..., remaining: [String]?) -> defaultcommandCommand {
+                self.defaultcommand(options, remaining: remaining)
+            }
+
+            public func defaultcommand(_ options: [defaultcommandCommand.Option], remaining: [String]?) -> defaultcommandCommand {
+                defaultcommandCommand(parent: self, options, remaining: remaining)
+            }
+
+            public struct defaultcommandCommand {
+                public var parent: packageCommand
+                public var options: [Option]
+                public var remaining: [String]?
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case enable_dependency_cache
+                    case disable_package_manifest_caching
+                    case enable_build_manifest_caching
+                    case manifest_cache(String)
+                    case enable_experimental_prebuilts
+                    case experimental_prebuilts_download_url(String)
+                    case experimental_prebuilts_root_cert(String)
+                    case verbose
+                    case very_verbose
+                    case quiet
+                    case disable_sandbox
+                    case netrc
+                    case enable_netrc
+                    case netrc_file(String)
+                    case enable_keychain
+                    case resolver_fingerprint_checking(String)
+                    case resolver_signing_entity_checking(String)
+                    case enable_signature_validation
+                    case enable_prefetching
+                    case force_resolved_versions
+                    case skip_update
+                    case disable_scm_to_registry_transformation
+                    case use_registry_identity_for_scm
+                    case replace_scm_with_registry
+                    case default_registry_url(String)
+                    case configuration(String)
+                    case Xcc(String)
+                    case Xswiftc(String)
+                    case Xlinker(String)
+                    case Xcxx(String)
+                    case Xxcbuild(String)
+                    case Xbuild_tools_swiftc(String)
+                    case Xmanifest(String)
+                    case triple(String)
+                    case sdk(String)
+                    case toolchain(String)
+                    case arch(String)
+                    case experimental_swift_sdk(String)
+                    case swift_sdk(String)
+                    case sanitize(String)
+                    case auto_index_store
+                    case experimental_prepare_for_indexing
+                    case experimental_prepare_for_indexing_no_lazy
+                    case enable_parseable_module_interfaces
+                    case jobs(String)
+                    case use_integrated_swift_driver
+                    case explicit_target_dependency_import_check(String)
+                    case experimental_explicit_module_build
+                    case build_system(String)
+                    case debug_info_format(String)
+                    case enable_test_discovery
+                    case experimental_test_entry_point_path(String)
+                    case experimental_lto_mode(String)
+                    case enable_get_task_allow_entitlement
+                    case omit_frame_pointers
+                    case enable_dead_strip
+                    case disable_local_rpath
+                    case allow_writing_to_package_directory
+                    case allow_writing_to_directory(String)
+                    case allow_network_connections(String)
+                    case package(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .enable_dependency_cache:
+                            ["--enable-dependency-cache"]
+                        case .disable_package_manifest_caching:
+                            ["--disable-package-manifest-caching"]
+                        case .enable_build_manifest_caching:
+                            ["--enable-build-manifest-caching"]
+                        case let .manifest_cache(manifest_cache):
+                            ["--manifest-cache", String(describing: manifest_cache)]
+                        case .enable_experimental_prebuilts:
+                            ["--enable-experimental-prebuilts"]
+                        case let .experimental_prebuilts_download_url(experimental_prebuilts_download_url):
+                            ["--experimental-prebuilts-download-url", String(describing: experimental_prebuilts_download_url)]
+                        case let .experimental_prebuilts_root_cert(experimental_prebuilts_root_cert):
+                            ["--experimental-prebuilts-root-cert", String(describing: experimental_prebuilts_root_cert)]
+                        case .verbose:
+                            ["--verbose"]
+                        case .very_verbose:
+                            ["--very-verbose"]
+                        case .quiet:
+                            ["--quiet"]
+                        case .disable_sandbox:
+                            ["--disable-sandbox"]
+                        case .netrc:
+                            ["--netrc"]
+                        case .enable_netrc:
+                            ["--enable-netrc"]
+                        case let .netrc_file(netrc_file):
+                            ["--netrc-file", String(describing: netrc_file)]
+                        case .enable_keychain:
+                            ["--enable-keychain"]
+                        case let .resolver_fingerprint_checking(resolver_fingerprint_checking):
+                            ["--resolver-fingerprint-checking", String(describing: resolver_fingerprint_checking)]
+                        case let .resolver_signing_entity_checking(resolver_signing_entity_checking):
+                            ["--resolver-signing-entity-checking", String(describing: resolver_signing_entity_checking)]
+                        case .enable_signature_validation:
+                            ["--enable-signature-validation"]
+                        case .enable_prefetching:
+                            ["--enable-prefetching"]
+                        case .force_resolved_versions:
+                            ["--force-resolved-versions"]
+                        case .skip_update:
+                            ["--skip-update"]
+                        case .disable_scm_to_registry_transformation:
+                            ["--disable-scm-to-registry-transformation"]
+                        case .use_registry_identity_for_scm:
+                            ["--use-registry-identity-for-scm"]
+                        case .replace_scm_with_registry:
+                            ["--replace-scm-with-registry"]
+                        case let .default_registry_url(default_registry_url):
+                            ["--default-registry-url", String(describing: default_registry_url)]
+                        case let .configuration(configuration):
+                            ["--configuration", String(describing: configuration)]
+                        case let .Xcc(Xcc):
+                            ["-Xcc", String(describing: Xcc)]
+                        case let .Xswiftc(Xswiftc):
+                            ["-Xswiftc", String(describing: Xswiftc)]
+                        case let .Xlinker(Xlinker):
+                            ["-Xlinker", String(describing: Xlinker)]
+                        case let .Xcxx(Xcxx):
+                            ["-Xcxx", String(describing: Xcxx)]
+                        case let .Xxcbuild(Xxcbuild):
+                            ["-Xxcbuild", String(describing: Xxcbuild)]
+                        case let .Xbuild_tools_swiftc(Xbuild_tools_swiftc):
+                            ["-Xbuild-tools-swiftc", String(describing: Xbuild_tools_swiftc)]
+                        case let .Xmanifest(Xmanifest):
+                            ["-Xmanifest", String(describing: Xmanifest)]
+                        case let .triple(triple):
+                            ["--triple", String(describing: triple)]
+                        case let .sdk(sdk):
+                            ["--sdk", String(describing: sdk)]
+                        case let .toolchain(toolchain):
+                            ["--toolchain", String(describing: toolchain)]
+                        case let .arch(arch):
+                            ["--arch", String(describing: arch)]
+                        case let .experimental_swift_sdk(experimental_swift_sdk):
+                            ["--experimental-swift-sdk", String(describing: experimental_swift_sdk)]
+                        case let .swift_sdk(swift_sdk):
+                            ["--swift-sdk", String(describing: swift_sdk)]
+                        case let .sanitize(sanitize):
+                            ["--sanitize", String(describing: sanitize)]
+                        case .auto_index_store:
+                            ["--auto-index-store"]
+                        case .experimental_prepare_for_indexing:
+                            ["--experimental-prepare-for-indexing"]
+                        case .experimental_prepare_for_indexing_no_lazy:
+                            ["--experimental-prepare-for-indexing-no-lazy"]
+                        case .enable_parseable_module_interfaces:
+                            ["--enable-parseable-module-interfaces"]
+                        case let .jobs(jobs):
+                            ["--jobs", String(describing: jobs)]
+                        case .use_integrated_swift_driver:
+                            ["--use-integrated-swift-driver"]
+                        case let .explicit_target_dependency_import_check(explicit_target_dependency_import_check):
+                            ["--explicit-target-dependency-import-check", String(describing: explicit_target_dependency_import_check)]
+                        case .experimental_explicit_module_build:
+                            ["--experimental-explicit-module-build"]
+                        case let .build_system(build_system):
+                            ["--build-system", String(describing: build_system)]
+                        case let .debug_info_format(debug_info_format):
+                            ["-debug-info-format", String(describing: debug_info_format)]
+                        case .enable_test_discovery:
+                            ["--enable-test-discovery"]
+                        case let .experimental_test_entry_point_path(experimental_test_entry_point_path):
+                            ["--experimental-test-entry-point-path", String(describing: experimental_test_entry_point_path)]
+                        case let .experimental_lto_mode(experimental_lto_mode):
+                            ["--experimental-lto-mode", String(describing: experimental_lto_mode)]
+                        case .enable_get_task_allow_entitlement:
+                            ["--enable-get-task-allow-entitlement"]
+                        case .omit_frame_pointers:
+                            ["--omit-frame-pointers"]
+                        case .enable_dead_strip:
+                            ["--enable-dead-strip"]
+                        case .disable_local_rpath:
+                            ["--disable-local-rpath"]
+                        case .allow_writing_to_package_directory:
+                            ["--allow-writing-to-package-directory"]
+                        case let .allow_writing_to_directory(allow_writing_to_directory):
+                            ["--allow-writing-to-directory", String(describing: allow_writing_to_directory)]
+                        case let .allow_network_connections(allow_network_connections):
+                            ["--allow-network-connections", String(describing: allow_network_connections)]
+                        case let .package(package):
+                            ["--package", String(describing: package)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: packageCommand, _ options: [defaultcommandCommand.Option], remaining: [String]?) {
+                    self.parent = parent
+                    self.options = options
+                    self.remaining = remaining
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("default-command")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    if let remaining = self.remaining { genArgs += remaining.map(\.description) }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+        }
+
+        // Perform operations on Swift SDKs.
+        public func sdk(_ options: sdkCommand.Option...) -> sdkCommand {
+            self.sdk(options)
+        }
+
+        // Perform operations on Swift SDKs.
+        public func sdk(_ options: [sdkCommand.Option]) -> sdkCommand {
+            sdkCommand(parent: self, options)
+        }
+
+        public struct sdkCommand {
+            public var parent: swiftCommand
+            public var options: [Option]
+
+            public enum Option {
+                case version
+                case help
+
+                public func args() -> [String] {
+                    switch self {
+                    case .version:
+                        ["--version"]
+                    case .help:
+                        ["--help"]
+                    }
+                }
+            }
+
+            public init(parent: swiftCommand, _ options: [sdkCommand.Option]) {
+                self.parent = parent
+                self.options = options
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("sdk")
+
+                for opt in self.options {
+                    genArgs.append(contentsOf: opt.args())
+                }
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+
+            // Manages configuration options for installed Swift SDKs.
+            public func configure(_ options: configureCommand.Option..., sdk_id: String, target_triple: String) -> configureCommand {
+                self.configure(options, sdk_id: sdk_id, target_triple: target_triple)
+            }
+
+            // Manages configuration options for installed Swift SDKs.
+            public func configure(_ options: [configureCommand.Option], sdk_id: String, target_triple: String) -> configureCommand {
+                configureCommand(parent: self, options, sdk_id: sdk_id, target_triple: target_triple)
+            }
+
+            public struct configureCommand {
+                public var parent: sdkCommand
+                public var options: [Option]
+                public var sdk_id: String
+                public var target_triple: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case sdk_root_path(String)
+                    case swift_resources_path(String)
+                    case swift_static_resources_path(String)
+                    case include_search_path(String)
+                    case library_search_path(String)
+                    case toolset_path(String)
+                    case reset
+                    case show_configuration
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case let .sdk_root_path(sdk_root_path):
+                            ["--sdk-root-path", String(describing: sdk_root_path)]
+                        case let .swift_resources_path(swift_resources_path):
+                            ["--swift-resources-path", String(describing: swift_resources_path)]
+                        case let .swift_static_resources_path(swift_static_resources_path):
+                            ["--swift-static-resources-path", String(describing: swift_static_resources_path)]
+                        case let .include_search_path(include_search_path):
+                            ["--include-search-path", String(describing: include_search_path)]
+                        case let .library_search_path(library_search_path):
+                            ["--library-search-path", String(describing: library_search_path)]
+                        case let .toolset_path(toolset_path):
+                            ["--toolset-path", String(describing: toolset_path)]
+                        case .reset:
+                            ["--reset"]
+                        case .show_configuration:
+                            ["--show-configuration"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: sdkCommand, _ options: [configureCommand.Option], sdk_id: String, target_triple: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.sdk_id = sdk_id
+                    self.target_triple = target_triple
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("configure")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.sdk_id.description]
+                    genArgs += [self.target_triple.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Deprecated: use `swift sdk configure` instead.Manages configuration options for installed Swift SDKs.
+            public func configuration(_ options: configurationCommand.Option...) -> configurationCommand {
+                self.configuration(options)
+            }
+
+            // Deprecated: use `swift sdk configure` instead.Manages configuration options for installed Swift SDKs.
+            public func configuration(_ options: [configurationCommand.Option]) -> configurationCommand {
+                configurationCommand(parent: self, options)
+            }
+
+            public struct configurationCommand {
+                public var parent: sdkCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: sdkCommand, _ options: [configurationCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("configuration")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+
+                // Resets configuration properties currently applied to a given Swift SDK and target triple. If no specific property is specified, all of them are reset for the Swift SDK.
+                public func reset(_ options: resetCommand.Option..., sdk_id: String, target_triple: String) -> resetCommand {
+                    self.reset(options, sdk_id: sdk_id, target_triple: target_triple)
+                }
+
+                // Resets configuration properties currently applied to a given Swift SDK and target triple. If no specific property is specified, all of them are reset for the Swift SDK.
+                public func reset(_ options: [resetCommand.Option], sdk_id: String, target_triple: String) -> resetCommand {
+                    resetCommand(parent: self, options, sdk_id: sdk_id, target_triple: target_triple)
+                }
+
+                public struct resetCommand {
+                    public var parent: configurationCommand
+                    public var options: [Option]
+                    public var sdk_id: String
+                    public var target_triple: String
+
+                    public enum Option {
+                        case package_path(String)
+                        case cache_path(String)
+                        case config_path(String)
+                        case security_path(String)
+                        case scratch_path(String)
+                        case build_path(String)
+                        case multiroot_data_file(String)
+                        case destination(String)
+                        case experimental_swift_sdks_path(String)
+                        case swift_sdks_path(String)
+                        case toolset(String)
+                        case pkg_config_path(String)
+                        case ignore_lock
+                        case sdk_root_path
+                        case swift_resources_path
+                        case swift_static_resources_path
+                        case include_search_path
+                        case library_search_path
+                        case toolset_path
+                        case version
+                        case help
+
+                        public func args() -> [String] {
+                            switch self {
+                            case let .package_path(package_path):
+                                ["--package-path", String(describing: package_path)]
+                            case let .cache_path(cache_path):
+                                ["--cache-path", String(describing: cache_path)]
+                            case let .config_path(config_path):
+                                ["--config-path", String(describing: config_path)]
+                            case let .security_path(security_path):
+                                ["--security-path", String(describing: security_path)]
+                            case let .scratch_path(scratch_path):
+                                ["--scratch-path", String(describing: scratch_path)]
+                            case let .build_path(build_path):
+                                ["--build-path", String(describing: build_path)]
+                            case let .multiroot_data_file(multiroot_data_file):
+                                ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                            case let .destination(destination):
+                                ["--destination", String(describing: destination)]
+                            case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                                ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                            case let .swift_sdks_path(swift_sdks_path):
+                                ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                            case let .toolset(toolset):
+                                ["--toolset", String(describing: toolset)]
+                            case let .pkg_config_path(pkg_config_path):
+                                ["--pkg-config-path", String(describing: pkg_config_path)]
+                            case .ignore_lock:
+                                ["--ignore-lock"]
+                            case .sdk_root_path:
+                                ["--sdk-root-path"]
+                            case .swift_resources_path:
+                                ["--swift-resources-path"]
+                            case .swift_static_resources_path:
+                                ["--swift-static-resources-path"]
+                            case .include_search_path:
+                                ["--include-search-path"]
+                            case .library_search_path:
+                                ["--library-search-path"]
+                            case .toolset_path:
+                                ["--toolset-path"]
+                            case .version:
+                                ["--version"]
+                            case .help:
+                                ["--help"]
+                            }
+                        }
+                    }
+
+                    public init(parent: configurationCommand, _ options: [resetCommand.Option], sdk_id: String, target_triple: String) {
+                        self.parent = parent
+                        self.options = options
+                        self.sdk_id = sdk_id
+                        self.target_triple = target_triple
+                    }
+
+                    public func config() -> Configuration {
+                        var c = self.parent.config()
+
+                        var genArgs = c.arguments.storage.map(\.description)
+
+                        genArgs.append("reset")
+
+                        for opt in self.options {
+                            genArgs.append(contentsOf: opt.args())
+                        }
+                        genArgs += [self.sdk_id.description]
+                        genArgs += [self.target_triple.description]
+
+                        c.arguments = .init(genArgs)
+
+                        return c
+                    }
+                }
+
+                // Sets configuration options for installed Swift SDKs.
+                public func set(_ options: setCommand.Option..., sdk_id: String, target_triple: String) -> setCommand {
+                    self.set(options, sdk_id: sdk_id, target_triple: target_triple)
+                }
+
+                // Sets configuration options for installed Swift SDKs.
+                public func set(_ options: [setCommand.Option], sdk_id: String, target_triple: String) -> setCommand {
+                    setCommand(parent: self, options, sdk_id: sdk_id, target_triple: target_triple)
+                }
+
+                public struct setCommand {
+                    public var parent: configurationCommand
+                    public var options: [Option]
+                    public var sdk_id: String
+                    public var target_triple: String
+
+                    public enum Option {
+                        case package_path(String)
+                        case cache_path(String)
+                        case config_path(String)
+                        case security_path(String)
+                        case scratch_path(String)
+                        case build_path(String)
+                        case multiroot_data_file(String)
+                        case destination(String)
+                        case experimental_swift_sdks_path(String)
+                        case swift_sdks_path(String)
+                        case toolset(String)
+                        case pkg_config_path(String)
+                        case ignore_lock
+                        case sdk_root_path(String)
+                        case swift_resources_path(String)
+                        case swift_static_resources_path(String)
+                        case include_search_path(String)
+                        case library_search_path(String)
+                        case toolset_path(String)
+                        case version
+                        case help
+
+                        public func args() -> [String] {
+                            switch self {
+                            case let .package_path(package_path):
+                                ["--package-path", String(describing: package_path)]
+                            case let .cache_path(cache_path):
+                                ["--cache-path", String(describing: cache_path)]
+                            case let .config_path(config_path):
+                                ["--config-path", String(describing: config_path)]
+                            case let .security_path(security_path):
+                                ["--security-path", String(describing: security_path)]
+                            case let .scratch_path(scratch_path):
+                                ["--scratch-path", String(describing: scratch_path)]
+                            case let .build_path(build_path):
+                                ["--build-path", String(describing: build_path)]
+                            case let .multiroot_data_file(multiroot_data_file):
+                                ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                            case let .destination(destination):
+                                ["--destination", String(describing: destination)]
+                            case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                                ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                            case let .swift_sdks_path(swift_sdks_path):
+                                ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                            case let .toolset(toolset):
+                                ["--toolset", String(describing: toolset)]
+                            case let .pkg_config_path(pkg_config_path):
+                                ["--pkg-config-path", String(describing: pkg_config_path)]
+                            case .ignore_lock:
+                                ["--ignore-lock"]
+                            case let .sdk_root_path(sdk_root_path):
+                                ["--sdk-root-path", String(describing: sdk_root_path)]
+                            case let .swift_resources_path(swift_resources_path):
+                                ["--swift-resources-path", String(describing: swift_resources_path)]
+                            case let .swift_static_resources_path(swift_static_resources_path):
+                                ["--swift-static-resources-path", String(describing: swift_static_resources_path)]
+                            case let .include_search_path(include_search_path):
+                                ["--include-search-path", String(describing: include_search_path)]
+                            case let .library_search_path(library_search_path):
+                                ["--library-search-path", String(describing: library_search_path)]
+                            case let .toolset_path(toolset_path):
+                                ["--toolset-path", String(describing: toolset_path)]
+                            case .version:
+                                ["--version"]
+                            case .help:
+                                ["--help"]
+                            }
+                        }
+                    }
+
+                    public init(parent: configurationCommand, _ options: [setCommand.Option], sdk_id: String, target_triple: String) {
+                        self.parent = parent
+                        self.options = options
+                        self.sdk_id = sdk_id
+                        self.target_triple = target_triple
+                    }
+
+                    public func config() -> Configuration {
+                        var c = self.parent.config()
+
+                        var genArgs = c.arguments.storage.map(\.description)
+
+                        genArgs.append("set")
+
+                        for opt in self.options {
+                            genArgs.append(contentsOf: opt.args())
+                        }
+                        genArgs += [self.sdk_id.description]
+                        genArgs += [self.target_triple.description]
+
+                        c.arguments = .init(genArgs)
+
+                        return c
+                    }
+                }
+
+                // Prints all configuration properties currently applied to a given Swift SDK and target triple.
+                public func show(_ options: showCommand.Option..., sdk_id: String, target_triple: String) -> showCommand {
+                    self.show(options, sdk_id: sdk_id, target_triple: target_triple)
+                }
+
+                // Prints all configuration properties currently applied to a given Swift SDK and target triple.
+                public func show(_ options: [showCommand.Option], sdk_id: String, target_triple: String) -> showCommand {
+                    showCommand(parent: self, options, sdk_id: sdk_id, target_triple: target_triple)
+                }
+
+                public struct showCommand {
+                    public var parent: configurationCommand
+                    public var options: [Option]
+                    public var sdk_id: String
+                    public var target_triple: String
+
+                    public enum Option {
+                        case package_path(String)
+                        case cache_path(String)
+                        case config_path(String)
+                        case security_path(String)
+                        case scratch_path(String)
+                        case build_path(String)
+                        case multiroot_data_file(String)
+                        case destination(String)
+                        case experimental_swift_sdks_path(String)
+                        case swift_sdks_path(String)
+                        case toolset(String)
+                        case pkg_config_path(String)
+                        case ignore_lock
+                        case version
+                        case help
+
+                        public func args() -> [String] {
+                            switch self {
+                            case let .package_path(package_path):
+                                ["--package-path", String(describing: package_path)]
+                            case let .cache_path(cache_path):
+                                ["--cache-path", String(describing: cache_path)]
+                            case let .config_path(config_path):
+                                ["--config-path", String(describing: config_path)]
+                            case let .security_path(security_path):
+                                ["--security-path", String(describing: security_path)]
+                            case let .scratch_path(scratch_path):
+                                ["--scratch-path", String(describing: scratch_path)]
+                            case let .build_path(build_path):
+                                ["--build-path", String(describing: build_path)]
+                            case let .multiroot_data_file(multiroot_data_file):
+                                ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                            case let .destination(destination):
+                                ["--destination", String(describing: destination)]
+                            case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                                ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                            case let .swift_sdks_path(swift_sdks_path):
+                                ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                            case let .toolset(toolset):
+                                ["--toolset", String(describing: toolset)]
+                            case let .pkg_config_path(pkg_config_path):
+                                ["--pkg-config-path", String(describing: pkg_config_path)]
+                            case .ignore_lock:
+                                ["--ignore-lock"]
+                            case .version:
+                                ["--version"]
+                            case .help:
+                                ["--help"]
+                            }
+                        }
+                    }
+
+                    public init(parent: configurationCommand, _ options: [showCommand.Option], sdk_id: String, target_triple: String) {
+                        self.parent = parent
+                        self.options = options
+                        self.sdk_id = sdk_id
+                        self.target_triple = target_triple
+                    }
+
+                    public func config() -> Configuration {
+                        var c = self.parent.config()
+
+                        var genArgs = c.arguments.storage.map(\.description)
+
+                        genArgs.append("show")
+
+                        for opt in self.options {
+                            genArgs.append(contentsOf: opt.args())
+                        }
+                        genArgs += [self.sdk_id.description]
+                        genArgs += [self.target_triple.description]
+
+                        c.arguments = .init(genArgs)
+
+                        return c
+                    }
+                }
+            }
+
+            // Installs a given Swift SDK bundle to a location discoverable by SwiftPM. If the artifact bundle is at a remote location, it's downloaded to local filesystem first.
+            public func install(_ options: installCommand.Option..., bundle_path_or_url: String) -> installCommand {
+                self.install(options, bundle_path_or_url: bundle_path_or_url)
+            }
+
+            // Installs a given Swift SDK bundle to a location discoverable by SwiftPM. If the artifact bundle is at a remote location, it's downloaded to local filesystem first.
+            public func install(_ options: [installCommand.Option], bundle_path_or_url: String) -> installCommand {
+                installCommand(parent: self, options, bundle_path_or_url: bundle_path_or_url)
+            }
+
+            public struct installCommand {
+                public var parent: sdkCommand
+                public var options: [Option]
+                public var bundle_path_or_url: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case checksum(String)
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case let .checksum(checksum):
+                            ["--checksum", String(describing: checksum)]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: sdkCommand, _ options: [installCommand.Option], bundle_path_or_url: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.bundle_path_or_url = bundle_path_or_url
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("install")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.bundle_path_or_url.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Print a list of IDs of available Swift SDKs available on the filesystem.
+            public func list(_ options: listCommand.Option...) -> listCommand {
+                self.list(options)
+            }
+
+            // Print a list of IDs of available Swift SDKs available on the filesystem.
+            public func list(_ options: [listCommand.Option]) -> listCommand {
+                listCommand(parent: self, options)
+            }
+
+            public struct listCommand {
+                public var parent: sdkCommand
+                public var options: [Option]
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: sdkCommand, _ options: [listCommand.Option]) {
+                    self.parent = parent
+                    self.options = options
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("list")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
+
+            // Removes a previously installed Swift SDK bundle from the filesystem.
+            public func remove(_ options: removeCommand.Option..., sdk_id_or_bundle_name: String) -> removeCommand {
+                self.remove(options, sdk_id_or_bundle_name: sdk_id_or_bundle_name)
+            }
+
+            // Removes a previously installed Swift SDK bundle from the filesystem.
+            public func remove(_ options: [removeCommand.Option], sdk_id_or_bundle_name: String) -> removeCommand {
+                removeCommand(parent: self, options, sdk_id_or_bundle_name: sdk_id_or_bundle_name)
+            }
+
+            public struct removeCommand {
+                public var parent: sdkCommand
+                public var options: [Option]
+                public var sdk_id_or_bundle_name: String
+
+                public enum Option {
+                    case package_path(String)
+                    case cache_path(String)
+                    case config_path(String)
+                    case security_path(String)
+                    case scratch_path(String)
+                    case build_path(String)
+                    case multiroot_data_file(String)
+                    case destination(String)
+                    case experimental_swift_sdks_path(String)
+                    case swift_sdks_path(String)
+                    case toolset(String)
+                    case pkg_config_path(String)
+                    case ignore_lock
+                    case version
+                    case help
+
+                    public func args() -> [String] {
+                        switch self {
+                        case let .package_path(package_path):
+                            ["--package-path", String(describing: package_path)]
+                        case let .cache_path(cache_path):
+                            ["--cache-path", String(describing: cache_path)]
+                        case let .config_path(config_path):
+                            ["--config-path", String(describing: config_path)]
+                        case let .security_path(security_path):
+                            ["--security-path", String(describing: security_path)]
+                        case let .scratch_path(scratch_path):
+                            ["--scratch-path", String(describing: scratch_path)]
+                        case let .build_path(build_path):
+                            ["--build-path", String(describing: build_path)]
+                        case let .multiroot_data_file(multiroot_data_file):
+                            ["--multiroot-data-file", String(describing: multiroot_data_file)]
+                        case let .destination(destination):
+                            ["--destination", String(describing: destination)]
+                        case let .experimental_swift_sdks_path(experimental_swift_sdks_path):
+                            ["--experimental-swift-sdks-path", String(describing: experimental_swift_sdks_path)]
+                        case let .swift_sdks_path(swift_sdks_path):
+                            ["--swift-sdks-path", String(describing: swift_sdks_path)]
+                        case let .toolset(toolset):
+                            ["--toolset", String(describing: toolset)]
+                        case let .pkg_config_path(pkg_config_path):
+                            ["--pkg-config-path", String(describing: pkg_config_path)]
+                        case .ignore_lock:
+                            ["--ignore-lock"]
+                        case .version:
+                            ["--version"]
+                        case .help:
+                            ["--help"]
+                        }
+                    }
+                }
+
+                public init(parent: sdkCommand, _ options: [removeCommand.Option], sdk_id_or_bundle_name: String) {
+                    self.parent = parent
+                    self.options = options
+                    self.sdk_id_or_bundle_name = sdk_id_or_bundle_name
+                }
+
+                public func config() -> Configuration {
+                    var c = self.parent.config()
+
+                    var genArgs = c.arguments.storage.map(\.description)
+
+                    genArgs.append("remove")
+
+                    for opt in self.options {
+                        genArgs.append(contentsOf: opt.args())
+                    }
+                    genArgs += [self.sdk_id_or_bundle_name.description]
+
+                    c.arguments = .init(genArgs)
+
+                    return c
+                }
+            }
         }
     }
 }
@@ -545,15 +10646,15 @@ extension SystemCommand {
         }
 
         public func config() -> Configuration {
-            var args: [String] = []
+            var genArgs: [String] = []
 
             for opt in self.options {
-                args.append(contentsOf: opt.args())
+                genArgs.append(contentsOf: opt.args())
             }
 
             return Configuration(
                 executable: self.executable,
-                arguments: Arguments(args),
+                arguments: Arguments(genArgs),
                 environment: .inherit
             )
         }
@@ -597,16 +10698,16 @@ extension SystemCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\.description)
+                var genArgs = c.arguments.storage.map(\.description)
 
-                args.append("--create")
+                genArgs.append("--create")
 
                 for opt in self.options {
-                    args.append(contentsOf: opt.args())
+                    genArgs.append(contentsOf: opt.args())
                 }
-                if let files = self.files { args += files.map(\.description) }
+                if let files = self.files { genArgs += files.map(\.description) }
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }
@@ -649,15 +10750,15 @@ extension SystemCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var args = c.arguments.storage.map(\.description)
+                var genArgs = c.arguments.storage.map(\.description)
 
-                args.append("--extract")
+                genArgs.append("--extract")
 
                 for opt in self.options {
-                    args.append(contentsOf: opt.args())
+                    genArgs.append(contentsOf: opt.args())
                 }
 
-                c.arguments = .init(args)
+                c.arguments = .init(genArgs)
 
                 return c
             }

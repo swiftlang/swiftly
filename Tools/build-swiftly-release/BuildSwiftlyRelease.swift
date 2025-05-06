@@ -198,7 +198,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             throw Error(message: "Swift release \(swiftVersion) has no Static SDK offering")
         }
 
-        try await sys.swift().sdk().install("https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz", checksum: sdkPlatform.checksum ?? "deadbeef").run(currentPlatform)
+        try await sys.swift().sdk().install(.checksum(sdkPlatform.checksum ?? "deadbeef"), bundle_path_or_url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz").run(currentPlatform)
 
         var customEnv = ProcessInfo.processInfo.environment
         customEnv["CC"] = "\(cwd)/Tools/build-swiftly-release/musl-clang"
@@ -232,7 +232,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         FileManager.default.changeCurrentDirectoryPath(cwd.string)
 
-        try await sys.swift().build(.swiftSdk("\(arch)-swift-linux-musl"), .product("swiftly"), .pkgConfigPath(pkgConfigPath / "lib/pkgconfig"), .staticSwiftStdlib, .configuration("release")).run(currentPlatform)
+        try await sys.swift().build(.swift_sdk("\(arch)-swift-linux-musl"), .product("swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .static_swift_stdlib, .configuration("release")).run(currentPlatform)
 
         let releaseDir = cwd / ".build/release"
 
@@ -260,13 +260,13 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             let testArchive = debugDir / "test-swiftly-linux-x86_64.tar.gz"
 #endif
 
-            try await sys.swift().build(.swiftSdk("\(arch)-swift-linux-musl"), .product("test-swiftly"), .pkgConfigPath(pkgConfigPath / "lib/pkgconfig"), .staticSwiftStdlib, .configuration("debug")).run(currentPlatform)
+            try await sys.swift().build(.swift_sdk("\(arch)-swift-linux-musl"), .product("test-swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .static_swift_stdlib, .configuration("debug")).run(currentPlatform)
             try await sys.tar(.directory(debugDir)).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).run(currentPlatform)
 
             print(testArchive)
         }
 
-        try await sys.swift().sdk().remove(sdkName).runEcho(currentPlatform)
+        try await sys.swift().sdk().remove(sdk_id_or_bundle_name: sdkName).runEcho(currentPlatform)
     }
 
     func buildMacOSRelease(cert: String?, identifier: String) async throws {

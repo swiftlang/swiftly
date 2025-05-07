@@ -82,7 +82,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
             """
         }
 
-        try await allCmds.write(to: swiftlyCoreDir / "CommandsNew.swift", atomically: true)
+        try await allCmds.write(to: swiftlyCoreDir / "Commands.swift", atomically: true)
     }
 
     struct Vars {

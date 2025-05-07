@@ -249,7 +249,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
         let swiftName = command.commandName.replacingOccurrences(of: "-", with: "")
 
         var funcName = swiftName
-        if ["init", "import"] .contains(funcName) {
+        if ["init", "import"].contains(funcName) {
             // TODO: handle all of Swift's keywords here
             funcName = "_" + funcName
         }
@@ -297,10 +297,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
             public func config() -> Configuration {
                 var genArgs: [String] = []
 
-                \((
-                    options.asArgs +
-                        vars.asArgs
-                ).joined(separator: "\n" + indent(1)))
+                \((options.asArgs + vars.asArgs).joined(separator: "\n" + indent(1)))
 
                 return Configuration(
                     executable: self.executable,
@@ -318,10 +315,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
 
                 genArgs.append("\(execName)")
 
-                \((
-                    options.asArgs +
-                        vars.asArgs
-                ).joined(separator: "\n" + indent(1)))
+                \((options.asArgs + vars.asArgs).joined(separator: "\n" + indent(1)))
 
                 c.arguments = .init(genArgs)
 
@@ -338,7 +332,8 @@ struct GenerateCommandModels: AsyncParsableCommand {
         \(helperFunc)
 
         public struct \(structName) {
-            \((
+        \(
+            (
                 (path.count == 0 ? [
                     "public static var defaultExecutable: Executable { .name(\"\(execName)\") }",
                     "public var executable: Executable"
@@ -348,16 +343,13 @@ struct GenerateCommandModels: AsyncParsableCommand {
                     ]) +
                     options.asDeclaration +
                     vars.asDeclarations
-            ).joined(separator: "\n" + indent(1)))
+            ).joined(separator: "\n" + indent(2))
+        )
 
             \(options.asEnum.joined(separator: "\n" + indent(1)))
 
             public init(\(([path.count == 0 ? "executable: Executable" : "parent: \(command.superCommands!.last!)Command"] + options.asSignature(structName) + vars.asSignature).joined(separator: ", "))) {
-                \((
-                    [path.count == 0 ? "self.executable = executable" : "self.parent = parent"] +
-                        options.asInitialization +
-                        vars.asInitializations
-                ).joined(separator: "\n" + indent(2)))
+                \(([path.count == 0 ? "self.executable = executable" : "self.parent = parent"] + options.asInitialization + vars.asInitializations).joined(separator: "\n" + indent(2)))
             }
 
             \(configFunc)

@@ -277,9 +277,9 @@ public struct Linux: Platform {
                 if let mockedHomeDir = ctx.mockedHomeDir {
                     var env = ProcessInfo.processInfo.environment
                     env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
-                    try await sys.gpg()._import(keys: tmpFile).run(self, env: env, quiet: true)
+                    try await sys.gpg()._import(key: tmpFile).run(self, env: env, quiet: true)
                 } else {
-                    try await sys.gpg()._import(keys: tmpFile).run(self, quiet: true)
+                    try await sys.gpg()._import(key: tmpFile).run(self, quiet: true)
                 }
             }
         }
@@ -418,9 +418,9 @@ public struct Linux: Platform {
                 if let mockedHomeDir = ctx.mockedHomeDir {
                     var env = ProcessInfo.processInfo.environment
                     env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
-                    try await sys.gpg().verify(detachedSignature: sigFile, signedData: archive).run(self, env: env, quiet: false)
+                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(self, env: env, quiet: false)
                 } else {
-                    try await sys.gpg().verify(detachedSignature: sigFile, signedData: archive).run(self, quiet: !verbose)
+                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(self, quiet: !verbose)
                 }
             } catch {
                 throw SwiftlyError(message: "Signature verification failed: \(error).")
@@ -447,9 +447,9 @@ public struct Linux: Platform {
                 if let mockedHomeDir = ctx.mockedHomeDir {
                     var env = ProcessInfo.processInfo.environment
                     env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
-                    try await sys.gpg().verify(detachedSignature: sigFile, signedData: archive).run(self, env: env, quiet: false)
+                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(self, env: env, quiet: false)
                 } else {
-                    try await sys.gpg().verify(detachedSignature: sigFile, signedData: archive).run(self, quiet: !verbose)
+                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(self, quiet: !verbose)
                 }
             } catch {
                 throw SwiftlyError(message: "Signature verification failed: \(error).")

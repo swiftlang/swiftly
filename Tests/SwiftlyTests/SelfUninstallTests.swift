@@ -95,6 +95,11 @@ import Testing
 
             try Data(shellProfileContents.utf8).write(to: profileHome)
 
+            #expect(
+                try await fs.exists(atPath: profileHome) == true,
+                "shell profile file should exist"
+            )
+
             // then call swiftly uninstall
             try await SwiftlyTests.runCommand(SelfUninstall.self, ["self-uninstall"])
 
@@ -111,6 +116,10 @@ import Testing
                 }
             }
             #expect(sourceLineRemoved, "swiftly should be removed from the profile file")
+            #expect(
+                try await fs.exists(atPath: profileHome) == true,
+                "shell profile file should still exist"
+            )
         }
     }
 }

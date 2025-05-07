@@ -103,6 +103,11 @@ import Testing
             // then call swiftly uninstall
             try await SwiftlyTests.runCommand(SelfUninstall.self, ["self-uninstall"])
 
+            #expect(
+                try await fs.exists(atPath: profileHome) == true,
+                "shell profile file should still exist"
+            )
+
             var sourceLineRemoved = true
             for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"] {
                 let profile = SwiftlyTests.ctx.mockedHomeDir! / p
@@ -116,10 +121,6 @@ import Testing
                 }
             }
             #expect(sourceLineRemoved, "swiftly should be removed from the profile file")
-            #expect(
-                try await fs.exists(atPath: profileHome) == true,
-                "shell profile file should still exist"
-            )
         }
     }
 }

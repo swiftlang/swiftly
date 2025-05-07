@@ -545,6 +545,36 @@ The script will receive the argument '+abcde' followed by '+xyz'.
 
 
 
+## self-uninstall
+
+Uninstall swiftly itself.
+
+```
+swiftly self-uninstall [--assume-yes] [--verbose] [--version] [--help]
+```
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+
 ## link
 
 Link swiftly so it resumes management of the active toolchain.

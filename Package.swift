@@ -115,6 +115,16 @@ let package = Package(
             path: "Tools/generate-docs-reference"
         ),
         .executableTarget(
+            name: "generate-command-models",
+            dependencies: [
+                .target(name: "SwiftlyCore"),
+                .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
+                .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
+            path: "Tools/generate-command-models"
+        ),
+        .executableTarget(
             name: "build-swiftly-release",
             dependencies: [
                 .target(name: "SwiftlyCore"),

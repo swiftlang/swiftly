@@ -1,0 +1,49 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "gpg",
+    "abstract": "OpenPGP encryption and signing tool. See gpg(1) for more information.",
+    "shouldDisplay": true,
+    "subcommands": [
+      {
+        "commandName": "--import",
+        "superCommands": [
+          "gpg"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "valueName": "key",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": false,
+            "isRepeating": true
+          }
+        ]
+      },
+      {
+        "commandName": "--verify",
+        "superCommands": [
+          "gpg"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "valueName": "detached-signature",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "valueName": "signed-data",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": true,
+            "isRepeating": false
+          }
+        ]
+      }
+    ]
+  }
+}

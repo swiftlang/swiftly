@@ -1,0 +1,20 @@
+{
+  "arguments": [
+    {
+      "path": "output-path",
+      "type": "file"
+    },
+    {
+      "path": "pkg-path",
+      "type": "file"
+    },
+    {
+      "path": "dist-path",
+      "type": "file"
+    },
+    {
+      "path": "search-path",
+      "type": "file"
+    }
+  ]
+}

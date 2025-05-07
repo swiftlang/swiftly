@@ -1,0 +1,8 @@
+{
+  "arguments": [
+    {
+      "path": "workingDir",
+      "type": "file"
+    }
+  ]
+}

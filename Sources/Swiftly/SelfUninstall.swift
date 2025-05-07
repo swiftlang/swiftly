@@ -98,9 +98,11 @@ struct SelfUninstall: SwiftlyCommand {
 
         await ctx.print("Removing swiftly from shell profile at \(profileHome)...")
 
-        if case let profileContents = try String(contentsOf: profileHome, encoding: .utf8), profileContents.contains(sourceLine) {
-            let newContents = profileContents.replacingOccurrences(of: sourceLine, with: "")
-            try Data(newContents.utf8).write(to: profileHome, options: [.atomic])
+        if try await fs.exists(atPath: profileHome) {
+            if case let profileContents = try String(contentsOf: profileHome, encoding: .utf8), profileContents.contains(sourceLine) {
+                let newContents = profileContents.replacingOccurrences(of: sourceLine, with: "")
+                try Data(newContents.utf8).write(to: profileHome, options: [.atomic])
+            }
         }
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx)

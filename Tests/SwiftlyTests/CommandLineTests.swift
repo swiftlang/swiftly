@@ -211,13 +211,13 @@ public struct CommandLineTests {
     }
 
     @Test func testProductBuild() async throws {
-        var config = sys.productbuild().synthesize(package: FilePath("mypkg"), distributionOutputPath: FilePath("distribution")).config()
+        var config = sys.productbuild(.synthesize, .pkg_path(FilePath("mypkg")), output_path: FilePath("distribution")).config()
         #expect(String(describing: config) == "productbuild --synthesize --package mypkg distribution")
 
-        config = sys.productbuild().distribution(distPath: FilePath("mydist"), productOutputPath: FilePath("product")).config()
+        config = sys.productbuild(.dist_path(FilePath("mydist")), output_path: FilePath("product")).config()
         #expect(String(describing: config) == "productbuild --distribution mydist product")
 
-        config = sys.productbuild().distribution(.packagePath(FilePath("pkgpath")), .sign("mycert"), distPath: FilePath("mydist"), productOutputPath: FilePath("myproduct")).config()
+        config = sys.productbuild(.dist_path(FilePath("mydist")), .search_path(FilePath("pkgpath")), .cert("mycert"), output_path: FilePath("myproduct")).config()
         #expect(String(describing: config) == "productbuild --distribution mydist --package-path pkgpath --sign mycert myproduct")
     }
 

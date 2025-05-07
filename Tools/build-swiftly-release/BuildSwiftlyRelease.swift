@@ -322,16 +322,16 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let pkgFileReconfigured = releaseDir / "swiftly-\(self.version)-reconfigured.pkg"
         let distFile = releaseDir / "distribution.plist"
 
-        try await sys.productbuild().synthesize(package: pkgFile, distributionOutputPath: distFile).runEcho(currentPlatform)
+        try await sys.productbuild(.synthesize, .pkg_path(pkgFile), output_path: distFile).runEcho(currentPlatform)
 
         var distFileContents = try String(contentsOf: distFile, encoding: .utf8)
         distFileContents = distFileContents.replacingOccurrences(of: "<choices-outline>", with: "<title>swiftly</title><domains enable_anywhere=\"false\" enable_currentUserHome=\"true\" enable_localSystem=\"false\"/><choices-outline>")
         try distFileContents.write(to: distFile, atomically: true, encoding: .utf8)
 
         if let cert = cert {
-            try await sys.productbuild().distribution(.packagePath(pkgFile.parent), .sign(cert), distPath: distFile, productOutputPath: pkgFileReconfigured).runEcho(currentPlatform)
+            try await sys.productbuild(.search_path(pkgFile.parent), .cert(cert), .dist_path(distFile), output_path: pkgFileReconfigured).runEcho(currentPlatform)
         } else {
-            try await sys.productbuild().distribution(.packagePath(pkgFile.parent), distPath: distFile, productOutputPath: pkgFileReconfigured).runEcho(currentPlatform)
+            try await sys.productbuild(.search_path(pkgFile.parent), .dist_path(distFile), output_path: pkgFileReconfigured).runEcho(currentPlatform)
         }
         try await fs.remove(atPath: pkgFile)
         try await fs.copy(atPath: pkgFileReconfigured, toPath: pkgFile)

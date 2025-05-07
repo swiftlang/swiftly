@@ -516,6 +516,69 @@ extension SystemCommand {
 }
 
 extension SystemCommand {
+    // Build a product archive for the macOS Installer or the Mac App Store. See productbuild(1) for more information.
+    public static func productbuild(executable: Executable = productbuildCommand.defaultExecutable, _ options: productbuildCommand.Option..., output_path: FilePath) -> productbuildCommand {
+        Self.productbuild(executable: executable, options, output_path: output_path)
+    }
+
+    // Build a product archive for the macOS Installer or the Mac App Store. See productbuild(1) for more information.
+    public static func productbuild(executable: Executable = productbuildCommand.defaultExecutable, _ options: [productbuildCommand.Option], output_path: FilePath) -> productbuildCommand {
+        productbuildCommand(executable: executable, options, output_path: output_path)
+    }
+
+    public struct productbuildCommand {
+        public static var defaultExecutable: Executable { .name("productbuild") }
+        public var executable: Executable
+        public var options: [Option]
+        public var output_path: FilePath
+
+        public enum Option {
+            case synthesize
+            case dist_path(FilePath)
+            case pkg_path(FilePath)
+            case search_path(FilePath)
+            case cert(String)
+
+            public func args() -> [String] {
+                switch self {
+                case .synthesize:
+                    ["--synthesize"]
+                case let .dist_path(dist_path):
+                    ["--distribution", String(describing: dist_path)]
+                case let .pkg_path(pkg_path):
+                    ["--package", String(describing: pkg_path)]
+                case let .search_path(search_path):
+                    ["--package-path", String(describing: search_path)]
+                case let .cert(cert):
+                    ["--sign", String(describing: cert)]
+                }
+            }
+        }
+
+        public init(executable: Executable, _ options: [productbuildCommand.Option], output_path: FilePath) {
+            self.executable = executable
+            self.options = options
+            self.output_path = output_path
+        }
+
+        public func config() -> Configuration {
+            var genArgs: [String] = []
+
+            for opt in self.options {
+                genArgs.append(contentsOf: opt.args())
+            }
+            genArgs += [self.output_path.description]
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(genArgs),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand {
     // calculate a message-digest fingerprint (checksum) for a file. See sha256sum(1) for more information.
     public static func sha256sum(executable: Executable = sha256sumCommand.defaultExecutable, _ options: sha256sumCommand.Option..., files: FilePath...) -> sha256sumCommand {
         Self.sha256sum(executable: executable, options, files: files)

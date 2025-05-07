@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import SwiftlyCore
+import SystemPackage
 
 struct SelfUninstall: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
@@ -42,6 +43,64 @@ struct SelfUninstall: SwiftlyCommand {
             throw SwiftlyError(message: "swiftly installation has been cancelled")
         }
         await ctx.print("Uninstalling swiftly...")
+
+        let shell = if let mockedShell = ctx.mockedShell {
+            mockedShell
+        } else {
+            if let s = ProcessInfo.processInfo.environment["SHELL"] {
+                s
+            } else {
+                try await Swiftly.currentPlatform.getShell()
+            }
+        }
+
+        let envFile: FilePath
+        let sourceLine: String
+        if shell.hasSuffix("fish") {
+            envFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.fish"
+            sourceLine = """
+
+            # Added by swiftly
+            source "\(envFile)"
+            """
+        } else {
+            envFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.sh"
+            sourceLine = """
+
+            # Added by swiftly
+            . "\(envFile)"
+            """
+        }
+
+        let userHome = ctx.mockedHomeDir ?? fs.home
+
+        let profileHome: FilePath
+        if shell.hasSuffix("zsh") {
+            profileHome = userHome / ".zprofile"
+        } else if shell.hasSuffix("bash") {
+            if case let p = userHome / ".bash_profile", try await fs.exists(atPath: p) {
+                profileHome = p
+            } else if case let p = userHome / ".bash_login", try await fs.exists(atPath: p) {
+                profileHome = p
+            } else {
+                profileHome = userHome / ".profile"
+            }
+        } else if shell.hasSuffix("fish") {
+            if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"], case let xdgConfigURL = FilePath(xdgConfigHome) {
+                profileHome = xdgConfigURL / "fish/conf.d/swiftly.fish"
+            } else {
+                profileHome = userHome / ".config/fish/conf.d/swiftly.fish"
+            }
+        } else {
+            profileHome = userHome / ".profile"
+        }
+
+        await ctx.print("Removing swiftly from shell profile at \(profileHome)...")
+
+        if case let profileContents = try String(contentsOf: profileHome, encoding: .utf8), profileContents.contains(sourceLine) {
+            let newContents = profileContents.replacingOccurrences(of: sourceLine, with: "")
+            try Data(newContents.utf8).write(to: profileHome, options: [.atomic])
+        }
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx)
         let swiftlyHome = Swiftly.currentPlatform.swiftlyHomeDir(ctx)

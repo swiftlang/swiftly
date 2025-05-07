@@ -323,6 +323,95 @@ extension SystemCommand {
 }
 
 extension SystemCommand {
+    // OpenPGP encryption and signing tool. See gpg(1) for more information.
+    public static func gpg(executable: Executable = gpgCommand.defaultExecutable) -> gpgCommand {
+        gpgCommand(executable: executable)
+    }
+
+    public struct gpgCommand {
+        public static var defaultExecutable: Executable { .name("gpg") }
+        public var executable: Executable
+
+        public init(executable: Executable) {
+            self.executable = executable
+        }
+
+        public func config() -> Configuration {
+            var genArgs: [String] = []
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(genArgs),
+                environment: .inherit
+            )
+        }
+
+        public func _import(key: FilePath...) -> importCommand {
+            self._import(key: key)
+        }
+
+        public func _import(key: [FilePath]) -> importCommand {
+            importCommand(parent: self, key: key)
+        }
+
+        public struct importCommand {
+            public var parent: gpgCommand
+            public var key: [FilePath]
+
+            public init(parent: gpgCommand, key: [FilePath]) {
+                self.parent = parent
+                self.key = key
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("--import")
+
+                genArgs += self.key.map(\.description)
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+        }
+
+        public func verify(detached_signature: FilePath? = nil, signed_data: FilePath? = nil) -> verifyCommand {
+            verifyCommand(parent: self, detached_signature: detached_signature, signed_data: signed_data)
+        }
+
+        public struct verifyCommand {
+            public var parent: gpgCommand
+            public var detached_signature: FilePath?
+            public var signed_data: FilePath?
+
+            public init(parent: gpgCommand, detached_signature: FilePath? = nil, signed_data: FilePath? = nil) {
+                self.parent = parent
+                self.detached_signature = detached_signature
+                self.signed_data = signed_data
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("--verify")
+
+                if let detached_signature = self.detached_signature { genArgs += [detached_signature.description] }
+                if let signed_data = self.signed_data { genArgs += [signed_data.description] }
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand {
     // Create or operate on universal files. See lipo(1) for more information.
     public static func lipo(executable: Executable = lipoCommand.defaultExecutable, input_file: FilePath...) -> lipoCommand {
         Self.lipo(executable: executable, input_file: input_file)

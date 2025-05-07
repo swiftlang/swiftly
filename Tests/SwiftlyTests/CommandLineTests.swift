@@ -222,10 +222,10 @@ public struct CommandLineTests {
     }
 
     @Test func testGpg() async throws {
-        var config = sys.gpg()._import(keys: FilePath("somekeys.asc")).config()
+        var config = sys.gpg()._import(key: FilePath("somekeys.asc")).config()
         #expect(String(describing: config) == "gpg --import somekeys.asc")
 
-        config = sys.gpg().verify(detachedSignature: FilePath("file.sig"), signedData: FilePath("file")).config()
+        config = sys.gpg().verify(detached_signature: FilePath("file.sig"), signed_data: FilePath("file")).config()
         #expect(String(describing: config) == "gpg --verify file.sig file")
     }
 

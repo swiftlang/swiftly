@@ -249,9 +249,9 @@ struct GenerateCommandModels: AsyncParsableCommand {
         let swiftName = command.commandName.replacingOccurrences(of: "-", with: "")
 
         var funcName = swiftName
-        if funcName == "init" {
+        if ["init", "import"] .contains(funcName) {
             // TODO: handle all of Swift's keywords here
-            funcName = "_init"
+            funcName = "_" + funcName
         }
         let structName = "\(swiftName)Command"
 

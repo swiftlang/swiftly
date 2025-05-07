@@ -114,7 +114,10 @@ import Testing
                 if try await fs.exists(atPath: profile) {
                     if let profileContents = try? String(contentsOf: profile), profileContents.contains(sourceLine) {
                         // expect only the source line is removed
-                        #expect(profileContents == shellProfileContents.replacingOccurrences(of: sourceLine, with: ""))
+                        #expect(
+                            profileContents == shellProfileContents.replacingOccurrences(of: sourceLine, with: ""),
+                            "the original profile contents should not be changed"
+                        )
                         sourceLineRemoved = false
                         break
                     }

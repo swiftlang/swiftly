@@ -36,6 +36,7 @@ struct SelfUninstall: SwiftlyCommand {
         await ctx.print("""
         You are about to uninstall swiftly. 
         This will remove the swiftly binary and all the files in the swiftly home directory. 
+        All installed toolchains will not be removed, if you want to remove them, please do so manually with `swiftly uninstall all`.
         This action is irreversible.
         """)
 

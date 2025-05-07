@@ -412,6 +412,60 @@ extension SystemCommand {
 }
 
 extension SystemCommand {
+    // system software and package installer tool. See installer(1) for more information.
+    public static func installer(executable: Executable = installerCommand.defaultExecutable, _ options: installerCommand.Option...) -> installerCommand {
+        Self.installer(executable: executable, options)
+    }
+
+    // system software and package installer tool. See installer(1) for more information.
+    public static func installer(executable: Executable = installerCommand.defaultExecutable, _ options: [installerCommand.Option]) -> installerCommand {
+        installerCommand(executable: executable, options)
+    }
+
+    public struct installerCommand {
+        public static var defaultExecutable: Executable { .name("installer") }
+        public var executable: Executable
+        public var options: [Option]
+
+        public enum Option {
+            case verbose
+            case pkg(FilePath)
+            case target(String)
+
+            public func args() -> [String] {
+                switch self {
+                case .verbose:
+                    ["-verbose"]
+                case let .pkg(pkg):
+                    ["-pkg", String(describing: pkg)]
+                case let .target(target):
+                    ["-target", String(describing: target)]
+                }
+            }
+        }
+
+        public init(executable: Executable, _ options: [installerCommand.Option]) {
+            self.executable = executable
+            self.options = options
+        }
+
+        public func config() -> Configuration {
+            var genArgs: [String] = []
+
+            for opt in self.options {
+                genArgs.append(contentsOf: opt.args())
+            }
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(genArgs),
+                environment: .inherit
+            )
+        }
+    }
+}
+
+extension SystemCommand {
     // Create or operate on universal files. See lipo(1) for more information.
     public static func lipo(executable: Executable = lipoCommand.defaultExecutable, input_file: FilePath...) -> lipoCommand {
         Self.lipo(executable: executable, input_file: input_file)
@@ -605,12 +659,12 @@ extension SystemCommand {
 }
 
 extension SystemCommand {
-    // OpenPGP encryption and signing tool. See gpg(1) for more information.
+    // Query and manipulate macOS Installer packages and receipts. See pkgutil(1) for more information.
     public static func pkgutil(executable: Executable = pkgutilCommand.defaultExecutable, _ options: pkgutilCommand.Option...) -> pkgutilCommand {
         Self.pkgutil(executable: executable, options)
     }
 
-    // OpenPGP encryption and signing tool. See gpg(1) for more information.
+    // Query and manipulate macOS Installer packages and receipts. See pkgutil(1) for more information.
     public static func pkgutil(executable: Executable = pkgutilCommand.defaultExecutable, _ options: [pkgutilCommand.Option]) -> pkgutilCommand {
         pkgutilCommand(executable: executable, options)
     }

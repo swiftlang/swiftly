@@ -2,7 +2,7 @@
   "serializationVersion": 0,
   "command": {
     "commandName": "pkgutil",
-    "abstract": "OpenPGP encryption and signing tool. See gpg(1) for more information.",
+    "abstract": "Query and manipulate macOS Installer packages and receipts. See pkgutil(1) for more information.",
     "shouldDisplay": true,
     "arguments": [
       {

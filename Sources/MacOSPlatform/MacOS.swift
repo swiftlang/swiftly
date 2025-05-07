@@ -71,7 +71,7 @@ public struct MacOS: Platform {
             // If the toolchains go into the default user location then we use the installer to install them
             await ctx.print("Installing package in user home directory...")
 
-            try await sys.installer(.verbose, pkg: tmpFile, target: "CurrentUserHomeDirectory").run(self, quiet: !verbose)
+            try await sys.installer(.verbose, .pkg(tmpFile), .target("CurrentUserHomeDirectory")).run(self, quiet: !verbose)
         } else {
             // Otherwise, we extract the pkg into the requested toolchains directory.
             await ctx.print("Expanding pkg...")
@@ -118,8 +118,8 @@ public struct MacOS: Platform {
         if ctx.mockedHomeDir == nil {
             await ctx.print("Extracting the swiftly package...")
             try await sys.installer(
-                pkg: archive,
-                target: "CurrentUserHomeDirectory"
+                .pkg(archive),
+                .target("CurrentUserHomeDirectory")
             )
             try? await sys.pkgutil(.volume(userHomeDir)).forget(pkg_id: "org.swift.swiftly").run(self)
         } else {

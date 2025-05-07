@@ -241,7 +241,7 @@ public struct CommandLineTests {
     }
 
     @Test func testInstaller() async throws {
-        var config = sys.installer(.verbose, pkg: FilePath("path/to/my.pkg"), target: "CurrentUserHomeDirectory").config()
+        var config = sys.installer(.verbose, .pkg(FilePath("path/to/my.pkg")), .target("CurrentUserHomeDirectory")).config()
         #expect(String(describing: config) == "installer -verbose -pkg path/to/my.pkg -target CurrentUserHomeDirectory")
     }
 }

@@ -605,6 +605,144 @@ extension SystemCommand {
 }
 
 extension SystemCommand {
+    // OpenPGP encryption and signing tool. See gpg(1) for more information.
+    public static func pkgutil(executable: Executable = pkgutilCommand.defaultExecutable, _ options: pkgutilCommand.Option...) -> pkgutilCommand {
+        Self.pkgutil(executable: executable, options)
+    }
+
+    // OpenPGP encryption and signing tool. See gpg(1) for more information.
+    public static func pkgutil(executable: Executable = pkgutilCommand.defaultExecutable, _ options: [pkgutilCommand.Option]) -> pkgutilCommand {
+        pkgutilCommand(executable: executable, options)
+    }
+
+    public struct pkgutilCommand {
+        public static var defaultExecutable: Executable { .name("pkgutil") }
+        public var executable: Executable
+        public var options: [Option]
+
+        public enum Option {
+            case verbose
+            case volume(FilePath)
+
+            public func args() -> [String] {
+                switch self {
+                case .verbose:
+                    ["--verbose"]
+                case let .volume(volume):
+                    ["--volume", String(describing: volume)]
+                }
+            }
+        }
+
+        public init(executable: Executable, _ options: [pkgutilCommand.Option]) {
+            self.executable = executable
+            self.options = options
+        }
+
+        public func config() -> Configuration {
+            var genArgs: [String] = []
+
+            for opt in self.options {
+                genArgs.append(contentsOf: opt.args())
+            }
+
+            return Configuration(
+                executable: self.executable,
+                arguments: Arguments(genArgs),
+                environment: .inherit
+            )
+        }
+
+        public func checksignature(pkg_path: FilePath) -> checksignatureCommand {
+            checksignatureCommand(parent: self, pkg_path: pkg_path)
+        }
+
+        public struct checksignatureCommand {
+            public var parent: pkgutilCommand
+            public var pkg_path: FilePath
+
+            public init(parent: pkgutilCommand, pkg_path: FilePath) {
+                self.parent = parent
+                self.pkg_path = pkg_path
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("--check-signature")
+
+                genArgs += [self.pkg_path.description]
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+        }
+
+        public func expand(pkg_path: FilePath, dir_path: FilePath) -> expandCommand {
+            expandCommand(parent: self, pkg_path: pkg_path, dir_path: dir_path)
+        }
+
+        public struct expandCommand {
+            public var parent: pkgutilCommand
+            public var pkg_path: FilePath
+            public var dir_path: FilePath
+
+            public init(parent: pkgutilCommand, pkg_path: FilePath, dir_path: FilePath) {
+                self.parent = parent
+                self.pkg_path = pkg_path
+                self.dir_path = dir_path
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("--expand")
+
+                genArgs += [self.pkg_path.description]
+                genArgs += [self.dir_path.description]
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+        }
+
+        public func forget(pkg_id: String) -> forgetCommand {
+            forgetCommand(parent: self, pkg_id: pkg_id)
+        }
+
+        public struct forgetCommand {
+            public var parent: pkgutilCommand
+            public var pkg_id: String
+
+            public init(parent: pkgutilCommand, pkg_id: String) {
+                self.parent = parent
+                self.pkg_id = pkg_id
+            }
+
+            public func config() -> Configuration {
+                var c = self.parent.config()
+
+                var genArgs = c.arguments.storage.map(\.description)
+
+                genArgs.append("--forget")
+
+                genArgs += [self.pkg_id.description]
+
+                c.arguments = .init(genArgs)
+
+                return c
+            }
+        }
+    }
+}
+
+extension SystemCommand {
     // Build a product archive for the macOS Installer or the Mac App Store. See productbuild(1) for more information.
     public static func productbuild(executable: Executable = productbuildCommand.defaultExecutable, _ options: productbuildCommand.Option..., output_path: FilePath) -> productbuildCommand {
         Self.productbuild(executable: executable, options, output_path: output_path)

@@ -230,13 +230,13 @@ public struct CommandLineTests {
     }
 
     @Test func testPkgutil() async throws {
-        var config = sys.pkgutil(.verbose).checkSignature(pkgPath: FilePath("path/to/my.pkg")).config()
+        var config = sys.pkgutil(.verbose).checksignature(pkg_path: FilePath("path/to/my.pkg")).config()
         #expect(String(describing: config) == "pkgutil --verbose --check-signature path/to/my.pkg")
 
-        config = sys.pkgutil(.verbose).expand(pkgPath: FilePath("path/to/my.pkg"), dirPath: FilePath("expand/to/here")).config()
+        config = sys.pkgutil(.verbose).expand(pkg_path: FilePath("path/to/my.pkg"), dir_path: FilePath("expand/to/here")).config()
         #expect(String(describing: config) == "pkgutil --verbose --expand path/to/my.pkg expand/to/here")
 
-        config = sys.pkgutil(.volume("/Users/foo")).forget(packageId: "com.example.pkg").config()
+        config = sys.pkgutil(.volume("/Users/foo")).forget(pkg_id: "com.example.pkg").config()
         #expect(String(describing: config) == "pkgutil --volume /Users/foo --forget com.example.pkg")
     }
 

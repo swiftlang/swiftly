@@ -338,7 +338,7 @@ extension Platform {
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw RunProgramError(exitCode: process.terminationStatus, program: args.first!, arguments: Array(args.dropFirst()))
+            throw RunProgramError(exitCode: process.terminationStatus, program: program, arguments: args)
         }
 
         if let outData {

@@ -1,0 +1,9 @@
+{
+  "optionsSingleDash": true,
+  "arguments": [
+    {
+      "path": "pkg",
+      "type": "file"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "getent",
+    "abstract": "get entries from Name Service Switch libraries. See getent(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "valueName": "database",
+        "isOptional": false,
+        "isRepeating": false,
+        "kind": "positional",
+        "shouldDisplay": true
+      },
+      {
+        "valueName": "key",
+        "isOptional": false,
+        "isRepeating": true,
+        "kind": "positional",
+        "shouldDisplay": true
+      }
+    ]
+  }
+}

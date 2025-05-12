@@ -1,0 +1,17 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "make",
+    "abstract": "make utility to maintain groups of programs. See make(1) for more information.",
+    "shouldDisplay": true,
+    "subcommands": [
+      {
+        "commandName": "install",
+        "superCommands": [
+          "make"
+        ],
+        "shouldDisplay": true,
+      }
+    ]
+  }
+}

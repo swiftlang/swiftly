@@ -1,0 +1,20 @@
+{
+  "arguments": [
+    {
+      "path": "volume",
+      "type": "file"
+    },
+    {
+      "path": "--check-signature.pkg-path",
+      "type": "file"
+    },
+    {
+      "path": "--expand.pkg-path",
+      "type": "file"
+    },
+    {
+      "path": "--expand.dir-path",
+      "type": "file"
+    }
+  ]
+}

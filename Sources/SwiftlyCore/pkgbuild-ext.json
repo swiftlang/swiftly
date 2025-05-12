@@ -1,0 +1,16 @@
+{
+  "arguments": [
+    {
+      "path": "package-output-path",
+      "type": "file"
+    },
+    {
+      "path": "root",
+      "type": "file"
+    },
+    {
+      "path": "install-location",
+      "type": "file"
+    }
+  ]
+}

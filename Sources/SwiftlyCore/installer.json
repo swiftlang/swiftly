@@ -1,0 +1,61 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "installer",
+    "abstract": "system software and package installer tool. See installer(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "verbose"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "verbose"
+        },
+        "valueName": "verbose",
+        "shouldDisplay": true,
+        "kind": "flag",
+        "isOptional": true,
+        "isRepeating": false
+      },
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "pkg"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "pkg"
+        },
+        "valueName": "pkg",
+        "shouldDisplay": true,
+        "kind": "option",
+        "isOptional": false,
+        "isRepeating": false
+      },
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "target"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "target"
+        },
+        "valueName": "target",
+        "shouldDisplay": true,
+        "kind": "option",
+        "isOptional": false,
+        "isRepeating": false
+      }
+    ]
+  }
+}

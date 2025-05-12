@@ -1,0 +1,101 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "pkgutil",
+    "abstract": "Query and manipulate macOS Installer packages and receipts. See pkgutil(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "verbose"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "verbose"
+        },
+        "valueName": "verbose",
+        "shouldDisplay": true,
+        "kind": "flag",
+        "isOptional": true,
+        "isRepeating": false
+      },
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "volume"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "volume"
+        },
+        "valueName": "volume",
+        "shouldDisplay": true,
+        "kind": "option",
+        "isOptional": true,
+        "isRepeating": false
+      }
+    ],
+    "subcommands": [
+      {
+        "commandName": "--check-signature",
+        "superCommands": [
+          "pkgutil"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "valueName": "pkg-path",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": false,
+            "isRepeating": false
+          }
+        ]
+      },
+      {
+        "commandName": "--expand",
+        "superCommands": [
+          "pkgutil"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "valueName": "pkg-path",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": false,
+            "isRepeating": false
+          },
+          {
+            "valueName": "dir-path",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": false,
+            "isRepeating": false
+          }
+        ]
+      },
+      {
+        "commandName": "--forget",
+        "superCommands": [
+          "pkgutil"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "valueName": "pkg-id",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": false,
+            "isRepeating": false
+          }
+        ]
+      },
+    ]
+  }
+}

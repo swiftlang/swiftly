@@ -81,12 +81,31 @@ struct Install: SwiftlyCommand {
         try await self.run(Swiftly.createDefaultContext())
     }
 
+    private func swiftlyHomeDir(_ ctx: SwiftlyCoreContext) -> FilePath {
+        return Swiftly.currentPlatform.swiftlyHomeDir(ctx)
+    }
+
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
         let versionUpdateReminder = try await validateSwiftly(ctx)
         defer {
             versionUpdateReminder()
         }
         try await validateLinked(ctx)
+
+        // Acquire a lock for installation - if fails, exit immediately with code 42
+        let lockFile = self.swiftlyHomeDir(ctx) / "swiftly.lock"
+        let fileLock = try FileLock(at: lockFile.string)
+        guard fileLock.tryLock() else {
+            // Exit immediately with specific exit code for scripts/tools to detect
+            Foundation.exit(42)
+        }
+        defer {
+            do {
+                try fileLock.unlock()
+            } catch {
+                print("ERROR: Failed to unlock file: \(String(cString: strerror(errno)))")
+            }
+        }
 
         var config = try await Config.load(ctx)
         let toolchainVersion = try await Self.determineToolchainVersion(ctx, version: self.version, config: &config)

@@ -125,4 +125,15 @@ final class InitTests: SwiftlyTests {
             XCTAssertTrue(Swiftly.currentPlatform.swiftlyToolchainsDir.appendingPathComponent("foo.txt").fileExists())
         }
     }
+
+    func testAllowedInstalledCommands() async throws {
+        XCTAssertTrue(try Init.allowedInstallCommands.wholeMatch(in: "apt-get -y install python3 libsqlite3") != nil)
+        XCTAssertTrue(try Init.allowedInstallCommands.wholeMatch(in: "yum -y install python3 libsqlite3") != nil)
+        XCTAssertTrue(try Init.allowedInstallCommands.wholeMatch(in: "yum -y install python3 libsqlite3-dev") != nil)
+        XCTAssertTrue(try Init.allowedInstallCommands.wholeMatch(in: "yum -y install libstdc++-dev:i386") != nil)
+
+        XCTAssertTrue(try Init.allowedInstallCommands.wholeMatch(in: "SOME_ENV_VAR=abcde yum -y install libstdc++-dev:i386") == nil)
+        XCTAssertTrue(try Init.allowedInstallCommands.wholeMatch(in: "apt-get -y install libstdc++-dev:i386; rm -rf /") == nil)
+        XCTAssertTrue(try Init.allowedInstallCommands.wholeMatch(in: "apt-get -y install libstdc++-dev:i386\nrm -rf /") == nil)
+    }
 }

@@ -405,7 +405,7 @@ written to this file as commands that can be run after the installation.
 Perform swiftly initialization into your user account.
 
 ```
-swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip-install] [--quiet-shell-followup] [--assume-yes] [--verbose] [--version] [--help]
+swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip-install] [--quiet-shell-followup] [--sudo-install-packages] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **--no-modify-profile:**
@@ -431,6 +431,11 @@ swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip
 **--quiet-shell-followup:**
 
 *Quiet shell follow up commands*
+
+
+**--sudo-install-packages:**
+
+*Run sudo if there are post-installation packages to install (Linux only)*
 
 
 **--assume-yes:**

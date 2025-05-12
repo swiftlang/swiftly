@@ -24,8 +24,8 @@ public enum Proxy {
 
                     if CommandLine.arguments.count == 1 {
                         // User ran swiftly with no extra arguments in an uninstalled environment, so we jump directly into
-                        //  an simple init.
-                        try await Init.execute(assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false, quietShellFollowup: false)
+                        //  a simple init.
+                        try await Init.execute(assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false, quietShellFollowup: false, sudoInstallPackages: false)
                         return
                     } else if CommandLine.arguments.count >= 2 && CommandLine.arguments[1] == "init" {
                         // Let the user run the init command with their arguments, if any.

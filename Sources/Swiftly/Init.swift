@@ -20,21 +20,25 @@ internal struct Init: SwiftlyCommand {
     var skipInstall: Bool = false
     @Flag(help: "Quiet shell follow up commands")
     var quietShellFollowup: Bool = false
+    @Flag(help: "Run sudo if there are post-installation packages to install (Linux only)")
+    var sudoInstallPackages: Bool = false
 
     @OptionGroup var root: GlobalOptions
 
+    internal static var allowedInstallCommands: Regex<(Substring, Substring, Substring)> { try! Regex("^(apt-get|yum) -y install( [A-Za-z0-9:\\-\\+]+)+$") }
+
     private enum CodingKeys: String, CodingKey {
-        case noModifyProfile, overwrite, platform, skipInstall, root, quietShellFollowup
+        case noModifyProfile, overwrite, platform, skipInstall, root, quietShellFollowup, sudoInstallPackages
     }
 
     public mutating func validate() throws {}
 
     internal mutating func run() async throws {
-        try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, quietShellFollowup: self.quietShellFollowup)
+        try await Self.execute(assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, quietShellFollowup: self.quietShellFollowup, sudoInstallPackages: self.sudoInstallPackages)
     }
 
     /// Initialize the installation of swiftly.
-    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool) async throws {
+    internal static func execute(assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool, sudoInstallPackages: Bool) async throws {
         try Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
 
         var config = try? Config.load()
@@ -290,6 +294,12 @@ internal struct Init: SwiftlyCommand {
         }
 
         if let postInstall {
+#if !os(Linux)
+            if sudoInstallPackages {
+                SwiftlyCore.print("Sudo installing missing packages has no effect on non-Linux platforms.")
+            }
+#endif
+
             SwiftlyCore.print("""
             There are some dependencies that should be installed before using this toolchain.
             You can run the following script as the system administrator (e.g. root) to prepare
@@ -298,6 +308,42 @@ internal struct Init: SwiftlyCommand {
                 \(postInstall)
 
             """)
+
+            if sudoInstallPackages {
+                // This is very security sensitive code here and that's why there's special process handling
+                // and an allow-list of what we will attempt to run as root. Also, the sudo binary is run directly
+                // with a fully-qualified path without any checking in order to avoid TOCTOU.
+
+                guard try Self.allowedInstallCommands.wholeMatch(in: postInstall) != nil else {
+                    fatalError("post installation command \(postInstall) does not match allowed patterns for sudo")
+                }
+
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
+                p.arguments = ["-k"] + ["-p", "Enter your sudo password to run it right away (Ctrl-C aborts): "] + postInstall.split(separator: " ").map { String($0) }
+
+                do {
+                    try p.run()
+
+                    // Attach this process to our process group so that Ctrl-C and other signals work
+                    let pgid = tcgetpgrp(STDOUT_FILENO)
+                    if pgid != -1 {
+                        tcsetpgrp(STDOUT_FILENO, p.processIdentifier)
+                    }
+
+                    defer { if pgid != -1 {
+                        tcsetpgrp(STDOUT_FILENO, pgid)
+                    }}
+
+                    p.waitUntilExit()
+
+                    guard p.terminationStatus == 0 else {
+                        throw SwiftlyError(message: "sudo could not be run to install the packages")
+                    }
+                } catch {
+                    throw SwiftlyError(message: "sudo could not be run to install the packages")
+                }
+            }
         }
     }
 }

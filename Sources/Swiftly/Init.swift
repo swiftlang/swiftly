@@ -337,11 +337,11 @@ internal struct Init: SwiftlyCommand {
 
                     p.waitUntilExit()
 
-                    guard p.terminationStatus == 0 else {
-                        throw SwiftlyError(message: "sudo could not be run to install the packages")
+                    if p.terminationStatus == 0 {
+                        SwiftlyCore.print("sudo could not be run to install the packages")
                     }
                 } catch {
-                    throw SwiftlyError(message: "sudo could not be run to install the packages")
+                    SwiftlyCore.print("sudo could not be run to install the packages")
                 }
             }
         }

@@ -148,7 +148,9 @@ public struct MacOS: Platform {
     public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose: Bool)
         async throws
     {
-        await ctx.print("Uninstalling package in user home directory...")
+        if verbose {
+            await ctx.print("Uninstalling package in user home directory... ")
+        }
 
         let toolchainDir = self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"
 

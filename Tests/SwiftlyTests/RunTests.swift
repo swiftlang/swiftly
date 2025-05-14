@@ -68,15 +68,13 @@ import Testing
         #expect(["swift", "+1.2.3", "build"] == command)
         #expect(nil == selector)
 
-        do {
+        #expect(throws: SwiftlyError.self) {
             let _ = try Run.extractProxyArguments(command: ["+1.2.3"])
-            #expect(false)
-        } catch {}
+        }
 
-        do {
+        #expect(throws: SwiftlyError.self) {
             let _ = try Run.extractProxyArguments(command: [])
-            #expect(false)
-        } catch {}
+        }
 
         (command, selector) = try Run.extractProxyArguments(command: ["swift", "+1.2.3", "build"])
         #expect(["swift", "build"] == command)

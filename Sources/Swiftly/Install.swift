@@ -92,72 +92,85 @@ struct Install: SwiftlyCommand {
         }
         try await validateLinked(ctx)
 
-        // Acquire a lock for installation - if fails, exit immediately with code 42
-        let lockFile = self.swiftlyHomeDir(ctx) / "swiftly.lock"
-        let fileLock = try FileLock(at: lockFile.string)
-        guard fileLock.tryLock() else {
-            // Exit immediately with specific exit code for scripts/tools to detect
-            Foundation.exit(42)
-        }
-        defer {
-            do {
-                try fileLock.unlock()
-            } catch {
-                print("ERROR: Failed to unlock file: \(String(cString: strerror(errno)))")
+        do {
+            let lockFile = self.swiftlyHomeDir(ctx) / "swiftly.lock"
+            let fileLock = try FileLock(at: lockFile.string)
+
+            //            guard fileLock.tryLock() else {
+            //            // Exit immediately with specific exit code for scripts/tools to detect
+            //            print("Another installation is in progress. Exiting.")
+            //            Foundation.exit(42)
+            //            }
+
+            guard fileLock.waitForLock(timeout: 300, pollingInterval: 2) else {
+                print("ERROR: Failed to acquire lock on file: \(lockFile.string)")
+                Foundation.exit(42)
             }
-        }
 
-        var config = try await Config.load(ctx)
-        let toolchainVersion = try await Self.determineToolchainVersion(ctx, version: self.version, config: &config)
+            defer {
+                do {
+                    try fileLock.unlock()
+                } catch {
+                    print("WARNING: Failed to unlock file: \(error)")
+                }
+            }
 
-        let (postInstallScript, pathChanged) = try await Self.execute(
-            ctx,
-            version: toolchainVersion,
-            &config,
-            useInstalledToolchain: self.use,
-            verifySignature: self.verify,
-            verbose: self.root.verbose,
-            assumeYes: self.root.assumeYes
-        )
+            var config = try await Config.load(ctx)
+            let toolchainVersion = try await Install.determineToolchainVersion(
+                ctx, version: self.version, config: &config)
 
-        let shell =
-            if let s = ProcessInfo.processInfo.environment["SHELL"]
-        {
-            s
-        } else {
-            try await Swiftly.currentPlatform.getShell()
-        }
+            let (postInstallScript, pathChanged) = try await Install.execute(
+                ctx,
+                version: toolchainVersion,
+                &config,
+                useInstalledToolchain: use,
+                verifySignature: verify,
+                verbose: root.verbose,
+                assumeYes: root.assumeYes
+            )
 
-        // Fish doesn't cache its path, so this instruction is not necessary.
-        if pathChanged && !shell.hasSuffix("fish") {
-            await ctx.print(
-                """
-                NOTE: Swiftly has updated some elements in your path and your shell may not yet be
-                aware of the changes. You can update your shell's environment by running
+            let shell: String
+            if let s = ProcessInfo.processInfo.environment["SHELL"] {
+                shell = s
+            } else {
+                shell = try await Swiftly.currentPlatform.getShell()
+            }
 
-                hash -r
+            // Fish doesn't cache its path, so this instruction is not necessary.
+            if pathChanged && !shell.hasSuffix("fish") {
+                await ctx.print(
+                    """
+                    NOTE: Swiftly has updated some elements in your path and your shell may not yet be
+                    aware of the changes. You can update your shell's environment by running
 
-                or restarting your shell.
+                    hash -r
 
-                """)
-        }
+                    or restarting your shell.
 
-        if let postInstallScript {
-            guard let postInstallFile = self.postInstallFile else {
-                throw SwiftlyError(
-                    message: """
-
-                    There are some dependencies that should be installed before using this toolchain.
-                    You can run the following script as the system administrator (e.g. root) to prepare
-                    your system:
-
-                    \(postInstallScript)
                     """)
             }
 
-            try Data(postInstallScript.utf8).write(
-                to: postInstallFile, options: .atomic
-            )
+            if let postInstallScript: String = postInstallScript {
+                guard let postInstallFile = self.postInstallFile else {
+                    throw SwiftlyError(
+                        message: """
+
+                            There are some dependencies that should be installed before using this toolchain.
+                            You can run the following script as the system administrator (e.g. root) to prepare
+                            your system:
+
+                            \(postInstallScript)
+                            """)
+                }
+
+                try Data(postInstallScript.utf8).write(
+                    to: postInstallFile, options: .atomic
+                )
+            }
+
+        } catch {
+            print("ERROR: \(String(cString: strerror(errno)))")
+            Foundation.exit(1)
         }
     }
 
@@ -476,3 +489,5 @@ struct Install: SwiftlyCommand {
         }
     }
 }
+
+

@@ -232,7 +232,7 @@ swiftly uninstall <toolchain> [--assume-yes] [--verbose] [--version] [--help]
 *The toolchain(s) to uninstall.*
 
 
-The toolchain selector provided determines which toolchains to uninstall. Specific toolchains can be uninstalled by using their full names as the selector, for example a full stable release version with patch (a.b.c): 
+The toolchain selector provided determines which toolchains to uninstall. Specific toolchains can be uninstalled by using their full names as the selector, for example a full stable release version with patch (a.b.c):
 
     $ swiftly uninstall 5.2.1
 

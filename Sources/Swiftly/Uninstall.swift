@@ -12,7 +12,7 @@ struct Uninstall: SwiftlyCommand {
 
         The toolchain selector provided determines which toolchains to uninstall. Specific \
         toolchains can be uninstalled by using their full names as the selector, for example \
-        a full stable release version with patch (a.b.c): 
+        a full stable release version with patch (a.b.c):
 
             $ swiftly uninstall 5.2.1
 
@@ -129,7 +129,7 @@ struct Uninstall: SwiftlyCommand {
     }
 
     static func execute(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ config: inout Config, verbose: Bool) async throws {
-        await ctx.print("Uninstalling \(toolchain)...", terminator: "")
+        await ctx.print("Uninstalling \(toolchain)... ", terminator: "")
         config.installedToolchains.remove(toolchain)
         // This is here to prevent the inUse from referencing a toolchain that is not installed
         if config.inUse == toolchain {

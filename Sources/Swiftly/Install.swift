@@ -81,12 +81,42 @@ struct Install: SwiftlyCommand {
         try await self.run(Swiftly.createDefaultContext())
     }
 
+    private func swiftlyHomeDir(_ ctx: SwiftlyCoreContext) -> FilePath {
+        Swiftly.currentPlatform.swiftlyHomeDir(ctx)
+    }
+
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
         let versionUpdateReminder = try await validateSwiftly(ctx)
         defer {
             versionUpdateReminder()
         }
         try await validateLinked(ctx)
+
+        let lockFile = self.swiftlyHomeDir(ctx) / "swiftly.lock"
+        let fileLock: SwiftlyCore.FileLock
+
+        do {
+            fileLock = try SwiftlyCore.FileLock(at: lockFile.string)
+        } catch {
+            print("ERROR: Failed to create lock file: \(error)")
+            Foundation.exit(42)
+        }
+
+        defer {
+            do {
+                try fileLock.unlock()
+            } catch {
+                print("WARNING: Failed to unlock file: \(error)")
+            }
+        }
+
+        if self.root.verbose {
+            await ctx.print("Attempting to acquire installation lock...")
+        }
+        guard fileLock.waitForLock(timeout: 300, pollingInterval: 2) else {
+            print("ERROR: Failed to acquire lock on file: \(lockFile.string) after 300 seconds")
+            Foundation.exit(42)
+        }
 
         var config = try await Config.load(ctx)
         let toolchainVersion = try await Self.determineToolchainVersion(ctx, version: self.version, config: &config)

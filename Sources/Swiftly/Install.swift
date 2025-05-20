@@ -71,10 +71,13 @@ struct Install: SwiftlyCommand {
         ))
     var postInstallFile: FilePath?
 
+    @Flag(name: .shortAndLong, help: "Automatically install system dependencies for the newly installed toolchain.")
+    var installSystemDeps: Bool = false
+
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case version, use, verify, postInstallFile, root
+        case version, use, verify, postInstallFile, installSystemDeps, root
     }
 
     mutating func run() async throws {
@@ -124,16 +127,36 @@ struct Install: SwiftlyCommand {
         }
 
         if let postInstallScript {
+            if installSystemDeps {
+                // Auto install system dependencies if dpecified
+                await ctx.print("\nThe following command will be executed to install system dependencies for the installed toolchain:")
+                await ctx.print(postInstallScript)
+
+                if !self.root.assumeYes {
+                    guard await ctx.promptForConfirmation(defaultBehavior: true) else {
+                        throw SwiftlyError(message: "System dependency installation has been cancelled")
+                    }
+                }
+
+                try Swiftly.currentPlatform.runProgram(postInstallScript.components(separatedBy: " "))
+            }
+
             guard let postInstallFile = self.postInstallFile else {
-                throw SwiftlyError(
-                    message: """
+                // If the user isn't auto installing the deps and they didn't specify a post install file, display error. If they are
+                // auto installing the system deps without a postInstallFile exit early as this is considered a valid use case.
+                if installSystemDeps {
+                    return
+                } else {
+                    throw SwiftlyError(
+                        message: """
 
-                    There are some dependencies that should be installed before using this toolchain.
-                    You can run the following script as the system administrator (e.g. root) to prepare
-                    your system:
+                        There are some dependencies that should be installed before using this toolchain.
+                        You can run the following script as the system administrator (e.g. root) to prepare
+                        your system:
 
-                    \(postInstallScript)
-                    """)
+                        \(postInstallScript)
+                        """)
+                }
             }
 
             try Data(postInstallScript.utf8).write(

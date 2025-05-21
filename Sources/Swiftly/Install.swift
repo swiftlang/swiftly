@@ -109,18 +109,17 @@ struct Install: SwiftlyCommand {
             try await Swiftly.currentPlatform.getShell()
         }
 
-        // Fish doesn't cache its path, so this instruction is not necessary.
-        if pathChanged && !shell.hasSuffix("fish") {
-            await ctx.print(
-                """
-                NOTE: Swiftly has updated some elements in your path and your shell may not yet be
-                aware of the changes. You can update your shell's environment by running
+        // Fish or Nushell don't seem to cache their `PATH` env var, so this instruction is not necessary.
+        if pathChanged && !shell.hasSuffix("fish") && !shell.hasSuffix("/nu") {
+            await ctx.print("""
+            NOTE: Swiftly has updated some elements in your path and your shell may not yet be
+            aware of the changes. You can update your shell's environment by running
 
                 hash -r
 
-                or restarting your shell.
+            or restarting your shell.
 
-                """)
+            """)
         }
 
         if let postInstallScript {

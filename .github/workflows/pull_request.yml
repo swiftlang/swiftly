@@ -22,6 +22,22 @@ jobs:
       shell_check_enabled: false
       unacceptable_language_check_enabled: true
 
+  macos-tests-selfhosted:
+    name: macOS (Sequoia ARM64)
+    runs-on: [self-hosted, macos, sequoia, ARM64]
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Select Xcode
+        run: echo "DEVELOPER_DIR=/Applications/Xcode_16.3.app" >> $GITHUB_ENV
+      - name: Swift version
+        run: xcrun swift --version
+      - name: Build / Test
+        run: xcrun swift test
+        timeout-minutes: 60
+
   tests-selfhosted:
     name: Test (Self Hosted) / ${{ matrix.container }}
     runs-on: ubuntu-latest

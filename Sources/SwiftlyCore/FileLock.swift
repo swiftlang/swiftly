@@ -1,99 +1,83 @@
 import Foundation
+import SystemPackage
 
 /**
- * A non-blocking file lock implementation with polling capability.
+ * A non-blocking file lock implementation using file creation as locking mechanism.
  * Use case: When installing multiple Swiftly instances on the same machine,
  * one should acquire the lock while others poll until it becomes available.
  */
 
-#if os(macOS)
-import Darwin.C
-#elseif os(Linux)
-import Glibc
-#endif
+public actor FileLock {
+    let filePath: FilePath
+    private var isLocked = false
 
-public struct FileLock {
-    let filePath: String
-
-    let fileHandle: FileHandle
-
-    public static let defaultPollingInterval: TimeInterval = 1.0
-
+    public static let defaultPollingInterval: TimeInterval = 1
     public static let defaultTimeout: TimeInterval = 300.0
 
-    public init(at filePath: String) throws {
-        self.filePath = filePath
-
-        if !FileManager.default.fileExists(atPath: filePath) {
-            FileManager.default.createFile(atPath: filePath, contents: nil)
-        }
-
-        self.fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: filePath))
+    public init(at path: FilePath) {
+        self.filePath = path
     }
 
-    public func tryLock() -> Bool {
-        self.fileHandle.tryLockFile()
+    public func tryLock() async -> Bool {
+        do {
+            guard !self.isLocked else { return true }
+
+            guard !(try await FileSystem.exists(atPath: self.filePath)) else {
+                return false
+            }
+            // Create the lock file with exclusive permissions
+            try await FileSystem.create(.mode(0o600), file: self.filePath, contents: nil)
+            self.isLocked = true
+            return true
+        } catch {
+            return false
+        }
     }
 
     public func waitForLock(
         timeout: TimeInterval = FileLock.defaultTimeout,
         pollingInterval: TimeInterval = FileLock.defaultPollingInterval
-    ) -> Bool {
-        let startTime = Date()
+    ) async -> Bool {
+        let start = Date()
 
-        if self.tryLock() {
-            return true
-        }
-
-        while Date().timeIntervalSince(startTime) < timeout {
-            Thread.sleep(forTimeInterval: pollingInterval)
-
-            if self.tryLock() {
+        while Date().timeIntervalSince(start) < timeout {
+            if await self.tryLock() {
                 return true
             }
+            try? await Task.sleep(for: .seconds(pollingInterval))
         }
 
         return false
     }
 
-    public func unlock() throws {
-        guard self.fileHandle != nil else { return }
-        try self.fileHandle.unlockFile()
-        try self.fileHandle.close()
+    public func unlock() async throws {
+        guard self.isLocked else { return }
+
+        try await FileSystem.remove(atPath: self.filePath)
+        self.isLocked = false
     }
 }
 
-extension FileHandle {
-    func tryLockFile() -> Bool {
-        let fd = self.fileDescriptor
-        var flock = flock()
-        flock.l_type = Int16(F_WRLCK)
-        flock.l_whence = Int16(SEEK_SET)
-        flock.l_start = 0
-        flock.l_len = 0
+public func withLock<T>(
+    _ lockFile: FilePath,
+    timeout: TimeInterval = FileLock.defaultTimeout,
+    pollingInterval: TimeInterval = FileLock.defaultPollingInterval,
+    action: @escaping () async throws -> T
+) async throws -> T {
+    let lock = FileLock(at: lockFile)
+    guard await lock.waitForLock(timeout: timeout, pollingInterval: pollingInterval) else {
+        throw SwiftlyError(message: "Failed to acquire file lock at \(lock.filePath)")
+    }
 
-        if fcntl(fd, F_SETLK, &flock) == -1 {
-            if errno == EACCES || errno == EAGAIN {
-                return false
-            } else {
-                fputs("Unexpected lock error: \(String(cString: strerror(errno)))\n", stderr)
-                return false
+    defer {
+        Task {
+            do {
+                try await lock.unlock()
+            } catch {
+                print("WARNING: Failed to unlock file: \(error)")
             }
         }
-        return true
     }
 
-    func unlockFile() throws {
-        let fd = self.fileDescriptor
-        var flock = flock()
-        flock.l_type = Int16(F_UNLCK)
-        flock.l_whence = Int16(SEEK_SET)
-        flock.l_start = 0
-        flock.l_len = 0
-
-        if fcntl(fd, F_SETLK, &flock) == -1 {
-            throw SwiftlyError(
-                message: "Failed to unlock file: \(String(cString: strerror(errno)))")
-        }
-    }
+    return try await action()
 }

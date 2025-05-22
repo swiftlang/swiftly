@@ -92,32 +92,6 @@ struct Install: SwiftlyCommand {
         }
         try await validateLinked(ctx)
 
-        let lockFile = self.swiftlyHomeDir(ctx) / "swiftly.lock"
-        let fileLock: SwiftlyCore.FileLock
-
-        do {
-            fileLock = try SwiftlyCore.FileLock(at: lockFile.string)
-        } catch {
-            print("ERROR: Failed to create lock file: \(error)")
-            Foundation.exit(42)
-        }
-
-        defer {
-            do {
-                try fileLock.unlock()
-            } catch {
-                print("WARNING: Failed to unlock file: \(error)")
-            }
-        }
-
-        if self.root.verbose {
-            await ctx.print("Attempting to acquire installation lock...")
-        }
-        guard fileLock.waitForLock(timeout: 300, pollingInterval: 2) else {
-            print("ERROR: Failed to acquire lock on file: \(lockFile.string) after 300 seconds")
-            Foundation.exit(42)
-        }
-
         var config = try await Config.load(ctx)
         let toolchainVersion = try await Self.determineToolchainVersion(ctx, version: self.version, config: &config)
 
@@ -376,33 +350,51 @@ struct Install: SwiftlyCommand {
                 )
             }
 
-            try await Swiftly.currentPlatform.install(ctx, from: tmpFile, version: version, verbose: verbose)
-
-            let pathChanged = try await Self.setupProxies(
-                ctx,
-                version: version,
-                verbose: verbose,
-                assumeYes: assumeYes
-            )
-
-            config.installedToolchains.insert(version)
-
-            try config.save(ctx)
-
-            // If this is the first installed toolchain, mark it as in-use regardless of whether the
-            // --use argument was provided.
-            if useInstalledToolchain {
-                try await Use.execute(ctx, version, globalDefault: false, &config)
+            let lockFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "swiftly.lock"
+            if verbose {
+                await ctx.print("Attempting to acquire installation lock at \(lockFile) ...")
             }
 
-            // We always update the global default toolchain if there is none set. This could
-            //  be the only toolchain that is installed, which makes it the only choice.
-            if config.inUse == nil {
-                config.inUse = version
+            let (pathChanged, newConfig) = try await withLock(lockFile) {
+                if verbose {
+                    await ctx.print("Acquired installation lock.")
+                }
+
+                var config = try await Config.load(ctx)
+
+                try await Swiftly.currentPlatform.install(
+                    ctx, from: tmpFile,
+                    version: version,
+                    verbose: verbose
+                )
+
+                let pathChanged = try await Self.setupProxies(
+                    ctx,
+                    version: version,
+                    verbose: verbose,
+                    assumeYes: assumeYes
+                )
+
+                config.installedToolchains.insert(version)
+
                 try config.save(ctx)
-                await ctx.print("The global default toolchain has been set to `\(version)`")
-            }
 
+                // If this is the first installed toolchain, mark it as in-use regardless of whether the
+                // --use argument was provided.
+                if useInstalledToolchain {
+                    try await Use.execute(ctx, version, globalDefault: false, &config)
+                }
+
+                // We always update the global default toolchain if there is none set. This could
+                //  be the only toolchain that is installed, which makes it the only choice.
+                if config.inUse == nil {
+                    config.inUse = version
+                    try config.save(ctx)
+                    await ctx.print("The global default toolchain has been set to `\(version)`")
+                }
+                return (pathChanged, config)
+            }
+            config = newConfig
             await ctx.print("\(version) installed successfully!")
             return (postInstallScript, pathChanged)
         }

@@ -2,11 +2,13 @@
 
 # This script does a bit of extra preparation of the docker containers used to run the GitHub workflows
 # that are specific to this project's needs when building/testing. Note that this script runs on
-# every supported Linux distribution so it must adapt to the distribution that it is running.
+# every supported Linux distribution and macOS so it must adapt to the distribution that it is running.
 
-# Install the basic utilities depending on the type of Linux distribution
-apt-get --help && apt-get update && TZ=Etc/UTC apt-get -y install curl make gpg tzdata
-yum --help && (curl --help && yum -y install curl) && yum install make gpg
+if [[ "$(uname -s)" == "Linux" ]]; then
+    # Install the basic utilities depending on the type of Linux distribution
+    apt-get --help && apt-get update && TZ=Etc/UTC apt-get -y install curl make gpg tzdata
+    yum --help && (curl --help && yum -y install curl) && yum install make gpg
+fi
 
 set -e
 
@@ -27,7 +29,12 @@ done
 
 if [ "$installSwiftly" == true ]; then
     echo "Installing swiftly"
-    curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
+
+    if [[ "$(uname -s)" == "Linux" ]]; then
+        curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
+    else
+        curl -O https://download.swift.org/swiftly/darwin/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}.pkg && installer -pkg swiftly-*.pkg -target CurrentUserHomeDirectory && ~/.swiftly/bin/ init -y --skip-install
+    fi
 
     . "/root/.local/share/swiftly/env.sh"
     hash -r
@@ -64,7 +71,9 @@ if [ "$installSwiftly" == true ]; then
     echo "Displaying swift version"
     swiftly run "${runSelector[@]}" swift --version
 
-    CC=clang swiftly run "${runSelector[@]}" "$(dirname "$0")/install-libarchive.sh"
+    if [[ "$(uname -s)" == "Linux" ]]; then
+        CC=clang swiftly run "${runSelector[@]}" "$(dirname "$0")/install-libarchive.sh"
 else
-    "$(dirname "$0")/install-libarchive.sh"
+        "$(dirname "$0")/install-libarchive.sh"
+    fi
 fi

@@ -23,19 +23,19 @@ jobs:
       unacceptable_language_check_enabled: true
 
   macos-tests-selfhosted:
-    name: macOS (Sequoia ARM64)
+    name: Test (Self Hosted) / macOS Sequoia ARM64
     runs-on: [self-hosted, macos, sequoia, ARM64]
     strategy:
       fail-fast: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Select Xcode
-        run: echo "DEVELOPER_DIR=/Applications/Xcode_16.3.app" >> $GITHUB_ENV
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Swift version
-        run: xcrun swift --version
-      - name: Build / Test
-        run: xcrun swift test
+        run: swift --version
+      - name: Build and Test
+        run: swift test
         timeout-minutes: 60
 
   tests-selfhosted:

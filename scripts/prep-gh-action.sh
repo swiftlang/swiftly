@@ -79,7 +79,6 @@ if [ "$installSwiftly" == true ]; then
 
     if [[ "$(uname -s)" == "Linux" ]]; then
         CC=clang swiftly run "${runSelector[@]}" "$(dirname "$0")/install-libarchive.sh"
-else
         "$(dirname "$0")/install-libarchive.sh"
     fi
 fi

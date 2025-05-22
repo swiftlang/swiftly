@@ -77,7 +77,7 @@ jobs:
       - name: Upload Tests
         uses: actions/upload-artifact@v4
         with:
-          name: swiftly-tests-x86_64
+          name: test-swiftly-linux-x86_64
           path: .build/debug/test-swiftly-linux-x86_64.tar.gz
           if-no-files-found: error
           retention-days: 1
@@ -102,8 +102,8 @@ jobs:
       - name: Upload Tests
         uses: actions/upload-artifact@v4
         with:
-          name: swiftly-tests-darwin
-          path: .build/debug/test-swiftly-macos.tar.gz
+          name: test-swiftly-macos
+          path: .build/release/test-swiftly-macos.tar.gz
           if-no-files-found: error
           retention-days: 1
 

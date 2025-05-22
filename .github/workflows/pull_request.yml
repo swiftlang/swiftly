@@ -56,7 +56,7 @@ jobs:
         run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swift build --build-tests; else swift test; fi'
 
   releasebuildcheck:
-    name: Release Build Check
+    name: Release Build Check / Linux
     runs-on: ubuntu-latest
     container:
       image: "redhat/ubi9"
@@ -79,6 +79,31 @@ jobs:
         with:
           name: swiftly-tests-x86_64
           path: .build/debug/test-swiftly-linux-x86_64.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  releasebuildcheckmacos:
+    name: Release Build Check / macOS
+    runs-on: [self-hosted, macos, sequoia, ARM64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh --install-swiftly
+      - name: Build Artifact
+        run: swift run build-swiftly-release --test --skip "999.0.0"
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftly-release-darwin
+          path: .build/release/swiftly-*.pkg
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload Tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftly-tests-darwin
+          path: .build/debug/test-swiftly-darwin-arm64.tar.gz
           if-no-files-found: error
           retention-days: 1
 

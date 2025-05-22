@@ -103,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: swiftly-tests-darwin
-          path: .build/debug/test-swiftly-darwin-arm64.tar.gz
+          path: .build/debug/test-swiftly-macos.tar.gz
           if-no-files-found: error
           retention-days: 1
 

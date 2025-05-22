@@ -32,11 +32,18 @@ if [ "$installSwiftly" == true ]; then
 
     if [[ "$(uname -s)" == "Linux" ]]; then
         curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
+        . "/root/.local/share/swiftly/env.sh"
     else
-        curl -O https://download.swift.org/swiftly/darwin/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}.pkg && installer -pkg swiftly-*.pkg -target CurrentUserHomeDirectory && ~/.swiftly/bin/ init -y --skip-install
+        export SWIFTLY_HOME_DIR="$(pwd)/swiftly-bootstrap"
+        export SWIFTLY_BIN_DIR="$SWIFTLY_HOME_DIR/bin"
+        export SWIFTLY_TOOLCHAIN_DIR="$SWIFTLY_HOME_DIR/toolchains"
+        mkdir -p "$SWIFTLY_HOME_DIR"
+
+        curl -O https://download.swift.org/swiftly/darwin/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}.pkg && pkgutil --check-signature swiftly-*.pkg && pkgutil --verbose --expand swiftly-*.pkg . && tar -C "${SWIFTLY_HOME_DIR}" xvf Payload && "$SWIFTLY_HOME_DIR/bin/swiftly" init -y --skip-install
+
+        . "$SWIFTLY_HOME_DIR/env.sh"
     fi
 
-    . "/root/.local/share/swiftly/env.sh"
     hash -r
 
     if [ -n "$GITHUB_ENV" ]; then

@@ -24,12 +24,12 @@
           {
             "names": [
               {
-                "kind": "long",
+                "kind": "longWithSingleDash",
                 "name": "output"
               }
             ],
             "preferredName": {
-              "kind": "long",
+              "kind": "longWithSingleDash",
               "name": "output"
             },
             "valueName": "output",

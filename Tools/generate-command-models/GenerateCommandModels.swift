@@ -15,7 +15,6 @@ typealias fs = FileSystem
 typealias sys = SystemCommand
 
 struct CommandExtensions: Codable {
-    var optionsSingleDash: Bool?
     var arguments: [ArgumentExtension]?
 }
 
@@ -190,8 +189,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
             let flag = arg.kind == .flag
             var name: String?
             if let longName = arg.names?.filter { $0.kind == .long }.first?.name {
-                let dashes = (self.cmdExt.optionsSingleDash ?? false) ? "-" : "--"
-                name = dashes + longName
+                name = "--" + longName
             } else if let shortName = arg.names?.filter { $0.kind == .short }.first?.name {
                 name = "-" + shortName
             } else if let longNameWithSingleDash = arg.names?.filter { $0.kind == .longWithSingleDash }.first?.name {

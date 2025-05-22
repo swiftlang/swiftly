@@ -39,7 +39,7 @@ if [ "$installSwiftly" == true ]; then
         export SWIFTLY_TOOLCHAIN_DIR="$SWIFTLY_HOME_DIR/toolchains"
         mkdir -p "$SWIFTLY_HOME_DIR"
 
-        curl -O https://download.swift.org/swiftly/darwin/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}.pkg && pkgutil --check-signature swiftly-*.pkg && pkgutil --verbose --expand swiftly-*.pkg . && tar -C "${SWIFTLY_HOME_DIR}" xvf Payload && "$SWIFTLY_HOME_DIR/bin/swiftly" init -y --skip-install
+        curl -O https://download.swift.org/swiftly/darwin/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}.pkg && pkgutil --check-signature swiftly-*.pkg && pkgutil --verbose --expand swiftly-*.pkg "${SWIFTLY_HOME_DIR}" && tar -C "${SWIFTLY_HOME_DIR}" -xvf "${SWIFTLY_HOME_DIR}"/swiftly-*/Payload && "$SWIFTLY_HOME_DIR/bin/swiftly" init -y --skip-install
 
         . "$SWIFTLY_HOME_DIR/env.sh"
     fi

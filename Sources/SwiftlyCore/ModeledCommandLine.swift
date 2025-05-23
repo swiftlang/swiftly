@@ -212,3 +212,5 @@ extension Output {
         return try await p.runProgramOutput(executable, args, env: env)
     }
 }
+
+public enum SystemCommand {}

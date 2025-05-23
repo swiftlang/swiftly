@@ -19,7 +19,7 @@ import Testing
             }
 
             try await withGpg { runGpg in
-                try await runGpg(sys.gpg()._import(keys: tmpFile))
+                try await runGpg(sys.gpg()._import(key: tmpFile))
             }
         }
     }
@@ -47,8 +47,8 @@ import Testing
 
             try await withGpg { runGpg in
                 try await httpClient.getGpgKeys().download(to: keysFile)
-                try await runGpg(sys.gpg()._import(keys: keysFile))
-                try await runGpg(sys.gpg().verify(detachedSignature: tmpFileSignature, signedData: tmpFile))
+                try await runGpg(sys.gpg()._import(key: keysFile))
+                try await runGpg(sys.gpg().verify(detached_signature: tmpFileSignature, signed_data: tmpFile))
             }
         }
     }
@@ -76,8 +76,8 @@ import Testing
 
             try await withGpg { runGpg in
                 try await httpClient.getGpgKeys().download(to: keysFile)
-                try await runGpg(sys.gpg()._import(keys: keysFile))
-                try await runGpg(sys.gpg().verify(detachedSignature: tmpFileSignature, signedData: tmpFile))
+                try await runGpg(sys.gpg()._import(key: keysFile))
+                try await runGpg(sys.gpg().verify(detached_signature: tmpFileSignature, signed_data: tmpFile))
             }
         }
     }

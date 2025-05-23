@@ -51,10 +51,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Activate Swiftly
-        run: source /opt/swiftly/env.sh
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build Release Artifact
-        run: swiftly run swift run build-swiftly-release ${{ inputs.skip }} ${{ inputs.version }}
+        run: swift run build-swiftly-release ${{ inputs.skip }} ${{ inputs.version }}
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:

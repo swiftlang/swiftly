@@ -18,8 +18,8 @@ env:
   SWIFTLY_BOOTSTRAP_VERSION: 1.0.0
 
 jobs:
-  buildrelease:
-    name: Build Release
+  buildrelease-linux:
+    name: Build Release / Linux x86_64
     runs-on: ubuntu-latest
     container:
       image: "redhat/ubi9"
@@ -43,4 +43,21 @@ jobs:
         with:
           name: swiftly-docs
           path: .build/docs/**
+          if-no-files-found: error
+
+  buildrelease-macos:
+    name: Build Release / macOS
+    runs-on: [self-hosted, macos, sequoia, ARM64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh --install-swiftly
+      - name: Build Release Artifact
+        run: swift run build-swiftly-release ${{ inputs.skip }} ${{ inputs.version }}
+      - name: Upload Release Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftly-release-x86_64
+          path: .build/release/swiftly-*.tar.gz
           if-no-files-found: error

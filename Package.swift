@@ -68,7 +68,8 @@ let package = Package(
                 .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
                 .product(name: "SystemPackage", package: "swift-system"),
             ],
-            swiftSettings: swiftSettings
+            swiftSettings: swiftSettings,
+            plugins: ["GenerateCommandModels"]
         ),
         .target(
             name: "SwiftlyDownloadAPI",
@@ -107,6 +108,13 @@ let package = Package(
             ),
             dependencies: ["generate-docs-reference"]
         ),
+        .plugin(
+            name: "GenerateCommandModels",
+            capability: .buildTool(),
+            dependencies: [
+                "generate-command-models"
+            ]
+        ),
         .executableTarget(
             name: "generate-docs-reference",
             dependencies: [
@@ -117,10 +125,8 @@ let package = Package(
         .executableTarget(
             name: "generate-command-models",
             dependencies: [
-                .target(name: "SwiftlyCore"),
-                .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
-                .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "SystemPackage", package: "swift-system"),
             ],
             path: "Tools/generate-command-models"
         ),

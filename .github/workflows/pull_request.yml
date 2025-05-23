@@ -30,10 +30,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh --install-swiftly
+      - name: Activate Swiftly
+        run: source /opt/swiftly/env.sh
       - name: Build and Test
-        run: swift test
+        run: swiftly run swift test
         timeout-minutes: 60
 
   tests-selfhosted:
@@ -88,10 +88,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh --install-swiftly
+      - name: Activate Swiftly
+        run: source /opt/swiftly/env.sh
       - name: Build Artifact
-        run: swift run build-swiftly-release --test --skip "999.0.0"
+        run: swiftly run swift run build-swiftly-release --test --skip "999.0.0"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

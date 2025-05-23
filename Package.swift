@@ -112,7 +112,7 @@ let package = Package(
             name: "GenerateCommandModels",
             capability: .buildTool(),
             dependencies: [
-                "generate-command-models"
+                "generate-command-models",
             ]
         ),
         .executableTarget(

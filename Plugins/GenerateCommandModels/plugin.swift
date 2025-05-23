@@ -5,7 +5,7 @@ struct MyPlugin: BuildToolPlugin {
     func createBuildCommands(context: PluginContext, target: Target) throws -> [Command] {
         guard let target = target as? SourceModuleTarget else { return [] }
 
-        let jsonSources = target.sourceFiles.map({ $0.path }).filter({ $0.extension == "json" })
+        let jsonSources = target.sourceFiles.map(\.path).filter { $0.extension == "json" }
 
         guard jsonSources.count > 0 else { return [] }
 
@@ -18,7 +18,7 @@ struct MyPlugin: BuildToolPlugin {
                 arguments: ["--output-file", outputPath] + jsonSources,
                 inputFiles: jsonSources,
                 outputFiles: [outputPath]
-            )
+            ),
         ]
     }
 }

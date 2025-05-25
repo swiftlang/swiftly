@@ -1,7 +1,7 @@
 import PackagePlugin
 
 @main
-struct MyPlugin: BuildToolPlugin {
+struct GenerateCommandModelsPlugin: BuildToolPlugin {
     func createBuildCommands(context: PluginContext, target: Target) throws -> [Command] {
         guard let target = target as? SourceModuleTarget else { return [] }
 

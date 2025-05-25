@@ -373,18 +373,20 @@ extension Platform {
 
         // We couldn't find ourselves in the usual places. Assume that no installation is necessary
         // since we were most likely invoked at SWIFTLY_BIN_DIR already.
-        guard let cmdAbsolute else {
+        guard var cmdAbsolute else {
             return
         }
 
         // Traverse a symbolic link to the real swiftly
         if let linkDest = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute) {
-            if linkDest.hasPrefix("/") {
-                cmdAbsolute = FilePath(linkDest)
+            if linkDest.isAbsolute {
+                cmdAbsolute = linkDest
             } else {
-                cmdAbsolute = cmdAbsolute / linkDest
+                cmdAbsolute = (cmdAbsolute / linkDest.string).lexicallyNormalized()
             }
         }
+
+        guard case let cmdAbsolute else { fatalError() }
 
         // Proceed to installation only if we're in the user home directory, or a non-system location.
         let userHome = fs.home

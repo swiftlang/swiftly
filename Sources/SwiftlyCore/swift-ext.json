@@ -1,0 +1,16 @@
+{
+  "arguments": [
+    {
+      "path": "build.pkg-config-path",
+      "type": "file"
+    },
+    {
+      "path": "package.init.package-path",
+      "type": "file"
+    },
+    {
+      "path": "build.package-path",
+      "type": "file"
+    }
+  ]
+}

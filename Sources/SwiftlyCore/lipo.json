@@ -1,0 +1,45 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "lipo",
+    "abstract": "Create or operate on universal files. See lipo(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "valueName": "input_file",
+        "isOptional": false,
+        "isRepeating": true, 
+        "kind": "positional",
+        "shouldDisplay": true
+      }
+    ],
+    "subcommands": [
+      {
+        "commandName": "-create",
+        "superCommands": [
+          "lipo"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "names": [
+              {
+                "kind": "longWithSingleDash",
+                "name": "output"
+              }
+            ],
+            "preferredName": {
+              "kind": "longWithSingleDash",
+              "name": "output"
+            },
+            "valueName": "output",
+            "shouldDisplay": true,
+            "kind": "option",
+            "isOptional": false,
+            "isRepeating": false
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -377,6 +377,15 @@ extension Platform {
             return
         }
 
+        // Traverse a symbolic link to the real swiftly
+        if let linkDest = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute) {
+            if linkDest.hasPrefix("/") {
+                cmdAbsolute = FilePath(linkDest)
+            } else {
+                cmdAbsolute = cmdAbsolute / linkDest
+            }
+        }
+
         // Proceed to installation only if we're in the user home directory, or a non-system location.
         let userHome = fs.home
 

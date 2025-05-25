@@ -386,7 +386,7 @@ extension Platform {
             }
         }
 
-        guard case let cmdAbsolute else { fatalError() }
+        guard case let cmdAbsolute = cmdAbsolute else { fatalError() }
 
         // Proceed to installation only if we're in the user home directory, or a non-system location.
         let userHome = fs.home

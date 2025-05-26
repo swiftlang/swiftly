@@ -357,7 +357,7 @@ struct Install: SwiftlyCommand {
 
             let (pathChanged, newConfig) = try await withLock(lockFile) {
                 if verbose {
-                    await ctx.print("Acquired installation lock.")
+                    await ctx.print("Acquired installation lock")
                 }
 
                 var config = try await Config.load(ctx)

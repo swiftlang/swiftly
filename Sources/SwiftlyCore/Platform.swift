@@ -377,6 +377,11 @@ extension Platform {
             return
         }
 
+        // If swiftly is symlinked then we leave it where it is, such as in a homebrew installation.
+        if let _ = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute) {
+            return
+        }
+
         // Proceed to installation only if we're in the user home directory, or a non-system location.
         let userHome = fs.home
 

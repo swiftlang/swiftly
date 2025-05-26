@@ -377,13 +377,9 @@ extension Platform {
             return
         }
 
-        // Traverse a symbolic link to the real swiftly
-        if let linkDest = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute) {
-            if linkDest.isAbsolute {
-                cmdAbsolute = linkDest
-            } else {
-                cmdAbsolute = (cmdAbsolute / linkDest.string).lexicallyNormalized()
-            }
+        // If swiftly is symlinked then we leave it where it is, such as in a homebrew installation.
+        if let _ = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute) {
+            return
         }
 
         guard case let cmdAbsolute = cmdAbsolute else { fatalError() }

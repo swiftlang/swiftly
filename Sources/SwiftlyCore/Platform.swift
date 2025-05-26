@@ -373,7 +373,7 @@ extension Platform {
 
         // We couldn't find ourselves in the usual places. Assume that no installation is necessary
         // since we were most likely invoked at SWIFTLY_BIN_DIR already.
-        guard var cmdAbsolute else {
+        guard let cmdAbsolute else {
             return
         }
 
@@ -381,8 +381,6 @@ extension Platform {
         if let _ = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute) {
             return
         }
-
-        guard case let cmdAbsolute = cmdAbsolute else { fatalError() }
 
         // Proceed to installation only if we're in the user home directory, or a non-system location.
         let userHome = fs.home

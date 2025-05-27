@@ -450,6 +450,13 @@ extension Platform {
             return swiftlyHomeBin
         }
 
+        // If swiftly is a symlink then something else, such as homebrew, is managing it.
+        if cmdAbsolute != nil {
+            if let _ = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute!) {
+                return cmdAbsolute
+            }
+        }
+
         let systemRoots: [FilePath] = ["/usr", "/opt", "/bin"]
 
         // If we are system managed then we know where swiftly should be.

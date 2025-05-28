@@ -32,18 +32,22 @@ import Testing
         }
     }
 
-    @Test(.mockedSwiftlyVersion(), .testHome(), arguments: [
-        "/bin/bash",
-        "/bin/zsh",
-        "/bin/fish",
-    ]) func removesEntryFromShellProfile(_ shell: String) async throws {
-        // Fresh user without swiftly installed
-        try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
+    @Test(.mockedSwiftlyVersion(), .withShell("/bin/bash")) func removesEntryFromShellProfile_bash() async throws {
+        try await self.shellProfileRemovalTest()
+    }
 
-        var ctx = SwiftlyTests.ctx
-        ctx.mockedShell = shell
+    @Test(.mockedSwiftlyVersion(), .withShell("/bin/zsh")) func removesEntryFromShellProfile_zsh() async throws {
+        try await self.shellProfileRemovalTest()
+    }
 
-        try await SwiftlyTests.$ctx.withValue(ctx) {
+    @Test(.mockedSwiftlyVersion(), .withShell("/bin/fish")) func removesEntryFromShellProfile_fish() async throws {
+        try await self.shellProfileRemovalTest()
+    }
+
+    func shellProfileRemovalTest() async throws {
+        try await SwiftlyTests.withTestHome {
+            // Fresh user without swiftly installed
+            try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
             try await SwiftlyTests.runCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
 
             let fishSourceLine = """

@@ -159,6 +159,27 @@ extension Trait where Self == MockedSwiftlyVersionTrait {
     static func mockedSwiftlyVersion(_ name: String = "testHome") -> Self { Self(name) }
 }
 
+struct WithShellTrait: TestTrait, TestScoping {
+    let shell: String
+
+    init(_ shell: String) {
+        self.shell = shell
+    }
+
+    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
+        var ctx = SwiftlyTests.ctx
+        ctx.mockedShell = self.shell
+        try await SwiftlyTests.$ctx.withValue(ctx) {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == WithShellTrait {
+    /// Run the test with the provided shell.
+    static func withShell(_ shell: String) -> Self { Self(shell) }
+}
+
 struct MockHomeToolchainsTrait: TestTrait, TestScoping {
     var name: String = "testHome"
     var toolchains: Set<ToolchainVersion> = .allToolchains()

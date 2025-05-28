@@ -1,0 +1,8 @@
+{
+  "arguments": [
+    {
+      "path": "name",
+      "type": "file"
+    }
+  ]
+}

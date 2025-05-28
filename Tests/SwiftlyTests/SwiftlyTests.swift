@@ -958,11 +958,11 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         let pkg = tmp / "swiftly.pkg"
 
         try await sys.pkgbuild(
-            .installLocation("swiftly"),
+            .install_location("swiftly"),
             .version("\(self.latestSwiftlyVersion)"),
             .identifier("org.swift.swiftly"),
-            root: swiftlyDir,
-            packageOutputPath: pkg
+            .root(swiftlyDir),
+            package_output_path: pkg
         )
         .run(Swiftly.currentPlatform)
 
@@ -1005,11 +1005,11 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         let pkg = tmp / "toolchain.pkg"
 
         try await sys.pkgbuild(
-            .installLocation(FilePath("Library/Developer/Toolchains/\(toolchain.identifier).xctoolchain")),
+            .install_location(FilePath("Library/Developer/Toolchains/\(toolchain.identifier).xctoolchain")),
             .version("\(toolchain.name)"),
             .identifier(pkgInfo.CFBundleIdentifier),
-            root: toolchainDir,
-            packageOutputPath: pkg
+            .root(toolchainDir),
+            package_output_path: pkg
         )
         .run(Swiftly.currentPlatform)
 

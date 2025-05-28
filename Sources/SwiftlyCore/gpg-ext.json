@@ -1,0 +1,16 @@
+{
+  "arguments": [
+    {
+      "path": "--import.key",
+      "type": "file"
+    },
+    {
+      "path": "--verify.detached-signature",
+      "type": "file"
+    },
+    {
+      "path": "--verify.signed-data",
+      "type": "file"
+    }
+  ]
+}

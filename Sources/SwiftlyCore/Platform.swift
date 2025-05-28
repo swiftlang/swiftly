@@ -338,7 +338,7 @@ extension Platform {
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw RunProgramError(exitCode: process.terminationStatus, program: args.first!, arguments: Array(args.dropFirst()))
+            throw RunProgramError(exitCode: process.terminationStatus, program: program, arguments: args)
         }
 
         if let outData {
@@ -374,6 +374,11 @@ extension Platform {
         // We couldn't find ourselves in the usual places. Assume that no installation is necessary
         // since we were most likely invoked at SWIFTLY_BIN_DIR already.
         guard let cmdAbsolute else {
+            return
+        }
+
+        // If swiftly is symlinked then we leave it where it is, such as in a homebrew installation.
+        if let _ = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute) {
             return
         }
 
@@ -443,6 +448,13 @@ extension Platform {
         let homeBinExists = try await fs.exists(atPath: swiftlyHomeBin)
         if cmdAbsolute == nil && homeBinExists {
             return swiftlyHomeBin
+        }
+
+        // If swiftly is a symlink then something else, such as homebrew, is managing it.
+        if cmdAbsolute != nil {
+            if let _ = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute!) {
+                return cmdAbsolute
+            }
         }
 
         let systemRoots: [FilePath] = ["/usr", "/opt", "/bin"]

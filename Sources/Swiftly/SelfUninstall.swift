@@ -28,21 +28,24 @@ struct SelfUninstall: SwiftlyCommand {
                 "Self uninstall doesn't work when swiftly has been installed externally. Please uninstall it from the source where you installed it in the first place."
             )
         }
+        
+        if !self.root.assumeYes {
+            await ctx.print("""
+            You are about to uninstall swiftly. 
+            This will remove the swiftly binary and all the files in the swiftly home directory. 
+            All installed toolchains will not be removed, if you want to remove them, please do so manually with `swiftly uninstall all`.
+            This action is irreversible.
+            """)
+
+            guard await ctx.promptForConfirmation(defaultBehavior: true) else {
+                throw SwiftlyError(message: "swiftly installation has been cancelled")
+            }
+        }
 
         try await Self.execute(ctx, verbose: self.root.verbose)
     }
 
     public static func execute(_ ctx: SwiftlyCoreContext, verbose _: Bool) async throws {
-        await ctx.print("""
-        You are about to uninstall swiftly. 
-        This will remove the swiftly binary and all the files in the swiftly home directory. 
-        All installed toolchains will not be removed, if you want to remove them, please do so manually with `swiftly uninstall all`.
-        This action is irreversible.
-        """)
-
-        guard await ctx.promptForConfirmation(defaultBehavior: true) else {
-            throw SwiftlyError(message: "swiftly installation has been cancelled")
-        }
         await ctx.print("Uninstalling swiftly...")
 
         let shell = if let mockedShell = ctx.mockedShell {

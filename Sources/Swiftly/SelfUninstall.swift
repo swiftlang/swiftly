@@ -28,7 +28,7 @@ struct SelfUninstall: SwiftlyCommand {
                 "Self uninstall doesn't work when swiftly has been installed externally. Please uninstall it from the source where you installed it in the first place."
             )
         }
-        
+
         if !self.root.assumeYes {
             await ctx.print("""
             You are about to uninstall swiftly. 
@@ -48,68 +48,50 @@ struct SelfUninstall: SwiftlyCommand {
     public static func execute(_ ctx: SwiftlyCoreContext, verbose _: Bool) async throws {
         await ctx.print("Uninstalling swiftly...")
 
-        let shell = if let mockedShell = ctx.mockedShell {
-            mockedShell
-        } else {
-            if let s = ProcessInfo.processInfo.environment["SHELL"] {
-                s
-            } else {
-                try await Swiftly.currentPlatform.getShell()
-            }
-        }
-
-        let envFile: FilePath
-        let sourceLine: String
-        if shell.hasSuffix("fish") {
-            envFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.fish"
-            sourceLine = """
-
-            # Added by swiftly
-            source "\(envFile)"
-            """
-        } else {
-            envFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.sh"
-            sourceLine = """
-
-            # Added by swiftly
-            . "\(envFile)"
-            """
-        }
-
         let userHome = ctx.mockedHomeDir ?? fs.home
-
-        let profileHome: FilePath
-        if shell.hasSuffix("zsh") {
-            profileHome = userHome / ".zprofile"
-        } else if shell.hasSuffix("bash") {
-            if case let p = userHome / ".bash_profile", try await fs.exists(atPath: p) {
-                profileHome = p
-            } else if case let p = userHome / ".bash_login", try await fs.exists(atPath: p) {
-                profileHome = p
-            } else {
-                profileHome = userHome / ".profile"
-            }
-        } else if shell.hasSuffix("fish") {
-            if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"], case let xdgConfigURL = FilePath(xdgConfigHome) {
-                profileHome = xdgConfigURL / "fish/conf.d/swiftly.fish"
-            } else {
-                profileHome = userHome / ".config/fish/conf.d/swiftly.fish"
-            }
-        } else {
-            profileHome = userHome / ".profile"
-        }
-
-        await ctx.print("Removing swiftly from shell profile at \(profileHome)...")
-
-        if try await fs.exists(atPath: profileHome) {
-            if case let profileContents = try String(contentsOf: profileHome, encoding: .utf8), profileContents.contains(sourceLine) {
-                let newContents = profileContents.replacingOccurrences(of: sourceLine, with: "")
-                try Data(newContents.utf8).write(to: profileHome, options: [.atomic])
-            }
-        }
-
-        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx)
         let swiftlyHome = Swiftly.currentPlatform.swiftlyHomeDir(ctx)
+        let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx)
+
+        let fishSourceLine = """
+        # Added by swiftly
+
+        source "\(swiftlyHome / "env.fish")"
+        """
+
+        let shSourceLine = """
+        # Added by swiftly
+
+        . "\(swiftlyHome / "env.sh")"
+        """
+
+        var profilePaths: [FilePath] = [
+            userHome / ".zprofile",
+            userHome / ".bash_profile",
+            userHome / ".bash_login",
+            userHome / ".profile",
+        ]
+
+        // Handle fish shell config
+        if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"] {
+            profilePaths.append(FilePath(xdgConfigHome) / "fish/conf.d/swiftly.fish")
+        } else {
+            profilePaths.append(userHome / ".config/fish/conf.d/swiftly.fish")
+        }
+
+        await ctx.print("Scanning shell profile files to remove swiftly source line...")
+
+        // remove swiftly source line from shell profile files
+        for path in profilePaths {
+            if try await fs.exists(atPath: path) {
+                await ctx.print("Removing swiftly source line from \(path)...")
+                let isFishProfile = path.extension == "fish"
+                let sourceLine = isFishProfile ? fishSourceLine : shSourceLine
+                if case let profileContents = try String(contentsOf: path, encoding: .utf8), profileContents.contains(sourceLine) {
+                    let newContents = profileContents.replacingOccurrences(of: sourceLine, with: "")
+                    try Data(newContents.utf8).write(to: path, options: [.atomic])
+                }
+            }
+        }
 
         await ctx.print("Removing swiftly binary from \(swiftlyBin)...")
         try await fs.remove(atPath: swiftlyBin)

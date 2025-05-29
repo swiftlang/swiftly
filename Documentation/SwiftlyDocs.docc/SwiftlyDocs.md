@@ -21,6 +21,7 @@ It provides a single path to install, update, remove, or run commands with a spe
 - <doc:uninstall-toolchains>
 - <doc:update-toolchain>
 - <doc:automated-install>
+- <doc:swift-version>
 
 ### Reference
 

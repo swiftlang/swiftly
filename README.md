@@ -59,7 +59,7 @@ This command checks to see if there are new versions of swiftly itself and upgra
 
 ## Uninstalling swiftly
 
-swiftly can be savely removed with the following command:
+swiftly can be safely removed with the following command:
 
 `swiftly self-uninstall`
 

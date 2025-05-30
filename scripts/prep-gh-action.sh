@@ -2,11 +2,13 @@
 
 # This script does a bit of extra preparation of the docker containers used to run the GitHub workflows
 # that are specific to this project's needs when building/testing. Note that this script runs on
-# every supported Linux distribution so it must adapt to the distribution that it is running.
+# every supported Linux distribution and macOS so it must adapt to the distribution that it is running.
 
-# Install the basic utilities depending on the type of Linux distribution
-apt-get --help && apt-get update && TZ=Etc/UTC apt-get -y install curl make gpg tzdata
-yum --help && (curl --help && yum -y install curl) && yum install make gpg
+if [[ "$(uname -s)" == "Linux" ]]; then
+    # Install the basic utilities depending on the type of Linux distribution
+    apt-get --help && apt-get update && TZ=Etc/UTC apt-get -y install curl make gpg tzdata
+    yum --help && (curl --help && yum -y install curl) && yum install make gpg
+fi
 
 set -e
 
@@ -27,14 +29,25 @@ done
 
 if [ "$installSwiftly" == true ]; then
     echo "Installing swiftly"
-    curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
 
-    . "/root/.local/share/swiftly/env.sh"
+    if [[ "$(uname -s)" == "Linux" ]]; then
+        curl -O https://download.swift.org/swiftly/linux/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
+        . "/root/.local/share/swiftly/env.sh"
+    else
+        export SWIFTLY_HOME_DIR="$(pwd)/swiftly-bootstrap"
+        export SWIFTLY_BIN_DIR="$SWIFTLY_HOME_DIR/bin"
+        export SWIFTLY_TOOLCHAINS_DIR="$SWIFTLY_HOME_DIR/toolchains"
+
+        curl -O https://download.swift.org/swiftly/darwin/swiftly-${SWIFTLY_BOOTSTRAP_VERSION}.pkg && pkgutil --check-signature swiftly-*.pkg && pkgutil --verbose --expand swiftly-*.pkg "${SWIFTLY_HOME_DIR}" && tar -C "${SWIFTLY_HOME_DIR}" -xvf "${SWIFTLY_HOME_DIR}"/swiftly-*/Payload && "$SWIFTLY_HOME_DIR/bin/swiftly" init -y --skip-install
+
+        . "$SWIFTLY_HOME_DIR/env.sh"
+    fi
+
     hash -r
 
     if [ -n "$GITHUB_ENV" ]; then
         echo "Updating GitHub environment"
-        echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV"
+        echo "PATH=$PATH" >> "$GITHUB_ENV" && echo "SWIFTLY_HOME_DIR=$SWIFTLY_HOME_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_BIN_DIR=$SWIFTLY_BIN_DIR" >> "$GITHUB_ENV" && echo "SWIFTLY_TOOLCHAINS_DIR=$SWIFTLY_TOOLCHAINS_DIR" >> "$GITHUB_ENV"
     fi
 
     selector=()
@@ -64,7 +77,11 @@ if [ "$installSwiftly" == true ]; then
     echo "Displaying swift version"
     swiftly run "${runSelector[@]}" swift --version
 
-    CC=clang swiftly run "${runSelector[@]}" "$(dirname "$0")/install-libarchive.sh"
+    if [[ "$(uname -s)" == "Linux" ]]; then
+        CC=clang swiftly run "${runSelector[@]}" "$(dirname "$0")/install-libarchive.sh"
+    fi
 else
-    "$(dirname "$0")/install-libarchive.sh"
+    if [[ "$(uname -s)" == "Linux" ]]; then
+        "$(dirname "$0")/install-libarchive.sh"
+    fi
 fi

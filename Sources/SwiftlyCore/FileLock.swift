@@ -1,9 +1,19 @@
 import Foundation
 import SystemPackage
 
-enum FileLockError: Error {
-    case cannotAcquireLock
-    case timeoutExceeded
+enum FileLockError: Error, LocalizedError {
+    case cannotAcquireLock(FilePath)
+    case lockedByPID(FilePath, String)
+
+    var errorDescription: String? {
+        switch self {
+        case let .cannotAcquireLock(path):
+            return "Cannot acquire lock at \(path). Another process may be holding the lock. If you are sure no other processes are running, you can manually remove the lock file at \(path)."
+        case let .lockedByPID(path, pid):
+            return
+                "Lock at \(path) is held by process ID \(pid). Wait for the process to complete or manually remove the lock file if the process is no longer running."
+        }
+    }
 }
 
 /// A non-blocking file lock implementation using file creation as locking mechanism.
@@ -19,10 +29,21 @@ public struct FileLock {
         self.filePath = path
         do {
             let fileURL = URL(fileURLWithPath: self.filePath.string)
-            let contents = Foundation.ProcessInfo.processInfo.processIdentifier.description.data(using: .utf8) ?? Data()
+            let contents = Foundation.ProcessInfo.processInfo.processIdentifier.description.data(using: .utf8)
+                ?? Data()
             try contents.write(to: fileURL, options: .withoutOverwriting)
         } catch CocoaError.fileWriteFileExists {
-            throw FileLockError.cannotAcquireLock
+            // Read the PID from the existing lock file
+            let fileURL = URL(fileURLWithPath: self.filePath.string)
+            if let data = try? Data(contentsOf: fileURL),
+               let pidString = String(data: data, encoding: .utf8)?.trimmingCharacters(
+                   in: .whitespacesAndNewlines),
+               !pidString.isEmpty
+            {
+                throw FileLockError.lockedByPID(self.filePath, pidString)
+            } else {
+                throw FileLockError.cannotAcquireLock(self.filePath)
+            }
         }
     }
 
@@ -32,14 +53,26 @@ public struct FileLock {
         pollingInterval: TimeInterval = FileLock.defaultPollingInterval
     ) async throws -> FileLock {
         let start = Date()
+        var lastError: Error?
+
         while Date().timeIntervalSince(start) < timeout {
-            if let fileLock = try? FileLock(at: path) {
-                return fileLock
+            let result = Result { try FileLock(at: path) }
+
+            switch result {
+            case let .success(lock):
+                return lock
+            case let .failure(error):
+                lastError = error
+                try? await Task.sleep(for: .seconds(pollingInterval) + .milliseconds(Int.random(in: 0...200)))
             }
-            try? await Task.sleep(for: .seconds(pollingInterval))
         }
 
-        throw FileLockError.timeoutExceeded
+        // Timeout reached, throw the last error from the loop
+        if let lastError = lastError {
+            throw lastError
+        } else {
+            throw FileLockError.cannotAcquireLock(path)
+        }
     }
 
     public func unlock() async throws {
@@ -53,14 +86,15 @@ public func withLock<T>(
     pollingInterval: TimeInterval = FileLock.defaultPollingInterval,
     action: @escaping () async throws -> T
 ) async throws -> T {
-    guard
-        let lock = try? await FileLock.waitForLock(
+    let lock: FileLock
+    do {
+        lock = try await FileLock.waitForLock(
             lockFile,
             timeout: timeout,
             pollingInterval: pollingInterval
         )
-    else {
-        throw SwiftlyError(message: "Failed to acquire file lock at \(lockFile)")
+    } catch {
+        throw SwiftlyError(message: "Failed to acquire file lock at \(lockFile): \(error.localizedDescription)")
     }
 
     do {

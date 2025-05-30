@@ -128,16 +128,28 @@ struct Uninstall: SwiftlyCommand {
         await ctx.print("\(toolchains.count) toolchain(s) successfully uninstalled")
     }
 
-    static func execute(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ config: inout Config, verbose: Bool) async throws {
+    static func execute(
+        _ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ config: inout Config,
+        verbose: Bool
+    ) async throws {
         await ctx.print("Uninstalling \(toolchain)... ", terminator: "")
-        config.installedToolchains.remove(toolchain)
-        // This is here to prevent the inUse from referencing a toolchain that is not installed
-        if config.inUse == toolchain {
-            config.inUse = nil
+        let lockFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "swiftly.lock"
+        if verbose {
+            await ctx.print("Attempting to acquire installation lock at \(lockFile) ...")
         }
-        try config.save(ctx)
 
-        try await Swiftly.currentPlatform.uninstall(ctx, toolchain, verbose: verbose)
+        config = try await withLock(lockFile) {
+            var config = try await Config.load(ctx)
+            config.installedToolchains.remove(toolchain)
+            // This is here to prevent the inUse from referencing a toolchain that is not installed
+            if config.inUse == toolchain {
+                config.inUse = nil
+            }
+            try config.save(ctx)
+
+            try await Swiftly.currentPlatform.uninstall(ctx, toolchain, verbose: verbose)
+            return config
+        }
         await ctx.print("done")
     }
 }

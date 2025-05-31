@@ -5,6 +5,12 @@ import SwiftlyWebsiteAPI
 @preconcurrency import TSCBasic
 import TSCUtility
 
+extension SwiftlyVersion: ExpressibleByArgument {
+    public init?(argument: String) {
+        try? self.init(parsing: argument)
+    }
+}
+
 struct SelfUpdate: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
         abstract: "Update the version of swiftly itself."
@@ -12,8 +18,10 @@ struct SelfUpdate: SwiftlyCommand {
 
     @OptionGroup var root: GlobalOptions
 
+    @Option(help: .hidden) var toVersion: SwiftlyVersion
+
     private enum CodingKeys: String, CodingKey {
-        case root
+        case root, toVersion
     }
 
     mutating func run() async throws {
@@ -31,50 +39,79 @@ struct SelfUpdate: SwiftlyCommand {
             )
         }
 
-        let _ = try await Self.execute(ctx, verbose: self.root.verbose)
+        let _ = try await Self.execute(ctx, verbose: self.root.verbose, version: self.toVersion)
     }
 
-    public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool) async throws
+    public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool, version swiftlyVersion: SwiftlyVersion?) async throws
         -> SwiftlyVersion
     {
-        await ctx.print("Checking for swiftly updates...")
+        var downloadURL: Foundation.URL?
+        var version: SwiftlyVersion? = swiftlyVersion
 
-        let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
+        if let version {
+            guard let version > SwiftlyCore.version
 
-        guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
-            await ctx.print("Already up to date.")
-            return SwiftlyCore.version
+#if os(macOS)
+            downloadURL = URL(string: "https://download.swift.org/swiftly/darwin/swiftly-\(version).pkg")
+#elseif os(Linux)
+#if arch(x86_64)
+            downloadURL = URL(string: "https://download.swift.org/swiftly/linux/swiftly-\(version)-x86_64.tar.gz")
+#elseif arch(arm64)
+            downloadURL = URL(string: "https://download.swift.org/swiftly/linux/swiftly-\(version)-aarch64.tar.gz")
+#else
+            #error("Processor architecture is unsupported")
+#endif
+            #error("Operating system is unsupported")
+#endif
+
+            guard try version > SwiftlyCore.version else {
+                await ctx.print("Self-update does not support downgrading to an older version or re-installing the current version. Current version is \(SwiftlyCore.version) and requested version is \(version).")
+                return SwiftlyCore.version
+            }
+
+            await ctx.print("Self-update requested to swiftly version \(version)")
         }
 
-        var downloadURL: Foundation.URL?
-        for platform in swiftlyRelease.platforms {
+        if downloadURL == nil {
+            await ctx.print("Checking for swiftly updates...")
+
+            let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
+
+            guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
+                await ctx.print("Already up to date.")
+                return SwiftlyCore.version
+            }
+            for platform in swiftlyRelease.platforms {
 #if os(macOS)
-            guard platform.isDarwin else {
-                continue
-            }
+                guard platform.isDarwin else {
+                    continue
+                }
 #elseif os(Linux)
-            guard platform.isLinux else {
-                continue
-            }
+                guard platform.isLinux else {
+                    continue
+                }
 #endif
 
 #if arch(x86_64)
-            downloadURL = try platform.x86_64URL
+                downloadURL = try platform.x86_64URL
 #elseif arch(arm64)
-            downloadURL = try platform.arm64URL
+                downloadURL = try platform.arm64URL
 #endif
+            }
+
+            guard let downloadURL else {
+                throw SwiftlyError(
+                    message:
+                    "The newest release of swiftly is incompatible with your current OS and/or processor architecture."
+                )
+            }
+
+            version = try swiftlyRelease.swiftlyVersion
+
+            await ctx.print("A new version of swiftly is available: \(version)")
         }
 
-        guard let downloadURL else {
-            throw SwiftlyError(
-                message:
-                "The newest release of swiftly is incompatible with your current OS and/or processor architecture."
-            )
-        }
-
-        let version = try swiftlyRelease.swiftlyVersion
-
-        await ctx.print("A new version is available: \(version)")
+        guard let version, let downloadURL else { fatalError() }
 
         let tmpFile = fs.mktemp()
         try await fs.create(file: tmpFile, contents: nil)

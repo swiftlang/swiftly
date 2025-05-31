@@ -49,7 +49,6 @@ struct SelfUpdate: SwiftlyCommand {
         var version: SwiftlyVersion? = swiftlyVersion
 
         if let version {
-            guard let version > SwiftlyCore.version
 
 #if os(macOS)
             downloadURL = URL(string: "https://download.swift.org/swiftly/darwin/swiftly-\(version).pkg")
@@ -64,7 +63,7 @@ struct SelfUpdate: SwiftlyCommand {
             #error("Operating system is unsupported")
 #endif
 
-            guard try version > SwiftlyCore.version else {
+            guard version > SwiftlyCore.version else {
                 await ctx.print("Self-update does not support downgrading to an older version or re-installing the current version. Current version is \(SwiftlyCore.version) and requested version is \(version).")
                 return SwiftlyCore.version
             }
@@ -108,7 +107,7 @@ struct SelfUpdate: SwiftlyCommand {
 
             version = try swiftlyRelease.swiftlyVersion
 
-            await ctx.print("A new version of swiftly is available: \(version)")
+            await ctx.print("A new version of swiftly is available: \(version!)")
         }
 
         guard let version, let downloadURL else { fatalError() }

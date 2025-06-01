@@ -49,12 +49,11 @@ struct SelfUpdate: SwiftlyCommand {
         var version: SwiftlyVersion? = swiftlyVersion
 
         if let version {
-
 #if os(macOS)
             downloadURL = URL(string: "https://download.swift.org/swiftly/darwin/swiftly-\(version).pkg")
 #endif
 
-#f os(Linux)
+#if os(Linux)
 #if arch(x86_64)
             downloadURL = URL(string: "https://download.swift.org/swiftly/linux/swiftly-\(version)-x86_64.tar.gz")
 #elseif arch(arm64)

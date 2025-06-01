@@ -464,7 +464,7 @@ swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip
 Update the version of swiftly itself.
 
 ```
-swiftly self-update [--assume-yes] [--verbose] [--version] [--help]
+swiftly self-update [--assume-yes] [--verbose]  [--version] [--help]
 ```
 
 **--assume-yes:**

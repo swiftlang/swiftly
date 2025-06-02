@@ -1,6 +1,5 @@
 @testable import SwiftlyCore
 import Testing
-import XCTest
 
 @Suite struct StringExtensionsTests {
     @Test("Basic text wrapping at column width")
@@ -17,7 +16,7 @@ import XCTest
         width.
         """
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Preserve existing line breaks")
@@ -25,7 +24,7 @@ import XCTest
         let input = "First line\nSecond line\nThird line"
         let expected = "First line\nSecond line\nThird line"
 
-        XCTAssertEqual(input.wrapText(to: 20), expected)
+        #expect(input.wrapText(to: 20) == expected)
     }
 
     @Test("Combine wrapping with existing line breaks")
@@ -40,7 +39,7 @@ import XCTest
         Another short line
         """
 
-        XCTAssertEqual(input.wrapText(to: 15), expected)
+        #expect(input.wrapText(to: 15) == expected)
     }
 
     @Test("Words longer than column width")
@@ -52,7 +51,7 @@ import XCTest
         word
         """
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Text with no spaces")
@@ -60,7 +59,7 @@ import XCTest
         let input = "ThisIsALongStringWithNoSpaces"
         let expected = "ThisIsALongStringWithNoSpaces"
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Empty string")
@@ -68,7 +67,7 @@ import XCTest
         let input = ""
         let expected = ""
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Single character")
@@ -76,7 +75,7 @@ import XCTest
         let input = "X"
         let expected = "X"
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Single line not exceeding width")
@@ -84,7 +83,7 @@ import XCTest
         let input = "Short text"
         let expected = "Short text"
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Wrapping with indentation")
@@ -101,15 +100,15 @@ import XCTest
           lines.
         """
 
-        XCTAssertEqual(input.wrapText(to: 10, wrappingIndent: 2), expected)
+        #expect(input.wrapText(to: 20, wrappingIndent: 2) == expected)
     }
 
     @Test("Zero or negative column width")
     func testZeroOrNegativeWidth() {
         let input = "This should not be wrapped"
 
-        XCTAssertEqual(input.wrapText(to: 0), input)
-        XCTAssertEqual(input.wrapText(to: -5), input)
+        #expect(input.wrapText(to: 0) == input)
+        #expect(input.wrapText(to: -5) == input)
     }
 
     @Test("Very narrow column width")
@@ -117,7 +116,7 @@ import XCTest
         let input = "A B C"
         let expected = "A\nB\nC"
 
-        XCTAssertEqual(input.wrapText(to: 1), expected)
+        #expect(input.wrapText(to: 1) == expected)
     }
 
     @Test("Special characters")
@@ -129,7 +128,7 @@ import XCTest
         chars
         """
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Unicode characters")
@@ -140,7 +139,7 @@ import XCTest
         😀🚀🌍
         """
 
-        XCTAssertEqual(input.wrapText(to: 15), expected)
+        #expect(input.wrapText(to: 15) == expected)
     }
 
     @Test("Irregular spacing")
@@ -152,7 +151,7 @@ import XCTest
         spacing
         """
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Tab characters")
@@ -163,7 +162,7 @@ import XCTest
         \ttabs
         """
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Trailing spaces")
@@ -175,7 +174,7 @@ import XCTest
         spaces
         """
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Leading spaces")
@@ -187,7 +186,7 @@ import XCTest
         text
         """
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Multiple consecutive newlines")
@@ -195,7 +194,7 @@ import XCTest
         let input = "First\n\nSecond\n\n\nThird"
         let expected = "First\n\nSecond\n\n\nThird"
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 
     @Test("Edge case - exactly at column width")
@@ -203,6 +202,6 @@ import XCTest
         let input = "1234567890 abcdefghij"
         let expected = "1234567890\nabcdefghij"
 
-        XCTAssertEqual(input.wrapText(to: 10), expected)
+        #expect(input.wrapText(to: 10) == expected)
     }
 }

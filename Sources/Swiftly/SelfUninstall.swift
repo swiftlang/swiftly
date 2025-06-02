@@ -52,15 +52,14 @@ struct SelfUninstall: SwiftlyCommand {
         let swiftlyHome = Swiftly.currentPlatform.swiftlyHomeDir(ctx)
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx)
 
-        let fishSourceLine = """
+        let commentLine = """
         # Added by swiftly
-
+        """
+        let fishSourceLine = """
         source "\(swiftlyHome / "env.fish")"
         """
 
         let shSourceLine = """
-        # Added by swiftly
-
         . "\(swiftlyHome / "env.sh")"
         """
 
@@ -88,11 +87,13 @@ struct SelfUninstall: SwiftlyCommand {
             let isFish = path.extension == "fish"
             let sourceLine = isFish ? fishSourceLine : shSourceLine
             let contents = try String(contentsOf: path, encoding: .utf8)
-            if contents.contains(sourceLine) {
-                let updated = contents.replacingOccurrences(of: sourceLine, with: "")
-                try Data(updated.utf8).write(to: path, options: [.atomic])
+            let linesToRemove = [sourceLine, commentLine]
+            var updatedContents = contents
+            for line in linesToRemove where contents.contains(line) {
+                updatedContents = updatedContents.replacingOccurrences(of: line, with: "")
+                try Data(updatedContents.utf8).write(to: path, options: [.atomic])
                 if verbose {
-                    await ctx.print("\(path) was updated to remove swiftly source line.")
+                    await ctx.print("\(path) was updated to remove swiftly line: \(line)")
                 }
             }
         }

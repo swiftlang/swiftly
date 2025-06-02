@@ -45,7 +45,7 @@ struct SelfUninstall: SwiftlyCommand {
         try await Self.execute(ctx, verbose: self.root.verbose)
     }
 
-    static func execute(_ ctx: SwiftlyCoreContext, verbose _: Bool) async throws {
+    static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool) async throws {
         await ctx.print("Uninstalling swiftly...")
 
         let userHome = ctx.mockedHomeDir ?? fs.home
@@ -82,13 +82,18 @@ struct SelfUninstall: SwiftlyCommand {
 
         // Remove swiftly source lines from shell profiles
         for path in profilePaths where try await fs.exists(atPath: path) {
-            await ctx.print("Updating \(path)...")
+            if verbose {
+                await ctx.print("Checking \(path)...")
+            }
             let isFish = path.extension == "fish"
             let sourceLine = isFish ? fishSourceLine : shSourceLine
             let contents = try String(contentsOf: path, encoding: .utf8)
             if contents.contains(sourceLine) {
                 let updated = contents.replacingOccurrences(of: sourceLine, with: "")
                 try Data(updated.utf8).write(to: path, options: [.atomic])
+                if verbose {
+                    await ctx.print("\(path) was updated to remove swiftly source line.")
+                }
             }
         }
 

@@ -58,7 +58,11 @@ struct SelfUpdate: SwiftlyCommand {
             downloadURL = URL(string: "https://download.swift.org/swiftly/linux/swiftly-\(version)-x86_64.tar.gz")
 #elseif arch(arm64)
             downloadURL = URL(string: "https://download.swift.org/swiftly/linux/swiftly-\(version)-aarch64.tar.gz")
+#else
+            fatalError("Unsupported architecture")
 #endif
+#else
+            fatalError("Unsupported OS")
 #endif
 
             guard version > SwiftlyCore.version else {

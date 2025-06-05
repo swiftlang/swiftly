@@ -98,12 +98,77 @@ struct SelfUninstall: SwiftlyCommand {
             }
         }
 
-        await ctx.print("Removing swiftly binary at \(swiftlyBin)...")
-        try await fs.remove(atPath: swiftlyBin)
+        // Remove swiftly symlinks and binary from Swiftly bin directory
+        await ctx.print("Checking swiftly bin directory at \(swiftlyBin)...")
+        if verbose {
+            await ctx.print("--------------------------")
+        }
+        let swiftlyBinary = swiftlyBin / "swiftly"
+        if try await fs.exists(atPath: swiftlyBin) {
+            let entries = try await fs.ls(atPath: swiftlyBin)
+            for entry in entries {
+                let fullPath = swiftlyBin / entry
+                guard try await fs.exists(atPath: fullPath) else { continue }
+                if try await fs.isSymLink(atPath: fullPath) {
+                    let dest = try await fs.readlink(atPath: fullPath)
+                    if dest == swiftlyBinary {
+                        if verbose {
+                            await ctx.print("Removing symlink: \(fullPath) -> \(dest)")
+                        }
+                        try await fs.remove(atPath: fullPath)
+                    }
+                }
+            }
+        }
+        // then check if the swiftly binary exists
+        if try await fs.exists(atPath: swiftlyBinary) {
+            if verbose {
+                await ctx.print("Swiftly binary found at \(swiftlyBinary), removing it...")
+            }
+            try await fs.remove(atPath: swiftlyBin / "swiftly")
+        } 
 
-        await ctx.print("Removing swiftly home directory at \(swiftlyHome)...")
-        try await fs.remove(atPath: swiftlyHome)
+        let entries = try await fs.ls(atPath: swiftlyBin)
+        if entries.isEmpty {
+            if verbose {
+                await ctx.print("Swiftly bin directory at \(swiftlyBin) is empty, removing it...")
+            }
+            try await fs.remove(atPath: swiftlyBin)
+        }
 
-        await ctx.print("Swiftly uninstalled successfully.")
+        await ctx.print("Checking swiftly home directory at \(swiftlyHome)...")
+        if verbose {
+            await ctx.print("--------------------------")
+        }
+        let homeFiles = try? await fs.ls(atPath: swiftlyHome)
+        if let homeFiles = homeFiles, homeFiles.contains("config.json") {
+            if verbose {
+                await ctx.print("Removing swiftly config file at \(swiftlyHome / "config.json")...")
+            }
+            try await fs.remove(atPath: swiftlyHome / "config.json")
+        }
+        // look for env.sh and env.fish
+        if let homeFiles = homeFiles, homeFiles.contains("env.sh") {
+            if verbose {
+                await ctx.print("Removing swiftly env.sh file at \(swiftlyHome / "env.sh")...")
+            }
+            try await fs.remove(atPath: swiftlyHome / "env.sh")
+        }
+        if let homeFiles = homeFiles, homeFiles.contains("env.fish") {
+            if verbose {
+                await ctx.print("Removing swiftly env.fish file at \(swiftlyHome / "env.fish")...") 
+            }
+            try await fs.remove(atPath: swiftlyHome / "env.fish")
+        }
+        // if now the swiftly home directory is empty, remove it
+        let homeEntries = try await fs.ls(atPath: swiftlyHome)
+        if homeEntries.isEmpty {
+            if verbose {
+                await ctx.print("Swiftly home directory at \(swiftlyHome) is empty, removing it...")
+            }
+            try await fs.remove(atPath: swiftlyHome)
+        }
+
+        await ctx.print("Swiftly is successfully uninstalled.")
     }
 }

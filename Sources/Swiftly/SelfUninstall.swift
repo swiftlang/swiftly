@@ -126,7 +126,7 @@ struct SelfUninstall: SwiftlyCommand {
                 await ctx.print("Swiftly binary found at \(swiftlyBinary), removing it...")
             }
             try await fs.remove(atPath: swiftlyBin / "swiftly")
-        } 
+        }
 
         let entries = try await fs.ls(atPath: swiftlyBin)
         if entries.isEmpty {
@@ -156,12 +156,38 @@ struct SelfUninstall: SwiftlyCommand {
         }
         if let homeFiles = homeFiles, homeFiles.contains("env.fish") {
             if verbose {
-                await ctx.print("Removing swiftly env.fish file at \(swiftlyHome / "env.fish")...") 
+                await ctx.print("Removing swiftly env.fish file at \(swiftlyHome / "env.fish")...")
             }
             try await fs.remove(atPath: swiftlyHome / "env.fish")
         }
+
+        // we should also check for share/doc/swiftly/license/LICENSE.txt
+        let licensePath = swiftlyHome / "share/doc/swiftly/license/LICENSE.txt"
+        if
+            try await fs.exists(atPath: licensePath)
+        {
+            if verbose {
+                await ctx.print("Removing swiftly license file at \(licensePath)...")
+            }
+            try await fs.remove(atPath: licensePath)
+        }
+
+        // removes each of share/doc/swiftly/license directories if they are empty
+        let licenseDir = swiftlyHome / "share/doc/swiftly/license"
+        if try await fs.exists(atPath: licenseDir) {
+            let licenseEntries = try await fs.ls(atPath: licenseDir)
+            if licenseEntries.isEmpty {
+                if verbose {
+                    await ctx.print("Swiftly license directory at \(licenseDir) is empty, removing it...")
+                }
+                try await fs.remove(atPath: licenseDir)
+            }
+        }
+
         // if now the swiftly home directory is empty, remove it
         let homeEntries = try await fs.ls(atPath: swiftlyHome)
+        await ctx.print("Checking swiftly home directory entries...")
+        await ctx.print("still present: \(homeEntries.joined(separator: ", "))")
         if homeEntries.isEmpty {
             if verbose {
                 await ctx.print("Swiftly home directory at \(swiftlyHome) is empty, removing it...")

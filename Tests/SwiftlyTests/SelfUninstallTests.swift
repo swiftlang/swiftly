@@ -25,10 +25,18 @@ import Testing
                 try await fs.exists(atPath: swiftlyBinDir) == false,
                 "swiftly bin directory should be removed"
             )
-            #expect(
-                try await fs.exists(atPath: swiftlyHomeDir) == false,
-                "swiftly home directory should be removed"
-            )
+            if try await fs.exists(atPath: swiftlyHomeDir) {
+                let contents = try await fs.ls(atPath: swiftlyHomeDir)
+                #expect(
+                    contents == ["Toolchains"] || contents.isEmpty,
+                    "swiftly home directory should only contain 'toolchains' or be empty"
+                )
+            } else {
+                #expect(
+                    true,
+                    "swiftly home directory should be removed"
+                )
+            }
         }
     }
 

@@ -115,7 +115,7 @@ struct Install: SwiftlyCommand {
 
         // Fish doesn't cache its path, so this instruction is not necessary.
         if pathChanged && !shell.hasSuffix("fish") {
-            await ctx.print(
+            await ctx.message(
                 """
                 NOTE: Swiftly has updated some elements in your path and your shell may not yet be
                 aware of the changes. You can update your shell's environment by running
@@ -177,10 +177,10 @@ struct Install: SwiftlyCommand {
             let overwrite = Set(toolchainBinDirContents).subtracting(existingProxies).intersection(
                 swiftlyBinDirContents)
             if !overwrite.isEmpty && !assumeYes {
-                await ctx.print("The following existing executables will be overwritten:")
+                await ctx.message("The following existing executables will be overwritten:")
 
                 for executable in overwrite {
-                    await ctx.print("  \(swiftlyBinDir / executable)")
+                    await ctx.message("  \(swiftlyBinDir / executable)")
                 }
 
                 guard await ctx.promptForConfirmation(defaultBehavior: false) else {
@@ -189,7 +189,7 @@ struct Install: SwiftlyCommand {
             }
 
             if verbose {
-                await ctx.print("Setting up toolchain proxies...")
+                await ctx.message("Setting up toolchain proxies...")
             }
 
             let proxiesToCreate = Set(toolchainBinDirContents).subtracting(swiftlyBinDirContents).union(
@@ -251,7 +251,7 @@ struct Install: SwiftlyCommand {
         assumeYes: Bool
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
-            await ctx.print("\(version) is already installed.")
+            await ctx.message("\(version) is already installed.")
             return (nil, false)
         }
 
@@ -263,7 +263,7 @@ struct Install: SwiftlyCommand {
             requireSignatureValidation: verifySignature
         )
 
-        await ctx.print("Installing \(version)")
+        await ctx.message("Installing \(version)")
 
         let tmpFile = fs.mktemp(ext: ".\(Swiftly.currentPlatform.toolchainFileExtension)")
         try await fs.create(file: tmpFile, contents: nil)
@@ -352,12 +352,12 @@ struct Install: SwiftlyCommand {
 
             let lockFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "swiftly.lock"
             if verbose {
-                await ctx.print("Attempting to acquire installation lock at \(lockFile) ...")
+                await ctx.message("Attempting to acquire installation lock at \(lockFile) ...")
             }
 
             let (pathChanged, newConfig) = try await withLock(lockFile) {
                 if verbose {
-                    await ctx.print("Acquired installation lock")
+                    await ctx.message("Acquired installation lock")
                 }
 
                 var config = try await Config.load(ctx)
@@ -390,12 +390,12 @@ struct Install: SwiftlyCommand {
                 if config.inUse == nil {
                     config.inUse = version
                     try config.save(ctx)
-                    await ctx.print("The global default toolchain has been set to `\(version)`")
+                    await ctx.message("The global default toolchain has been set to `\(version)`")
                 }
                 return (pathChanged, config)
             }
             config = newConfig
-            await ctx.print("\(version) installed successfully!")
+            await ctx.message("\(version) installed successfully!")
             return (postInstallScript, pathChanged)
         }
     }
@@ -406,7 +406,7 @@ struct Install: SwiftlyCommand {
     {
         switch selector {
         case .latest:
-            await ctx.print("Fetching the latest stable Swift release...")
+            await ctx.message("Fetching the latest stable Swift release...")
 
             guard
                 let release = try await ctx.httpClient.getReleaseToolchains(
@@ -429,7 +429,7 @@ struct Install: SwiftlyCommand {
                 return .stable(ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch))
             }
 
-            await ctx.print("Fetching the latest stable Swift \(major).\(minor) release...")
+            await ctx.message("Fetching the latest stable Swift \(major).\(minor) release...")
             // If a patch was not provided, perform a lookup to get the latest patch release
             // of the provided major/minor version pair.
             let toolchain = try await ctx.httpClient.getReleaseToolchains(
@@ -449,7 +449,7 @@ struct Install: SwiftlyCommand {
                 return ToolchainVersion(snapshotBranch: branch, date: date)
             }
 
-            await ctx.print("Fetching the latest \(branch) branch snapshot...")
+            await ctx.message("Fetching the latest \(branch) branch snapshot...")
 
             // If a date was not provided, perform a lookup to find the most recent snapshot
             // for the given branch.

@@ -342,7 +342,7 @@ public struct Linux: Platform {
             try await fs.mkdir(atPath: self.swiftlyToolchainsDir(ctx))
         }
 
-        await ctx.print("Extracting toolchain...")
+        await ctx.message("Extracting toolchain...")
         let toolchainDir = self.swiftlyToolchainsDir(ctx) / version.name
 
         if try await fs.exists(atPath: toolchainDir) {
@@ -376,7 +376,7 @@ public struct Linux: Platform {
         let tmpDir = self.getTempFilePath()
         try await fs.mkdir(.parents, atPath: tmpDir)
         try await fs.withTemporary(files: tmpDir) {
-            await ctx.print("Extracting new swiftly...")
+            await ctx.message("Extracting new swiftly...")
             try extractArchive(atPath: archive) { name in
                 // Extract to the temporary directory
                 tmpDir / String(name)
@@ -405,7 +405,7 @@ public struct Linux: Platform {
         _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: FilePath, verbose: Bool
     ) async throws {
         if verbose {
-            await ctx.print("Downloading toolchain signature...")
+            await ctx.message("Downloading toolchain signature...")
         }
 
         let sigFile = self.getTempFilePath()
@@ -413,7 +413,7 @@ public struct Linux: Platform {
         try await fs.withTemporary(files: sigFile) {
             try await ctx.httpClient.getSwiftToolchainFileSignature(toolchainFile).download(to: sigFile)
 
-            await ctx.print("Verifying toolchain signature...")
+            await ctx.message("Verifying toolchain signature...")
             do {
                 if let mockedHomeDir = ctx.mockedHomeDir {
                     var env = ProcessInfo.processInfo.environment
@@ -432,7 +432,7 @@ public struct Linux: Platform {
         _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: FilePath, verbose: Bool
     ) async throws {
         if verbose {
-            await ctx.print("Downloading swiftly signature...")
+            await ctx.message("Downloading swiftly signature...")
         }
 
         let sigFile = self.getTempFilePath()
@@ -442,7 +442,7 @@ public struct Linux: Platform {
                 url: archiveDownloadURL.appendingPathExtension("sig")
             ).download(to: sigFile)
 
-            await ctx.print("Verifying swiftly signature...")
+            await ctx.message("Verifying swiftly signature...")
             do {
                 if let mockedHomeDir = ctx.mockedHomeDir {
                     var env = ProcessInfo.processInfo.environment
@@ -461,11 +461,11 @@ public struct Linux: Platform {
         -> PlatformDefinition
     {
         if let platformPretty {
-            print(
+            await ctx.message(
                 "\(platformPretty) is not an officially supported platform, but the toolchains for another platform may still work on it."
             )
         } else {
-            print(
+            await ctx.message(
                 "This platform could not be detected, but a toolchain for one of the supported platforms may work on it."
             )
         }
@@ -473,7 +473,7 @@ public struct Linux: Platform {
         let selections = self.linuxPlatforms.enumerated().map { "\($0 + 1)) \($1.namePretty)" }.joined(
             separator: "\n")
 
-        print(
+        await ctx.message(
             """
             Please select the platform to use for toolchain downloads:
 
@@ -526,7 +526,7 @@ public struct Linux: Platform {
             if disableConfirmation {
                 throw SwiftlyError(message: message)
             } else {
-                print(message)
+                await ctx.message(message)
             }
             return await self.manualSelectPlatform(ctx, platformPretty)
         }
@@ -557,7 +557,7 @@ public struct Linux: Platform {
             if disableConfirmation {
                 throw SwiftlyError(message: message)
             } else {
-                print(message)
+                await ctx.message(message)
             }
             return await self.manualSelectPlatform(ctx, platformPretty)
         }
@@ -568,7 +568,7 @@ public struct Linux: Platform {
                 if disableConfirmation {
                     throw SwiftlyError(message: message)
                 } else {
-                    print(message)
+                    await ctx.message(message)
                 }
                 return await self.manualSelectPlatform(ctx, platformPretty)
             }
@@ -580,7 +580,7 @@ public struct Linux: Platform {
                 if disableConfirmation {
                     throw SwiftlyError(message: message)
                 } else {
-                    print(message)
+                    await ctx.message(message)
                 }
                 return await self.manualSelectPlatform(ctx, platformPretty)
             }
@@ -596,7 +596,7 @@ public struct Linux: Platform {
         if disableConfirmation {
             throw SwiftlyError(message: message)
         } else {
-            print(message)
+            await ctx.message(message)
         }
         return await self.manualSelectPlatform(ctx, platformPretty)
     }

@@ -59,7 +59,7 @@ struct List: SwiftlyCommand {
             if toolchain == config.inUse {
                 message += " (default)"
             }
-            await ctx.print(message)
+            await ctx.message(message)
         }
 
         if let selector {
@@ -79,14 +79,14 @@ struct List: SwiftlyCommand {
             }
 
             let message = "Installed \(modifier) toolchains"
-            await ctx.print(message)
-            await ctx.print(String(repeating: "-", count: message.count))
+            await ctx.message(message)
+            await ctx.message(String(repeating: "-", count: message.count))
             for toolchain in toolchains {
                 await printToolchain(toolchain)
             }
         } else {
-            await ctx.print("Installed release toolchains")
-            await ctx.print("----------------------------")
+            await ctx.message("Installed release toolchains")
+            await ctx.message("----------------------------")
             for toolchain in toolchains {
                 guard toolchain.isStableRelease() else {
                     continue
@@ -94,9 +94,9 @@ struct List: SwiftlyCommand {
                 await printToolchain(toolchain)
             }
 
-            await ctx.print("")
-            await ctx.print("Installed snapshot toolchains")
-            await ctx.print("-----------------------------")
+            await ctx.message("")
+            await ctx.message("Installed snapshot toolchains")
+            await ctx.message("-----------------------------")
             for toolchain in toolchains where toolchain.isSnapshot() {
                 await printToolchain(toolchain)
             }

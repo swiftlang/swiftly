@@ -53,19 +53,22 @@ public struct SwiftlyCoreContext: Sendable {
     /// Pass the provided string to the set output handler if any.
     /// If no output handler has been set, just print to stdout.
     public func print(_ string: String = "", terminator: String? = nil) async {
-        // Get terminal size or use default width
-        let terminalWidth = self.getTerminalWidth()
-        let wrappedString = string.isEmpty ? string : string.wrapText(to: terminalWidth)
-
         guard let handler = self.outputHandler else {
             if let terminator {
-                Swift.print(wrappedString, terminator: terminator)
+                Swift.print(string, terminator: terminator)
             } else {
-                Swift.print(wrappedString)
+                Swift.print(string)
             }
             return
         }
-        await handler.handleOutputLine(wrappedString + (terminator ?? ""))
+        await handler.handleOutputLine(string + (terminator ?? ""))
+    }
+
+    public func message(_ string: String = "", terminator: String? = nil) async {
+        // Get terminal size or use default width
+        let terminalWidth = self.getTerminalWidth()
+        let wrappedString = string.isEmpty ? string : string.wrapText(to: terminalWidth)
+        await self.print(wrappedString, terminator: terminator)
     }
 
     /// Detects the terminal width in columns

@@ -73,24 +73,24 @@ struct Uninstall: SwiftlyCommand {
         }
 
         guard !toolchains.isEmpty else {
-            await ctx.print("No toolchains matched \"\(self.toolchain)\"")
+            await ctx.message("No toolchains matched \"\(self.toolchain)\"")
             return
         }
 
         if !self.root.assumeYes {
-            await ctx.print("The following toolchains will be uninstalled:")
+            await ctx.message("The following toolchains will be uninstalled:")
 
             for toolchain in toolchains {
-                await ctx.print("  \(toolchain)")
+                await ctx.message("  \(toolchain)")
             }
 
             guard await ctx.promptForConfirmation(defaultBehavior: true) else {
-                await ctx.print("Aborting uninstall")
+                await ctx.message("Aborting uninstall")
                 return
             }
         }
 
-        await ctx.print()
+        await ctx.message()
 
         for toolchain in toolchains {
             var config = try await Config.load(ctx)
@@ -124,18 +124,18 @@ struct Uninstall: SwiftlyCommand {
             try await Self.execute(ctx, toolchain, &config, verbose: self.root.verbose)
         }
 
-        await ctx.print()
-        await ctx.print("\(toolchains.count) toolchain(s) successfully uninstalled")
+        await ctx.message()
+        await ctx.message("\(toolchains.count) toolchain(s) successfully uninstalled")
     }
 
     static func execute(
         _ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ config: inout Config,
         verbose: Bool
     ) async throws {
-        await ctx.print("Uninstalling \(toolchain)... ", terminator: "")
+        await ctx.message("Uninstalling \(toolchain)... ", terminator: "")
         let lockFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "swiftly.lock"
         if verbose {
-            await ctx.print("Attempting to acquire installation lock at \(lockFile) ...")
+            await ctx.message("Attempting to acquire installation lock at \(lockFile) ...")
         }
 
         config = try await withLock(lockFile) {
@@ -150,6 +150,6 @@ struct Uninstall: SwiftlyCommand {
             try await Swiftly.currentPlatform.uninstall(ctx, toolchain, verbose: verbose)
             return config
         }
-        await ctx.print("done")
+        await ctx.message("done")
     }
 }

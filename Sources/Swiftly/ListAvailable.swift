@@ -87,7 +87,7 @@ struct ListAvailable: SwiftlyCommand {
             if toolchain == config.inUse {
                 message += " (default)"
             }
-            await ctx.print(message)
+            await ctx.message(message)
         }
 
         if let selector {
@@ -107,14 +107,14 @@ struct ListAvailable: SwiftlyCommand {
             }
 
             let message = "Available \(modifier) toolchains"
-            await ctx.print(message)
-            await ctx.print(String(repeating: "-", count: message.count))
+            await ctx.message(message)
+            await ctx.message(String(repeating: "-", count: message.count))
             for toolchain in toolchains {
                 await printToolchain(toolchain)
             }
         } else {
-            print("Available release toolchains")
-            print("----------------------------")
+            await ctx.message("Available release toolchains")
+            await ctx.message("----------------------------")
             for toolchain in toolchains where toolchain.isStableRelease() {
                 await printToolchain(toolchain)
             }

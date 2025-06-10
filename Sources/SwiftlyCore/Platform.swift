@@ -404,7 +404,7 @@ extension Platform {
             return
         }
 
-        await ctx.print("Installing swiftly in \(swiftlyHomeBin)...")
+        await ctx.message("Installing swiftly in \(swiftlyHomeBin)...")
 
         if try await fs.exists(atPath: swiftlyHomeBin) {
             try await fs.remove(atPath: swiftlyHomeBin)
@@ -414,7 +414,7 @@ extension Platform {
             try await fs.move(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
         } catch {
             try await fs.copy(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
-            await ctx.print(
+            await ctx.message(
                 "Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed."
             )
         }

@@ -85,7 +85,7 @@ struct Use: SwiftlyCommand {
 
             if self.printLocation {
                 // Print the toolchain location and exit
-                await ctx.print("\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion))")
+                await ctx.message("\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion))")
                 return
             }
 
@@ -98,7 +98,7 @@ struct Use: SwiftlyCommand {
                 message += " (default)"
             }
 
-            await ctx.print(message)
+            await ctx.message(message)
 
             return
         }
@@ -110,7 +110,7 @@ struct Use: SwiftlyCommand {
         let selector = try ToolchainSelector(parsing: toolchain)
 
         guard let toolchain = config.listInstalledToolchains(selector: selector).max() else {
-            await ctx.print("No installed toolchains match \"\(toolchain)\"")
+            await ctx.message("No installed toolchains match \"\(toolchain)\"")
             return
         }
 
@@ -130,10 +130,10 @@ struct Use: SwiftlyCommand {
             message = "The file `\(versionFile)` has been set to `\(toolchain)`"
         } else if let newVersionFile = try await findNewVersionFile(ctx), !globalDefault {
             if !assumeYes {
-                await ctx.print("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
+                await ctx.message("A new file `\(newVersionFile)` will be created to set the new in-use toolchain for this project. Alternatively, you can set your default globally with the `--global-default` flag. Proceed with creating this file?")
 
                 guard await ctx.promptForConfirmation(defaultBehavior: true) else {
-                    await ctx.print("Aborting setting in-use toolchain")
+                    await ctx.message("Aborting setting in-use toolchain")
                     return
                 }
             }
@@ -151,7 +151,7 @@ struct Use: SwiftlyCommand {
             message += " (was \(selectedVersion.name))"
         }
 
-        await ctx.print(message)
+        await ctx.message(message)
     }
 
     static func findNewVersionFile(_ ctx: SwiftlyCoreContext) async throws -> FilePath? {

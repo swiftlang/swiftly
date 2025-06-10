@@ -69,12 +69,12 @@ public struct MacOS: Platform {
 
         if toolchainsDir == self.defaultToolchainsDirectory {
             // If the toolchains go into the default user location then we use the installer to install them
-            await ctx.print("Installing package in user home directory...")
+            await ctx.message("Installing package in user home directory...")
 
             try await sys.installer(.verbose, .pkg(tmpFile), .target("CurrentUserHomeDirectory")).run(self, quiet: !verbose)
         } else {
             // Otherwise, we extract the pkg into the requested toolchains directory.
-            await ctx.print("Expanding pkg...")
+            await ctx.message("Expanding pkg...")
             let tmpDir = fs.mktemp()
             let toolchainDir = toolchainsDir / "\(version.identifier).xctoolchain"
 
@@ -82,7 +82,7 @@ public struct MacOS: Platform {
                 try await fs.mkdir(atPath: toolchainDir)
             }
 
-            await ctx.print("Checking package signature...")
+            await ctx.message("Checking package signature...")
             do {
                 try await sys.pkgutil().checksignature(pkg_path: tmpFile).run(self, quiet: !verbose)
             } catch {
@@ -92,7 +92,7 @@ public struct MacOS: Platform {
                 }
 
                 // We permit the signature verification to fail during testing
-                await ctx.print("Signature verification failed, which is allowable during testing with mocked toolchains")
+                await ctx.message("Signature verification failed, which is allowable during testing with mocked toolchains")
             }
             try await sys.pkgutil(.verbose).expand(pkg_path: tmpFile, dir_path: tmpDir).run(self, quiet: !verbose)
 
@@ -103,7 +103,7 @@ public struct MacOS: Platform {
                 payload = tmpDir / "\(version.identifier)-osx-package.pkg/Payload"
             }
 
-            await ctx.print("Untarring pkg Payload...")
+            await ctx.message("Untarring pkg Payload...")
             try await sys.tar(.directory(toolchainDir)).extract(.verbose, .archive(payload)).run(self, quiet: !verbose)
         }
     }
@@ -116,7 +116,7 @@ public struct MacOS: Platform {
         let userHomeDir = ctx.mockedHomeDir ?? fs.home
 
         if ctx.mockedHomeDir == nil {
-            await ctx.print("Extracting the swiftly package...")
+            await ctx.message("Extracting the swiftly package...")
             try await sys.installer(
                 .pkg(archive),
                 .target("CurrentUserHomeDirectory")
@@ -138,7 +138,7 @@ public struct MacOS: Platform {
                 throw SwiftlyError(message: "Payload file could not be found at \(tmpDir).")
             }
 
-            await ctx.print("Extracting the swiftly package into \(installDir)...")
+            await ctx.message("Extracting the swiftly package into \(installDir)...")
             try await sys.tar(.directory(installDir)).extract(.verbose, .archive(payload)).run(self, quiet: false)
         }
 
@@ -149,7 +149,7 @@ public struct MacOS: Platform {
         async throws
     {
         if verbose {
-            await ctx.print("Uninstalling package in user home directory... ")
+            await ctx.message("Uninstalling package in user home directory... ")
         }
 
         let toolchainDir = self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"

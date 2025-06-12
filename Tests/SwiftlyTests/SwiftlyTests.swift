@@ -89,7 +89,8 @@ extension SwiftlyCoreContext {
         mockedHomeDir: FilePath?,
         httpRequestExecutor: HTTPRequestExecutor,
         outputHandler: (any OutputHandler)?,
-        inputProvider: (any InputProvider)?
+        inputProvider: (any InputProvider)?,
+        format: SwiftlyCore.OutputFormat = .text
     ) {
         self.init(httpClient: SwiftlyHTTPClient(httpRequestExecutor: httpRequestExecutor))
 
@@ -98,6 +99,7 @@ extension SwiftlyCoreContext {
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: httpRequestExecutor)
         self.outputHandler = outputHandler
         self.inputProvider = inputProvider
+        self.format = format
     }
 }
 
@@ -236,7 +238,7 @@ public enum SwiftlyTests {
 
     /// Run this command, using the provided input as the stdin (in lines). Returns an array of captured
     /// output lines.
-    static func runWithMockedIO<T: SwiftlyCommand>(_ commandType: T.Type, _ arguments: [String], quiet: Bool = false, input: [String]? = nil) async throws -> [String] {
+    static func runWithMockedIO<T: SwiftlyCommand>(_ commandType: T.Type, _ arguments: [String], quiet: Bool = false, input: [String]? = nil, format: SwiftlyCore.OutputFormat = .text) async throws -> [String] {
         let handler = TestOutputHandler(quiet: quiet)
         let provider: (any InputProvider)? = if let input {
             TestInputProvider(lines: input)
@@ -248,7 +250,8 @@ public enum SwiftlyTests {
             mockedHomeDir: SwiftlyTests.ctx.mockedHomeDir,
             httpRequestExecutor: SwiftlyTests.ctx.httpClient.httpRequestExecutor,
             outputHandler: handler,
-            inputProvider: provider
+            inputProvider: provider,
+            format: format
         )
 
         let rawCmd = try Swiftly.parseAsRoot(arguments)

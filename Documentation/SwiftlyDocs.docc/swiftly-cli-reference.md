@@ -152,7 +152,7 @@ Note that listing available snapshots before the latest release (major and minor
 Set the in-use or default toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
 
 ```
-swiftly use [--print-location] [--global-default] [--assume-yes] [--verbose] [<toolchain>] [--version] [--help]
+swiftly use [--print-location] [--global-default] [--format=<format>] [--assume-yes] [--verbose] [<toolchain>] [--version] [--help]
 ```
 
 **--print-location:**
@@ -163,6 +163,11 @@ swiftly use [--print-location] [--global-default] [--assume-yes] [--verbose] [<t
 **--global-default:**
 
 *Set the global default toolchain that is used when there are no .swift-version files.*
+
+
+**--format=\<format\>:**
+
+*Output format (text, json)*
 
 
 **--assume-yes:**

@@ -83,6 +83,10 @@ public enum FileSystem {
         try FileManager.default.destinationOfSymbolicLink(atPath: atPath)
     }
 
+    public static func isSymLink(atPath: FilePath) async throws -> Bool {
+        try FileManager.default.attributesOfItem(atPath: atPath.string)[.type] as? FileAttributeType == .typeSymbolicLink
+    }
+
     public static func symlink(atPath: FilePath, linkPath: FilePath) async throws {
         try FileManager.default.createSymbolicLink(atPath: atPath, withDestinationPath: linkPath)
     }

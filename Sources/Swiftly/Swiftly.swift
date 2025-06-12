@@ -46,6 +46,7 @@ public struct Swiftly: SwiftlyCommand {
             Init.self,
             SelfUpdate.self,
             Run.self,
+            SelfUninstall.self,
             Link.self,
             Unlink.self,
         ]

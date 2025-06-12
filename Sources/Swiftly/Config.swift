@@ -32,7 +32,7 @@ public struct Config: Codable, Equatable, Sendable {
             if config.version == nil {
                 // Assume that the version of swiftly is 0.3.0 because that is the last
                 // unversioned release.
-                config.version = try? SwiftlyVersion(parsing: "0.3.0")
+                config.version = SwiftlyCore.version
             }
             return config
         } catch {

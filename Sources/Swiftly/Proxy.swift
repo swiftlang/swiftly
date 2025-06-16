@@ -14,6 +14,10 @@ public enum Proxy {
             }
 
             guard binName != "swiftly" else {
+                if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "--generate-completion-script" {
+                    // If the first argument is for completion script generation, we let swiftly handle it and finish.
+                    return await Swiftly.main()
+                }
                 // Treat this as a swiftly invocation, but first check that we are installed, bootstrapping
                 //  the installation process if we aren't.
                 let configResult: Result<Config, any Error>

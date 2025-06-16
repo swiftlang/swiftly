@@ -31,14 +31,14 @@ if [ "$installSwiftly" == true ]; then
     echo "Installing swiftly"
 
     if [[ "$(uname -s)" == "Linux" ]]; then
-        curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
+        curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz && tar zxf swiftly.tar.gz && ./swiftly init -y --skip-install
         . "/root/.local/share/swiftly/env.sh"
     else
         export SWIFTLY_HOME_DIR="$(pwd)/swiftly-bootstrap"
         export SWIFTLY_BIN_DIR="$SWIFTLY_HOME_DIR/bin"
         export SWIFTLY_TOOLCHAINS_DIR="$SWIFTLY_HOME_DIR/toolchains"
 
-        curl -O https://download.swift.org/swiftly/darwin/swiftly.pkg && pkgutil --check-signature swiftly-*.pkg && pkgutil --verbose --expand swiftly-*.pkg "${SWIFTLY_HOME_DIR}" && tar -C "${SWIFTLY_HOME_DIR}" -xvf "${SWIFTLY_HOME_DIR}"/swiftly-*/Payload && "$SWIFTLY_HOME_DIR/bin/swiftly" init -y --skip-install
+        curl -O https://download.swift.org/swiftly/darwin/swiftly.pkg && pkgutil --check-signature swiftly.pkg && pkgutil --verbose --expand swiftly.pkg "${SWIFTLY_HOME_DIR}" && tar -C "${SWIFTLY_HOME_DIR}" -xvf "${SWIFTLY_HOME_DIR}"/swiftly-*/Payload && "$SWIFTLY_HOME_DIR/bin/swiftly" init -y --skip-install
 
         . "$SWIFTLY_HOME_DIR/env.sh"
     fi

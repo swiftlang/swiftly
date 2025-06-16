@@ -31,7 +31,7 @@ if [ "$installSwiftly" == true ]; then
     echo "Installing swiftly"
 
     if [[ "$(uname -s)" == "Linux" ]]; then
-        curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz && tar zxf swiftly.tar.gz && ./swiftly init -y --skip-install
+        curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz && tar zxf swiftly-*.tar.gz && ./swiftly init -y --skip-install
         . "/root/.local/share/swiftly/env.sh"
     else
         export SWIFTLY_HOME_DIR="$(pwd)/swiftly-bootstrap"

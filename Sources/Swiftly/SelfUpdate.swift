@@ -75,11 +75,6 @@ struct SelfUpdate: SwiftlyCommand {
             await ctx.print("Self-update requested to swiftly version \(version)")
         }
 
-        guard version > SwiftlyCore.version else {
-            await ctx.message("Already up to date.")
-            return SwiftlyCore.version
-        }
-
         if downloadURL == nil {
             await ctx.print("Checking for swiftly updates...")
 

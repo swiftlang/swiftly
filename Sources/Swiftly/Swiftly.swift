@@ -51,8 +51,8 @@ public struct Swiftly: SwiftlyCommand {
         ]
     )
 
-    public static func createDefaultContext() -> SwiftlyCoreContext {
-        SwiftlyCoreContext()
+    public static func createDefaultContext(format: SwiftlyCore.OutputFormat = .text) -> SwiftlyCoreContext {
+        SwiftlyCoreContext(format: format)
     }
 
     /// The list of directories that swiftly needs to exist in order to execute.

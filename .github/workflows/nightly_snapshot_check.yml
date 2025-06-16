@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '30 3 * * *'
 
-env:
-  SWIFTLY_BOOTSTRAP_VERSION: 1.0.0
-
 jobs:
   tests-selfhosted-linux:
     name: Test (Smoke Test - Nightly Swift Toolchain) / ${{ matrix.container }}
@@ -14,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ["ubuntu:20.04", "ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
+        container: ["ubuntu:20.04", "ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12"]
     container:
       image: ${{ matrix.container }}
     steps:
@@ -36,4 +33,4 @@ jobs:
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly --swift-main-snapshot
       - name: Build and Test
-        run: swift test
+        run: swiftly run +main-snapshot swift test

@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '30 3 * * *'
 
-env:
-  SWIFTLY_BOOTSTRAP_VERSION: 1.0.1
-
 jobs:
   tests-selfhosted-linux:
     name: Test (Smoke Test - Nightly Swift Toolchain) / ${{ matrix.container }}

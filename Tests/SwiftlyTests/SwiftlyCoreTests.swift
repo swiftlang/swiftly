@@ -7,7 +7,7 @@ import Testing
 actor TestOutputCapture: OutputHandler {
     private(set) var outputLines: [String] = []
 
-    func handleOutputLine(_ string: String) {
+    func handleOutputLine(_ string: String) async {
         self.outputLines.append(string)
     }
 

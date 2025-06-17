@@ -88,7 +88,7 @@ struct Use: SwiftlyCommand {
 
             if self.printLocation {
                 let location = LocationInfo(path: "\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion))")
-                await ctx.output(location)
+                try await ctx.output(location)
                 return
             }
 
@@ -100,7 +100,7 @@ struct Use: SwiftlyCommand {
             }
 
             let toolchainInfo = ToolchainInfo(version: selectedVersion, source: source)
-            await ctx.output(toolchainInfo)
+            try await ctx.output(toolchainInfo)
 
             return
         }
@@ -150,7 +150,7 @@ struct Use: SwiftlyCommand {
             configFile = nil
         }
 
-        await ctx.output(ToolchainSetInfo(
+        try await ctx.output(ToolchainSetInfo(
             version: toolchain,
             previousVersion: selectedVersion,
             isGlobal: isGlobal,

@@ -14,10 +14,6 @@ public enum Proxy {
             }
 
             guard binName != "swiftly" else {
-                if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "--generate-completion-script" {
-                    // If the first argument is for completion script generation, we let swiftly handle it and finish.
-                    return await Swiftly.main()
-                }
                 // Treat this as a swiftly invocation, but first check that we are installed, bootstrapping
                 //  the installation process if we aren't.
                 let configResult: Result<Config, any Error>
@@ -36,19 +32,18 @@ public enum Proxy {
 
                     if CommandLine.arguments.count == 1 {
                         // User ran swiftly with no extra arguments in an uninstalled environment, so we jump directly into
-                        //  an simple init.
+                        //  a simple init.
                         try await Init.execute(ctx, assumeYes: false, noModifyProfile: false, overwrite: false, platform: nil, verbose: false, skipInstall: false, quietShellFollowup: false)
                         return
-                    } else if CommandLine.arguments.count >= 2 && CommandLine.arguments[1] == "init" {
-                        // Let the user run the init command with their arguments, if any.
+                    } else if CommandLine.arguments.count >= 2 && ["init", "--generate-completion-script"].contains(CommandLine.arguments[1]) {
+                        // Let the user run the init command or completion script generation with arguments, if any.
                         await Swiftly.main()
                         return
-                    } else if CommandLine.arguments.count == 2 && (CommandLine.arguments[1] == "--help" || CommandLine.arguments[1] == "--experimental-dump-help") {
-                        // Allow the showing of help information
+                    } else if CommandLine.arguments.count == 2 && ["--help", "--experimental-dump-help"].contains(CommandLine.arguments[1]) {
+                        // Just print help information.
                         await Swiftly.main()
                         return
                     } else {
-                        // We've been invoked outside the "init" subcommand and we're not yet configured.
                         // This will throw if the configuration couldn't be loaded and give the user an actionable message.
                         throw err
                     }

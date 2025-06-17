@@ -11,10 +11,10 @@ public enum OutputFormat: String, Sendable, CaseIterable, ExpressibleByArgument 
 }
 
 public protocol OutputFormatter {
-    func format(_ data: OutputData) -> String
+    func format(_ data: OutputData) throws -> String
 }
 
-public protocol OutputData: Codable, CustomStringConvertible {
+public protocol OutputData: Encodable, CustomStringConvertible {
     var description: String { get }
 }
 
@@ -26,19 +26,21 @@ public struct TextOutputFormatter: OutputFormatter {
     }
 }
 
+public enum OutputFormatterError: Error {
+    case encodingError(String)
+}
+
 public struct JSONOutputFormatter: OutputFormatter {
     public init() {}
 
-    public func format(_ data: OutputData) -> String {
+    public func format(_ data: OutputData) throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
-        let jsonData = try? encoder.encode(data)
-
-        guard let jsonData = jsonData, let result = String(data: jsonData, encoding: .utf8) else {
-            return "{}"
+        let jsonData = try encoder.encode(data)
+        guard let result = String(data: jsonData, encoding: .utf8) else {
+            throw OutputFormatterError.encodingError("Failed to encode JSON data as a string in UTF-8.")
         }
-
         return result
     }
 }

@@ -107,7 +107,7 @@ written to this file as commands that can be run after the installation.
 List toolchains available for install.
 
 ```
-swiftly list-available [<toolchain-selector>] [--version] [--help]
+swiftly list-available [<toolchain-selector>] [--format=<format>] [--version] [--help]
 ```
 
 **toolchain-selector:**
@@ -133,6 +133,11 @@ The installed snapshots for a given development branch can be listed by specifyi
     $ swiftly list-available x.y-snapshot
 
 Note that listing available snapshots before the latest release (major and minor number) is unsupported.
+
+
+**--format=\<format\>:**
+
+*Output format (text, json)*
 
 
 **--version:**

@@ -98,13 +98,13 @@ public struct SwiftlyCoreContext: Sendable {
         }
     }
 
-    public func output(_ data: OutputData) async {
+    public func output(_ data: OutputData) async throws {
         let formattedOutput: String
         switch self.format {
         case .text:
             formattedOutput = TextOutputFormatter().format(data)
         case .json:
-            formattedOutput = JSONOutputFormatter().format(data)
+            formattedOutput = try JSONOutputFormatter().format(data)
         }
         await self.print(formattedOutput)
     }

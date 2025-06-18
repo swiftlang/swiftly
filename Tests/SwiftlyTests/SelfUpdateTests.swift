@@ -21,7 +21,7 @@ import Testing
     func runSelfUpdateTest(latestVersion: SwiftlyVersion) async throws {
         try await SwiftlyTests.withTestHome {
             try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: latestVersion) {
-                let updatedVersion = try await SelfUpdate.execute(SwiftlyTests.ctx, verbose: true)
+                let updatedVersion = try await SelfUpdate.execute(SwiftlyTests.ctx, verbose: true, version: nil)
                 #expect(latestVersion == updatedVersion)
             }
         }

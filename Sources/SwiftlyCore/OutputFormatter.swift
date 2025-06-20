@@ -14,7 +14,7 @@ public protocol OutputFormatter {
     func format(_ data: OutputData) throws -> String
 }
 
-public protocol OutputData: Encodable, CustomStringConvertible {
+public protocol OutputData: CustomStringConvertible, Codable {
     var description: String { get }
 }
 

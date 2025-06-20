@@ -335,22 +335,23 @@ import Testing
                     var output = try await SwiftlyTests.runWithMockedIO(
                         Use.self, ["use", "-g", "--format", "json", toolchain.name], format: .json
                     )
-                    // Decode the output to a dictionary, to avoid making everything Decodable.
-                    let result =
-                        try JSONSerialization.jsonObject(
-                            with: output[0].data(using: .utf8)!, options: []
-                        ) as! [String: Any]
-                    #expect(result["version"] as! String == toolchain.name)
+
+                    let toolchainSetInfo = try JSONDecoder().decode(
+                        ToolchainSetInfo.self,
+                        from: output[0].data(using: .utf8)!
+                    )
+                    #expect(toolchainSetInfo.version.name == toolchain.name)
 
                     output = try await SwiftlyTests.runWithMockedIO(
                         Use.self, ["use", "-g", "--print-location", "--format", "json"], format: .json
                     )
-                    let result2 =
-                        try JSONSerialization.jsonObject(
-                            with: output[0].data(using: .utf8)!, options: []
-                        ) as! [String: Any]
+
+                    let locationInfo = try JSONDecoder().decode(
+                        LocationInfo.self,
+                        from: output[0].data(using: .utf8)!
+                    )
                     #expect(
-                        result2["path"] as! String
+                        locationInfo.path
                             == Swiftly.currentPlatform.findToolchainLocation(
                                 SwiftlyTests.ctx, toolchain
                             ).string)

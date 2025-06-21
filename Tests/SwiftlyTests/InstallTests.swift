@@ -1,6 +1,7 @@
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
+import SystemPackage
 import Testing
 
 @Suite struct InstallTests {
@@ -261,5 +262,38 @@ import Testing
         try await SwiftlyTests.validateInUse(expected: .oldStable)
         try await SwiftlyTests.installMockedToolchain(selector: ToolchainVersion.newStable.name, args: ["--use"])
         try await SwiftlyTests.validateInUse(expected: .newStable)
+    }
+
+    /// Verify that progress information is written to the progress file when specified.
+    @Test(.testHomeMockedToolchain()) func installProgressFile() async throws {
+        let progressFile = fs.mktemp(ext: ".json")
+
+        try await SwiftlyTests.runCommand(Install.self, [
+            "install", "5.7.0",
+            "--post-install-file=\(fs.mktemp())",
+            "--progress-file=\(progressFile.string)",
+        ])
+
+        #expect(try await fs.exists(atPath: progressFile))
+
+        let progressContent = try String(contentsOfFile: progressFile.string)
+        let lines = progressContent.components(separatedBy: .newlines).filter { !$0.isEmpty }
+
+        #expect(!lines.isEmpty, "Progress file should contain progress entries")
+
+        // Verify that at least one progress entry exists
+        let hasProgressEntry = lines.contains { line in
+            line.contains("\"step\"") && line.contains("\"percent\"") && line.contains("\"timestamp\"")
+        }
+        #expect(hasProgressEntry, "Progress file should contain step progress entries")
+
+        // Verify that a completion entry exists
+        let hasCompletionEntry = lines.contains { line in
+            line.contains("\"complete\"") && line.contains("\"success\"")
+        }
+        #expect(hasCompletionEntry, "Progress file should contain completion entry")
+
+        // Clean up
+        try FileManager.default.removeItem(atPath: progressFile.string)
     }
 }

@@ -190,6 +190,22 @@ extension String {
         try self.write(to: URL(fileURLWithPath: path.string), atomically: atomically, encoding: enc)
     }
 
+    public func append(to path: FilePath, encoding enc: String.Encoding = .utf8) throws {
+        if !FileManager.default.fileExists(atPath: path.string) {
+            try self.write(to: path, atomically: true, encoding: enc)
+            return
+        }
+
+        let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: path.string))
+        defer { fileHandle.closeFile() }
+        fileHandle.seekToEndOfFile()
+        if let data = self.data(using: enc) {
+            fileHandle.write(data)
+        } else {
+            throw SwiftlyError(message: "Failed to convert string to data with encoding \(enc)")
+        }
+    }
+
     public init(contentsOf path: FilePath, encoding enc: String.Encoding = .utf8) throws {
         try self.init(contentsOf: URL(fileURLWithPath: path.string), encoding: enc)
     }

@@ -1,4 +1,6 @@
 import Foundation
+@testable import Swiftly
+@testable import SwiftlyCore
 import SystemPackage
 import Testing
 
@@ -98,6 +100,20 @@ import Testing
         }
 
         try FileManager.default.removeItem(atPath: tempFile.string)
+    }
+
+    @Test("Test clear method removes file")
+    func testClearRemovesFile() throws {
+        let tempFile = fs.mktemp(ext: ".json")
+        let reporter = JsonFileProgressReporter(filePath: tempFile)
+
+        reporter.update(step: 1, total: 2, text: "Test")
+
+        #expect(FileManager.default.fileExists(atPath: tempFile.string))
+
+        reporter.clear()
+
+        #expect(!FileManager.default.fileExists(atPath: tempFile.string))
     }
 
     @Test("Test multiple progress updates create multiple lines")

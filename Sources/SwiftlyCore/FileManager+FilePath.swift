@@ -60,7 +60,7 @@ public enum FileSystem {
         case mode(Int)
     }
 
-    public static func create(_ options: CreateOptions..., file: FilePath, contents: Data?) async throws {
+    public static func create(_ options: CreateOptions..., file: FilePath, contents: Data? = nil) async throws {
         try await Self.create(options, file: file, contents: contents)
     }
 
@@ -194,15 +194,6 @@ extension String {
         if !FileManager.default.fileExists(atPath: path.string) {
             try self.write(to: path, atomically: true, encoding: enc)
             return
-        }
-
-        let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: path.string))
-        defer { fileHandle.closeFile() }
-        fileHandle.seekToEndOfFile()
-        if let data = self.data(using: enc) {
-            fileHandle.write(data)
-        } else {
-            throw SwiftlyError(message: "Failed to convert string to data with encoding \(enc)")
         }
     }
 

@@ -77,6 +77,7 @@ struct Install: SwiftlyCommand {
             discussion: """
             Progress information will be appended to this file as JSON objects, one per line.
             Each progress entry contains timestamp, progress percentage, and a descriptive message.
+            The file must be writable, else an error will be thrown.
             """
         ))
     var progressFile: FilePath?
@@ -313,12 +314,16 @@ struct Install: SwiftlyCommand {
             }
 
             let animation: ProgressAnimationProtocol =
-                progressFile != nil
-                    ? JsonFileProgressReporter(filePath: progressFile!)
-                    : PercentProgressAnimation(
-                        stream: stdoutStream,
-                        header: "Downloading \(version)"
-                    )
+                if let progressFile
+            {
+                try JsonFileProgressReporter(ctx, filePath: progressFile)
+            } else {
+                PercentProgressAnimation(stream: stdoutStream, header: "Downloading \(version)")
+            }
+
+            defer {
+                try? (animation as? JsonFileProgressReporter)?.close()
+            }
 
             var lastUpdate = Date()
 

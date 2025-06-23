@@ -86,6 +86,7 @@ written to this file as commands that can be run after the installation.
 
 Progress information will be appended to this file as JSON objects, one per line.
 Each progress entry contains timestamp, progress percentage, and a descriptive message.
+The file must be writable, else an error will be thrown.
 
 
 **--assume-yes:**

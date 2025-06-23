@@ -11,27 +11,30 @@ enum ProgressInfo: Codable {
 struct JsonFileProgressReporter: ProgressAnimationProtocol {
     let filePath: FilePath
     private let encoder: JSONEncoder
+    private let ctx: SwiftlyCoreContext
+    private let fileHandle: FileHandle
 
-    init(filePath: FilePath, encoder: JSONEncoder = JSONEncoder()) {
+    init(_ ctx: SwiftlyCoreContext, filePath: FilePath, encoder: JSONEncoder = JSONEncoder()) throws
+    {
+        self.ctx = ctx
         self.filePath = filePath
         self.encoder = encoder
+        self.fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: filePath.string))
     }
 
     private func writeProgress(_ progress: ProgressInfo) {
         let jsonData = try? self.encoder.encode(progress)
-        guard let jsonData = jsonData, let jsonString = String(data: jsonData, encoding: .utf8)
-        else {
-            print("Failed to encode progress entry to JSON")
+        guard let jsonData = jsonData else {
+            Task { [ctx = self.ctx] in
+                await ctx.message("Failed to encode progress entry to JSON")
+            }
             return
         }
 
-        let jsonLine = jsonString + "\n"
-
-        do {
-            try jsonLine.append(to: self.filePath)
-        } catch {
-            print("Failed to write progress entry to \(self.filePath): \(error)")
-        }
+        self.fileHandle.seekToEndOfFile()
+        self.fileHandle.write(jsonData)
+        self.fileHandle.write("\n".data(using: .utf8) ?? Data())
+        self.fileHandle.synchronizeFile()
     }
 
     func update(step: Int, total: Int, text: String) {
@@ -49,10 +52,11 @@ struct JsonFileProgressReporter: ProgressAnimationProtocol {
     }
 
     func clear() {
-        do {
-            try FileManager.default.removeItem(atPath: self.filePath.string)
-        } catch {
-            print("Failed to clear progress file at \(self.filePath): \(error)")
-        }
+        self.fileHandle.truncateFile(atOffset: 0)
+        self.fileHandle.synchronizeFile()
+    }
+
+    func close() throws {
+        try self.fileHandle.close()
     }
 }

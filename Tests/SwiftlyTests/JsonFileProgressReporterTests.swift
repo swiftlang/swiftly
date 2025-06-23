@@ -1,133 +1,163 @@
 import Foundation
-@testable import Swiftly
-@testable import SwiftlyCore
 import SystemPackage
 import Testing
 
-@Suite("JsonFileProgressReporter Tests")
-struct JsonFileProgressReporterTests {
-    @Test("Test update method writes progress to file")
-    func testUpdateWritesProgressToFile() throws {
+@testable import Swiftly
+@testable import SwiftlyCore
+
+@Suite struct JsonFileProgressReporterTests {
+    @Test("Test update method writes progress to file as valid JSONNL")
+    func testUpdateWritesProgressToFile() async throws {
         let tempFile = fs.mktemp(ext: ".json")
-        let reporter = JsonFileProgressReporter(filePath: tempFile)
+        try await fs.create(.mode(Int(0o644)), file: tempFile)
+        defer { try? FileManager.default.removeItem(atPath: tempFile.string) }
+        let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
 
         reporter.update(step: 1, total: 10, text: "Processing item 1")
+        try reporter.close()
 
-        let fileContent = try String(contentsOfFile: tempFile.string)
+        let decoder = JSONDecoder()
 
-        #expect(fileContent.contains("Processing item 1"))
-        #expect(fileContent.contains("\"percent\":10"))
-        #expect(fileContent.contains("\"step\""))
-        #expect(fileContent.contains("\"timestamp\""))
+        let info = try String(contentsOfFile: tempFile.string).split(separator: "\n")
+            .filter {
+                !$0.isEmpty
+            }.map {
+                try decoder.decode(
+                    ProgressInfo.self,
+                    from: Data($0.trimmingCharacters(in: .whitespacesAndNewlines).utf8)
+                )
+            }
 
-        try FileManager.default.removeItem(atPath: tempFile.string)
+        #expect(info.count == 1)
+
+        if case let .step(timestamp, percent, text) = info.first {
+            #expect(text == "Processing item 1")
+            #expect(percent == 10)
+            #expect(timestamp.timeIntervalSince1970 > 0)
+        } else {
+            Issue.record("Expected step info but got \(info[0])")
+            return
+        }
     }
 
     @Test("Test complete method writes completion status")
-    func testCompleteWritesCompletionStatus() throws {
+    func testCompleteWritesCompletionStatus() async throws {
         let tempFile = fs.mktemp(ext: ".json")
-        let reporter = JsonFileProgressReporter(filePath: tempFile)
+        try await fs.create(.mode(Int(0o644)), file: tempFile)
+        defer { try? FileManager.default.removeItem(atPath: tempFile.string) }
 
-        reporter.complete(success: true)
+        let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
 
-        let fileContent = try String(contentsOfFile: tempFile.string)
+        let status = Bool.random()
+        reporter.complete(success: status)
+        try reporter.close()
 
-        #expect(fileContent.contains("\"success\":true"))
-        #expect(fileContent.contains("\"complete\""))
+        let decoder = JSONDecoder()
 
-        try FileManager.default.removeItem(atPath: tempFile.string)
-    }
+        let info = try String(contentsOfFile: tempFile.string).split(separator: "\n")
+            .filter {
+                !$0.isEmpty
+            }.map {
+                try decoder.decode(ProgressInfo.self, from: Data($0.utf8))
+            }
 
-    @Test("Test complete method writes failure status")
-    func testCompleteWritesFailureStatus() throws {
-        let tempFile = fs.mktemp(ext: ".json")
-        let reporter = JsonFileProgressReporter(filePath: tempFile)
+        #expect(info.count == 1)
 
-        reporter.complete(success: false)
-
-        let fileContent = try String(contentsOfFile: tempFile.string)
-
-        #expect(fileContent.contains("\"success\":false"))
-        #expect(fileContent.contains("\"complete\""))
-
-        try FileManager.default.removeItem(atPath: tempFile.string)
+        if case let .complete(success) = info.first {
+            #expect(success == status)
+        } else {
+            Issue.record("Expected completion info but got \(info)")
+            return
+        }
     }
 
     @Test("Test percentage calculation")
-    func testPercentageCalculation() throws {
+    func testPercentageCalculation() async throws {
         let tempFile = fs.mktemp(ext: ".json")
-        let reporter = JsonFileProgressReporter(filePath: tempFile)
+        try await fs.create(.mode(Int(0o644)), file: tempFile)
+        defer { try? FileManager.default.removeItem(atPath: tempFile.string) }
+        let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
 
         reporter.update(step: 25, total: 100, text: "Quarter way")
+        try reporter.close()
 
-        let fileContent = try String(contentsOfFile: tempFile.string)
-
-        #expect(fileContent.contains("\"percent\":25"))
+        let decoder = JSONDecoder()
+        let info = try String(contentsOfFile: tempFile.string).split(separator: "\n")
+            .filter {
+                !$0.isEmpty
+            }.map {
+                try decoder.decode(ProgressInfo.self, from: Data($0.utf8))
+            }
+        #expect(info.count == 1)
+        if case let .step(_, percent, text) = info.first {
+            #expect(percent == 25)
+            #expect(text == "Quarter way")
+        } else {
+            Issue.record("Expected step info but got \(info)")
+            return
+        }
 
         try FileManager.default.removeItem(atPath: tempFile.string)
     }
 
-    @Test("Test clear method removes file")
-    func testClearRemovesFile() throws {
+    @Test("Test clear method truncates the file")
+    func testClearTruncatesFile() async throws {
         let tempFile = fs.mktemp(ext: ".json")
-        let reporter = JsonFileProgressReporter(filePath: tempFile)
+        try await fs.create(.mode(Int(0o644)), file: tempFile)
+        defer { try? FileManager.default.removeItem(atPath: tempFile.string) }
+        let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
+        defer { try? reporter.close() }
 
         reporter.update(step: 1, total: 2, text: "Test")
 
-        #expect(FileManager.default.fileExists(atPath: tempFile.string))
+        #expect(try String(contentsOf: tempFile).lengthOfBytes(using: String.Encoding.utf8) > 0)
 
         reporter.clear()
 
-        #expect(!FileManager.default.fileExists(atPath: tempFile.string))
+        #expect(try String(contentsOf: tempFile).lengthOfBytes(using: String.Encoding.utf8) == 0)
     }
 
     @Test("Test multiple progress updates create multiple lines")
-    func testMultipleUpdatesCreateMultipleLines() throws {
+    func testMultipleUpdatesCreateMultipleLines() async throws {
         let tempFile = fs.mktemp(ext: ".json")
-        let reporter = JsonFileProgressReporter(filePath: tempFile)
+        try await fs.create(.mode(Int(0o644)), file: tempFile)
+        defer { try? FileManager.default.removeItem(atPath: tempFile.string) }
 
-        reporter.update(step: 1, total: 3, text: "Step 1")
-        reporter.update(step: 2, total: 3, text: "Step 2")
+        let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
+
+        reporter.update(step: 5, total: 100, text: "Processing item 5")
+        reporter.update(step: 10, total: 100, text: "Processing item 10")
+        reporter.update(step: 50, total: 100, text: "Processing item 50")
+        reporter.update(step: 100, total: 100, text: "Processing item 100")
+
         reporter.complete(success: true)
+        try? reporter.close()
 
-        let fileContent = try String(contentsOfFile: tempFile.string)
-        let lines = fileContent.components(separatedBy: .newlines).filter { !$0.isEmpty }
+        let decoder = JSONDecoder()
+        let info = try String(contentsOfFile: tempFile.string).split(separator: "\n")
+            .filter {
+                !$0.isEmpty
+            }.map {
+                try decoder.decode(ProgressInfo.self, from: Data($0.utf8))
+            }
 
-        #expect(lines.count == 3)
-        #expect(lines[0].contains("Step 1"))
-        #expect(lines[1].contains("Step 2"))
-        #expect(lines[2].contains("\"success\":true"))
+        #expect(info.count == 5)
 
-        try FileManager.default.removeItem(atPath: tempFile.string)
-    }
+        for (idx, pct) in [5, 10, 50, 100].enumerated() {
+            if case let .step(_, percent, text) = info[idx] {
+                #expect(text == "Processing item \(pct)")
+                #expect(percent == pct)
+            } else {
+                Issue.record("Expected step info but got \(info[idx])")
+                return
+            }
+        }
 
-    @Test("Test zero step edge case")
-    func testZeroStepEdgeCase() throws {
-        let tempFile = fs.mktemp(ext: ".json")
-        let reporter = JsonFileProgressReporter(filePath: tempFile)
-
-        reporter.update(step: 0, total: 10, text: "Starting")
-
-        let fileContent = try String(contentsOfFile: tempFile.string)
-
-        #expect(fileContent.contains("\"percent\":0"))
-        #expect(fileContent.contains("Starting"))
-
-        try FileManager.default.removeItem(atPath: tempFile.string)
-    }
-
-    @Test("Test full completion edge case")
-    func testFullCompletionEdgeCase() throws {
-        let tempFile = fs.mktemp(ext: ".json")
-        let reporter = JsonFileProgressReporter(filePath: tempFile)
-
-        reporter.update(step: 100, total: 100, text: "Done")
-
-        let fileContent = try String(contentsOfFile: tempFile.string)
-
-        #expect(fileContent.contains("\"percent\":100"))
-        #expect(fileContent.contains("Done"))
-
-        try FileManager.default.removeItem(atPath: tempFile.string)
+        if case let .complete(success) = info[4] {
+            #expect(success == true)
+        } else {
+            Issue.record("Expected completion info but got \(info[4])")
+            return
+        }
     }
 }

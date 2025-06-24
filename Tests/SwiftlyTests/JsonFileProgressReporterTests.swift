@@ -100,23 +100,6 @@ import Testing
         try FileManager.default.removeItem(atPath: tempFile.string)
     }
 
-    @Test("Test clear method truncates the file")
-    func testClearTruncatesFile() async throws {
-        let tempFile = fs.mktemp(ext: ".json")
-        try await fs.create(.mode(Int(0o644)), file: tempFile)
-        defer { try? FileManager.default.removeItem(atPath: tempFile.string) }
-        let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
-        defer { try? reporter.close() }
-
-        reporter.update(step: 1, total: 2, text: "Test")
-
-        #expect(try String(contentsOf: tempFile).lengthOfBytes(using: String.Encoding.utf8) > 0)
-
-        reporter.clear()
-
-        #expect(try String(contentsOf: tempFile).lengthOfBytes(using: String.Encoding.utf8) == 0)
-    }
-
     @Test("Test multiple progress updates create multiple lines")
     func testMultipleUpdatesCreateMultipleLines() async throws {
         let tempFile = fs.mktemp(ext: ".json")

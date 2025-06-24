@@ -31,14 +31,15 @@ struct JsonFileProgressReporter: ProgressAnimationProtocol {
             return
         }
 
-        self.fileHandle.seekToEndOfFile()
         self.fileHandle.write(jsonData)
         self.fileHandle.write("\n".data(using: .utf8) ?? Data())
-        self.fileHandle.synchronizeFile()
+        try? self.fileHandle.synchronize()
     }
 
     func update(step: Int, total: Int, text: String) {
-        assert(step <= total)
+        guard total > 0 && step <= total else {
+            return
+        }
         self.writeProgress(
             ProgressInfo.step(
                 timestamp: Date(),
@@ -52,8 +53,7 @@ struct JsonFileProgressReporter: ProgressAnimationProtocol {
     }
 
     func clear() {
-        self.fileHandle.truncateFile(atOffset: 0)
-        self.fileHandle.synchronizeFile()
+        // not implemented for JSON file reporter
     }
 
     func close() throws {

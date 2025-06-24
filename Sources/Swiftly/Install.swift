@@ -71,10 +71,21 @@ struct Install: SwiftlyCommand {
         ))
     var postInstallFile: FilePath?
 
+    @Option(
+        help: ArgumentHelp(
+            "A file path where progress information will be written in JSONL format",
+            discussion: """
+            Progress information will be appended to this file as JSON objects, one per line.
+            Each progress entry contains timestamp, progress percentage, and a descriptive message.
+            The file must be writable, else an error will be thrown.
+            """
+        ))
+    var progressFile: FilePath?
+
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case version, use, verify, postInstallFile, root
+        case version, use, verify, postInstallFile, root, progressFile
     }
 
     mutating func run() async throws {
@@ -93,7 +104,9 @@ struct Install: SwiftlyCommand {
         try await validateLinked(ctx)
 
         var config = try await Config.load(ctx)
-        let toolchainVersion = try await Self.determineToolchainVersion(ctx, version: self.version, config: &config)
+        let toolchainVersion = try await Self.determineToolchainVersion(
+            ctx, version: self.version, config: &config
+        )
 
         let (postInstallScript, pathChanged) = try await Self.execute(
             ctx,
@@ -102,7 +115,8 @@ struct Install: SwiftlyCommand {
             useInstalledToolchain: self.use,
             verifySignature: self.verify,
             verbose: self.root.verbose,
-            assumeYes: self.root.assumeYes
+            assumeYes: self.root.assumeYes,
+            progressFile: self.progressFile
         )
 
         let shell =
@@ -192,8 +206,9 @@ struct Install: SwiftlyCommand {
                 await ctx.message("Setting up toolchain proxies...")
             }
 
-            let proxiesToCreate = Set(toolchainBinDirContents).subtracting(swiftlyBinDirContents).union(
-                overwrite)
+            let proxiesToCreate = Set(toolchainBinDirContents).subtracting(swiftlyBinDirContents)
+                .union(
+                    overwrite)
 
             for p in proxiesToCreate {
                 let proxy = Swiftly.currentPlatform.swiftlyBinDir(ctx) / p
@@ -248,7 +263,8 @@ struct Install: SwiftlyCommand {
         useInstalledToolchain: Bool,
         verifySignature: Bool,
         verbose: Bool,
-        assumeYes: Bool
+        assumeYes: Bool,
+        progressFile: FilePath? = nil
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
             await ctx.message("\(version) is already installed.")
@@ -258,10 +274,11 @@ struct Install: SwiftlyCommand {
         // Ensure the system is set up correctly before downloading it. Problems that prevent installation
         //  will throw, while problems that prevent use of the toolchain will be written out as a post install
         //  script for the user to run afterwards.
-        let postInstallScript = try await Swiftly.currentPlatform.verifySystemPrerequisitesForInstall(
-            ctx, platformName: config.platform.name, version: version,
-            requireSignatureValidation: verifySignature
-        )
+        let postInstallScript = try await Swiftly.currentPlatform
+            .verifySystemPrerequisitesForInstall(
+                ctx, platformName: config.platform.name, version: version,
+                requireSignatureValidation: verifySignature
+            )
 
         await ctx.message("Installing \(version)")
 
@@ -296,10 +313,17 @@ struct Install: SwiftlyCommand {
                 }
             }
 
-            let animation = PercentProgressAnimation(
-                stream: stdoutStream,
-                header: "Downloading \(version)"
-            )
+            let animation: ProgressAnimationProtocol =
+                if let progressFile
+            {
+                try JsonFileProgressReporter(ctx, filePath: progressFile)
+            } else {
+                PercentProgressAnimation(stream: stdoutStream, header: "Downloading \(version)")
+            }
+
+            defer {
+                try? (animation as? JsonFileProgressReporter)?.close()
+            }
 
             var lastUpdate = Date()
 
@@ -315,7 +339,9 @@ struct Install: SwiftlyCommand {
                     reportProgress: { progress in
                         let now = Date()
 
-                        guard lastUpdate.distance(to: now) > 0.25 || progress.receivedBytes == progress.totalBytes
+                        guard
+                            lastUpdate.distance(to: now) > 0.25
+                            || progress.receivedBytes == progress.totalBytes
                         else {
                             return
                         }
@@ -334,7 +360,8 @@ struct Install: SwiftlyCommand {
                     }
                 )
             } catch let notFound as DownloadNotFoundError {
-                throw SwiftlyError(message: "\(version) does not exist at URL \(notFound.url), exiting")
+                throw SwiftlyError(
+                    message: "\(version) does not exist at URL \(notFound.url), exiting")
             } catch {
                 animation.complete(success: false)
                 throw error
@@ -401,7 +428,9 @@ struct Install: SwiftlyCommand {
     }
 
     /// Utilize the swift.org API along with the provided selector to select a toolchain for install.
-    public static func resolve(_ ctx: SwiftlyCoreContext, config: Config, selector: ToolchainSelector)
+    public static func resolve(
+        _ ctx: SwiftlyCoreContext, config: Config, selector: ToolchainSelector
+    )
         async throws -> ToolchainVersion
     {
         switch selector {
@@ -426,7 +455,8 @@ struct Install: SwiftlyCommand {
             }
 
             if let patch {
-                return .stable(ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch))
+                return .stable(
+                    ToolchainVersion.StableRelease(major: major, minor: minor, patch: patch))
             }
 
             await ctx.message("Fetching the latest stable Swift \(major).\(minor) release...")

@@ -1,6 +1,7 @@
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
+import SystemPackage
 import Testing
 
 @Suite struct InstallTests {
@@ -262,4 +263,130 @@ import Testing
         try await SwiftlyTests.installMockedToolchain(selector: ToolchainVersion.newStable.name, args: ["--use"])
         try await SwiftlyTests.validateInUse(expected: .newStable)
     }
+
+    /// Verify that progress information is written to the progress file when specified.
+    @Test(.testHomeMockedToolchain()) func installProgressFile() async throws {
+        let progressFile = fs.mktemp(ext: ".json")
+        try await fs.create(.mode(0o644), file: progressFile)
+
+        try await SwiftlyTests.runCommand(Install.self, [
+            "install", "5.7.0",
+            "--post-install-file=\(fs.mktemp())",
+            "--progress-file=\(progressFile.string)",
+        ])
+
+        #expect(try await fs.exists(atPath: progressFile))
+
+        let decoder = JSONDecoder()
+        let progressContent = try String(contentsOfFile: progressFile.string)
+        let progressInfo = try progressContent.split(separator: "\n")
+            .filter { !$0.isEmpty }
+            .map { line in
+                try decoder.decode(ProgressInfo.self, from: Data(line.utf8))
+            }
+
+        #expect(!progressInfo.isEmpty, "Progress file should contain progress entries")
+
+        // Verify that at least one step progress entry exists
+        let hasStepEntry = progressInfo.contains { info in
+            if case .step = info { return true }
+            return false
+        }
+        #expect(hasStepEntry, "Progress file should contain step progress entries")
+
+        // Verify that a completion entry exists
+        let hasCompletionEntry = progressInfo.contains { info in
+            if case .complete = info { return true }
+            return false
+        }
+        #expect(hasCompletionEntry, "Progress file should contain completion entry")
+
+        // Clean up
+        try FileManager.default.removeItem(atPath: progressFile.string)
+    }
+
+#if os(Linux) || os(macOS)
+    @Test(.testHomeMockedToolchain())
+    func installProgressFileNamedPipe() async throws {
+        let tempDir = NSTemporaryDirectory()
+        let pipePath = tempDir + "swiftly_install_progress_pipe"
+
+        let result = mkfifo(pipePath, 0o644)
+        guard result == 0 else {
+            return // Skip test if mkfifo syscall failed
+        }
+
+        defer {
+            try? FileManager.default.removeItem(atPath: pipePath)
+        }
+
+        var receivedMessages: [ProgressInfo] = []
+        let decoder = JSONDecoder()
+        var installCompleted = false
+
+        let readerTask = Task {
+            guard let fileHandle = FileHandle(forReadingAtPath: pipePath) else { return }
+            defer { fileHandle.closeFile() }
+
+            var buffer = Data()
+
+            while !installCompleted {
+                let data = fileHandle.availableData
+                if data.isEmpty {
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                    continue
+                }
+
+                buffer.append(data)
+
+                while let newlineRange = buffer.range(of: "\n".data(using: .utf8)!) {
+                    let lineData = buffer.subdata(in: 0..<newlineRange.lowerBound)
+                    buffer.removeSubrange(0..<newlineRange.upperBound)
+
+                    if !lineData.isEmpty {
+                        if let progress = try? decoder.decode(ProgressInfo.self, from: lineData) {
+                            receivedMessages.append(progress)
+                            if case .complete = progress {
+                                installCompleted = true
+                                return
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let installTask = Task {
+            try await SwiftlyTests.runCommand(Install.self, [
+                "install", "5.7.0",
+                "--post-install-file=\(fs.mktemp())",
+                "--progress-file=\(pipePath)",
+            ])
+        }
+
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { try? await readerTask.value }
+            group.addTask { try? await installTask.value }
+        }
+
+        #expect(!receivedMessages.isEmpty, "Named pipe should receive progress entries")
+
+        let hasCompletionEntry = receivedMessages.contains { info in
+            if case .complete = info { return true }
+            return false
+        }
+        #expect(hasCompletionEntry, "Named pipe should receive completion entry")
+
+        for message in receivedMessages {
+            switch message {
+            case let .step(timestamp, percent, text):
+                #expect(timestamp.timeIntervalSince1970 > 0)
+                #expect(percent >= 0 && percent <= 100)
+                #expect(!text.isEmpty)
+            case let .complete(success):
+                #expect(success == true)
+            }
+        }
+    }
+#endif
 }

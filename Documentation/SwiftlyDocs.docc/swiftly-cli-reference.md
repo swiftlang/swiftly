@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--assume-yes] [--verbose] [--version] [--help]
+swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **version:**
@@ -78,6 +78,15 @@ NOTE: Swiftly downloads toolchains to a temporary file that it later cleans duri
 
 If the toolchain that is installed has extra post installation steps, they will be
 written to this file as commands that can be run after the installation.
+
+
+**--progress-file=\<progress-file\>:**
+
+*A file path where progress information will be written in JSONL format*
+
+Progress information will be appended to this file as JSON objects, one per line.
+Each progress entry contains timestamp, progress percentage, and a descriptive message.
+The file must be writable, else an error will be thrown.
 
 
 **--assume-yes:**

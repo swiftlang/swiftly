@@ -5,7 +5,7 @@ import SwiftlyCore
 /// the current in-use tooolchain, and information about the platform.
 ///
 /// TODO: implement cache
-public struct Config: Codable, Equatable {
+public struct Config: Codable, Equatable, Sendable {
     public var inUse: ToolchainVersion?
     public var installedToolchains: Set<ToolchainVersion>
     public var platform: PlatformDefinition
@@ -24,9 +24,10 @@ public struct Config: Codable, Equatable {
     }
 
     /// Read the config file from disk.
-    public static func load(_ ctx: SwiftlyCoreContext) throws -> Config {
+    public static func load(_ ctx: SwiftlyCoreContext) async throws -> Config {
         do {
-            let data = try Data(contentsOf: Swiftly.currentPlatform.swiftlyConfigFile(ctx))
+            let configFile = Swiftly.currentPlatform.swiftlyConfigFile(ctx)
+            let data = try await fs.cat(atPath: configFile)
             var config = try JSONDecoder().decode(Config.self, from: data)
             if config.version == nil {
                 // Assume that the version of swiftly is 0.3.0 because that is the last
@@ -36,7 +37,7 @@ public struct Config: Codable, Equatable {
             return config
         } catch {
             let msg = """
-            Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile(ctx).path).
+            Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile(ctx)).
 
             To begin using swiftly you can install it: '\(CommandLine.arguments[0]) init'.
             """
@@ -76,8 +77,8 @@ public struct Config: Codable, Equatable {
 
     /// Load the config, pass it to the provided closure, and then
     /// save the modified config to disk.
-    public static func update(_ ctx: SwiftlyCoreContext, f: (inout Config) throws -> Void) throws {
-        var config = try Config.load(ctx)
+    public static func update(_ ctx: SwiftlyCoreContext, f: (inout Config) throws -> Void) async throws {
+        var config = try await Config.load(ctx)
         try f(&config)
         // only save the updates if the prior closure invocation succeeded
         try config.save(ctx)

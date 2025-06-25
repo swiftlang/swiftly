@@ -7,7 +7,7 @@ import Testing
     static let homeName = "uninstallTests"
 
     /// Tests that `swiftly uninstall` successfully handles being invoked when no toolchains have been installed yet.
-    @Test(.mockHomeToolchains(Self.homeName, toolchains: [])) func uninstallNoInstalledToolchains() async throws {
+    @Test(.mockHomeToolchains(Self.homeName, toolchains: []), .mockedSwiftlyVersion()) func uninstallNoInstalledToolchains() async throws {
         _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
 
         try await SwiftlyTests.validateInstalledToolchains(
@@ -17,7 +17,7 @@ import Testing
     }
 
     /// Tests that `swiftly uninstall latest` successfully uninstalls the latest stable release of Swift.
-    @Test func uninstallLatest() async throws {
+    @Test(.mockedSwiftlyVersion()) func uninstallLatest() async throws {
         let toolchains = Set<ToolchainVersion>.allToolchains().filter { $0.asStableRelease != nil }
         try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: toolchains) {
             var installed = toolchains
@@ -38,7 +38,7 @@ import Testing
     }
 
     /// Tests that a fully-qualified stable release version can be supplied to `swiftly uninstall`.
-    @Test(.mockHomeToolchains(Self.homeName)) func uninstallStableRelease() async throws {
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName)) func uninstallStableRelease() async throws {
         var installed: Set<ToolchainVersion> = .allToolchains()
 
         for toolchain in Set<ToolchainVersion>.allToolchains().filter({ $0.isStableRelease() }) {
@@ -60,7 +60,7 @@ import Testing
     }
 
     /// Tests that a fully-qualified snapshot version can be supplied to `swiftly uninstall`.
-    @Test(.mockHomeToolchains(Self.homeName)) func uninstallSnapshot() async throws {
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName)) func uninstallSnapshot() async throws {
         var installed: Set<ToolchainVersion> = .allToolchains()
 
         for toolchain in Set<ToolchainVersion>.allToolchains().filter({ $0.isSnapshot() }) {
@@ -82,7 +82,7 @@ import Testing
     }
 
     /// Tests that multiple toolchains can be installed at once.
-    @Test func bulkUninstall() async throws {
+    @Test(.mockedSwiftlyVersion()) func bulkUninstall() async throws {
         let toolchains = Set(
             [
                 "main-snapshot-2022-01-03",
@@ -158,7 +158,7 @@ import Testing
     }
 
     /// Tests that uninstalling the toolchain that is currently "in use" has the expected behavior.
-    @Test func uninstallInUse() async throws {
+    @Test(.mockedSwiftlyVersion()) func uninstallInUse() async throws {
         let toolchains: Set<ToolchainVersion> = [
             .oldStable,
             .oldStableNewPatch,
@@ -224,21 +224,21 @@ import Testing
     }
 
     /// Tests that uninstalling the last toolchain is handled properly and cleans up any symlinks.
-    @Test(.mockHomeToolchains(Self.homeName, toolchains: [.oldStable])) func uninstallLastToolchain() async throws {
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable])) func uninstallLastToolchain() async throws {
         _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["y"])
-        let config = try Config.load()
+        let config = try await Config.load()
         #expect(config.inUse == nil)
 
         // Ensure all symlinks have been cleaned up.
-        let symlinks = try FileManager.default.contentsOfDirectory(
-            atPath: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).path
+        let symlinks = try await fs.ls(
+            atPath: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx)
         )
         #expect(symlinks == [])
     }
 
     /// Tests that aborting an uninstall works correctly.
-    @Test(.mockHomeToolchains(Self.homeName, toolchains: .allToolchains(), inUse: .oldStable)) func uninstallAbort() async throws {
-        let preConfig = try Config.load()
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: .allToolchains(), inUse: .oldStable)) func uninstallAbort() async throws {
+        let preConfig = try await Config.load()
         _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["n"])
         try await SwiftlyTests.validateInstalledToolchains(
             .allToolchains(),
@@ -246,11 +246,11 @@ import Testing
         )
 
         // Ensure config did not change.
-        #expect(try Config.load() == preConfig)
+        #expect(try await Config.load() == preConfig)
     }
 
     /// Tests that providing the `-y` argument skips the confirmation prompt.
-    @Test(.mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable])) func uninstallAssumeYes() async throws {
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable])) func uninstallAssumeYes() async throws {
         try await SwiftlyTests.runCommand(Uninstall.self, ["uninstall", "-y", ToolchainVersion.oldStable.name])
         try await SwiftlyTests.validateInstalledToolchains(
             [.newStable],
@@ -259,7 +259,7 @@ import Testing
     }
 
     /// Tests that providing "all" as an argument to uninstall will uninstall all toolchains.
-    @Test(.mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable, .newMainSnapshot, .oldReleaseSnapshot])) func uninstallAll() async throws {
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable, .newMainSnapshot, .oldReleaseSnapshot])) func uninstallAll() async throws {
         try await SwiftlyTests.runCommand(Uninstall.self, ["uninstall", "-y", "all"])
         try await SwiftlyTests.validateInstalledToolchains(
             [],
@@ -268,8 +268,8 @@ import Testing
     }
 
     /// Tests that uninstalling a toolchain that is the global default, but is not in the list of installed toolchains.
-    @Test(.mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable, .newMainSnapshot, .oldReleaseSnapshot])) func uninstallNotInstalled() async throws {
-        var config = try Config.load()
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable, .newMainSnapshot, .oldReleaseSnapshot])) func uninstallNotInstalled() async throws {
+        var config = try await Config.load()
         config.inUse = .newMainSnapshot
         config.installedToolchains.remove(.newMainSnapshot)
         try config.save()

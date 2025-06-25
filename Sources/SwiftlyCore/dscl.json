@@ -1,0 +1,52 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "dscl",
+    "abstract": "Directory Service command line utility for macOS. See dscl(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "datasource"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "datasource"
+        },
+        "valueName": "datasource",
+        "isOptional": true,
+        "isRepeating": false,
+        "kind": "positional",
+        "shouldDisplay": true
+      }
+    ],
+    "subcommands": [
+      {
+        "commandName": "-read",
+        "superCommands": [
+          "dscl"
+        ],
+        "shouldDisplay": true,
+        "arguments": [
+          {
+            "valueName": "path",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": true,
+            "isRepeating": false
+          },
+          {
+            "valueName": "key",
+            "shouldDisplay": true,
+            "kind": "positional",
+            "isOptional": true,
+            "isRepeating": true
+          }
+        ]
+      }
+    ]
+  }
+}

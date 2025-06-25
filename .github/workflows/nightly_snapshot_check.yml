@@ -1,0 +1,36 @@
+name: Smoke Test - Nightly Swift Toolchain
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+
+jobs:
+  tests-selfhosted-linux:
+    name: Test (Smoke Test - Nightly Swift Toolchain) / ${{ matrix.container }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        container: ["ubuntu:20.04", "ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12"]
+    container:
+      image: ${{ matrix.container }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-main-snapshot
+      - name: Build and Test
+        # UBI 9 and Ubuntu 20.04 - See https://github.com/swiftlang/swift/issues/80908
+        # UBI 9 - See https://github.com/swiftlang/swift/issues/80909
+        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swiftly run +main-snapshot swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swiftly run +main-snapshot swift build --build-tests; else swiftly run +main-snapshot swift test; fi'
+
+  tests-selfhosted-macos:
+    name: Test (Smoke Test - Nightly Swift Toolchain) / macOS Sequoia ARM64
+    runs-on: [self-hosted, macos, sequoia, ARM64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-main-snapshot
+      - name: Build and Test
+        run: swiftly run +main-snapshot swift test

@@ -1,0 +1,44 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "sha256sum",
+    "abstract": "calculate a message-digest fingerprint (checksum) for a file. See sha256sum(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "files"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "files"
+        },
+        "valueName": "files",
+        "isOptional": false,
+        "isRepeating": true,
+        "kind": "positional",
+        "shouldDisplay": true
+      },
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "verbose"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "verbose"
+        },
+        "valueName": "verbose",
+        "isOptional": true,
+        "isRepeating": false,
+        "kind": "flag",
+        "shouldDisplay": true
+      }
+    ]
+  }
+}

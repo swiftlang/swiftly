@@ -9,6 +9,7 @@ import OpenAPIAsyncHTTPClient
 import OpenAPIRuntime
 import SwiftlyDownloadAPI
 import SwiftlyWebsiteAPI
+import SystemPackage
 
 extension SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease {
     public var swiftlyVersion: SwiftlyVersion {
@@ -578,10 +579,11 @@ public struct SwiftlyHTTPClient: Sendable {
 }
 
 extension OpenAPIRuntime.HTTPBody {
-    public func download(to destination: URL, reportProgress: ((DownloadProgress) -> Void)? = nil)
+    public func download(to destination: FilePath, reportProgress: ((DownloadProgress) -> Void)? = nil)
         async throws
     {
-        let fileHandle = try FileHandle(forWritingTo: destination)
+        let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: destination.string))
+
         defer {
             try? fileHandle.close()
         }

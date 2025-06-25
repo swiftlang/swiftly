@@ -12,7 +12,7 @@ struct Uninstall: SwiftlyCommand {
 
         The toolchain selector provided determines which toolchains to uninstall. Specific \
         toolchains can be uninstalled by using their full names as the selector, for example \
-        a full stable release version with patch (a.b.c): 
+        a full stable release version with patch (a.b.c):
 
             $ swiftly uninstall 5.2.1
 
@@ -48,8 +48,12 @@ struct Uninstall: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
-        let startingConfig = try Config.load(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
+
+        let startingConfig = try await Config.load(ctx)
 
         var toolchains: [ToolchainVersion]
         if self.toolchain == "all" {
@@ -72,27 +76,27 @@ struct Uninstall: SwiftlyCommand {
         toolchains.removeAll(where: { $0 == .xcodeVersion })
 
         guard !toolchains.isEmpty else {
-            await ctx.print("No toolchains can be uninstalled that match \"\(self.toolchain)\"")
+            await ctx.message("No toolchains can be uninstalled that match \"\(self.toolchain)\"")
             return
         }
 
         if !self.root.assumeYes {
-            await ctx.print("The following toolchains will be uninstalled:")
+            await ctx.message("The following toolchains will be uninstalled:")
 
             for toolchain in toolchains {
-                await ctx.print("  \(toolchain)")
+                await ctx.message("  \(toolchain)")
             }
 
             guard await ctx.promptForConfirmation(defaultBehavior: true) else {
-                await ctx.print("Aborting uninstall")
+                await ctx.message("Aborting uninstall")
                 return
             }
         }
 
-        await ctx.print()
+        await ctx.message()
 
         for toolchain in toolchains {
-            var config = try Config.load(ctx)
+            var config = try await Config.load(ctx)
 
             // If the in-use toolchain was one of the uninstalled toolchains, use a new toolchain.
             if toolchain == config.inUse {
@@ -126,20 +130,32 @@ struct Uninstall: SwiftlyCommand {
             try await Self.execute(ctx, toolchain, &config, verbose: self.root.verbose)
         }
 
-        await ctx.print()
-        await ctx.print("\(toolchains.count) toolchain(s) successfully uninstalled")
+        await ctx.message()
+        await ctx.message("\(toolchains.count) toolchain(s) successfully uninstalled")
     }
 
-    static func execute(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ config: inout Config, verbose: Bool) async throws {
-        await ctx.print("Uninstalling \(toolchain)...", terminator: "")
-        config.installedToolchains.remove(toolchain)
-        // This is here to prevent the inUse from referencing a toolchain that is not installed
-        if config.inUse == toolchain {
-            config.inUse = nil
+    static func execute(
+        _ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ config: inout Config,
+        verbose: Bool
+    ) async throws {
+        await ctx.message("Uninstalling \(toolchain)... ", terminator: "")
+        let lockFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "swiftly.lock"
+        if verbose {
+            await ctx.message("Attempting to acquire installation lock at \(lockFile) ...")
         }
-        try config.save(ctx)
 
-        try await Swiftly.currentPlatform.uninstall(ctx, toolchain, verbose: verbose)
-        await ctx.print("done")
+        config = try await withLock(lockFile) {
+            var config = try await Config.load(ctx)
+            config.installedToolchains.remove(toolchain)
+            // This is here to prevent the inUse from referencing a toolchain that is not installed
+            if config.inUse == toolchain {
+                config.inUse = nil
+            }
+            try config.save(ctx)
+
+            try await Swiftly.currentPlatform.uninstall(ctx, toolchain, verbose: verbose)
+            return config
+        }
+        await ctx.message("done")
     }
 }

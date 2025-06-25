@@ -1,4 +1,5 @@
 import ArgumentParser
+import Foundation
 import SwiftlyCore
 
 struct List: SwiftlyCommand {
@@ -33,75 +34,45 @@ struct List: SwiftlyCommand {
     ))
     var toolchainSelector: String?
 
+    @Option(name: .long, help: "Output format (text, json)")
+    var format: SwiftlyCore.OutputFormat = .text
+
     mutating func run() async throws {
-        try await self.run(Swiftly.createDefaultContext())
+        try await self.run(Swiftly.createDefaultContext(format: self.format))
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
+
+        var config = try await Config.load(ctx)
         let selector = try self.toolchainSelector.map { input in
             try ToolchainSelector(parsing: input)
         }
 
-        var config = try Config.load(ctx)
-
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
         let (inUse, _) = try await selectToolchain(ctx, config: &config)
 
-        let printToolchain = { (toolchain: ToolchainVersion) in
-            var message = "\(toolchain)"
-            if let inUse, toolchain == inUse {
-                message += " (in use)"
-            }
-            if toolchain == config.inUse {
-                message += " (default)"
-            }
-            await ctx.print(message)
+        var installedToolchainInfos = toolchains.compactMap { toolchain -> InstallToolchainInfo? in
+            InstallToolchainInfo(
+                version: toolchain,
+                inUse: inUse == toolchain,
+                isDefault: toolchain == config.inUse
+            )
         }
-
-        if let selector {
-            let modifier = switch selector {
-            case let .stable(major, minor, nil):
-                if let minor {
-                    "Swift \(major).\(minor) release"
-                } else {
-                    "Swift \(major) release"
-                }
-            case .snapshot(.main, nil):
-                "main development snapshot"
-            case let .snapshot(.release(major, minor), nil):
-                "\(major).\(minor) development snapshot"
-            default:
-                "matching"
-            }
-
-            let message = "Installed \(modifier) toolchains"
-            await ctx.print(message)
-            await ctx.print(String(repeating: "-", count: message.count))
-            for toolchain in toolchains {
-                await printToolchain(toolchain)
-            }
-        } else {
-            await ctx.print("Installed release toolchains")
-            await ctx.print("----------------------------")
-            for toolchain in toolchains {
-                guard toolchain.isStableRelease() else {
-                    continue
-                }
-                await printToolchain(toolchain)
-            }
-
-            await ctx.print("")
-            await ctx.print("Installed snapshot toolchains")
-            await ctx.print("-----------------------------")
-            for toolchain in toolchains where toolchain.isSnapshot() {
-                await printToolchain(toolchain)
-            }
 
 #if os(macOS)
-            await ctx.print("")
-            await printToolchain(ToolchainVersion.xcode)
+        installedToolchainInfos.append(
+            InstallToolchainInfo(
+                version: ToolchainVersion.xcode,
+                inUse: inUse == ToolchainVersion.xcode,
+                isDefault: config.inUse == ToolchainVersion.xcode
+            )
+        )
 #endif
-        }
+
+        try await ctx.output(InstalledToolchainsListInfo(toolchains: installedToolchainInfos, selector: selector))
     }
 }

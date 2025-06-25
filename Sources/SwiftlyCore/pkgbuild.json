@@ -1,0 +1,102 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "pkgbuild",
+    "abstract": "Build a macOS Installer component package from on-disk files. See pkgbuild(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "sign"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "sign"
+        },
+        "valueName": "sign",
+        "isOptional": true,
+        "isRepeating": false,
+        "kind": "option",
+        "shouldDisplay": true
+      },
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "identifier"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "identifier"
+        },
+        "valueName": "identifier",
+        "isOptional": true,
+        "isRepeating": false,
+        "kind": "option",
+        "shouldDisplay": true
+      },
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "version"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "version"
+        },
+        "valueName": "version",
+        "isOptional": true,
+        "isRepeating": false,
+        "kind": "option",
+        "shouldDisplay": true
+      },
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "install-location"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "install-location"
+        },
+        "valueName": "install-location",
+        "isOptional": true,
+        "isRepeating": false,
+        "kind": "option",
+        "shouldDisplay": true
+      },
+      {
+        "names": [
+          {
+            "kind": "long",
+            "name": "root"
+          }
+        ],
+        "preferredName": {
+          "kind": "long",
+          "name": "root"
+        },
+        "valueName": "root",
+        "isOptional": false,
+        "isRepeating": false,
+        "kind": "option",
+        "shouldDisplay": true
+      },
+      {
+        "valueName": "package-output-path",
+        "isOptional": false,
+        "isRepeating": false,
+        "kind": "positional",
+        "shouldDisplay": true
+      }
+    ]
+  }
+}

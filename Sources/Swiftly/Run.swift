@@ -58,14 +58,16 @@ struct Run: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try validateSwiftly(ctx)
+        let versionUpdateReminder = try await validateSwiftly(ctx)
+        defer {
+            versionUpdateReminder()
+        }
+        var config = try await Config.load(ctx)
 
         // Handle the specific case where help is requested of the run subcommand
         if command == ["--help"] {
             throw CleanExit.helpRequest(self)
         }
-
-        var config = try Config.load(ctx)
 
         let (command, selector) = try Self.extractProxyArguments(command: self.command)
 
@@ -105,6 +107,9 @@ struct Run: SwiftlyCommand {
 
             try await Swiftly.currentPlatform.proxy(ctx, toolchain, command[0], [String](command[1...]))
         } catch let terminated as RunProgramError {
+            if ctx.mockedHomeDir != nil {
+                throw terminated
+            }
             Foundation.exit(terminated.exitCode)
         } catch {
             throw error

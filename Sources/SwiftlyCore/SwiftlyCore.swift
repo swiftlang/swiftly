@@ -1,5 +1,6 @@
 import Foundation
 import SwiftlyWebsiteAPI
+import SystemPackage
 
 public let version = SwiftlyVersion(major: 1, minor: 1, patch: 0, suffix: "dev")
 
@@ -18,11 +19,11 @@ public protocol InputProvider: Actor {
 public struct SwiftlyCoreContext: Sendable {
     /// A separate home directory to use for testing purposes. This overrides swiftly's default
     /// home directory location logic.
-    public var mockedHomeDir: URL?
+    public var mockedHomeDir: FilePath?
 
     /// A separate current working directory to use for testing purposes. This overrides
     /// swiftly's default current working directory logic.
-    public var currentDirectory: URL
+    public var currentDirectory: FilePath
 
     /// A chosen shell for the current user as a typical path to the shell's binary
     /// location (e.g. /bin/sh). This overrides swiftly's default shell detection mechanisms
@@ -36,30 +37,80 @@ public struct SwiftlyCoreContext: Sendable {
     /// The output handler to use, if any.
     public var outputHandler: (any OutputHandler)?
 
-    /// The input probider to use, if any
+    /// The output handler for error streams
+    public var errorOutputHandler: (any OutputHandler)?
+
+    /// The input provider to use, if any
     public var inputProvider: (any InputProvider)?
 
-    public init() {
+    /// The terminal info provider
+    public var terminal: any Terminal
+
+    /// The format
+    public var format: OutputFormat = .text
+
+    public init(format: SwiftlyCore.OutputFormat = .text) {
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
-        self.currentDirectory = URL.currentDirectory()
+        self.currentDirectory = fs.cwd
+        self.format = format
+        self.terminal = SystemTerminal()
+    }
+
+    public init(httpClient: SwiftlyHTTPClient) {
+        self.httpClient = httpClient
+        self.currentDirectory = fs.cwd
+        self.terminal = SystemTerminal()
     }
 
     /// Pass the provided string to the set output handler if any.
     /// If no output handler has been set, just print to stdout.
-    public func print(_ string: String = "", terminator: String? = nil) async {
+    public func print(_ string: String = "") async {
         guard let handler = self.outputHandler else {
-            if let terminator {
-                Swift.print(string, terminator: terminator)
-            } else {
-                Swift.print(string)
-            }
+            Swift.print(string)
             return
         }
-        await handler.handleOutputLine(string + (terminator ?? ""))
+        await handler.handleOutputLine(string)
+    }
+
+    public func message(_ string: String = "", terminator: String? = nil) async {
+        let wrappedString = self.wrappedMessage(string) + (terminator ?? "")
+
+        if self.format == .json {
+            await self.printError(wrappedString)
+            return
+        } else {
+            await self.print(wrappedString)
+        }
+    }
+
+    private func wrappedMessage(_ string: String) -> String {
+        let terminalWidth = self.terminal.width()
+        return string.isEmpty ? string : string.wrapText(to: terminalWidth)
+    }
+
+    public func printError(_ string: String = "") async {
+        if let handler = self.errorOutputHandler {
+            await handler.handleOutputLine(string)
+        } else {
+            if let data = (string + "\n").data(using: .utf8) {
+                try? FileHandle.standardError.write(contentsOf: data)
+            }
+        }
+    }
+
+    public func output(_ data: OutputData) async throws {
+        let formattedOutput: String
+        switch self.format {
+        case .text:
+            formattedOutput = TextOutputFormatter().format(data)
+        case .json:
+            formattedOutput = try JSONOutputFormatter().format(data)
+        }
+        await self.print(formattedOutput)
     }
 
     public func readLine(prompt: String) async -> String? {
-        await self.print(prompt, terminator: ": \n")
+        await self.message(prompt, terminator: ": \n")
         guard let provider = self.inputProvider else {
             return Swift.readLine(strippingNewline: true)
         }
@@ -67,6 +118,10 @@ public struct SwiftlyCoreContext: Sendable {
     }
 
     public func promptForConfirmation(defaultBehavior: Bool) async -> Bool {
+        if self.format == .json {
+            await self.message("Assuming \(defaultBehavior ? "yes" : "no") due to JSON format")
+            return defaultBehavior
+        }
         let options: String
         if defaultBehavior {
             options = "(Y/n)"
@@ -75,10 +130,13 @@ public struct SwiftlyCoreContext: Sendable {
         }
 
         while true {
-            let answer = (await self.readLine(prompt: "Proceed? \(options)") ?? (defaultBehavior ? "y" : "n")).lowercased()
+            let answer =
+                (await self.readLine(prompt: "Proceed? \(options)")
+                        ?? (defaultBehavior ? "y" : "n")).lowercased()
 
             guard ["y", "n", ""].contains(answer) else {
-                await self.print("Please input either \"y\" or \"n\", or press ENTER to use the default.")
+                await self.message(
+                    "Please input either \"y\" or \"n\", or press ENTER to use the default.")
                 continue
             }
 

@@ -1,13 +1,14 @@
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
+import SystemPackage
 import Testing
 
 @Suite struct RunTests {
     static let homeName = "runTests"
 
     /// Tests that the `run` command can switch between installed toolchains.
-    @Test(.mockHomeToolchains()) func runSelection() async throws {
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func runSelection() async throws {
         // GIVEN: a set of installed toolchains
         // WHEN: invoking the run command with a selector argument for that toolchain
         var output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", "swift", "--version", "+\(ToolchainVersion.newStable.name)"])
@@ -15,7 +16,7 @@ import Testing
         #expect(output.contains(ToolchainVersion.newStable.name))
 
         // GIVEN: a set of installed toolchains and one is selected with a .swift-version file
-        let versionFile = SwiftlyTests.ctx.currentDirectory.appendingPathComponent(".swift-version")
+        let versionFile = SwiftlyTests.ctx.currentDirectory / ".swift-version"
         try ToolchainVersion.oldStable.name.write(to: versionFile, atomically: true, encoding: .utf8)
         // WHEN: invoking the run command without any selector arguments for toolchains
         output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", "swift", "--version"])
@@ -34,11 +35,11 @@ import Testing
     }
 
     /// Tests the `run` command verifying that the environment is as expected
-    @Test(.mockHomeToolchains()) func runEnvironment() async throws {
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func runEnvironment() async throws {
         // The toolchains directory should be the fist entry on the path
         let output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $PATH"])
         #expect(output.count == 1)
-        #expect(output[0].contains(Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).path))
+        #expect(output[0].contains(Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).string))
     }
 
     /// Tests the extraction of proxy arguments from the run command arguments.
@@ -67,15 +68,13 @@ import Testing
         #expect(["swift", "+1.2.3", "build"] == command)
         #expect(nil == selector)
 
-        do {
-            let _ = try Run.extractProxyArguments(command: ["+1.2.3"])
-            #expect(false)
-        } catch {}
+        #expect(throws: SwiftlyError.self) {
+            try Run.extractProxyArguments(command: ["+1.2.3"])
+        }
 
-        do {
-            let _ = try Run.extractProxyArguments(command: [])
-            #expect(false)
-        } catch {}
+        #expect(throws: SwiftlyError.self) {
+            try Run.extractProxyArguments(command: [])
+        }
 
         (command, selector) = try Run.extractProxyArguments(command: ["swift", "+1.2.3", "build"])
         #expect(["swift", "build"] == command)

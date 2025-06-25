@@ -1,0 +1,17 @@
+{
+  "serializationVersion": 0,
+  "command": {
+    "commandName": "strip",
+    "abstract": "remove symbols. See strip(1) for more information.",
+    "shouldDisplay": true,
+    "arguments": [
+      {
+        "valueName": "name",
+        "isOptional": false,
+        "isRepeating": true,
+        "kind": "positional",
+        "shouldDisplay": true
+      }
+    ]
+  }
+}

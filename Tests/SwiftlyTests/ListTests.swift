@@ -19,17 +19,21 @@ import Testing
         .oldReleaseSnapshot,
     ]
 
+    private static let swiftlyVersion = SwiftlyVersion(major: SwiftlyCore.version.major, minor: 0, patch: 0)
+
     /// Constructs a mock home directory with the toolchains listed above installed and runs the provided closure within
     /// the context of that home.
     func runListTest(f: () async throws -> Void) async throws {
         try await SwiftlyTests.withTestHome(name: Self.homeName) {
-            for toolchain in Set<ToolchainVersion>.allToolchains() {
-                try await SwiftlyTests.installMockedToolchain(toolchain: toolchain)
+            try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: Self.swiftlyVersion) {
+                for toolchain in Set<ToolchainVersion>.allToolchains() {
+                    try await SwiftlyTests.installMockedToolchain(toolchain: toolchain)
+                }
+
+                try await SwiftlyTests.runCommand(Use.self, ["use", "latest"])
+
+                try await f()
             }
-
-            try await SwiftlyTests.runCommand(Use.self, ["use", "latest"])
-
-            try await f()
         }
     }
 
@@ -42,8 +46,9 @@ import Testing
         }
 
         let output = try await SwiftlyTests.runWithMockedIO(List.self, args)
+        let lines = output.flatMap { $0.split(separator: "\n").map(String.init) }
 
-        let parsedToolchains = output.compactMap { outputLine in
+        let parsedToolchains = lines.compactMap { outputLine in
 #if !os(macOS)
             Set<ToolchainVersion>.allToolchains().first {
                 outputLine.contains(String(describing: $0))
@@ -56,7 +61,7 @@ import Testing
         }
 
         // Ensure extra toolchains weren't accidentally included in the output.
-        guard parsedToolchains.count == output.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") || $0.contains("xcode") }).count else {
+        guard parsedToolchains.count == lines.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") || $0.contains("xcode") }).count else {
             throw SwiftlyTestError(message: "unexpected listed toolchains in \(output)")
         }
 
@@ -133,8 +138,9 @@ import Testing
             }
 
             let output = try await SwiftlyTests.runWithMockedIO(List.self, listArgs)
+            let lines = output.flatMap { $0.split(separator: "\n").map(String.init) }
 
-            let inUse = output.filter { $0.contains("in use") }
+            let inUse = lines.filter { $0.contains("in use") && $0.contains(toolchain.name) }
             #expect(inUse == ["\(toolchain) (in use) (default)"])
         }
 
@@ -171,16 +177,101 @@ import Testing
         let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
 #endif
 
-        var toolchains = try await self.runList(selector: nil)
-        #expect(toolchains == systemToolchains)
+        try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: Self.swiftlyVersion) {
+            var toolchains = try await self.runList(selector: nil)
+            #expect(toolchains == systemToolchains)
 
-        toolchains = try await self.runList(selector: "5")
-        #expect(toolchains == [])
+            toolchains = try await self.runList(selector: "5")
+            #expect(toolchains == systemToolchains)
 
-        toolchains = try await self.runList(selector: "main-snapshot")
-        #expect(toolchains == [])
+            toolchains = try await self.runList(selector: "main-snapshot")
+            #expect(toolchains == systemToolchains)
 
-        toolchains = try await self.runList(selector: "5.7-snapshot")
-        #expect(toolchains == [])
+            toolchains = try await self.runList(selector: "5.7-snapshot")
+            #expect(toolchains == systemToolchains)
+        }
+    }
+
+    /// Tests that running `list` command with JSON format outputs correctly structured JSON.
+    @Test func listJsonFormat() async throws {
+        try await self.runListTest {
+            let output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "--format", "json"], format: .json
+            )
+
+            let listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+            #expect(listInfo.toolchains.count == Set<ToolchainVersion>.allToolchains().count)
+
+            for toolchain in listInfo.toolchains {
+                #expect(toolchain.version.name.isEmpty == false)
+                #expect(toolchain.inUse != nil)
+                #expect(toolchain.isDefault != nil)
+            }
+        }
+    }
+
+    /// Tests that running `list` command with JSON format and selector outputs filtered results.
+    @Test func listJsonFormatWithSelector() async throws {
+        try await self.runListTest {
+            var output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "5", "--format", "json"], format: .json
+            )
+
+            var listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+            #expect(listInfo.toolchains.count == Self.sortedReleaseToolchains.count)
+
+            for toolchain in listInfo.toolchains {
+                #expect(toolchain.version.isStableRelease())
+            }
+
+            output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "main-snapshot", "--format", "json"], format: .json
+            )
+
+            listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+            #expect(listInfo.toolchains.count == 2)
+
+            for toolchain in listInfo.toolchains {
+                #expect(toolchain.version.isSnapshot())
+                if let snapshot = toolchain.version.asSnapshot {
+                    #expect(snapshot.branch == .main)
+                }
+            }
+        }
+    }
+
+    /// Tests that the JSON output correctly indicates which toolchain is in use.
+    @Test func listJsonFormatInUse() async throws {
+        try await self.runListTest {
+            try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.newStable.name])
+
+            let output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "--format", "json"], format: .json
+            )
+
+            let listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+            let inUseToolchains = listInfo.toolchains.filter(\.inUse)
+            #expect(inUseToolchains.count == 1)
+
+            let inUseToolchain = inUseToolchains[0]
+            #expect(inUseToolchain.version.name == ToolchainVersion.newStable.name)
+            #expect(inUseToolchain.isDefault == true)
+        }
     }
 }

@@ -4,7 +4,6 @@ import Foundation
 import SwiftlyCore
 import SystemPackage
 @preconcurrency import TSCBasic
-import TSCUtility
 
 struct Install: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
@@ -313,16 +312,16 @@ struct Install: SwiftlyCommand {
                 }
             }
 
-            let animation: ProgressAnimationProtocol =
+            let animation: ProgressReporterProtocol =
                 if let progressFile
             {
                 try JsonFileProgressReporter(ctx, filePath: progressFile)
             } else {
-                PercentProgressAnimation(stream: stdoutStream, header: "Downloading \(version)")
+                ConsoleProgressReporter(stream: stdoutStream, header: "Downloading \(version)")
             }
 
             defer {
-                try? (animation as? JsonFileProgressReporter)?.close()
+                try? animation.close()
             }
 
             var lastUpdate = Date()
@@ -351,7 +350,7 @@ struct Install: SwiftlyCommand {
 
                         lastUpdate = Date()
 
-                        animation.update(
+                        await animation.update(
                             step: progress.receivedBytes,
                             total: progress.totalBytes!,
                             text:
@@ -363,10 +362,10 @@ struct Install: SwiftlyCommand {
                 throw SwiftlyError(
                     message: "\(version) does not exist at URL \(notFound.url), exiting")
             } catch {
-                animation.complete(success: false)
+                await animation.complete(success: false)
                 throw error
             }
-            animation.complete(success: true)
+            await animation.complete(success: true)
 
             if verifySignature {
                 try await Swiftly.currentPlatform.verifyToolchainSignature(

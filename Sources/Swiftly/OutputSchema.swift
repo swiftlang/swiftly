@@ -126,7 +126,7 @@ struct AvailableToolchainInfo: OutputData {
                 try versionContainer.encode(minor, forKey: .minor)
             }
         case .xcode:
-            try versionContainer.encode("xcode", forKey: .type)
+            try versionContainer.encode("system", forKey: .type)
         }
     }
 }
@@ -235,8 +235,8 @@ struct InstallToolchainInfo: OutputData {
                 try versionContainer.encode(major, forKey: .major)
                 try versionContainer.encode(minor, forKey: .minor)
             }
-        case let .xcode:
-            try versionContainer.encode("xcode", forKey: .type)
+        case .xcode:
+            try versionContainer.encode("system", forKey: .type)
         }
     }
 
@@ -283,7 +283,8 @@ struct InstallToolchainInfo: OutputData {
                     branch: branch,
                     date: date
                 ))
-        case "xcode":
+        case "system":
+            // The only system toolchain that exists at the moment is the xcode version
             self.version = .xcode
         default:
             throw DecodingError.dataCorruptedError(

@@ -88,7 +88,7 @@ import Testing
     }
 
 #if os(macOS)
-    @Test(.testHome()) func findXcodeToolchainLocation() async throws {
+    @Test(.mockedSwiftlyVersion(), .testHome()) func findXcodeToolchainLocation() async throws {
         // GIVEN: the xcode toolchain
         // AND there is xcode installed
         guard let xcodeLocation = try? await Swiftly.currentPlatform.runProgramOutput("xcode-select", "-p"), xcodeLocation != "" else {

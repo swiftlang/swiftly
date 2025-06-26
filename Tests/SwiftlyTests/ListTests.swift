@@ -51,17 +51,17 @@ import Testing
         let parsedToolchains = lines.compactMap { outputLine in
 #if !os(macOS)
             Set<ToolchainVersion>.allToolchains().first {
-                outputLine.contains(String(describing: $0))
+                outputLine.hasPrefix(String(describing: $0))
             }
 #else
             (Set<ToolchainVersion>.allToolchains() + [.xcodeVersion]).first {
-                outputLine.contains(String(describing: $0))
+                outputLine.hasPrefix(String(describing: $0))
             }
 #endif
         }
 
         // Ensure extra toolchains weren't accidentally included in the output.
-        guard parsedToolchains.count == lines.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") || $0.contains("xcode") }).count else {
+        guard parsedToolchains.count == lines.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") || $0.hasPrefix("xcode") }).count else {
             throw SwiftlyTestError(message: "unexpected listed toolchains in \(output)")
         }
 
@@ -182,13 +182,18 @@ import Testing
             #expect(toolchains == systemToolchains)
 
             toolchains = try await self.runList(selector: "5")
-            #expect(toolchains == systemToolchains)
+            #expect(toolchains == [])
 
             toolchains = try await self.runList(selector: "main-snapshot")
-            #expect(toolchains == systemToolchains)
+            #expect(toolchains == [])
 
             toolchains = try await self.runList(selector: "5.7-snapshot")
+            #expect(toolchains == [])
+
+#if os(macOS)
+            toolchains = try await self.runList(selector: "xcode")
             #expect(toolchains == systemToolchains)
+#endif
         }
     }
 
@@ -204,7 +209,13 @@ import Testing
                 from: output[0].data(using: .utf8)!
             )
 
-            #expect(listInfo.toolchains.count == Set<ToolchainVersion>.allToolchains().count)
+#if !os(macOS)
+            let systemToolchains: [ToolchainVersion] = []
+#else
+            let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
+#endif
+
+            #expect(listInfo.toolchains.count == Set<ToolchainVersion>.allToolchains().count + systemToolchains.count)
 
             for toolchain in listInfo.toolchains {
                 #expect(toolchain.version.name.isEmpty == false)

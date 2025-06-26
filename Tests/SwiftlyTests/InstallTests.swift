@@ -256,7 +256,7 @@ import Testing
     }
 
     /// Verify that the installed toolchain will be marked as in-use if the --use flag is specified.
-    @Test(.testHomeMockedToolchain()) func installUseFlag() async throws {
+    @Test(.mockedSwiftlyVersion(), .testHomeMockedToolchain()) func installUseFlag() async throws {
         try await SwiftlyTests.installMockedToolchain(toolchain: .oldStable)
         try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.oldStable.name])
         try await SwiftlyTests.validateInUse(expected: .oldStable)

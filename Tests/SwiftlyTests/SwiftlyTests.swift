@@ -61,15 +61,15 @@ actor InputProviderFail: InputProvider {
 }
 
 struct HTTPRequestExecutorFail: HTTPRequestExecutor {
-    func getCurrentSwiftlyRelease() async throws -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease { fatalError(unmockedMsg + "3") }
-    func getReleaseToolchains() async throws -> [Components.Schemas.Release] { fatalError(unmockedMsg + "4") }
-    func getSnapshotToolchains(branch _: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch, platform _: SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains { fatalError(unmockedMsg + "5") }
-    func getGpgKeys() async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg + "6") }
-    func getSwiftlyRelease(url _: URL) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg + "7") }
-    func getSwiftlyReleaseSignature(url _: URL) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg + "8") }
-    func getSwiftToolchainFile(_: ToolchainFile) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg + "9") }
+    func getCurrentSwiftlyRelease() async throws -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease { fatalError(unmockedMsg) }
+    func getReleaseToolchains() async throws -> [Components.Schemas.Release] { fatalError(unmockedMsg) }
+    func getSnapshotToolchains(branch _: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch, platform _: SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains { fatalError(unmockedMsg) }
+    func getGpgKeys() async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
+    func getSwiftlyRelease(url _: URL) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
+    func getSwiftlyReleaseSignature(url _: URL) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
+    func getSwiftToolchainFile(_: ToolchainFile) async throws -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
     func getSwiftToolchainFileSignature(_: ToolchainFile) async throws
-        -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg + "10") }
+        -> OpenAPIRuntime.HTTPBody { fatalError(unmockedMsg) }
 }
 
 // Convenience extensions to common Swiftly and SwiftlyCore types to set the correct context

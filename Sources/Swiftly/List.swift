@@ -63,16 +63,6 @@ struct List: SwiftlyCommand {
             )
         }
 
-#if os(macOS)
-        installedToolchainInfos.append(
-            InstallToolchainInfo(
-                version: ToolchainVersion.xcode,
-                inUse: inUse == ToolchainVersion.xcode,
-                isDefault: config.inUse == ToolchainVersion.xcode
-            )
-        )
-#endif
-
         try await ctx.output(InstalledToolchainsListInfo(toolchains: installedToolchainInfos, selector: selector))
     }
 }

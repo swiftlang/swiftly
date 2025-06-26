@@ -320,6 +320,8 @@ struct InstalledToolchainsListInfo: OutputData {
                 "main development snapshot"
             case let .snapshot(.release(major, minor), nil):
                 "\(major).\(minor) development snapshot"
+            case .xcode:
+                "xcode"
             default:
                 "matching"
             }
@@ -340,6 +342,13 @@ struct InstalledToolchainsListInfo: OutputData {
             lines.append("Installed snapshot toolchains")
             lines.append("-----------------------------")
             lines.append(contentsOf: snapshotToolchains.map(\.description))
+
+#if os(macOS)
+            lines.append("")
+            lines.append("Available system toolchains")
+            lines.append("---------------------------")
+            lines.append(ToolchainVersion.xcode.description)
+#endif
         }
 
         return lines.joined(separator: "\n")

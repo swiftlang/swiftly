@@ -194,8 +194,8 @@ import Testing
 #if os(macOS)
     /// Tests that the xcode toolchain can be used on macOS
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func useXcode() async throws {
-         try await self.useAndValidate(argument: ToolchainVersion.xcodeVersion.name, expectedVersion: .xcode)
-     }
+        try await self.useAndValidate(argument: ToolchainVersion.xcodeVersion.name, expectedVersion: .xcode)
+    }
 #endif
 
     /// Tests that the `use` command gracefully exits when executed before any toolchains have been installed.

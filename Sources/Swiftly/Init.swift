@@ -179,7 +179,7 @@ struct Init: SwiftlyCommand {
         if overwrite || config == nil {
             let pd = try await Swiftly.currentPlatform.detectPlatform(ctx, disableConfirmation: assumeYes, platform: platform)
             let c = Config(inUse: nil, installedToolchains: [], platform: pd, version: SwiftlyCore.version)
-            
+
             try c.save(ctx)
             config = c
         }

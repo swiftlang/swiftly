@@ -6,10 +6,10 @@ import TSCUtility
 
 public protocol ProgressReporterProtocol {
     /// Updates the progress animation with the current step, total steps, and an optional text message.
-    func update(step: Int, total: Int, text: String) async
+    func update(step: Int, total: Int, text: String) async throws
 
     /// Completes the progress animation, indicating success or failure.
-    func complete(success: Bool) async
+    func complete(success: Bool) async throws
 
     /// Closes any resources used by the reporter, if applicable.
     func close() throws
@@ -23,15 +23,15 @@ struct ConsoleProgressReporter: ProgressReporterProtocol {
         self.reporter = PercentProgressAnimation(stream: stream, header: header)
     }
 
-    func update(step: Int, total: Int, text: String) async {
+    func update(step: Int, total: Int, text: String) async throws {
         self.reporter.update(step: step, total: total, text: text)
     }
 
-    func complete(success: Bool) async {
+    func complete(success: Bool) async throws {
         self.reporter.complete(success: success)
     }
 
-    func close() {
+    func close() throws {
         // No resources to close for console reporter
     }
 }
@@ -55,23 +55,19 @@ struct JsonFileProgressReporter: ProgressReporterProtocol {
         self.fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: filePath.string))
     }
 
-    private func writeProgress(_ progress: ProgressInfo) async {
-        let jsonData = try? self.encoder.encode(progress)
-        guard let jsonData = jsonData else {
-            await self.ctx.message("Failed to encode progress entry to JSON")
-            return
-        }
+    private func writeProgress(_ progress: ProgressInfo) async throws {
+        let jsonData = try self.encoder.encode(progress)
 
         self.fileHandle.write(jsonData)
         self.fileHandle.write("\n".data(using: .utf8) ?? Data())
-        try? self.fileHandle.synchronize()
+        try self.fileHandle.synchronize()
     }
 
-    func update(step: Int, total: Int, text: String) async {
+    func update(step: Int, total: Int, text: String) async throws {
         guard total > 0 && step <= total else {
             return
         }
-        await self.writeProgress(
+        try await self.writeProgress(
             ProgressInfo.step(
                 timestamp: Date(),
                 percent: Int(Double(step) / Double(total) * 100),
@@ -80,8 +76,8 @@ struct JsonFileProgressReporter: ProgressReporterProtocol {
         )
     }
 
-    func complete(success: Bool) async {
-        await self.writeProgress(ProgressInfo.complete(success: success))
+    func complete(success: Bool) async throws {
+        try await self.writeProgress(ProgressInfo.complete(success: success))
     }
 
     func close() throws {

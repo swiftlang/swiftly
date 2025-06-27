@@ -13,7 +13,7 @@ import Testing
         defer { try? FileManager.default.removeItem(atPath: tempFile.string) }
         let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
 
-        await reporter.update(step: 1, total: 10, text: "Processing item 1")
+        try await reporter.update(step: 1, total: 10, text: "Processing item 1")
         try reporter.close()
 
         let decoder = JSONDecoder()
@@ -49,7 +49,7 @@ import Testing
         let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
 
         let status = Bool.random()
-        await reporter.complete(success: status)
+        try await reporter.complete(success: status)
         try reporter.close()
 
         let decoder = JSONDecoder()
@@ -78,7 +78,7 @@ import Testing
         defer { try? FileManager.default.removeItem(atPath: tempFile.string) }
         let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
 
-        await reporter.update(step: 25, total: 100, text: "Quarter way")
+        try await reporter.update(step: 25, total: 100, text: "Quarter way")
         try reporter.close()
 
         let decoder = JSONDecoder()
@@ -108,12 +108,12 @@ import Testing
 
         let reporter = try JsonFileProgressReporter(SwiftlyTests.ctx, filePath: tempFile)
 
-        await reporter.update(step: 5, total: 100, text: "Processing item 5")
-        await reporter.update(step: 10, total: 100, text: "Processing item 10")
-        await reporter.update(step: 50, total: 100, text: "Processing item 50")
-        await reporter.update(step: 100, total: 100, text: "Processing item 100")
+        try await reporter.update(step: 5, total: 100, text: "Processing item 5")
+        try await reporter.update(step: 10, total: 100, text: "Processing item 10")
+        try await reporter.update(step: 50, total: 100, text: "Processing item 50")
+        try await reporter.update(step: 100, total: 100, text: "Processing item 100")
 
-        await reporter.complete(success: true)
+        try await reporter.complete(success: true)
         try? reporter.close()
 
         let decoder = JSONDecoder()

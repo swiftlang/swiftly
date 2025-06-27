@@ -350,22 +350,28 @@ struct Install: SwiftlyCommand {
 
                         lastUpdate = Date()
 
-                        await animation.update(
-                            step: progress.receivedBytes,
-                            total: progress.totalBytes!,
-                            text:
-                            "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
-                        )
+                        do {
+                            try await animation.update(
+                                step: progress.receivedBytes,
+                                total: progress.totalBytes!,
+                                text:
+                                "Downloaded \(String(format: "%.1f", downloadedMiB)) MiB of \(String(format: "%.1f", totalMiB)) MiB"
+                            )
+                        } catch {
+                            await ctx.message(
+                                "Failed to update progress: \(error.localizedDescription)"
+                            )
+                        }
                     }
                 )
             } catch let notFound as DownloadNotFoundError {
                 throw SwiftlyError(
                     message: "\(version) does not exist at URL \(notFound.url), exiting")
             } catch {
-                await animation.complete(success: false)
+                try? await animation.complete(success: false)
                 throw error
             }
-            await animation.complete(success: true)
+            try await animation.complete(success: true)
 
             if verifySignature {
                 try await Swiftly.currentPlatform.verifyToolchainSignature(

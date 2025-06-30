@@ -81,14 +81,17 @@ struct Install: SwiftlyCommand {
         ))
     var progressFile: FilePath?
 
+    @Option(name: .long, help: "Output format (text, json)")
+    var format: SwiftlyCore.OutputFormat = .text
+
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case version, use, verify, postInstallFile, root, progressFile
+        case version, use, verify, postInstallFile, root, progressFile, format
     }
 
     mutating func run() async throws {
-        try await self.run(Swiftly.createDefaultContext())
+        try await self.run(Swiftly.createDefaultContext(format: self.format))
     }
 
     private func swiftlyHomeDir(_ ctx: SwiftlyCoreContext) -> FilePath {
@@ -266,7 +269,10 @@ struct Install: SwiftlyCommand {
         progressFile: FilePath? = nil
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
-            await ctx.message("\(version) is already installed.")
+            let installInfo = InstallInfo(
+                version: version, alreadyInstalled: true
+            )
+            try await ctx.output(installInfo)
             return (nil, false)
         }
 
@@ -312,16 +318,18 @@ struct Install: SwiftlyCommand {
                 }
             }
 
-            let animation: ProgressReporterProtocol =
+            let animation: ProgressReporterProtocol? =
                 if let progressFile
             {
                 try JsonFileProgressReporter(ctx, filePath: progressFile)
+            } else if ctx.format == .json {
+                nil
             } else {
                 ConsoleProgressReporter(stream: stdoutStream, header: "Downloading \(version)")
             }
 
             defer {
-                try? animation.close()
+                try? animation?.close()
             }
 
             var lastUpdate = Date()
@@ -351,7 +359,7 @@ struct Install: SwiftlyCommand {
                         lastUpdate = Date()
 
                         do {
-                            try await animation.update(
+                            try await animation?.update(
                                 step: progress.receivedBytes,
                                 total: progress.totalBytes!,
                                 text:
@@ -368,10 +376,10 @@ struct Install: SwiftlyCommand {
                 throw SwiftlyError(
                     message: "\(version) does not exist at URL \(notFound.url), exiting")
             } catch {
-                try? await animation.complete(success: false)
+                try? await animation?.complete(success: false)
                 throw error
             }
-            try await animation.complete(success: true)
+            try await animation?.complete(success: true)
 
             if verifySignature {
                 try await Swiftly.currentPlatform.verifyToolchainSignature(
@@ -427,7 +435,11 @@ struct Install: SwiftlyCommand {
                 return (pathChanged, config)
             }
             config = newConfig
-            await ctx.message("\(version) installed successfully!")
+            let installInfo = InstallInfo(
+                version: version,
+                alreadyInstalled: false
+            )
+            try await ctx.output(installInfo)
             return (postInstallScript, pathChanged)
         }
     }

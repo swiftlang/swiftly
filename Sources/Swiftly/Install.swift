@@ -323,9 +323,9 @@ struct Install: SwiftlyCommand {
             {
                 try JsonFileProgressReporter(ctx, filePath: progressFile)
             } else if ctx.format == .json {
-                nil
-            } else {
                 ConsoleProgressReporter(stream: stderrStream, header: "Downloading \(version)")
+            } else {
+                ConsoleProgressReporter(stream: stdoutStream, header: "Downloading \(version)")
             }
 
             defer {

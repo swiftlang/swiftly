@@ -389,4 +389,38 @@ import Testing
         }
     }
 #endif
+
+    /// Tests that `install` command with JSON format outputs correctly structured JSON.
+    @Test(.testHomeMockedToolchain()) func installJsonFormat() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Install.self, ["install", "5.7.0", "--post-install-file=\(fs.mktemp())", "--format", "json"], format: .json
+        )
+
+        let installInfo = try JSONDecoder().decode(
+            InstallInfo.self,
+            from: output[0].data(using: .utf8)!
+        )
+
+        #expect(installInfo.version.name == "5.7.0")
+        #expect(installInfo.alreadyInstalled == false)
+    }
+
+    /// Tests that `install` command with JSON format correctly indicates when toolchain is already installed.
+    @Test(.testHomeMockedToolchain()) func installJsonFormatAlreadyInstalled() async throws {
+        // First install the toolchain
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(fs.mktemp())"])
+
+        // Then try to install it again with JSON format
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Install.self, ["install", "5.7.0", "--post-install-file=\(fs.mktemp())", "--format", "json"], format: .json
+        )
+
+        let installInfo = try JSONDecoder().decode(
+            InstallInfo.self,
+            from: output[0].data(using: .utf8)!
+        )
+
+        #expect(installInfo.version.name == "5.7.0")
+        #expect(installInfo.alreadyInstalled == true)
+    }
 }

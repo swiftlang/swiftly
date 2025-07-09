@@ -70,7 +70,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
             """
         }
 
-        try await allCmds.write(to: URL(fileURLWithPath: self.outputFile), atomically: true, encoding: .utf8)
+        try allCmds.write(to: URL(fileURLWithPath: self.outputFile), atomically: true, encoding: .utf8)
     }
 
     struct Vars {

@@ -117,7 +117,7 @@ public struct MacOS: Platform {
 
         if ctx.mockedHomeDir == nil {
             await ctx.message("Extracting the swiftly package...")
-            try await sys.installer(
+            sys.installer(
                 .pkg(archive),
                 .target("CurrentUserHomeDirectory")
             )

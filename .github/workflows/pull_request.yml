@@ -6,9 +6,6 @@ on:
   push:
     branches: [main]
 
-env:
-  SWIFTLY_BOOTSTRAP_VERSION: 1.0.1-dev
-
 jobs:
   soundness:
     name: Soundness

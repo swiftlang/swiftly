@@ -256,4 +256,25 @@ import Testing
             #expect(ToolchainVersion.newStable.name == versionFileContents)
         }
     }
+
+    /// Tests that running a use command without an argument prints the currently in-use toolchain.
+    @Test(.mockedSwiftlyVersion()) func printInUseJsonFormat() async throws {
+        let toolchains = [
+            ToolchainVersion.newStable,
+            .newMainSnapshot,
+            .newReleaseSnapshot,
+        ]
+        try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: Set(toolchains)) {
+            let decoder = JSONDecoder()
+            for toolchain in toolchains {
+                var output = try await SwiftlyTests.runWithMockedIO(Use.self, ["use", "-g", "--format", "json", toolchain.name], format: .json)
+                let result = try decoder.decode(ToolchainSetInfo.self, from: output[0].data(using: .utf8)!)
+                #expect(result.version == toolchain)
+
+                output = try await SwiftlyTests.runWithMockedIO(Use.self, ["use", "-g", "--print-location", "--format", "json"], format: .json)
+                let result2 = try decoder.decode(LocationInfo.self, from: output[0].data(using: .utf8)!)
+                #expect(result2.path == Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchain).string)
+            }
+        }
+    }
 }

@@ -124,7 +124,7 @@ struct Init: SwiftlyCommand {
                 """
             }
 
-            await ctx.print(msg)
+            await ctx.message(msg)
 
             guard await ctx.promptForConfirmation(defaultBehavior: true) else {
                 throw SwiftlyError(message: "swiftly installation has been cancelled")
@@ -193,7 +193,7 @@ struct Init: SwiftlyCommand {
         let envFileExists = try await fs.exists(atPath: envFile)
 
         if overwrite || !envFileExists {
-            await ctx.print("Creating shell environment file for the user...")
+            await ctx.message("Creating shell environment file for the user...")
             var env = ""
             if shell.hasSuffix("fish") {
                 env = """
@@ -221,7 +221,7 @@ struct Init: SwiftlyCommand {
         }
 
         if !noModifyProfile {
-            await ctx.print("Updating profile...")
+            await ctx.message("Updating profile...")
 
             let userHome = ctx.mockedHomeDir ?? fs.home
 
@@ -275,7 +275,7 @@ struct Init: SwiftlyCommand {
         }
 
         if !quietShellFollowup {
-            await ctx.print("""
+            await ctx.message("""
             To begin using installed swiftly from your current shell, first run the following command:
                 \(sourceLine)
 
@@ -284,7 +284,7 @@ struct Init: SwiftlyCommand {
 
         // Fish doesn't have path caching, so this might only be needed for bash/zsh
         if pathChanged && !quietShellFollowup && !shell.hasSuffix("fish") {
-            await ctx.print("""
+            await ctx.message("""
             Your shell caches items on your path for better performance. Swiftly has added
             items to your path that may not get picked up right away. You can update your
             shell's environment by running
@@ -297,7 +297,7 @@ struct Init: SwiftlyCommand {
         }
 
         if let postInstall {
-            await ctx.print(Messages.postInstall(postInstall))
+            await ctx.message(Messages.postInstall(postInstall))
         }
     }
 }

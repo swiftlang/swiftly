@@ -48,6 +48,8 @@ struct SelfUpdate: SwiftlyCommand {
         var downloadURL: Foundation.URL?
         var version: SwiftlyVersion? = swiftlyVersion
 
+        await ctx.message("Checking for swiftly updates...")
+
         if let version {
 #if os(macOS)
             downloadURL = URL(string: "https://download.swift.org/swiftly/darwin/swiftly-\(version).pkg")
@@ -147,7 +149,7 @@ struct SelfUpdate: SwiftlyCommand {
             )
             try await Swiftly.currentPlatform.extractSwiftlyAndInstall(ctx, from: tmpFile)
 
-            await ctx.print("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
+            await ctx.message("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
             return version
         }
     }

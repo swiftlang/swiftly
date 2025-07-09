@@ -1,64 +1,103 @@
-/// A description
+import Foundation
+
 extension String {
-    /// Wraps text to fit within specified column width
-    ///
-    /// This method reformats the string to ensure each line fits within the specified column width,
-    /// attempting to break at spaces when possible to avoid splitting words.
-    ///
-    /// - Parameters:
-    ///   - columns: Maximum width (in characters) for each line
-    ///   - wrappingIndent: Number of spaces to add at the beginning of each wrapped line (not the first line)
-    ///
-    /// - Returns: A new string with appropriate line breaks to maintain the specified column width
-    func wrapText(to columns: Int, wrappingIndent: Int = 0) -> String {
-        let effectiveColumns = columns - wrappingIndent
-        guard effectiveColumns > 0 else { return self }
+    func wrapText(to columns: Int) -> String {
+        guard columns > 0 else { return self }
 
         var result: [Substring] = []
-        var currentIndex = self.startIndex
+        var current = startIndex
 
-        while currentIndex < self.endIndex {
-            let nextChunk = self[currentIndex...].prefix(effectiveColumns)
-
-            // Handle line breaks in the current chunk
-            if let lastLineBreak = nextChunk.lastIndex(of: "\n") {
-                result.append(
-                    contentsOf: self[currentIndex..<lastLineBreak].split(
-                        separator: "\n", omittingEmptySubsequences: false
-                    ))
-                currentIndex = self.index(after: lastLineBreak)
+        while current < endIndex {
+            if self[current] == "\n" {
+                result.append("\n")
+                current = index(after: current)
                 continue
             }
 
-            // We've reached the end of the string
-            if nextChunk.endIndex == self.endIndex {
-                result.append(self[currentIndex...])
-                break
+            let remainingText: String.SubSequence = self[current...]
+            let nextNewlineRange = remainingText.range(of: "\n")
+            let lineEnd = nextNewlineRange?.lowerBound ?? endIndex
+
+            var lineStart = current
+
+            while lineStart < lineEnd {
+                let remainingLength = distance(from: lineStart, to: lineEnd)
+
+                if remainingLength <= columns {
+                    result.append(self[lineStart..<lineEnd])
+                    lineStart = lineEnd
+                    continue
+                }
+
+                let chunkEnd = index(lineStart, offsetBy: columns + 1, limitedBy: lineEnd) ?? lineEnd
+                let chunkLength = distance(from: lineStart, to: chunkEnd)
+
+                if chunkLength <= columns {
+                    result.append(self[lineStart..<chunkEnd])
+                    lineStart = chunkEnd
+                    continue
+                }
+
+                let nextCharIndex = index(lineStart, offsetBy: columns)
+
+                if self[nextCharIndex].isWhitespace && self[nextCharIndex] != "\n" {
+                    result.append(self[lineStart..<nextCharIndex])
+                    result.append("\n")
+                    lineStart = self.skipWhitespace(from: index(after: nextCharIndex))
+                } else {
+                    var lastWhitespace: String.Index?
+                    var searchIndex = nextCharIndex
+
+                    while searchIndex > lineStart {
+                        let prevIndex = index(before: searchIndex)
+                        if self[prevIndex].isWhitespace && self[prevIndex] != "\n" {
+                            lastWhitespace = prevIndex
+                            break
+                        }
+                        searchIndex = prevIndex
+                    }
+
+                    if let lastWS = lastWhitespace {
+                        result.append(self[lineStart..<lastWS])
+                        result.append("\n")
+                        lineStart = self.skipWhitespace(from: index(after: lastWS))
+                    } else {
+                        let wordEndRange = self[lineStart...].rangeOfCharacter(from: .whitespacesAndNewlines)
+                        let wordEnd = wordEndRange?.lowerBound ?? lineEnd
+
+                        result.append(self[lineStart..<wordEnd])
+                        if wordEnd < lineEnd && self[wordEnd] != "\n" {
+                            result.append("\n")
+                            lineStart = self.skipWhitespace(from: index(after: wordEnd))
+                        } else {
+                            lineStart = wordEnd
+                        }
+                    }
+                }
             }
 
-            // Try to break at the last space within the column limit
-            if let lastSpace = nextChunk.lastIndex(of: " ") {
-                result.append(self[currentIndex..<lastSpace])
-                currentIndex = self.index(after: lastSpace)
-                continue
-            }
-
-            // If no space in the chunk, find the next space after column limit
-            if let nextSpace = self[currentIndex...].firstIndex(of: " ") {
-                result.append(self[currentIndex..<nextSpace])
-                currentIndex = self.index(after: nextSpace)
-                continue
-            }
-
-            // No spaces left in the string - add the rest and finish
-            result.append(self[currentIndex...])
-            break
+            current = lineEnd
         }
 
-        // Apply indentation to wrapped lines and join them
-        return
-            result
-                .map { $0.isEmpty ? $0 : String(repeating: " ", count: wrappingIndent) + $0 }
-                .joined(separator: "\n")
+        return result.joined()
+    }
+
+    private func skipWhitespace(from index: String.Index) -> String.Index {
+        guard index < endIndex else { return index }
+
+        let remainingRange = index..<endIndex
+        let nonWhitespaceRange = rangeOfCharacter(
+            from: CharacterSet.whitespacesAndNewlines.inverted.union(CharacterSet.newlines),
+            range: remainingRange
+        )
+
+        if let nonWhitespaceStart = nonWhitespaceRange?.lowerBound {
+            if self[nonWhitespaceStart] == "\n" {
+                return nonWhitespaceStart // Stop at newline
+            }
+            return nonWhitespaceStart
+        } else {
+            return endIndex
+        }
     }
 }

@@ -48,7 +48,7 @@ struct Init: SwiftlyCommand {
             (
                 config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev") ||
                     config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0) ||
-                    (config.version?.major == 1 && config.version?.minor == 0)
+                    (config.version.major == 1 && config.version.minor == 0)
             )
         {
             // This is a simple upgrade from the 0.4.0 pre-releases, or 1.x
@@ -178,9 +178,8 @@ struct Init: SwiftlyCommand {
         // Force the configuration to be present. Generate it if it doesn't already exist or overwrite is set
         if overwrite || config == nil {
             let pd = try await Swiftly.currentPlatform.detectPlatform(ctx, disableConfirmation: assumeYes, platform: platform)
-            var c = Config(inUse: nil, installedToolchains: [], platform: pd)
-            // Stamp the current version of swiftly on this config
-            c.version = SwiftlyCore.version
+            let c = Config(inUse: nil, installedToolchains: [], platform: pd, version: SwiftlyCore.version)
+
             try c.save(ctx)
             config = c
         }

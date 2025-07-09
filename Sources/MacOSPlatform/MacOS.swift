@@ -117,7 +117,7 @@ public struct MacOS: Platform {
 
         if ctx.mockedHomeDir == nil {
             await ctx.message("Extracting the swiftly package...")
-            sys.installer(
+            _ = sys.installer(
                 .pkg(archive),
                 .target("CurrentUserHomeDirectory")
             )
@@ -193,7 +193,7 @@ public struct MacOS: Platform {
     }
 
     public func getShell() async throws -> String {
-        for (key, value) in try await sys.dscl(datasource: ".").read(path: fs.home, key: ["UserShell"]).properties(self) {
+        for (_, value) in try await sys.dscl(datasource: ".").read(path: fs.home, key: ["UserShell"]).properties(self) {
             return value
         }
 

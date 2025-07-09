@@ -53,7 +53,17 @@ import Testing
         }
     }
 
-    @Test(.tags(.large)) func getSwiftlyRelease() async throws {
+    @Test(
+        .tags(.large),
+        arguments: [
+            "https://download.swift.org/swiftly/linux/swiftly-x86_64.tar.gz", // Latest
+            "https://download.swift.org/swiftly/linux/swiftly-1.0.1-x86_64.tar.gz", // Specific version
+            "https://download.swift.org/swiftly/linux/swiftly-1.0.1-dev-x86_64.tar.gz", // Specific dev prerelease version
+            "https://download.swift.org/swiftly/linux/swiftly-aarch64.tar.gz", // Latest ARM
+            "https://download.swift.org/swiftly/linux/swiftly-1.0.1-aarch64.tar.gz", // Specific ARM version
+            "https://download.swift.org/swiftly/linux/swiftly-1.0.1-dev-aarch64.tar.gz", // Specific dev prerelease version
+        ]
+    ) func getSwiftlyLinuxReleases(url: String) async throws {
         let tmpFile = fs.mktemp()
         try await fs.create(file: tmpFile, contents: nil)
         let tmpFileSignature = fs.mktemp(ext: ".sig")
@@ -64,7 +74,7 @@ import Testing
         try await fs.withTemporary(files: tmpFile, tmpFileSignature, keysFile) {
             let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
-            let swiftlyURL = try #require(URL(string: "https://download.swift.org/swiftly/linux/swiftly-x86_64.tar.gz"))
+            let swiftlyURL = try #require(URL(string: url))
 
             try await retry {
                 try await httpClient.getSwiftlyRelease(url: swiftlyURL).download(to: tmpFile)
@@ -78,6 +88,32 @@ import Testing
                 try await httpClient.getGpgKeys().download(to: keysFile)
                 try await runGpg(sys.gpg()._import(key: keysFile))
                 try await runGpg(sys.gpg().verify(detached_signature: tmpFileSignature, signed_data: tmpFile))
+            }
+        }
+    }
+
+    @Test(
+        .tags(.large),
+        arguments: [
+            "https://download.swift.org/swiftly/darwin/swiftly.pkg", // Latest
+            "https://download.swift.org/swiftly/darwin/swiftly-1.0.1.pkg", // Specific version
+            "https://download.swift.org/swiftly/darwin/swiftly-1.0.1-dev.pkg", // Specific dev prerelease version
+        ]
+    ) func getSwiftlyMacOSReleases(url: String) async throws {
+        let tmpFile = fs.mktemp()
+        try await fs.create(file: tmpFile, contents: nil)
+        let tmpFileSignature = fs.mktemp(ext: ".sig")
+        try await fs.create(file: tmpFileSignature, contents: nil)
+        let keysFile = fs.mktemp(ext: ".asc")
+        try await fs.create(file: keysFile, contents: nil)
+
+        try await fs.withTemporary(files: tmpFile, tmpFileSignature, keysFile) {
+            let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
+
+            let swiftlyURL = try #require(URL(string: url))
+
+            try await retry {
+                try await httpClient.getSwiftlyRelease(url: swiftlyURL).download(to: tmpFile)
             }
         }
     }

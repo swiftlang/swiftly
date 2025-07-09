@@ -54,7 +54,10 @@ extension SwiftlyWebsiteAPI.Components.Schemas.SwiftlyReleasePlatformArtifacts {
 }
 
 extension SwiftlyWebsiteAPI.Components.Schemas.SwiftlyPlatformIdentifier {
-    public init(_ knownSwiftlyPlatformIdentifier: SwiftlyWebsiteAPI.Components.Schemas.KnownSwiftlyPlatformIdentifier) {
+    public init(
+        _ knownSwiftlyPlatformIdentifier: SwiftlyWebsiteAPI.Components.Schemas
+            .KnownSwiftlyPlatformIdentifier
+    ) {
         self.init(value1: knownSwiftlyPlatformIdentifier)
     }
 }
@@ -74,15 +77,18 @@ public struct ToolchainFile: Sendable {
 }
 
 public protocol HTTPRequestExecutor: Sendable {
-    func getCurrentSwiftlyRelease() async throws -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease
+    func getCurrentSwiftlyRelease() async throws
+        -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease
     func getReleaseToolchains() async throws -> [SwiftlyWebsiteAPI.Components.Schemas.Release]
     func getSnapshotToolchains(
-        branch: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch, platform: SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier
+        branch: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch,
+        platform: SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier
     ) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains
     func getGpgKeys() async throws -> OpenAPIRuntime.HTTPBody
     func getSwiftlyRelease(url: URL) async throws -> OpenAPIRuntime.HTTPBody
     func getSwiftlyReleaseSignature(url: URL) async throws -> OpenAPIRuntime.HTTPBody
-    func getSwiftToolchainFile(_ toolchainFile: ToolchainFile) async throws -> OpenAPIRuntime.HTTPBody
+    func getSwiftToolchainFile(_ toolchainFile: ToolchainFile) async throws
+        -> OpenAPIRuntime.HTTPBody
     func getSwiftToolchainFileSignature(_ toolchainFile: ToolchainFile) async throws
         -> OpenAPIRuntime.HTTPBody
 }
@@ -132,7 +138,8 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
 
         if proxy != nil {
             self.httpClient = HTTPClient(
-                eventLoopGroupProvider: .singleton, configuration: HTTPClient.Configuration(proxy: proxy)
+                eventLoopGroupProvider: .singleton,
+                configuration: HTTPClient.Configuration(proxy: proxy)
             )
         } else {
             self.httpClient = HTTPClient.shared
@@ -177,18 +184,24 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
         )
     }
 
-    public func getCurrentSwiftlyRelease() async throws -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease {
+    public func getCurrentSwiftlyRelease() async throws
+        -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease
+    {
         let response = try await self.websiteClient().getCurrentSwiftlyRelease()
         return try response.ok.body.json
     }
 
-    public func getReleaseToolchains() async throws -> [SwiftlyWebsiteAPI.Components.Schemas.Release] {
+    public func getReleaseToolchains() async throws -> [
+        SwiftlyWebsiteAPI.Components.Schemas
+            .Release
+    ] {
         let response = try await self.websiteClient().listReleases()
         return try response.ok.body.json
     }
 
     public func getSnapshotToolchains(
-        branch: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch, platform: SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier
+        branch: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch,
+        platform: SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier
     ) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains {
         let response = try await self.websiteClient().listDevToolchains(
             .init(path: .init(branch: branch, platform: platform)))
@@ -196,40 +209,59 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     }
 
     public func getGpgKeys() async throws -> OpenAPIRuntime.HTTPBody {
-        let response = try await downloadClient(baseURL: SwiftlyDownloadAPI.Servers.productionURL()).swiftGpgKeys(
-            .init())
+        let response = try await downloadClient(baseURL: SwiftlyDownloadAPI.Servers.productionURL())
+            .swiftGpgKeys(
+                .init())
 
         return try response.ok.body.plainText
     }
 
     public func getSwiftlyRelease(url: URL) async throws -> OpenAPIRuntime.HTTPBody {
-        guard try url.host(percentEncoded: false) == Servers.productionDownloadURL().host(percentEncoded: false),
-              let match = try #/\/swiftly\/(?<platform>.+)\/(?<file>.+)/#.wholeMatch(
-                  in: url.path(percentEncoded: false))
+        guard
+            try url.host(percentEncoded: false)
+            == Servers.productionDownloadURL().host(percentEncoded: false),
+            let match = try #/\/swiftly\/(?<platform>.+)\/(?<file>.+)/#.wholeMatch(
+                in: url.path(percentEncoded: false))
         else {
-            throw SwiftlyError(message: "Unexpected Swiftly download URL format: \(url.path(percentEncoded: false))")
+            throw SwiftlyError(
+                message:
+                "Unexpected Swiftly download URL format: \(url.path(percentEncoded: false))")
         }
 
-        let response = try await downloadClient(baseURL: SwiftlyDownloadAPI.Servers.productionDownloadURL())
-            .downloadSwiftlyRelease(
-                .init(path: .init(platform: String(match.output.platform), file: String(match.output.file)))
-            )
+        let response = try await downloadClient(
+            baseURL: SwiftlyDownloadAPI.Servers.productionDownloadURL()
+        )
+        .downloadSwiftlyRelease(
+            .init(
+                path: .init(
+                    platform: String(match.output.platform), file: String(match.output.file)
+                ))
+        )
 
         return try response.ok.body.binary
     }
 
     public func getSwiftlyReleaseSignature(url: URL) async throws -> OpenAPIRuntime.HTTPBody {
-        guard try url.host(percentEncoded: false) == Servers.productionDownloadURL().host(percentEncoded: false),
-              let match = try #/\/swiftly\/(?<platform>.+)\/(?<file>.+).sig/#.wholeMatch(
-                  in: url.path(percentEncoded: false))
+        guard
+            try url.host(percentEncoded: false)
+            == Servers.productionDownloadURL().host(percentEncoded: false),
+            let match = try #/\/swiftly\/(?<platform>.+)\/(?<file>.+).sig/#.wholeMatch(
+                in: url.path(percentEncoded: false))
         else {
-            throw SwiftlyError(message: "Unexpected Swiftly signature URL format: \(url.path(percentEncoded: false))")
+            throw SwiftlyError(
+                message:
+                "Unexpected Swiftly signature URL format: \(url.path(percentEncoded: false))")
         }
 
-        let response = try await downloadClient(baseURL: SwiftlyDownloadAPI.Servers.productionDownloadURL())
-            .getSwiftlyReleaseSignature(
-                .init(path: .init(platform: String(match.output.platform), file: String(match.output.file)))
-            )
+        let response = try await downloadClient(
+            baseURL: SwiftlyDownloadAPI.Servers.productionDownloadURL()
+        )
+        .getSwiftlyReleaseSignature(
+            .init(
+                path: .init(
+                    platform: String(match.output.platform), file: String(match.output.file)
+                ))
+        )
 
         return try response.ok.body.binary
     }
@@ -237,16 +269,22 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     public func getSwiftToolchainFile(_ toolchainFile: ToolchainFile) async throws
         -> OpenAPIRuntime.HTTPBody
     {
-        let response = try await downloadClient(baseURL: SwiftlyDownloadAPI.Servers.productionDownloadURL())
-            .downloadSwiftToolchain(
-                .init(
-                    path: .init(
-                        category: String(toolchainFile.category), platform: String(toolchainFile.platform),
-                        version: String(toolchainFile.version), file: String(toolchainFile.file)
-                    )))
+        let response = try await downloadClient(
+            baseURL: SwiftlyDownloadAPI.Servers.productionDownloadURL()
+        )
+        .downloadSwiftToolchain(
+            .init(
+                path: .init(
+                    category: String(toolchainFile.category),
+                    platform: String(toolchainFile.platform),
+                    version: String(toolchainFile.version), file: String(toolchainFile.file)
+                )))
         if response == .notFound {
             throw try DownloadNotFoundError(
-                url: Servers.productionDownloadURL().appendingPathComponent(toolchainFile.category).appendingPathComponent(toolchainFile.platform).appendingPathComponent(toolchainFile.version).appendingPathComponent(toolchainFile.file))
+                url: Servers.productionDownloadURL().appendingPathComponent(toolchainFile.category)
+                    .appendingPathComponent(toolchainFile.platform).appendingPathComponent(
+                        toolchainFile.version
+                    ).appendingPathComponent(toolchainFile.file))
         }
 
         return try response.ok.body.binary
@@ -255,13 +293,16 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     public func getSwiftToolchainFileSignature(_ toolchainFile: ToolchainFile) async throws
         -> OpenAPIRuntime.HTTPBody
     {
-        let response = try await downloadClient(baseURL: SwiftlyDownloadAPI.Servers.productionDownloadURL())
-            .getSwiftToolchainSignature(
-                .init(
-                    path: .init(
-                        category: String(toolchainFile.category), platform: String(toolchainFile.platform),
-                        version: String(toolchainFile.version), file: String(toolchainFile.file)
-                    )))
+        let response = try await downloadClient(
+            baseURL: SwiftlyDownloadAPI.Servers.productionDownloadURL()
+        )
+        .getSwiftToolchainSignature(
+            .init(
+                path: .init(
+                    category: String(toolchainFile.category),
+                    platform: String(toolchainFile.platform),
+                    version: String(toolchainFile.version), file: String(toolchainFile.file)
+                )))
 
         return try response.ok.body.binary
     }
@@ -289,7 +330,9 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Architecture {
 }
 
 extension SwiftlyWebsiteAPI.Components.Schemas.PlatformIdentifier {
-    public init(_ knownPlatformIdentifier: SwiftlyWebsiteAPI.Components.Schemas.KnownPlatformIdentifier) {
+    public init(
+        _ knownPlatformIdentifier: SwiftlyWebsiteAPI.Components.Schemas.KnownPlatformIdentifier
+    ) {
         self.init(value1: knownPlatformIdentifier)
     }
 
@@ -322,15 +365,25 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
         // NOTE: some of these platforms are represented on swift.org metadata, but not supported by swiftly and so they don't have constants in PlatformDefinition
         switch self.name {
         case "Ubuntu 14.04":
-            PlatformDefinition(name: "ubuntu1404", nameFull: "ubuntu14.04", namePretty: "Ubuntu 14.04")
+            PlatformDefinition(
+                name: "ubuntu1404", nameFull: "ubuntu14.04", namePretty: "Ubuntu 14.04"
+            )
         case "Ubuntu 15.10":
-            PlatformDefinition(name: "ubuntu1510", nameFull: "ubuntu15.10", namePretty: "Ubuntu 15.10")
+            PlatformDefinition(
+                name: "ubuntu1510", nameFull: "ubuntu15.10", namePretty: "Ubuntu 15.10"
+            )
         case "Ubuntu 16.04":
-            PlatformDefinition(name: "ubuntu1604", nameFull: "ubuntu16.04", namePretty: "Ubuntu 16.04")
+            PlatformDefinition(
+                name: "ubuntu1604", nameFull: "ubuntu16.04", namePretty: "Ubuntu 16.04"
+            )
         case "Ubuntu 16.10":
-            PlatformDefinition(name: "ubuntu1610", nameFull: "ubuntu16.10", namePretty: "Ubuntu 16.10")
+            PlatformDefinition(
+                name: "ubuntu1610", nameFull: "ubuntu16.10", namePretty: "Ubuntu 16.10"
+            )
         case "Ubuntu 18.04":
-            PlatformDefinition(name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04")
+            PlatformDefinition(
+                name: "ubuntu1804", nameFull: "ubuntu18.04", namePretty: "Ubuntu 18.04"
+            )
         case "Ubuntu 20.04":
             PlatformDefinition.ubuntu2004
         case "Amazon Linux 2":
@@ -346,11 +399,17 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
         case "Red Hat Universal Base Image 9":
             PlatformDefinition.rhel9
         case "Ubuntu 24.04":
-            PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04")
+            PlatformDefinition(
+                name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"
+            )
         case "Debian 12":
-            PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12")
+            PlatformDefinition(
+                name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"
+            )
         case "Fedora 39":
-            PlatformDefinition(name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39")
+            PlatformDefinition(
+                name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39"
+            )
         default:
             nil
         }
@@ -412,7 +471,9 @@ public struct SwiftlyHTTPClient: Sendable {
     }
 
     /// Return the current Swiftly release using the swift.org API.
-    public func getCurrentSwiftlyRelease() async throws -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease {
+    public func getCurrentSwiftlyRelease() async throws
+        -> SwiftlyWebsiteAPI.Components.Schemas.SwiftlyRelease
+    {
         try await self.httpRequestExecutor.getCurrentSwiftlyRelease()
     }
 
@@ -433,7 +494,9 @@ public struct SwiftlyHTTPClient: Sendable {
             if platform.name != PlatformDefinition.macOS.name {
                 // If the platform isn't xcode then verify that there is an offering for this platform name and arch
                 guard
-                    let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: { $0.matches(platform) })
+                    let swiftOrgPlatform = swiftOrgRelease.platforms.first(where: {
+                        $0.matches(platform)
+                    })
                 else {
                     return nil
                 }
@@ -447,7 +510,8 @@ public struct SwiftlyHTTPClient: Sendable {
                   case let .stable(release) = version
             else {
                 throw SwiftlyError(
-                    message: "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
+                    message:
+                    "error parsing swift.org release version: \(swiftOrgRelease.stableName)")
             }
 
             if let filter {
@@ -523,9 +587,11 @@ public struct SwiftlyHTTPClient: Sendable {
         let swiftOrgSnapshots =
             if platform.name == PlatformDefinition.macOS.name
         {
-            devToolchains.universal ?? [SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch]()
+            devToolchains.universal
+                ?? [SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch]()
         } else if arch == "aarch64" {
-            devToolchains.aarch64 ?? [SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch]()
+            devToolchains.aarch64
+                ?? [SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch]()
         } else if arch == "x86_64" {
             devToolchains.x8664 ?? [SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch]()
         } else {
@@ -533,16 +599,18 @@ public struct SwiftlyHTTPClient: Sendable {
         }
 
         // Convert these into toolchain snapshot versions that match the filter
-        var matchingSnapshots = try swiftOrgSnapshots.map { try $0.parseSnapshot() }.compactMap { $0 }
-            .filter { toolchainVersion in
-                if let filter {
-                    guard filter(toolchainVersion) else {
-                        return false
-                    }
+        var matchingSnapshots = try swiftOrgSnapshots.map { try $0.parseSnapshot() }.compactMap {
+            $0
+        }
+        .filter { toolchainVersion in
+            if let filter {
+                guard filter(toolchainVersion) else {
+                    return false
                 }
-
-                return true
             }
+
+            return true
+        }
 
         matchingSnapshots.sort(by: >)
 
@@ -579,7 +647,9 @@ public struct SwiftlyHTTPClient: Sendable {
 }
 
 extension OpenAPIRuntime.HTTPBody {
-    public func download(to destination: FilePath, reportProgress: ((DownloadProgress) -> Void)? = nil)
+    public func download(
+        to destination: FilePath, reportProgress: ((DownloadProgress) async -> Void)? = nil
+    )
         async throws
     {
         let fileHandle = try FileHandle(forWritingTo: URL(fileURLWithPath: destination.string))
@@ -604,13 +674,16 @@ extension OpenAPIRuntime.HTTPBody {
             try fileHandle.write(contentsOf: buffer)
 
             let now = Date()
-            if let reportProgress, lastUpdate.distance(to: now) > 0.25 || receivedBytes == expectedBytes {
+            if let reportProgress,
+               lastUpdate.distance(to: now) > 0.25 || receivedBytes == expectedBytes
+            {
                 lastUpdate = now
-                reportProgress(
+                await reportProgress(
                     DownloadProgress(
                         receivedBytes: receivedBytes,
                         totalBytes: expectedBytes
-                    ))
+                    )
+                )
             }
         }
 

@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--assume-yes] [--verbose] [--version] [--help]
+swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--format=<format>] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **version:**
@@ -87,6 +87,11 @@ written to this file as commands that can be run after the installation.
 Progress information will be appended to this file as JSON objects, one per line.
 Each progress entry contains timestamp, progress percentage, and a descriptive message.
 The file must be writable, else an error will be thrown.
+
+
+**--format=\<format\>:**
+
+*Output format (text, json)*
 
 
 **--assume-yes:**
@@ -492,7 +497,7 @@ swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip
 Update the version of swiftly itself.
 
 ```
-swiftly self-update [--assume-yes] [--verbose] [--version] [--help]
+swiftly self-update [--assume-yes] [--verbose]  [--version] [--help]
 ```
 
 **--assume-yes:**

@@ -355,3 +355,28 @@ struct InstalledToolchainsListInfo: OutputData {
         return lines.joined(separator: "\n")
     }
 }
+
+struct InstallInfo: OutputData {
+    let version: ToolchainVersion
+    let alreadyInstalled: Bool
+
+    init(version: ToolchainVersion, alreadyInstalled: Bool) {
+        self.version = version
+        self.alreadyInstalled = alreadyInstalled
+    }
+
+    var description: String {
+        "\(self.version) is \(self.alreadyInstalled ? "already installed" : "installed successfully!")"
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case version
+        case alreadyInstalled
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.version.name, forKey: .version)
+        try container.encode(self.alreadyInstalled, forKey: .alreadyInstalled)
+    }
+}

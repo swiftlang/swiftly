@@ -95,7 +95,8 @@ public struct CommandLineTests {
         // AND a simple history
         try "Some text".write(to: tmp / "foo.txt", atomically: true)
         try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "add", "foo.txt")
-        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "config", "user.email", "user@example.com")
+        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "config", "--local", "user.email", "user@example.com")
+        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "config", "--local", "commit.gpgsign", "false")
         try await sys.git(.workingDir(tmp)).commit(.message("Initial commit")).run(Swiftly.currentPlatform)
         try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run(Swiftly.currentPlatform)
 

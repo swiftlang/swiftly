@@ -54,6 +54,12 @@ struct Use: SwiftlyCommand {
 
             $ swiftly use 5.7-snapshot
             $ swiftly use main-snapshot
+
+        macOS ONLY: There is a special selector for swiftly to use your Xcode toolchain. \
+        If there are multiple versions of Xcode then swiftly will use the currently selected \
+        toolchain from xcode-select.
+
+            $ swiftly use xcode
         """
     ))
     var toolchain: String?
@@ -87,7 +93,7 @@ struct Use: SwiftlyCommand {
             }
 
             if self.printLocation {
-                let location = LocationInfo(path: "\(Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion))")
+                let location = LocationInfo(path: "\(try await Swiftly.currentPlatform.findToolchainLocation(ctx, selectedVersion))")
                 try await ctx.output(location)
                 return
             }
@@ -251,7 +257,7 @@ public func selectToolchain(_ ctx: SwiftlyCoreContext, config: inout Config, glo
 
     // Check to ensure that the global default in use toolchain matches one of the installed toolchains, and return
     // no selected toolchain if it doesn't.
-    guard let defaultInUse = config.inUse, config.installedToolchains.contains(defaultInUse) else {
+    guard let defaultInUse = config.inUse, config.listInstalledToolchains(selector: nil).contains(defaultInUse) else {
         return (nil, .globalDefault)
     }
 

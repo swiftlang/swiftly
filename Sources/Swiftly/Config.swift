@@ -49,8 +49,14 @@ public struct Config: Codable, Equatable, Sendable {
     }
 
     public func listInstalledToolchains(selector: ToolchainSelector?) -> [ToolchainVersion] {
+#if os(macOS)
+        let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
+#else
+        let systemToolchains: [ToolchainVersion] = []
+#endif
+
         guard let selector else {
-            return Array(self.installedToolchains)
+            return Array(self.installedToolchains) + systemToolchains
         }
 
         if case .latest = selector {
@@ -61,7 +67,7 @@ public struct Config: Codable, Equatable, Sendable {
             return ts
         }
 
-        return self.installedToolchains.filter { toolchain in
+        return (self.installedToolchains + systemToolchains).filter { toolchain in
             selector.matches(toolchain: toolchain)
         }
     }

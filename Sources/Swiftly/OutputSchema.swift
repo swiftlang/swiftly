@@ -125,6 +125,8 @@ struct AvailableToolchainInfo: OutputData {
                 try versionContainer.encode(major, forKey: .major)
                 try versionContainer.encode(minor, forKey: .minor)
             }
+        case .xcode:
+            try versionContainer.encode("system", forKey: .type)
         }
     }
 }
@@ -233,6 +235,8 @@ struct InstallToolchainInfo: OutputData {
                 try versionContainer.encode(major, forKey: .major)
                 try versionContainer.encode(minor, forKey: .minor)
             }
+        case .xcode:
+            try versionContainer.encode("system", forKey: .type)
         }
     }
 
@@ -279,6 +283,9 @@ struct InstallToolchainInfo: OutputData {
                     branch: branch,
                     date: date
                 ))
+        case "system":
+            // The only system toolchain that exists at the moment is the xcode version
+            self.version = .xcode
         default:
             throw DecodingError.dataCorruptedError(
                 forKey: ToolchainVersionCodingKeys.type,
@@ -314,6 +321,8 @@ struct InstalledToolchainsListInfo: OutputData {
                 "main development snapshot"
             case let .snapshot(.release(major, minor), nil):
                 "\(major).\(minor) development snapshot"
+            case .xcode:
+                "xcode"
             default:
                 "matching"
             }
@@ -334,6 +343,13 @@ struct InstalledToolchainsListInfo: OutputData {
             lines.append("Installed snapshot toolchains")
             lines.append("-----------------------------")
             lines.append(contentsOf: snapshotToolchains.map(\.description))
+
+#if os(macOS)
+            lines.append("")
+            lines.append("Available system toolchains")
+            lines.append("---------------------------")
+            lines.append(ToolchainVersion.xcode.description)
+#endif
         }
 
         return lines.joined(separator: "\n")

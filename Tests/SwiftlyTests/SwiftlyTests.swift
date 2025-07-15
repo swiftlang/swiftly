@@ -220,7 +220,8 @@ public enum SwiftlyTests {
         return Config(
             inUse: nil,
             installedToolchains: [],
-            platform: pd
+            platform: pd,
+            version: SwiftlyCore.version
         )
     }
 

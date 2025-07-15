@@ -327,17 +327,17 @@ import Testing
             try? FileManager.default.removeItem(atPath: pipePath)
         }
 
-        var receivedMessages: [ProgressInfo] = []
         let decoder = JSONDecoder()
-        var installCompleted = false
 
         let readerTask = Task {
-            guard let fileHandle = FileHandle(forReadingAtPath: pipePath) else { return }
+            var receivedMessages: [ProgressInfo] = []
+
+            guard let fileHandle = FileHandle(forReadingAtPath: pipePath) else { throw SwiftlyError(message: "Unable to open file handle at \(pipePath)") }
             defer { fileHandle.closeFile() }
 
             var buffer = Data()
 
-            while !installCompleted {
+            while true {
                 let data = fileHandle.availableData
                 if data.isEmpty {
                     try await Task.sleep(nanoseconds: 100_000_000)
@@ -354,13 +354,14 @@ import Testing
                         if let progress = try? decoder.decode(ProgressInfo.self, from: lineData) {
                             receivedMessages.append(progress)
                             if case .complete = progress {
-                                installCompleted = true
-                                return
+                                return receivedMessages
                             }
                         }
                     }
                 }
             }
+
+            return receivedMessages
         }
 
         let installTask = Task {
@@ -371,10 +372,10 @@ import Testing
             ])
         }
 
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask { try? await readerTask.value }
-            group.addTask { try? await installTask.value }
-        }
+        let readerResult = await readerTask.result
+        try await installTask.value
+
+        let receivedMessages = try readerResult.get()
 
         #expect(!receivedMessages.isEmpty, "Named pipe should receive progress entries")
 

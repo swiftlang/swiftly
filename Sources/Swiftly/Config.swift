@@ -9,12 +9,13 @@ public struct Config: Codable, Equatable, Sendable {
     public var inUse: ToolchainVersion?
     public var installedToolchains: Set<ToolchainVersion>
     public var platform: PlatformDefinition
-    public var version: SwiftlyVersion?
+    public var version: SwiftlyVersion
 
-    init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition) {
+    init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition, version: SwiftlyVersion) {
         self.inUse = inUse
         self.installedToolchains = installedToolchains
         self.platform = platform
+        self.version = version
     }
 
     private static func makeEncoder() -> JSONEncoder {
@@ -28,12 +29,8 @@ public struct Config: Codable, Equatable, Sendable {
         do {
             let configFile = Swiftly.currentPlatform.swiftlyConfigFile(ctx)
             let data = try await fs.cat(atPath: configFile)
-            var config = try JSONDecoder().decode(Config.self, from: data)
-            if config.version == nil {
-                // Assume that the version of swiftly is 0.3.0 because that is the last
-                // unversioned release.
-                config.version = try? SwiftlyVersion(parsing: "0.3.0")
-            }
+            let config = try JSONDecoder().decode(Config.self, from: data)
+
             return config
         } catch {
             let msg = """

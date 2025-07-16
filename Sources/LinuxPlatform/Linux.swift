@@ -231,7 +231,7 @@ public struct Linux: Platform {
         return packages
     }
 
-    public func getSystemPackageManager(platformName: String) -> [String] {
+    public func getSystemPackageManager(platformName: String) -> String? {
         let manager: String? =
             switch platformName
         {
@@ -262,7 +262,7 @@ public struct Linux: Platform {
         _ ctx: SwiftlyCoreContext, platformName: String, version _: ToolchainVersion,
         requireSignatureValidation: Bool
     ) async throws -> String? {
-        let packages: [String] = getSystemPrerequisites(platformName: platformName))
+        let packages: [String] = getSystemPrerequisites(platformName: platformName)
 
         let manager: String? = getSystemPackageManager(platformName: platformName)
 

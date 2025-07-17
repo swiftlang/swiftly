@@ -364,3 +364,36 @@ struct InstallInfo: OutputData {
         try container.encode(self.alreadyInstalled, forKey: .alreadyInstalled)
     }
 }
+
+struct ToolchainDependencyInfo: OutputData {
+    let installedDependencies: [String]
+    let missingDependencies: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case installedDependencies
+        case missingDependencies
+    }
+
+    var description: String {
+        var lines: [String] = []
+
+        if !installedDependencies.isEmpty {
+            lines.append("Already installed toolchain dependencies")
+            lines.append("----------------------------")
+            for dependency in installedDependencies {
+                lines.append("• \(dependency)")
+            }
+        }
+
+        if !missingDependencies.isEmpty {
+            lines.append("\n")
+            lines.append("Missing toolchain dependencies")
+            lines.append("----------------------------")
+            for dependency in missingDependencies {
+                lines.append("• \(dependency)")
+            }
+        }
+
+        return lines.joined(separator: "\n")
+    }
+}

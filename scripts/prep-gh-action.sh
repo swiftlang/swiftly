@@ -18,8 +18,9 @@ while [ $# -ne 0 ]; do
         --install-swiftly)
             installSwiftly=true
             ;;
-        --swift-main-snapshot)
-            swiftMainSnapshot=true
+        --swift-snapshot)
+            swiftSnapshot="$2"
+            shift;
             ;;
         *)
             ;;
@@ -53,10 +54,10 @@ if [ "$installSwiftly" == true ]; then
     selector=()
     runSelector=()
 
-    if [ "$swiftMainSnapshot" == true ]; then
-        echo "Installing latest main-snapshot toolchain"
-        selector=("main-snapshot")
-        runSelector=("+main-snapshot")
+    if [ "$swiftSnapshot" != "" ]; then
+        echo "Installing latest $swiftSnapshot-snapshot toolchain"
+        selector=("$swiftSnapshot-snapshot")
+        runSelector=("+$swiftSnapshot-snapshot")
     elif [ -f .swift-version ]; then
         echo "Installing selected swift toolchain from .swift-version file"
         selector=()

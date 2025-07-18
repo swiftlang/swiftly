@@ -1,12 +1,12 @@
-name: Smoke Test - Nightly Swift Toolchain
+name: Smoke Test - 6.2 Nightly Swift Toolchain
 
 on:
   schedule:
-    - cron: '30 3 * * *'
+    - cron: '30 2 * * *'
 
 jobs:
   tests-selfhosted-linux:
-    name: Test (Smoke Test - Nightly Swift Toolchain) / ${{ matrix.container }}
+    name: Test (Smoke Test - 6.2 Nightly Swift Toolchain) / ${{ matrix.container }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -18,11 +18,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-snapshot main
+        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-snapshot 6.2
       - name: Build and Test
         # UBI 9 and Ubuntu 20.04 - See https://github.com/swiftlang/swift/issues/80908
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80909
-        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swiftly run +main-snapshot swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swiftly run +main-snapshot swift build --build-tests; else swiftly run +main-snapshot swift test; fi'
+        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swiftly run +6.2-snapshot swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swiftly run +6.2-snapshot swift build --build-tests; else swiftly run +6.2-snapshot swift test; fi'
 
   tests-selfhosted-macos:
     name: Test (Smoke Test - Nightly Swift Toolchain) / macOS Sequoia ARM64
@@ -31,6 +31,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-main-snapshot
+        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-snapshot 6.2
       - name: Build and Test
-        run: swiftly run +main-snapshot swift test
+        run: swiftly run +6.2-snapshot swift test

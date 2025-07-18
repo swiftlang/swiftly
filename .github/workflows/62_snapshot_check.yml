@@ -33,4 +33,4 @@ jobs:
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly --swift-snapshot 6.2
       - name: Build and Test
-        run: swiftly run +main-snapshot swift test
+        run: swiftly run +6.2-snapshot swift test

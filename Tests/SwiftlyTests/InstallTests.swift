@@ -256,12 +256,19 @@ import Testing
     }
 
     /// Verify that the installed toolchain will be marked as in-use if the --use flag is specified.
-    @Test(.testHomeMockedToolchain()) func installUseFlag() async throws {
+    @Test(.mockedSwiftlyVersion(), .testHomeMockedToolchain()) func installUseFlag() async throws {
         try await SwiftlyTests.installMockedToolchain(toolchain: .oldStable)
         try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.oldStable.name])
         try await SwiftlyTests.validateInUse(expected: .oldStable)
         try await SwiftlyTests.installMockedToolchain(selector: ToolchainVersion.newStable.name, args: ["--use"])
         try await SwiftlyTests.validateInUse(expected: .newStable)
+    }
+
+    /// Verify that xcode can't be installed like regular toolchains
+    @Test(.testHomeMockedToolchain()) func installXcode() async throws {
+        try await #expect(throws: SwiftlyError.self) {
+            try await SwiftlyTests.runCommand(Install.self, ["install", "xcode", "--post-install-file=\(fs.mktemp())"])
+        }
     }
 
     /// Verify that progress information is written to the progress file when specified.

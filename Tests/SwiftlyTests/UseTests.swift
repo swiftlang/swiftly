@@ -191,6 +191,13 @@ import Testing
         )
     }
 
+#if os(macOS)
+    /// Tests that the xcode toolchain can be used on macOS
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func useXcode() async throws {
+        try await self.useAndValidate(argument: ToolchainVersion.xcodeVersion.name, expectedVersion: .xcode)
+    }
+#endif
+
     /// Tests that the `use` command gracefully exits when executed before any toolchains have been installed.
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(toolchains: []))
     func useNoInstalledToolchains() async throws {
@@ -255,16 +262,25 @@ import Testing
                         Use.self, ["use", "-g", "--print-location"]
                     )
 
+                    let location = try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchain)
+
                     #expect(
                         output.contains(where: {
-                            $0.contains(
-                                Swiftly.currentPlatform.findToolchainLocation(
-                                    SwiftlyTests.ctx, toolchain
-                                ).string)
-                        }))
+                            $0.contains(location.string)
+                        })
+                    )
                 }
             }
     }
+
+#if os(macOS)
+    /// Tests that running a use command without an argument prints the xcode toolchain when it is in use.
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func printInUseXcode() async throws {
+        try await SwiftlyTests.runCommand(Use.self, ["use", "-g", "xcode"])
+        var output = try await SwiftlyTests.runWithMockedIO(Use.self, ["use", "-g"])
+        #expect(output.contains(where: { $0.contains("xcode") }))
+    }
+#endif
 
     /// Tests in-use toolchain selected by the .swift-version file.
     @Test(.mockedSwiftlyVersion()) func swiftVersionFile() async throws {
@@ -352,9 +368,9 @@ import Testing
                     )
                     #expect(
                         locationInfo.path
-                            == Swiftly.currentPlatform.findToolchainLocation(
+                            == (try await Swiftly.currentPlatform.findToolchainLocation(
                                 SwiftlyTests.ctx, toolchain
-                            ).string)
+                            )).string)
                 }
             }
     }

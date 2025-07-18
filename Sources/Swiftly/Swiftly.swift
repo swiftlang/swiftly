@@ -95,6 +95,7 @@ extension Data {
 }
 
 extension SwiftlyCommand {
+    @discardableResult
     public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) async throws -> () -> Void {
         for requiredDir in Swiftly.requiredDirectories(ctx) {
             guard try await fs.exists(atPath: requiredDir) else {

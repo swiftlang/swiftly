@@ -31,6 +31,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
-        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-main-snapshot
+        run: ./scripts/prep-gh-action.sh --install-swiftly --swift-snapshot main
       - name: Build and Test
         run: swiftly run +main-snapshot swift test

@@ -10,6 +10,9 @@ struct ListDependencies: SwiftlyCommand {
     @Option(name: .long, help: "Output format (text, json)")
     var format: SwiftlyCore.OutputFormat = .text
 
+    @Flag(name: .shortAndLong, help: "Automatically install missing system dependencies with elevated permissions")
+    var installSystemDeps: Bool = false
+
     internal static var allowedInstallCommands: Regex<(Substring, Substring, Substring)> { try! Regex("^(apt-get|yum) -y install( [A-Za-z0-9:\\-\\+]+)+$") }
 
     mutating func run() async throws {
@@ -28,7 +31,7 @@ struct ListDependencies: SwiftlyCommand {
         // Get the dependencies which must be required for this platform
         let dependencies = try await Swiftly.currentPlatform.getSystemPrerequisites(platformName: config.platform.name)
         let packageManager = try await Swiftly.currentPlatform.getSystemPackageManager(platformName: config.platform.name)
-        
+
         // Determine which dependencies are missing and which are installed
         var installedDeps: [String] = []
         var missingDeps: [String] = []
@@ -43,7 +46,7 @@ struct ListDependencies: SwiftlyCommand {
         try await ctx.output(
             ToolchainDependencyInfo(installedDependencies: installedDeps, missingDependencies: missingDeps)
         )
-        
+
         if !missingDeps.isEmpty, let packageManager {
             let installCmd = "\(packageManager) -y install \(missingDeps.joined(separator: " "))"
 
@@ -53,12 +56,9 @@ struct ListDependencies: SwiftlyCommand {
             '--install-system-deps'/'-i' option):
             '\(installCmd)'
             """
-            // ToDo: make dynamic via an arg
-            let promptForConfirmation = true
-
-            if promptForConfirmation {
+            if !installSystemDeps {
                 await ctx.message(msg)
-                
+
                 guard await ctx.promptForConfirmation(defaultBehavior: true) else {
                     throw SwiftlyError(message: "System dependency installation has been cancelled")
                 }

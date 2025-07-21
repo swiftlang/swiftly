@@ -377,6 +377,10 @@ struct ToolchainDependencyInfo: OutputData {
     var description: String {
         var lines: [String] = []
 
+        if installedDependencies.isEmpty && missingDependencies.isEmpty {
+            lines.append("There are no toolchain dependencies for this platform")
+        }
+
         if !installedDependencies.isEmpty {
             lines.append("Already installed toolchain dependencies")
             lines.append("----------------------------")

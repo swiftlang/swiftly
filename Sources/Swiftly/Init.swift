@@ -281,7 +281,7 @@ struct Init: SwiftlyCommand {
             """)
         }
 
-        if pathChanged {
+        if pathChanged && !quietShellFollowup {
             try await Self.handlePathChange(ctx)
         }
 

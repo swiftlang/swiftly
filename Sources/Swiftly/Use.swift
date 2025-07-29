@@ -121,11 +121,14 @@ struct Use: SwiftlyCommand {
             throw SwiftlyError(message: "No installed toolchains match \"\(toolchain)\"")
         }
 
-        try await Self.execute(ctx, toolchain, globalDefault: self.globalDefault, assumeYes: self.root.assumeYes, &config)
+        let pathChanged = try await Self.execute(ctx, toolchain, globalDefault: self.globalDefault, verbose: self.root.verbose, assumeYes: self.root.assumeYes, &config)
+        if pathChanged {
+            try await Self.handlePathChange(ctx)
+        }
     }
 
     /// Use a toolchain. This method can modify and save the input config and also create/modify a `.swift-version` file.
-    static func execute(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, globalDefault: Bool, assumeYes: Bool = true, _ config: inout Config) async throws {
+    static func execute(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, globalDefault: Bool, verbose: Bool, assumeYes: Bool = true, _ config: inout Config) async throws -> Bool {
         let (selectedVersion, result) = try await selectToolchain(ctx, config: &config, globalDefault: globalDefault)
 
         let isGlobal: Bool
@@ -142,7 +145,7 @@ struct Use: SwiftlyCommand {
 
                 guard await ctx.promptForConfirmation(defaultBehavior: true) else {
                     await ctx.message("Aborting setting in-use toolchain")
-                    return
+                    return false
                 }
             }
 
@@ -156,12 +159,21 @@ struct Use: SwiftlyCommand {
             configFile = nil
         }
 
+        let pathChanged = try await Install.setupProxies(
+            ctx,
+            version: toolchain,
+            verbose: verbose,
+            assumeYes: assumeYes
+        )
+
         try await ctx.output(ToolchainSetInfo(
             version: toolchain,
             previousVersion: selectedVersion,
             isGlobal: isGlobal,
             versionFile: configFile
         ))
+
+        return pathChanged
     }
 
     static func findNewVersionFile(_ ctx: SwiftlyCoreContext) async throws -> FilePath? {

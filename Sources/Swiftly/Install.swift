@@ -121,26 +121,8 @@ struct Install: SwiftlyCommand {
             progressFile: self.progressFile
         )
 
-        let shell =
-            if let s = ProcessInfo.processInfo.environment["SHELL"]
-        {
-            s
-        } else {
-            try await Swiftly.currentPlatform.getShell()
-        }
-
-        // Fish doesn't cache its path, so this instruction is not necessary.
-        if pathChanged && !shell.hasSuffix("fish") {
-            await ctx.message(
-                """
-                NOTE: Swiftly has updated some elements in your path and your shell may not yet be
-                aware of the changes. You can update your shell's environment by running
-
-                hash -r
-
-                or restarting your shell.
-
-                """)
+        if pathChanged {
+            try await Self.handlePathChange(ctx)
         }
 
         if let postInstallScript {
@@ -410,7 +392,7 @@ struct Install: SwiftlyCommand {
                     verbose: verbose
                 )
 
-                let pathChanged = try await Self.setupProxies(
+                var pathChanged = try await Self.setupProxies(
                     ctx,
                     version: version,
                     verbose: verbose,
@@ -424,7 +406,8 @@ struct Install: SwiftlyCommand {
                 // If this is the first installed toolchain, mark it as in-use regardless of whether the
                 // --use argument was provided.
                 if useInstalledToolchain {
-                    try await Use.execute(ctx, version, globalDefault: false, &config)
+                    let pc = try await Use.execute(ctx, version, globalDefault: false, verbose: verbose, &config)
+                    pathChanged = pathChanged || pc
                 }
 
                 // We always update the global default toolchain if there is none set. This could

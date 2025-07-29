@@ -119,7 +119,10 @@ struct Uninstall: SwiftlyCommand {
                     ?? config.listInstalledToolchains(selector: .latest).filter({ !toolchains.contains($0) }).max()
                     ?? config.installedToolchains.filter({ !toolchains.contains($0) }).max()
                 {
-                    try await Use.execute(ctx, toUse, globalDefault: true, &config)
+                    let pathChanged = try await Use.execute(ctx, toUse, globalDefault: true, verbose: self.root.verbose, &config)
+                    if pathChanged {
+                        try await Self.handlePathChange(ctx)
+                    }
                 } else {
                     // If there are no more toolchains installed, just unuse the currently active toolchain.
                     config.inUse = nil

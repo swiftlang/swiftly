@@ -19,7 +19,7 @@ import Testing
             // And start creating a mock folder structure for that toolchain.
             try "swiftly binary".write(to: swiftlyBinaryPath, atomically: true, encoding: .utf8)
 
-            let toolchainDir = Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchainVersion) / "usr" / "bin"
+            let toolchainDir = try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchainVersion) / "usr" / "bin"
             try await fs.mkdir(.parents, atPath: toolchainDir)
 
             let proxies = ["swift-build", "swift-test", "swift-run"]

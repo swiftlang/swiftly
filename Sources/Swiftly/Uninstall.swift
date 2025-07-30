@@ -55,7 +55,7 @@ struct Uninstall: SwiftlyCommand {
 
         let startingConfig = try await Config.load(ctx)
 
-        let toolchains: [ToolchainVersion]
+        var toolchains: [ToolchainVersion]
         if self.toolchain == "all" {
             // Sort the uninstalled toolchains such that the in-use toolchain will be uninstalled last.
             // This avoids printing any unnecessary output from using new toolchains while the uninstall is in progress.
@@ -72,8 +72,11 @@ struct Uninstall: SwiftlyCommand {
             toolchains = installedToolchains
         }
 
+        // Filter out the xcode toolchain here since it is not uninstallable
+        toolchains.removeAll(where: { $0 == .xcodeVersion })
+
         guard !toolchains.isEmpty else {
-            await ctx.message("No toolchains matched \"\(self.toolchain)\"")
+            await ctx.message("No toolchains can be uninstalled that match \"\(self.toolchain)\"")
             return
         }
 
@@ -105,6 +108,9 @@ struct Uninstall: SwiftlyCommand {
                 case let .snapshot(s):
                     // If a snapshot was previously in use, switch to the latest snapshot associated with that branch.
                     selector = .snapshot(branch: s.branch, date: nil)
+                case .xcode:
+                    // Xcode will not be in the list of installed toolchains, so this is only here for completeness
+                    selector = .xcode
                 }
 
                 if let toUse = config.listInstalledToolchains(selector: selector)
@@ -113,7 +119,10 @@ struct Uninstall: SwiftlyCommand {
                     ?? config.listInstalledToolchains(selector: .latest).filter({ !toolchains.contains($0) }).max()
                     ?? config.installedToolchains.filter({ !toolchains.contains($0) }).max()
                 {
-                    try await Use.execute(ctx, toUse, globalDefault: true, &config)
+                    let pathChanged = try await Use.execute(ctx, toUse, globalDefault: true, verbose: self.root.verbose, &config)
+                    if pathChanged {
+                        try await Self.handlePathChange(ctx)
+                    }
                 } else {
                     // If there are no more toolchains installed, just unuse the currently active toolchain.
                     config.inUse = nil

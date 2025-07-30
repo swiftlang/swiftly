@@ -281,18 +281,8 @@ struct Init: SwiftlyCommand {
             """)
         }
 
-        // Fish doesn't have path caching, so this might only be needed for bash/zsh
-        if pathChanged && !quietShellFollowup && !shell.hasSuffix("fish") {
-            await ctx.message("""
-            Your shell caches items on your path for better performance. Swiftly has added
-            items to your path that may not get picked up right away. You can update your
-            shell's environment by running
-
-            hash -r
-
-            or restarting your shell.
-
-            """)
+        if pathChanged && !quietShellFollowup {
+            try await Self.handlePathChange(ctx)
         }
 
         if let postInstall {

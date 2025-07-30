@@ -49,13 +49,19 @@ import Testing
         let lines = output.flatMap { $0.split(separator: "\n").map(String.init) }
 
         let parsedToolchains = lines.compactMap { outputLine in
+#if !os(macOS)
             Set<ToolchainVersion>.allToolchains().first {
-                outputLine.contains(String(describing: $0))
+                outputLine.hasPrefix(String(describing: $0))
             }
+#else
+            (Set<ToolchainVersion>.allToolchains() + [.xcodeVersion]).first {
+                outputLine.hasPrefix(String(describing: $0))
+            }
+#endif
         }
 
         // Ensure extra toolchains weren't accidentally included in the output.
-        guard parsedToolchains.count == lines.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") }).count else {
+        guard parsedToolchains.count == lines.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") || $0.hasPrefix("xcode") }).count else {
             throw SwiftlyTestError(message: "unexpected listed toolchains in \(output)")
         }
 
@@ -67,7 +73,11 @@ import Testing
     @Test func list() async throws {
         try await self.runListTest {
             let toolchains = try await self.runList(selector: nil)
+#if !os(macOS)
             #expect(toolchains == Self.sortedReleaseToolchains + Self.sortedSnapshotToolchains)
+#else
+            #expect(toolchains == Self.sortedReleaseToolchains + Self.sortedSnapshotToolchains + [.xcodeVersion])
+#endif
         }
     }
 
@@ -161,9 +171,15 @@ import Testing
 
     /// Tests that `list` properly handles the case where no toolchains have been installed yet.
     @Test(.testHome(Self.homeName)) func listEmpty() async throws {
+#if !os(macOS)
+        let systemToolchains: [ToolchainVersion] = []
+#else
+        let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
+#endif
+
         try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: Self.swiftlyVersion) {
             var toolchains = try await self.runList(selector: nil)
-            #expect(toolchains == [])
+            #expect(toolchains == systemToolchains)
 
             toolchains = try await self.runList(selector: "5")
             #expect(toolchains == [])
@@ -173,6 +189,11 @@ import Testing
 
             toolchains = try await self.runList(selector: "5.7-snapshot")
             #expect(toolchains == [])
+
+#if os(macOS)
+            toolchains = try await self.runList(selector: "xcode")
+            #expect(toolchains == systemToolchains)
+#endif
         }
     }
 
@@ -188,7 +209,13 @@ import Testing
                 from: output[0].data(using: .utf8)!
             )
 
-            #expect(listInfo.toolchains.count == Set<ToolchainVersion>.allToolchains().count)
+#if !os(macOS)
+            let systemToolchains: [ToolchainVersion] = []
+#else
+            let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
+#endif
+
+            #expect(listInfo.toolchains.count == Set<ToolchainVersion>.allToolchains().count + systemToolchains.count)
 
             for toolchain in listInfo.toolchains {
                 #expect(toolchain.version.name.isEmpty == false)

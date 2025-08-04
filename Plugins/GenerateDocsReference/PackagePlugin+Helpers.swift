@@ -25,11 +25,11 @@ extension ArgumentExtractor {
     }
 }
 
-extension Path {
+extension URL {
     func exec(arguments: [String]) throws {
         do {
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: self.string)
+            process.executableURL = self
             process.arguments = arguments
             try process.run()
             process.waitUntilExit()

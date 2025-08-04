@@ -6,8 +6,8 @@ enum GenerateDocsReferencePluginError: Error {
     case unknownBuildConfiguration(String)
     case buildFailed(String)
     case createOutputDirectoryFailed(Error)
-    case subprocessFailedNonZeroExit(Path, Int32)
-    case subprocessFailedError(Path, Error)
+    case subprocessFailedNonZeroExit(URL, Int32)
+    case subprocessFailedError(URL, Error)
 }
 
 extension GenerateDocsReferencePluginError: CustomStringConvertible {
@@ -23,12 +23,12 @@ extension GenerateDocsReferencePluginError: CustomStringConvertible {
             """
         case let .subprocessFailedNonZeroExit(tool, exitCode):
             return """
-            '\(tool.lastComponent)' invocation failed with a nonzero exit code: \
+            '\(tool.lastPathComponent)' invocation failed with a nonzero exit code: \
             '\(exitCode)'.
             """
         case let .subprocessFailedError(tool, error):
             return """
-            '\(tool.lastComponent)' invocation failed: \
+            '\(tool.lastPathComponent)' invocation failed: \
             '\(error.localizedDescription)'
             """
         }

@@ -119,7 +119,7 @@ struct TestSwiftly: AsyncParsableCommand {
             env["SWIFTLY_BIN_DIR"] = (customLoc! / "bin").string
             env["SWIFTLY_TOOLCHAINS_DIR"] = (customLoc! / "toolchains").string
 
-            try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
+            try await currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
             try await sh(executable: .path(shell), .login, .command(". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(currentPlatform, env: env, quiet: false)
         } else {
             print("Installing swiftly to the default location.")
@@ -132,7 +132,7 @@ struct TestSwiftly: AsyncParsableCommand {
                 env["XDG_CONFIG_HOME"] = (fs.home / ".config").string
             }
 
-            try currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--skip-install", quiet: false, env: env)
+            try await currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--skip-install", quiet: false, env: env)
             try await sh(executable: .path(shell), .login, .command("swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(currentPlatform, env: env, quiet: false)
         }
 
@@ -140,7 +140,7 @@ struct TestSwiftly: AsyncParsableCommand {
 
         if NSUserName() == "root" {
             if try await fs.exists(atPath: "./post-install.sh") {
-                try currentPlatform.runProgram(shell.string, "./post-install.sh", quiet: false)
+                try await currentPlatform.runProgram(shell.string, "./post-install.sh", quiet: false)
             }
             swiftReady = true
         } else if try await fs.exists(atPath: "./post-install.sh") {

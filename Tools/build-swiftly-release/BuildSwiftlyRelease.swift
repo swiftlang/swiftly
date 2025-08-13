@@ -204,7 +204,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         customEnv["CC"] = "\(cwd)/Tools/build-swiftly-release/musl-clang"
         customEnv["MUSL_PREFIX"] = "\(fs.home / ".swiftpm/swift-sdks/\(sdkName).artifactbundle/\(sdkName)/swift-linux-musl/musl-1.2.5.sdk/\(arch)/usr")"
 
-        try currentPlatform.runProgram(
+        try await currentPlatform.runProgram(
             "./configure",
             "--prefix=\(pkgConfigPath)",
             "--enable-shared=no",

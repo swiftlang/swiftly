@@ -31,6 +31,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.7.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.2"),
         .package(url: "https://github.com/apple/swift-system", from: "1.4.2"),
+        .package(url: "https://github.com/swiftlang/swift-subprocess", revision: "afc1f734feb29c3a1ebbd97cc1fe943f8e5d80e5"),
         // This dependency provides the correct version of the formatter so that you can run `swift run swiftformat Package.swift Plugins/ Sources/ Tests/`
         .package(url: "https://github.com/nicklockwood/SwiftFormat", exact: "0.49.18"),
     ],
@@ -67,6 +68,7 @@ let package = Package(
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
                 .product(name: "SystemPackage", package: "swift-system"),
+                .product(name: "Subprocess", package: "swift-subprocess"),
             ],
             swiftSettings: swiftSettings,
             plugins: ["GenerateCommandModels"]

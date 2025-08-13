@@ -181,7 +181,7 @@ extension Runnable {
             newEnv = newValue
         }
 
-        try p.runProgram([executable] + args, quiet: quiet, env: newEnv)
+        try await p.runProgram([executable] + args, quiet: quiet, env: newEnv)
     }
 }
 

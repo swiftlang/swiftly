@@ -142,7 +142,7 @@ public struct MacOS: Platform {
             try await sys.tar(.directory(installDir)).extract(.verbose, .archive(payload)).run(self, quiet: false)
         }
 
-        try self.runProgram((userHomeDir / ".swiftly/bin/swiftly").string, "init")
+        try await self.runProgram((userHomeDir / ".swiftly/bin/swiftly").string, "init")
     }
 
     public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose: Bool)

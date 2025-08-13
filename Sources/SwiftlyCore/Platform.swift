@@ -1,6 +1,6 @@
 import Foundation
-import SystemPackage
 import Subprocess
+import SystemPackage
 #if os(macOS)
 import System
 #else
@@ -271,22 +271,22 @@ extension Platform {
                 error: .fileDescriptor(.standardError, closeAfterSpawningProcess: false),
             )
 
-            // TODO figure out how to set the process group
+            // TODO: figure out how to set the process group
             // Attach this process to our process group so that Ctrl-C and other signals work
-            /*let pgid = tcgetpgrp(STDOUT_FILENO)
-            if pgid != -1 {
-                tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
-            }
+            /* let pgid = tcgetpgrp(STDOUT_FILENO)
+             if pgid != -1 {
+                 tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
+             }
 
-            defer {
-                if pgid != -1 {
-                    tcsetpgrp(STDOUT_FILENO, pgid)
-                }
-            }
+             defer {
+                 if pgid != -1 {
+                     tcsetpgrp(STDOUT_FILENO, pgid)
+                 }
+             }
 
-            process.waitUntilExit()*/
+             process.waitUntilExit() */
 
-            if case .exited(let code) = result.terminationStatus, code != 0 {
+            if case let .exited(code) = result.terminationStatus, code != 0 {
                 throw RunProgramError(exitCode: code, program: args.first!, arguments: Array(args.dropFirst()))
             }
         } else {
@@ -298,27 +298,27 @@ extension Platform {
                 error: .discarded,
             )
 
-            // TODO figure out how to set the process group
+            // TODO: figure out how to set the process group
             // Attach this process to our process group so that Ctrl-C and other signals work
-            /*let pgid = tcgetpgrp(STDOUT_FILENO)
-            if pgid != -1 {
-                tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
-            }
+            /* let pgid = tcgetpgrp(STDOUT_FILENO)
+             if pgid != -1 {
+                 tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
+             }
 
-            defer {
-                if pgid != -1 {
-                    tcsetpgrp(STDOUT_FILENO, pgid)
-                }
-            }
+             defer {
+                 if pgid != -1 {
+                     tcsetpgrp(STDOUT_FILENO, pgid)
+                 }
+             }
 
-            process.waitUntilExit()*/
+             process.waitUntilExit() */
 
-            if case .exited(let code) = result.terminationStatus, code != 0 {
+            if case let .exited(code) = result.terminationStatus, code != 0 {
                 throw RunProgramError(exitCode: code, program: args.first!, arguments: Array(args.dropFirst()))
             }
         }
 
-        // TODO handle exits with a signal
+        // TODO: handle exits with a signal
     }
 
     /// Run a program and capture its output.
@@ -349,19 +349,19 @@ extension Platform {
             error: .discarded,
         )
 
-        // TODO Attach this process to our process group so that Ctrl-C and other signals work
-        /*let pgid = tcgetpgrp(STDOUT_FILENO)
-        if pgid != -1 {
-            tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
-        }
-        defer {
-            if pgid != -1 {
-                tcsetpgrp(STDOUT_FILENO, pgid)
-            }
-        }
-        */
+        // TODO: Attach this process to our process group so that Ctrl-C and other signals work
+        /* let pgid = tcgetpgrp(STDOUT_FILENO)
+         if pgid != -1 {
+             tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
+         }
+         defer {
+             if pgid != -1 {
+                 tcsetpgrp(STDOUT_FILENO, pgid)
+             }
+         }
+         */
 
-        if case .exited(let code) = result.terminationStatus, code != 0 {
+        if case let .exited(code) = result.terminationStatus, code != 0 {
             throw RunProgramError(exitCode: code, program: args.first!, arguments: Array(args.dropFirst()))
         }
 

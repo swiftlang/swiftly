@@ -255,7 +255,7 @@ public struct Linux: Platform {
         }
 
         if requireSignatureValidation {
-            guard (try? self.runProgram("gpg", "--version", quiet: true)) != nil else {
+            guard (try? await self.runProgram("gpg", "--version", quiet: true)) != nil else {
                 var msg = "gpg is not installed. "
                 if let manager {
                     msg += """
@@ -321,7 +321,7 @@ public struct Linux: Platform {
                 }
                 return false
             case "yum":
-                try self.runProgram("yum", "list", "installed", package, quiet: true)
+                try await self.runProgram("yum", "list", "installed", package, quiet: true)
                 return true
             default:
                 return true
@@ -382,7 +382,7 @@ public struct Linux: Platform {
                 tmpDir / String(name)
             }
 
-            try self.runProgram((tmpDir / "swiftly").string, "init")
+            try await self.runProgram((tmpDir / "swiftly").string, "init")
         }
     }
 

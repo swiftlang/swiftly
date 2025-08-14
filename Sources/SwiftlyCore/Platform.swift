@@ -267,7 +267,8 @@ extension Platform {
                 .path("/usr/bin/env"),
                 arguments: .init(args),
                 environment: env != nil ? .inherit.updating(env ?? [:]) : .inherit,
-                output: .fileDescriptor(.standardError, closeAfterSpawningProcess: false),
+                input: .fileDescriptor(.standardInput, closeAfterSpawningProcess: false),
+                output: .fileDescriptor(.standardOutput, closeAfterSpawningProcess: false),
                 error: .fileDescriptor(.standardError, closeAfterSpawningProcess: false),
             )
 
@@ -314,22 +315,9 @@ extension Platform {
             .path("/usr/bin/env"),
             arguments: .init([program] + args),
             environment: env != nil ? .inherit.updating(env ?? [:]) : .inherit,
-            input: .none,
             output: .string(limit: 10 * 1024 * 1024, encoding: UTF8.self),
-            error: .discarded,
+            error: .fileDescriptor(.standardError, closeAfterSpawningProcess: false)
         )
-
-        // TODO: Attach this process to our process group so that Ctrl-C and other signals work
-        /* let pgid = tcgetpgrp(STDOUT_FILENO)
-         if pgid != -1 {
-             tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
-         }
-         defer {
-             if pgid != -1 {
-                 tcsetpgrp(STDOUT_FILENO, pgid)
-             }
-         }
-         */
 
         if case let .exited(code) = result.terminationStatus, code != 0 {
             throw RunProgramError(exitCode: code, program: args.first!, arguments: Array(args.dropFirst()))

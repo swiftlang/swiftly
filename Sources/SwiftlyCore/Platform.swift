@@ -1,11 +1,6 @@
 import Foundation
 import Subprocess
 import SystemPackage
-#if os(macOS)
-import System
-#else
-import SystemPackage
-#endif
 
 public struct PlatformDefinition: Codable, Equatable, Sendable {
     /// The name of the platform as it is used in the Swift download URLs.
@@ -63,7 +58,7 @@ public struct RunProgramError: Swift.Error {
 public protocol Platform: Sendable {
     /// The platform-specific default location on disk for swiftly's home
     /// directory.
-    var defaultSwiftlyHomeDir: SystemPackage.FilePath { get }
+    var defaultSwiftlyHomeDir: FilePath { get }
 
     /// The directory which stores the swiftly executable itself as well as symlinks
     /// to executables in the "bin" directory of the active toolchain.
@@ -71,10 +66,10 @@ public protocol Platform: Sendable {
     /// If a mocked home directory is set, this will be the "bin" subdirectory of the home directory.
     /// If not, this will be the SWIFTLY_BIN_DIR environment variable if set. If that's also unset,
     /// this will default to the platform's default location.
-    func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> SystemPackage.FilePath
+    func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> FilePath
 
     /// The "toolchains" subdirectory that contains the Swift toolchains managed by swiftly.
-    func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> SystemPackage.FilePath
+    func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath
 
     /// The file extension of the downloaded toolchain for this platform.
     /// e.g. for Linux systems this is "tar.gz" and on macOS it's "pkg".
@@ -82,12 +77,12 @@ public protocol Platform: Sendable {
 
     /// Installs a toolchain from a file on disk pointed to by the given path.
     /// After this completes, a user can “use” the toolchain.
-    func install(_ ctx: SwiftlyCoreContext, from: SystemPackage.FilePath, version: ToolchainVersion, verbose: Bool)
+    func install(_ ctx: SwiftlyCoreContext, from: FilePath, version: ToolchainVersion, verbose: Bool)
         async throws
 
     /// Extract swiftly from the provided downloaded archive and install
     /// ourselves from that.
-    func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: SystemPackage.FilePath) async throws
+    func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: FilePath) async throws
 
     /// Uninstalls a toolchain associated with the given version.
     /// If this version is in use, the next latest version will be used afterwards.
@@ -117,14 +112,14 @@ public protocol Platform: Sendable {
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.
     func verifyToolchainSignature(
-        _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: SystemPackage.FilePath, verbose: Bool
+        _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: FilePath, verbose: Bool
     )
         async throws
 
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.
     func verifySwiftlySignature(
-        _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: SystemPackage.FilePath, verbose: Bool
+        _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: FilePath, verbose: Bool
     ) async throws
 
     /// Detect the platform definition for this platform.
@@ -135,10 +130,10 @@ public protocol Platform: Sendable {
     func getShell() async throws -> String
 
     /// Find the location where the toolchain should be installed.
-    func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> SystemPackage.FilePath
+    func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
 
     /// Find the location of the toolchain binaries.
-    func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> SystemPackage.FilePath
+    func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
 }
 
 extension Platform {
@@ -155,183 +150,25 @@ extension Platform {
     ///   -- config.json
     /// ```
     ///
-    public func swiftlyHomeDir(_ ctx: SwiftlyCoreContext) -> SystemPackage.FilePath {
+    public func swiftlyHomeDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir
             ?? ProcessInfo.processInfo.environment["SWIFTLY_HOME_DIR"].map { FilePath($0) }
             ?? self.defaultSwiftlyHomeDir
     }
 
     /// The path of the configuration file in swiftly's home directory.
-    public func swiftlyConfigFile(_ ctx: SwiftlyCoreContext) -> SystemPackage.FilePath {
+    public func swiftlyConfigFile(_ ctx: SwiftlyCoreContext) -> FilePath {
         self.swiftlyHomeDir(ctx) / "config.json"
     }
 
 #if os(macOS) || os(Linux)
-    func proxyEnv(_ ctx: SwiftlyCoreContext, env: [String: String], toolchain: ToolchainVersion) async throws -> [String: String] {
-        var newEnv = env
-
-        let tcPath = try await self.findToolchainLocation(ctx, toolchain) / "usr/bin"
-        guard try await fs.exists(atPath: tcPath) else {
-            throw SwiftlyError(
-                message:
-                "Toolchain \(toolchain) could not be located in \(tcPath). You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again."
-            )
-        }
-
-        var pathComponents = (newEnv["PATH"] ?? "").split(separator: ":").map { String($0) }
-
-        // The toolchain goes to the beginning of the PATH
-        pathComponents.removeAll(where: { $0 == tcPath.string })
-        pathComponents = [tcPath.string] + pathComponents
-
-        // Remove swiftly bin directory from the PATH entirely
-        let swiftlyBinDir = self.swiftlyBinDir(ctx)
-        pathComponents.removeAll(where: { $0 == swiftlyBinDir.string })
-
-        newEnv["PATH"] = String(pathComponents.joined(separator: ":"))
-
-        return newEnv
-    }
-
-    /// Proxy the invocation of the provided command to the chosen toolchain.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func proxy(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String], _ env: [String: String] = [:]) async throws {
-        let tcPath = (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
-
-        let commandTcPath = tcPath / command
-        let commandToRun = if try await fs.exists(atPath: commandTcPath) {
-            commandTcPath.string
-        } else {
-            command
-        }
-
-        var newEnv = try await self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain)
-        for (key, value) in env {
-            newEnv[key] = value
-        }
-
-#if os(macOS)
-        // On macOS, we try to set SDKROOT if its empty for tools like clang++ that need it to
-        // find standard libraries that aren't in the toolchain, like libc++. Here we
-        // use xcrun to tell us what the default sdk root should be.
-        if newEnv["SDKROOT"] == nil {
-            newEnv["SDKROOT"] = (try? await self.runProgramOutput("/usr/bin/xcrun", "--show-sdk-path"))?.replacingOccurrences(of: "\n", with: "")
-        }
-#endif
-
-        try await self.runProgram([commandToRun] + arguments, env: newEnv)
-    }
-
-    /// Proxy the invocation of the provided command to the chosen toolchain and capture the output.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func proxyOutput(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws -> String? {
-        let tcPath = (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
-
-        let commandTcPath = tcPath / command
-        let commandToRun = if try await fs.exists(atPath: commandTcPath) {
-            commandTcPath.string
-        } else {
-            command
-        }
-
-        return try await self.runProgramOutput(commandToRun, arguments, env: self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain))
-    }
-
-    /// Run a program.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func runProgram(_ args: String..., quiet: Bool = false, env: [String: String]? = nil)
-        async throws
-    {
-        try await self.runProgram([String](args), quiet: quiet, env: env)
-    }
-
-    /// Run a program.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func runProgram(_ args: [String], quiet: Bool = false, env: [String: String]? = nil)
-        async throws
-    {
-        if !quiet {
-            let result = try await run(
-                .path("/usr/bin/env"),
-                arguments: .init(args),
-                environment: env != nil ? .inherit.updating(env ?? [:]) : .inherit,
-                input: .fileDescriptor(.standardInput, closeAfterSpawningProcess: false),
-                output: .fileDescriptor(.standardOutput, closeAfterSpawningProcess: false),
-                error: .fileDescriptor(.standardError, closeAfterSpawningProcess: false),
-            )
-
-            if case let .exited(code) = result.terminationStatus, code != 0 {
-                throw RunProgramError(exitCode: code, program: args.first!, arguments: Array(args.dropFirst()))
-            }
-        } else {
-            let result = try await run(
-                .path("/usr/bin/env"),
-                arguments: .init(args),
-                environment: env != nil ? .inherit.updating(env ?? [:]) : .inherit,
-                output: .discarded,
-                error: .discarded,
-            )
-
-            if case let .exited(code) = result.terminationStatus, code != 0 {
-                throw RunProgramError(exitCode: code, program: args.first!, arguments: Array(args.dropFirst()))
-            }
-        }
-
-        // TODO: handle exits with a signal
-    }
-
-    /// Run a program and capture its output.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func runProgramOutput(_ program: String, _ args: String..., env: [String: String]? = nil)
-        async throws -> String?
-    {
-        try await self.runProgramOutput(program, [String](args), env: env)
-    }
-
-    /// Run a program and capture its output.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func runProgramOutput(_ program: String, _ args: [String], env: [String: String]? = nil)
-        async throws -> String?
-    {
-        let result = try await run(
-            .path("/usr/bin/env"),
-            arguments: .init([program] + args),
-            environment: env != nil ? .inherit.updating(env ?? [:]) : .inherit,
-            output: .string(limit: 10 * 1024 * 1024, encoding: UTF8.self),
-            error: .fileDescriptor(.standardError, closeAfterSpawningProcess: false)
-        )
-
-        if case let .exited(code) = result.terminationStatus, code != 0 {
-            throw RunProgramError(exitCode: code, program: args.first!, arguments: Array(args.dropFirst()))
-        }
-
-        return result.standardOutput
-    }
 
     // Install ourselves in the final location
     public func installSwiftlyBin(_ ctx: SwiftlyCoreContext) async throws {
         // First, let's find out where we are.
         let cmd = CommandLine.arguments[0]
 
-        var cmdAbsolute: SystemPackage.FilePath?
+        var cmdAbsolute: FilePath?
 
         if cmd.hasPrefix("/") {
             cmdAbsolute = FilePath(cmd)
@@ -363,7 +200,7 @@ extension Platform {
         // Proceed to installation only if we're in the user home directory, or a non-system location.
         let userHome = fs.home
 
-        let systemRoots: [SystemPackage.FilePath] = ["/usr", "/opt", "/bin"]
+        let systemRoots: [FilePath] = ["/usr", "/opt", "/bin"]
 
         guard cmdAbsolute.starts(with: userHome) || systemRoots.filter({ cmdAbsolute.starts(with: $0) }).first == nil else {
             return
@@ -399,12 +236,12 @@ extension Platform {
     }
 
     // Find the location where swiftly should be executed.
-    public func findSwiftlyBin(_ ctx: SwiftlyCoreContext) async throws -> SystemPackage.FilePath? {
+    public func findSwiftlyBin(_ ctx: SwiftlyCoreContext) async throws -> FilePath? {
         let swiftlyHomeBin = self.swiftlyBinDir(ctx) / "swiftly"
 
         // First, let's find out where we are.
         let cmd = CommandLine.arguments[0]
-        var cmdAbsolute: SystemPackage.FilePath?
+        var cmdAbsolute: FilePath?
         if cmd.hasPrefix("/") {
             cmdAbsolute = FilePath(cmd)
         } else {
@@ -435,7 +272,7 @@ extension Platform {
             }
         }
 
-        let systemRoots: [SystemPackage.FilePath] = ["/usr", "/opt", "/bin"]
+        let systemRoots: [FilePath] = ["/usr", "/opt", "/bin"]
 
         // If we are system managed then we know where swiftly should be.
         let userHome = fs.home
@@ -457,7 +294,7 @@ extension Platform {
         return try await fs.exists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil
     }
 
-    public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> SystemPackage.FilePath
+    public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
     {
         (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
     }

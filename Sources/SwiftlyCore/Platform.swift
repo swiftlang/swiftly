@@ -1,5 +1,4 @@
 import Foundation
-import Subprocess
 import SystemPackage
 
 public struct PlatformDefinition: Codable, Equatable, Sendable {

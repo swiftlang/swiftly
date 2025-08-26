@@ -85,7 +85,7 @@ struct Uninstall: SwiftlyCommand {
 
         for toolchainSelector in self.toolchains {
             if toolchainSelector == UninstallConstants.allSelector {
-                let allInstalledToolchains = processAllSelector(config)
+                let allInstalledToolchains = self.processAllSelector(config)
                 allToolchains.formUnion(allInstalledToolchains)
                 selectorToToolchains[toolchainSelector] = allInstalledToolchains
             } else {
@@ -113,7 +113,7 @@ struct Uninstall: SwiftlyCommand {
     }
 
     private func processAllSelector(_ config: Config) -> [ToolchainVersion] {
-        return config.listInstalledToolchains(selector: nil).sorted { a, b in
+        config.listInstalledToolchains(selector: nil).sorted { a, b in
             a != config.inUse && (b == config.inUse || a < b)
         }
     }
@@ -134,11 +134,11 @@ struct Uninstall: SwiftlyCommand {
         _ ctx: SwiftlyCoreContext,
         _ selectionResult: ToolchainSelectionResult
     ) async throws -> [ToolchainVersion] {
-        if hasErrors(selectionResult) {
-            try await handleSelectionErrors(ctx, selectionResult)
+        if self.hasErrors(selectionResult) {
+            try await self.handleSelectionErrors(ctx, selectionResult)
         }
 
-        let toolchains = prepareToolchainsForUninstall(selectionResult)
+        let toolchains = self.prepareToolchainsForUninstall(selectionResult)
 
         guard !toolchains.isEmpty else {
             if self.toolchains.count == 1 {
@@ -149,15 +149,15 @@ struct Uninstall: SwiftlyCommand {
             throw UninstallCancelledException()
         }
 
-        if !root.assumeYes {
-            try await confirmUninstallation(ctx, toolchains, selectionResult.selectorToToolchains)
+        if !self.root.assumeYes {
+            try await self.confirmUninstallation(ctx, toolchains, selectionResult.selectorToToolchains)
         }
 
         return toolchains
     }
 
     private func hasErrors(_ result: ToolchainSelectionResult) -> Bool {
-        return !result.invalidSelectors.isEmpty || !result.noMatchSelectors.isEmpty
+        !result.invalidSelectors.isEmpty || !result.noMatchSelectors.isEmpty
     }
 
     private func handleSelectionErrors(_ ctx: SwiftlyCoreContext, _ result: ToolchainSelectionResult) async throws {
@@ -202,9 +202,9 @@ struct Uninstall: SwiftlyCommand {
     private func confirmUninstallation(
         _ ctx: SwiftlyCoreContext,
         _ toolchains: [ToolchainVersion],
-        _ selectorMapping: [String: [ToolchainVersion]]
+        _ _: [String: [ToolchainVersion]]
     ) async throws {
-        await displayToolchainConfirmation(ctx, toolchains)
+        await self.displayToolchainConfirmation(ctx, toolchains)
 
         guard await ctx.promptForConfirmation(defaultBehavior: true) else {
             await ctx.message("Aborting uninstall")
@@ -227,25 +227,25 @@ struct Uninstall: SwiftlyCommand {
         await ctx.message()
 
         // Apply proper sorting with access to config
-        let sortedToolchains = applySortingStrategy(toolchains, config: startingConfig)
+        let sortedToolchains = self.applySortingStrategy(toolchains, config: startingConfig)
 
         for (index, toolchain) in sortedToolchains.enumerated() {
-            await displayProgress(ctx, index: index, total: sortedToolchains.count, toolchain: toolchain)
+            await self.displayProgress(ctx, index: index, total: sortedToolchains.count, toolchain: toolchain)
 
             var config = try await Config.load(ctx)
 
             if toolchain == config.inUse {
-                try await handleInUseToolchainReplacement(ctx, toolchain, sortedToolchains, &config)
+                try await self.handleInUseToolchainReplacement(ctx, toolchain, sortedToolchains, &config)
             }
 
-            try await Self.execute(ctx, toolchain, &config, verbose: root.verbose)
+            try await Self.execute(ctx, toolchain, &config, verbose: self.root.verbose)
         }
 
-        await displayCompletionMessage(ctx, sortedToolchains.count)
+        await self.displayCompletionMessage(ctx, sortedToolchains.count)
     }
 
     private func applySortingStrategy(_ toolchains: [ToolchainVersion], config: Config) -> [ToolchainVersion] {
-        return toolchains.sorted { a, b in
+        toolchains.sorted { a, b in
             a != config.inUse && (b == config.inUse || a < b)
         }
     }
@@ -256,10 +256,10 @@ struct Uninstall: SwiftlyCommand {
         _ allUninstallTargets: [ToolchainVersion],
         _ config: inout Config
     ) async throws {
-        let replacementSelector = createReplacementSelector(for: toolchain)
+        let replacementSelector = self.createReplacementSelector(for: toolchain)
 
-        if let replacement = findSuitableReplacement(config, replacementSelector, excluding: allUninstallTargets) {
-            let pathChanged = try await Use.execute(ctx, replacement, globalDefault: true, verbose: root.verbose, &config)
+        if let replacement = self.findSuitableReplacement(config, replacementSelector, excluding: allUninstallTargets) {
+            let pathChanged = try await Use.execute(ctx, replacement, globalDefault: true, verbose: self.root.verbose, &config)
             if pathChanged {
                 try await Self.handlePathChange(ctx)
             }
@@ -291,7 +291,8 @@ struct Uninstall: SwiftlyCommand {
         // Try the specific selector first
         if let replacement = config.listInstalledToolchains(selector: selector)
             .filter({ !excluding.contains($0) })
-            .max() {
+            .max()
+        {
             return replacement
         }
 
@@ -302,7 +303,7 @@ struct Uninstall: SwiftlyCommand {
         }
 
         // Finally, try any remaining toolchain
-        return config.installedToolchains.filter({ !excluding.contains($0) }).max()
+        return config.installedToolchains.filter { !excluding.contains($0) }.max()
     }
 
     private func displayProgress(_ ctx: SwiftlyCoreContext, index: Int, total: Int, toolchain: ToolchainVersion) async {
@@ -313,7 +314,7 @@ struct Uninstall: SwiftlyCommand {
 
     private func displayCompletionMessage(_ ctx: SwiftlyCoreContext, _ toolchainCount: Int) async {
         await ctx.message()
-        if toolchains.count == 1 {
+        if self.toolchains.count == 1 {
             await ctx.message("\(toolchainCount) toolchain(s) successfully uninstalled")
         } else {
             await ctx.message("Successfully uninstalled \(toolchainCount) toolchain(s) from \(self.toolchains.count) selector(s)")

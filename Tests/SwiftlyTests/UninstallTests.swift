@@ -436,7 +436,7 @@ import Testing
         let output = try await SwiftlyTests.runWithMockedIO(
             Uninstall.self,
             ["uninstall", ToolchainVersion.oldStable.name, "xcode"], // xcode gets filtered out
-            input: ["y"]
+            input: ["y", "y"] // First y for error prompt, second y for confirmation
         )
 
         // Should only uninstall the valid, non-filtered toolchain

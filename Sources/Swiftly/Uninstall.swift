@@ -10,7 +10,7 @@ struct Uninstall: SwiftlyCommand {
         static let allSelector = "all"
     }
 
-    private struct UninstallCancelledException: Error {}
+    private struct UninstallCancelledError: Error {}
 
     private struct ToolchainSelectionResult {
         let validToolchains: Set<ToolchainVersion>
@@ -146,7 +146,7 @@ struct Uninstall: SwiftlyCommand {
             } else {
                 await ctx.message("No toolchains can be uninstalled that match the provided selectors")
             }
-            throw UninstallCancelledException()
+            throw UninstallCancelledError()
         }
 
         if !self.root.assumeYes {
@@ -180,12 +180,12 @@ struct Uninstall: SwiftlyCommand {
             await ctx.message("\nFound \(result.validToolchains.count) toolchain(s) from valid selectors. Continue with uninstalling these?")
             guard await ctx.promptForConfirmation(defaultBehavior: false) else {
                 await ctx.message("Aborting uninstall")
-                throw UninstallCancelledException()
+                throw UninstallCancelledError()
             }
         } else {
             // No valid toolchains found at all
             await ctx.message("No valid toolchains found to uninstall.")
-            throw UninstallCancelledException()
+            throw UninstallCancelledError()
         }
     }
 
@@ -208,7 +208,7 @@ struct Uninstall: SwiftlyCommand {
 
         guard await ctx.promptForConfirmation(defaultBehavior: true) else {
             await ctx.message("Aborting uninstall")
-            throw UninstallCancelledException()
+            throw UninstallCancelledError()
         }
     }
 

@@ -252,21 +252,25 @@ macOS ONLY: There is a special selector for swiftly to use your Xcode toolchain.
 Remove an installed toolchain.
 
 ```
-swiftly uninstall <toolchain> [--assume-yes] [--verbose] [--version] [--help]
+swiftly uninstall <toolchains>... [--assume-yes] [--verbose] [--version] [--help]
 ```
 
-**toolchain:**
+**toolchains:**
 
 *The toolchain(s) to uninstall.*
 
 
-The toolchain selector provided determines which toolchains to uninstall. Specific toolchains can be uninstalled by using their full names as the selector, for example a full stable release version with patch (a.b.c):
+The list of toolchain selectors determines which toolchains to uninstall. Specific toolchains can be uninstalled by using their full names as the selector, for example a full stable release version with patch (a.b.c):
 
     $ swiftly uninstall 5.2.1
 
 Or a full snapshot name with date (a.b-snapshot-YYYY-mm-dd):
 
     $ swiftly uninstall 5.7-snapshot-2022-06-20
+
+Multiple toolchain selectors can uninstall multiple toolchains at once:
+
+    $ swiftly uninstall 5.2.1 6.0.1
 
 Less specific selectors can be used to uninstall multiple toolchains at once. For instance, the patch version can be omitted to uninstall all toolchains associated with a given minor version release:
 

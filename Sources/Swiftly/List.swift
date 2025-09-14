@@ -55,7 +55,7 @@ struct List: SwiftlyCommand {
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
         let (inUse, _) = try await selectToolchain(ctx, config: &config)
 
-        var installedToolchainInfos = toolchains.compactMap { toolchain -> InstallToolchainInfo? in
+        let installedToolchainInfos = toolchains.compactMap { toolchain -> InstallToolchainInfo? in
             InstallToolchainInfo(
                 version: toolchain,
                 inUse: inUse == toolchain,

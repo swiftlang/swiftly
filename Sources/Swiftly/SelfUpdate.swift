@@ -18,7 +18,7 @@ struct SelfUpdate: SwiftlyCommand {
 
     @OptionGroup var root: GlobalOptions
 
-    @Option(help: .hidden) var toVersion: SwiftlyVersion
+    @Option(help: .hidden) var toVersion: SwiftlyVersion? = nil
 
     private enum CodingKeys: String, CodingKey {
         case root, toVersion

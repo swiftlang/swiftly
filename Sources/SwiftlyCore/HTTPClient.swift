@@ -110,7 +110,7 @@ struct SwiftlyUserAgentMiddleware: ClientMiddleware {
 
 /// An `HTTPRequestExecutor` backed by a shared `HTTPClient`. This makes actual network requests.
 public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
-    let httpClient: HTTPClient
+    public let httpClient: HTTPClient
 
     public init() {
         var proxy: HTTPClient.Configuration.Proxy?

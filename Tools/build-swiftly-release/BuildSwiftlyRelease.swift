@@ -150,8 +150,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? await fs.remove(atPath: libArchivePath)
 
         // Download libarchive
+        let httpExecutor = HTTPRequestExecutorImpl()
         let libarchiveRequest = HTTPClientRequest(url: "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
-        let libarchiveResponse = try await HTTPClient.shared.execute(libarchiveRequest, timeout: .seconds(60))
+        let libarchiveResponse = try await httpExecutor.httpClient.execute(libarchiveRequest, timeout: .seconds(60))
         guard libarchiveResponse.status == .ok else {
             throw Error(message: "Download failed with status: \(libarchiveResponse.status)")
         }
@@ -180,8 +181,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         }
 
         let swiftVersion = swiftVerMatch.output.1
-
-        let httpExecutor = HTTPRequestExecutorImpl()
         guard let swiftRelease = (try await httpExecutor.getReleaseToolchains()).first(where: { $0.name == swiftVersion }) else {
             throw Error(message: "Unable to find swift release using swift.org API: \(swiftVersion)")
         }

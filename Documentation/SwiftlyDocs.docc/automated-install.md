@@ -9,18 +9,28 @@ The examples are based on a typical Unix environment.
 ### Download the binary
 
 First, download the swiftly binary from swift.org for your operating system (for example, Linux) and processor architecture (for example `arm64` or `x86_64`).
-Here's an example using the popular curl command.
+Here's an example using the popular curl command. Note that for GPG signature checking you will first need to install the [swift.org signatures in your toolchain](https://www.swift.org/keys/active/).
 
 ```
 curl -L https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz > swiftly.tar.gz
+curl -L https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz.sig > swiftly.tar.gz.sig
+gpg --verify swiftly.tar.gz.sig swiftly.tar.gz
 tar zxf swiftly.tar.gz
 ```
 
-On macOS, download the pkg file and extract it like this from the command-line:
+On macOS, you can download the pkg file and extract it like this from the command-line:
 
 ```
 curl -L https://download.swift.org/swiftly/darwin/swiftly.pkg > swiftly.pkg
 installer -pkg swiftly.pkg -target CurrentUserHomeDirectory
+```
+
+You could be installing swiftly on a shared user account for macOS. In that case you might want to extract the pkg in a private location where it cannot be affected by other processes running in the same user account.
+
+```
+pkgutil --check-signature swiftly.pkg && pkgutil --expand swiftly.pkg tmp
+tar xf tmp/swiftly-*/Payload
+mv bin/swiftly .
 ```
 
 > Tip: If you are using Linux you will need GPG and the "ca-certificates" package for the root certificate authorities that will establish the trust that swiftly needs to make API requests that it needs. This package is frequently pre-installed on end-user environments, but may not be present in more minimal installations.
@@ -31,7 +41,7 @@ Once swiftly is downloaded, run the `init` subcommand to finish the installation
 The following example command prints verbose outputs, assume yes for all prompts, and skips the automatic installation of the latest swift toolchain:
 
 ```
-./swiftly init --verbose --assume-yes --skip-install    # the swiftly binary is extracted to ~/local/bin/swiftly on macOS
+./swiftly init --verbose --assume-yes --skip-install    # the swiftly binary is extracted to ~/.swiftly/bin/swiftly on macOS when using the installer
 ```
 
 Swiftly is installed, but the current shell may not yet be updated with the new environment variables, such as `PATH`.
@@ -75,6 +85,7 @@ If you want to install swiftly, or the binaries that it manages into different l
 
 - term `SWIFTLY_HOME_DIR`: The location of the swiftly configuration files, and environment scripts
 - term `SWIFTLY_BIN_DIR`: The location of the swiftly binary and toolchain symbolic links (for example swift, swiftc, and so on)
+- term `SWIFTLY_TOOLCHAIN_DIR`: The location where any toolchains will be downloaded
 - term `TMPDIR`: The temporary directory swiftly uses to hold large files, such as downloads, until it cleans them up.
 
 Sometimes swiftly can't automatically detect the system platform, or isn't supported by swift.

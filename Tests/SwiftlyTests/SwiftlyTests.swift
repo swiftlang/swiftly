@@ -336,6 +336,7 @@ public enum SwiftlyTests {
                 if cleanBinDir {
                     try await fs.remove(atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
                 }
+                throw error
             }
         }
     }

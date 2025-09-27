@@ -62,9 +62,9 @@ struct GenerateDocsReferencePlugin: CommandPlugin {
 
             // Create generation tool arguments.
             var generationToolArguments = [
-                builtArtifact.url.path(),
+                builtArtifact.url.path(percentEncoded: false),
                 "--output-file",
-                outputFile.path(),
+                outputFile.path(percentEncoded: false),
             ]
             generationToolArguments.append(
                 contentsOf: extractor.remainingArguments)

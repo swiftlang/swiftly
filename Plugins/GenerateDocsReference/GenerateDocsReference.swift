@@ -7,8 +7,7 @@ struct GenerateDocsReferencePlugin: CommandPlugin {
         arguments: [String]
     ) async throws {
         // Locate generation tool.
-        let generationToolFile = try context.tool(named: "generate-docs-reference").path
-
+        let generationToolFile = try context.tool(named: "generate-docs-reference").url
         // Create an extractor to extract plugin-only arguments from the `arguments`
         // array.
         var extractor = ArgumentExtractor(arguments)
@@ -52,18 +51,20 @@ struct GenerateDocsReferencePlugin: CommandPlugin {
             guard builtArtifact.kind == .executable else { continue }
 
             // Get the artifacts name.
-            let executableName = builtArtifact.path.lastComponent
+            let executableName = builtArtifact.url.lastPathComponent
 
             print("Generating docs reference for \(executableName)...")
 
-            let outputFile = context.package.directory
-                .appending("Documentation/SwiftlyDocs.docc/swiftly-cli-reference.md")
+            let outputFile = context.package.directoryURL
+                .appendingPathComponent("Documentation")
+                .appendingPathComponent("SwiftlyDocs.docc")
+                .appendingPathComponent("swiftly-cli-reference.md")
 
             // Create generation tool arguments.
             var generationToolArguments = [
-                builtArtifact.path.string,
+                builtArtifact.url.path(percentEncoded: false),
                 "--output-file",
-                outputFile.string,
+                outputFile.path(percentEncoded: false),
             ]
             generationToolArguments.append(
                 contentsOf: extractor.remainingArguments)

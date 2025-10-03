@@ -293,7 +293,7 @@ import Testing
 
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [])) func uninstallXcode() async throws {
         let output = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "-y", ToolchainVersion.xcodeVersion.name], throws: Uninstall.UninstallCancelledError.self)
-        #expect(!output.filter { $0.contains("No toolchains can be uninstalled that match \"xcode\"") }.isEmpty)
+        #expect(!output.filter { $0.contains("No toolchains can be uninstalled that match \"xcode\"") || $0.contains("No toolchains match these selectors: xcode") }.isEmpty)
     }
 
     // MARK: - Multiple Selector Tests

@@ -16,6 +16,7 @@
           "kind": "long",
           "name": "sign"
         },
+        "parsingStrategy": "default",
         "valueName": "sign",
         "isOptional": true,
         "isRepeating": false,
@@ -33,6 +34,7 @@
           "kind": "long",
           "name": "identifier"
         },
+        "parsingStrategy": "default",
         "valueName": "identifier",
         "isOptional": true,
         "isRepeating": false,
@@ -50,6 +52,7 @@
           "kind": "long",
           "name": "version"
         },
+        "parsingStrategy": "default",
         "valueName": "version",
         "isOptional": true,
         "isRepeating": false,
@@ -67,6 +70,7 @@
           "kind": "long",
           "name": "install-location"
         },
+        "parsingStrategy": "default",
         "valueName": "install-location",
         "isOptional": true,
         "isRepeating": false,
@@ -84,6 +88,7 @@
           "kind": "long",
           "name": "root"
         },
+        "parsingStrategy": "default",
         "valueName": "root",
         "isOptional": false,
         "isRepeating": false,
@@ -91,6 +96,7 @@
         "shouldDisplay": true
       },
       {
+        "parsingStrategy": "default",
         "valueName": "package-output-path",
         "isOptional": false,
         "isRepeating": false,

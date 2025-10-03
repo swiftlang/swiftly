@@ -16,6 +16,7 @@
           "kind": "short",
           "name": "C"
         },
+        "parsingStrategy": "default",
         "valueName": "directory",
         "isOptional": true,
         "isRepeating": false,
@@ -42,6 +43,7 @@
               "kind": "long",
               "name": "file"
             },
+            "parsingStrategy": "default",
             "valueName": "archive",
             "shouldDisplay": true,
             "kind": "option",
@@ -59,6 +61,7 @@
               "kind": "short",
               "name": "z"
             },
+            "parsingStrategy": "default",
             "valueName": "compressed",
             "shouldDisplay": true,
             "kind": "flag",
@@ -76,6 +79,7 @@
               "kind": "short",
               "name": "v"
             },
+            "parsingStrategy": "default",
             "valueName": "verbose",
             "shouldDisplay": true,
             "kind": "flag",
@@ -83,6 +87,7 @@
             "isRepeating": false
           },
           {
+            "parsingStrategy": "default",
             "valueName": "files",
             "shouldDisplay": true,
             "kind": "positional",
@@ -109,6 +114,7 @@
               "kind": "long",
               "name": "file"
             },
+            "parsingStrategy": "default",
             "valueName": "archive",
             "shouldDisplay": true,
             "kind": "option",
@@ -126,6 +132,7 @@
               "kind": "short",
               "name": "z"
             },
+            "parsingStrategy": "default",
             "valueName": "compressed",
             "shouldDisplay": true,
             "kind": "flag",
@@ -143,6 +150,7 @@
               "kind": "short",
               "name": "v"
             },
+            "parsingStrategy": "default",
             "valueName": "verbose",
             "shouldDisplay": true,
             "kind": "flag",

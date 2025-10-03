@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--format=<format>] [--assume-yes] [--verbose] [--version] [--help]
+swiftly install [<version>] [--use] [--verify] [--no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--format=<format>] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **version:**
@@ -67,9 +67,14 @@ NOTE: Swiftly downloads toolchains to a temporary file that it later cleans duri
 *Mark the newly installed toolchain as in-use.*
 
 
-**--verify|no-verify:**
+**--verify:**
 
-*Verify the toolchain's PGP signature before proceeding with installation.*
+*Verify (or not) the toolchain's PGP signature before proceeding with installation.*
+
+
+**--no-verify:**
+
+*Verify (or not) the toolchain's PGP signature before proceeding with installation.*
 
 
 **--post-install-file=\<post-install-file\>:**
@@ -365,7 +370,7 @@ The installed snapshots for a given development branch can be listed by specifyi
 Update an installed toolchain to a newer version.
 
 ```
-swiftly update [<toolchain>] [--assume-yes] [--verbose] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly update [<toolchain>] [--assume-yes] [--verbose] [--verify] [--no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **toolchain:**
@@ -416,9 +421,14 @@ A specific snapshot toolchain can be updated by including the date:
 *Enable verbose reporting from swiftly*
 
 
-**--verify|no-verify:**
+**--verify:**
 
-*Verify the toolchain's PGP signature before proceeding with installation.*
+*Verify (or not) the toolchain's PGP signature before proceeding with installation.*
+
+
+**--no-verify:**
+
+*Verify (or not) the toolchain's PGP signature before proceeding with installation.*
 
 
 **--post-install-file=\<post-install-file\>:**
@@ -656,6 +666,24 @@ Unlinks swiftly until swiftly is linked again with:
 **--help:**
 
 *Show help information.*
+
+
+
+
+## help
+
+Show subcommand help information.
+
+```
+swiftly help [<subcommands>...]  [--version]
+```
+
+**subcommands:**
+
+
+**--version:**
+
+*Show the version.*
 
 
 

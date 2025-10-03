@@ -16,8 +16,8 @@ struct GenerateCommandModelsPlugin: BuildToolPlugin {
                 displayName: "Generating Command Models from dumped JSON help",
                 executable: try context.tool(named: "generate-command-models").url,
                 arguments: [
-                    "--output-file", outputURL.path
-                ] + jsonSources.map { $0.path },
+                    "--output-file", outputURL.path,
+                ] + jsonSources.map(\.path),
                 inputFiles: jsonSources,
                 outputFiles: [outputURL]
             ),

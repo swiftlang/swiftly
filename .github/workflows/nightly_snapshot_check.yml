@@ -22,7 +22,7 @@ jobs:
       - name: Build and Test
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80908
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80909
-        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swiftly run +main-snapshot swift build --build-tests; swift build --build-tests; else swiftly run +main-snapshot swift test; fi'
+        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swiftly run +main-snapshot swift build --build-tests; else swiftly run +main-snapshot swift test; fi'
 
   tests-selfhosted-macos:
     name: Test (Smoke Test - Nightly Swift Toolchain) / macOS Sequoia ARM64

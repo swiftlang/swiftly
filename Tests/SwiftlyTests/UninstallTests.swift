@@ -8,7 +8,9 @@ import Testing
 
     /// Tests that `swiftly uninstall` successfully handles being invoked when no toolchains have been installed yet.
     @Test(.mockHomeToolchains(Self.homeName, toolchains: []), .mockedSwiftlyVersion()) func uninstallNoInstalledToolchains() async throws {
-        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
+        try await #require(throws: Uninstall.UninstallCancelledError.self) {
+            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
+        }
 
         try await SwiftlyTests.validateInstalledToolchains(
             [],
@@ -33,7 +35,9 @@ import Testing
             }
 
             // Ensure that uninstalling when no toolchains are installed is handled gracefully.
-            try await SwiftlyTests.runCommand(Uninstall.self, ["uninstall", "latest"])
+            try await #require(throws: Uninstall.UninstallCancelledError.self) {
+                try await SwiftlyTests.runCommand(Uninstall.self, ["uninstall", "latest"])
+            }
         }
     }
 
@@ -51,7 +55,9 @@ import Testing
             )
         }
 
-        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
+        try await #require(throws: Uninstall.UninstallCancelledError.self) {
+            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
+        }
 
         try await SwiftlyTests.validateInstalledToolchains(
             installed,
@@ -73,7 +79,9 @@ import Testing
             )
         }
 
-        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "main-snapshot-2022-01-01"], input: ["y"])
+        try await #require(throws: Uninstall.UninstallCancelledError.self) {
+            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "main-snapshot-2022-01-01"], input: ["y"])
+        }
 
         try await SwiftlyTests.validateInstalledToolchains(
             installed,
@@ -239,7 +247,9 @@ import Testing
     /// Tests that aborting an uninstall works correctly.
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: .allToolchains(), inUse: .oldStable)) func uninstallAbort() async throws {
         let preConfig = try await Config.load()
-        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["n"])
+        try await #require(throws: Uninstall.UninstallCancelledError.self) {
+            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["n"])
+        }
         try await SwiftlyTests.validateInstalledToolchains(
             .allToolchains(),
             description: "abort uninstall"
@@ -282,8 +292,8 @@ import Testing
     }
 
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [])) func uninstallXcode() async throws {
-        let output = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "-y", ToolchainVersion.xcodeVersion.name])
-        #expect(!output.filter { $0.contains("No toolchains can be uninstalled that match \"xcode\"") }.isEmpty)
+        let output = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "-y", ToolchainVersion.xcodeVersion.name], throws: Uninstall.UninstallCancelledError.self)
+        #expect(!output.filter { $0.contains("No toolchains can be uninstalled that match \"xcode\"") || $0.contains("No toolchains match these selectors: xcode") }.isEmpty)
     }
 
     // MARK: - Multiple Selector Tests
@@ -379,7 +389,8 @@ import Testing
         let output = try await SwiftlyTests.runWithMockedIO(
             Uninstall.self,
             ["uninstall", ToolchainVersion.oldStable.name, "invalid-selector"],
-            input: ["n"] // Abort at error prompt
+            input: ["n"], // Abort at error prompt
+            throws: Uninstall.UninstallCancelledError.self
         )
 
         // Should show error and abort
@@ -398,7 +409,8 @@ import Testing
     func uninstallNoMatchSelectors() async throws {
         let output = try await SwiftlyTests.runWithMockedIO(
             Uninstall.self,
-            ["uninstall", "main-snapshot", "5.99.0"] // Neither installed
+            ["uninstall", "main-snapshot", "5.99.0"], // Neither installed
+            throws: Uninstall.UninstallCancelledError.self
         )
 
         #expect(output.contains { $0.contains("No toolchains match these selectors: main-snapshot, 5.99.0") })
@@ -416,7 +428,8 @@ import Testing
     func uninstallAllInvalidSelectors() async throws {
         let output = try await SwiftlyTests.runWithMockedIO(
             Uninstall.self,
-            ["uninstall", "invalid-1", "invalid-2"]
+            ["uninstall", "invalid-1", "invalid-2"],
+            throws: Uninstall.UninstallCancelledError.self
         )
 
         #expect(output.contains { $0.contains("Invalid toolchain selectors: invalid-1, invalid-2") })

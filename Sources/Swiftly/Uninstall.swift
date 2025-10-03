@@ -10,7 +10,7 @@ struct Uninstall: SwiftlyCommand {
         static let allSelector = "all"
     }
 
-    private struct UninstallCancelledError: Error {}
+    package struct UninstallCancelledError: Error {}
 
     private struct ToolchainSelectionResult {
         let validToolchains: Set<ToolchainVersion>

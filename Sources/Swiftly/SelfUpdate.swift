@@ -18,7 +18,7 @@ struct SelfUpdate: SwiftlyCommand {
 
     @OptionGroup var root: GlobalOptions
 
-    @Option(help: .hidden) var toVersion: SwiftlyVersion
+    @Option(help: .hidden) var toVersion: SwiftlyVersion? = nil
 
     private enum CodingKeys: String, CodingKey {
         case root, toVersion
@@ -74,8 +74,6 @@ struct SelfUpdate: SwiftlyCommand {
         }
 
         if downloadURL == nil {
-            await ctx.print("Checking for swiftly updates...")
-
             let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
 
             guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {

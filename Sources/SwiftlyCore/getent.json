@@ -6,6 +6,7 @@
     "shouldDisplay": true,
     "arguments": [
       {
+        "parsingStrategy": "default",
         "valueName": "database",
         "isOptional": false,
         "isRepeating": false,
@@ -13,6 +14,7 @@
         "shouldDisplay": true
       },
       {
+        "parsingStrategy": "default",
         "valueName": "key",
         "isOptional": false,
         "isRepeating": true,

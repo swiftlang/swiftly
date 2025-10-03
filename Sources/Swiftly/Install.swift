@@ -56,7 +56,7 @@ struct Install: SwiftlyCommand {
 
     @Flag(
         inversion: .prefixedNo,
-        help: "Verify the toolchain's PGP signature before proceeding with installation."
+        help: "Verify (or not) the toolchain's PGP signature before proceeding with installation."
     )
     var verify = true
 

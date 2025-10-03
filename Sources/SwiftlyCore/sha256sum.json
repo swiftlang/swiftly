@@ -16,6 +16,7 @@
           "kind": "long",
           "name": "files"
         },
+        "parsingStrategy": "default",
         "valueName": "files",
         "isOptional": false,
         "isRepeating": true,
@@ -33,6 +34,7 @@
           "kind": "long",
           "name": "verbose"
         },
+        "parsingStrategy": "default",
         "valueName": "verbose",
         "isOptional": true,
         "isRepeating": false,

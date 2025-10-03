@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ["ubuntu:20.04", "ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
+        container: ["ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
     container:
       image: ${{ matrix.container }}
     steps:
@@ -48,9 +48,9 @@ jobs:
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build and Test
-        # UBI 9 and Ubuntu 20.04 - See https://github.com/swiftlang/swift/issues/80908
+        # UBI 9 - See https://github.com/swiftlang/swift/issues/80908
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80909
-        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swift build --build-tests; else swift test; fi'
+        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swift build --build-tests; then swift build --build-tests; else swift test; fi'
 
   releasebuildcheck:
     name: Release Build Check / Linux

@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ["ubuntu:20.04", "ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12"]
+        container: ["ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12"]
     container:
       image: ${{ matrix.container }}
     steps:
@@ -20,9 +20,9 @@ jobs:
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly --swift-snapshot main
       - name: Build and Test
-        # UBI 9 and Ubuntu 20.04 - See https://github.com/swiftlang/swift/issues/80908
+        # UBI 9 - See https://github.com/swiftlang/swift/issues/80908
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80909
-        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swiftly run +main-snapshot swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swiftly run +main-snapshot swift build --build-tests; else swiftly run +main-snapshot swift test; fi'
+        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swiftly run +main-snapshot swift build --build-tests; swift build --build-tests; else swiftly run +main-snapshot swift test; fi'
 
   tests-selfhosted-macos:
     name: Test (Smoke Test - Nightly Swift Toolchain) / macOS Sequoia ARM64

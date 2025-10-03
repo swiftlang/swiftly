@@ -25,22 +25,11 @@ extension ArgumentExtractor {
     }
 }
 
-extension Path {
-    func createOutputDirectory() throws {
-        do {
-            try FileManager.default.createDirectory(
-                atPath: self.string,
-                withIntermediateDirectories: true
-            )
-        } catch {
-            throw GenerateDocsReferencePluginError.createOutputDirectoryFailed(error)
-        }
-    }
-
+extension URL {
     func exec(arguments: [String]) throws {
         do {
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: self.string)
+            process.executableURL = self
             process.arguments = arguments
             try process.run()
             process.waitUntilExit()
@@ -55,15 +44,6 @@ extension Path {
         } catch {
             throw GenerateDocsReferencePluginError.subprocessFailedError(self, error)
         }
-    }
-}
-
-extension PackageManager.BuildResult.BuiltArtifact {
-    func matchingProduct(context: PluginContext) -> Product? {
-        context
-            .package
-            .products
-            .first { $0.name == self.path.lastComponent }
     }
 }
 

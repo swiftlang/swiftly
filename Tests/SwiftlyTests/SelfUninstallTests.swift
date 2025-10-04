@@ -28,7 +28,7 @@ import Testing
             if try await fs.exists(atPath: swiftlyHomeDir) {
                 let contents = try await fs.ls(atPath: swiftlyHomeDir)
                 #expect(
-                    contents == ["Toolchains"] || contents == ['toolchains'] || contents.isEmpty,
+                    contents == ["Toolchains"] || contents == ["toolchains"] || contents.isEmpty,
                     "swiftly home directory should only contain 'toolchains' or be empty"
                 )
             } else {

@@ -154,5 +154,134 @@ struct TestSwiftly: AsyncParsableCommand {
         } else if swiftReady {
             try await sh(executable: .path(shell), .login, .command("swift --version")).run(currentPlatform, env: env, quiet: false)
         }
+
+        // Test self-uninstall functionality
+        print("Testing self-uninstall functionality")
+        try await testSelfUninstall(customLoc: customLoc, shell: shell, env: env)
+    }
+
+    private func testSelfUninstall(customLoc: FilePath?, shell: FilePath, env: [String: String]) async throws {
+        if let customLoc = customLoc {
+            // Test self-uninstall for custom location
+            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swiftly self-uninstall --assume-yes")).run(currentPlatform, env: env, quiet: false)
+            
+            // Verify cleanup for custom location
+            try await verifyCustomLocationCleanup(customLoc: customLoc)
+        } else {
+            // Test self-uninstall for default location
+            try await sh(executable: .path(shell), .login, .command("swiftly self-uninstall --assume-yes")).run(currentPlatform, env: env, quiet: false)
+            
+            // Verify cleanup for default location
+            try await verifyDefaultLocationCleanup(shell: shell, env: env)
+        }
+    }
+
+    private func verifyCustomLocationCleanup(customLoc: FilePath) async throws {
+        print("Verifying cleanup for custom location at \(customLoc)")
+        
+        // Check that swiftly binary is removed
+        let swiftlyBinary = customLoc / "bin/swiftly"
+        guard !(try await fs.exists(atPath: swiftlyBinary)) else {
+            throw TestError("Swiftly binary still exists at \(swiftlyBinary)")
+        }
+        
+        // Check that env files are removed
+        let envSh = customLoc / "env.sh"
+        let envFish = customLoc / "env.fish"
+        guard !(try await fs.exists(atPath: envSh)) else {
+            throw TestError("env.sh still exists at \(envSh)")
+        }
+        guard !(try await fs.exists(atPath: envFish)) else {
+            throw TestError("env.fish still exists at \(envFish)")
+        }
+        
+        // Check that config is removed
+        let config = customLoc / "config.json"
+        guard !(try await fs.exists(atPath: config)) else {
+            throw TestError("config.json still exists at \(config)")
+        }
+        
+        print("✓ Custom location cleanup verification passed")
+    }
+
+    private func verifyDefaultLocationCleanup(shell: FilePath, env: [String: String]) async throws {
+        print("Verifying cleanup for default location")
+        
+        let swiftlyHome = fs.home / ".swiftly"
+        let swiftlyBin = swiftlyHome / "bin"
+        
+        // Check that swiftly binary is removed
+        let swiftlyBinary = swiftlyBin / "swiftly"
+        guard !(try await fs.exists(atPath: swiftlyBinary)) else {
+            throw TestError("Swiftly binary still exists at \(swiftlyBinary)")
+        }
+        
+        // Check that env files are removed
+        let envSh = swiftlyHome / "env.sh"
+        let envFish = swiftlyHome / "env.fish"
+        guard !(try await fs.exists(atPath: envSh)) else {
+            throw TestError("env.sh still exists at \(envSh)")
+        }
+        guard !(try await fs.exists(atPath: envFish)) else {
+            throw TestError("env.fish still exists at \(envFish)")
+        }
+        
+        // Check that config is removed
+        let config = swiftlyHome / "config.json"
+        guard !(try await fs.exists(atPath: config)) else {
+            throw TestError("config.json still exists at \(config)")
+        }
+        
+        // Check that shell profile files have been cleaned up
+        try await verifyProfileCleanup()
+        
+        // Verify swiftly command is no longer available
+        do {
+            try await sh(executable: .path(shell), .login, .command("which swiftly")).run(currentPlatform, env: env, quiet: true)
+            throw TestError("swiftly command is still available in PATH after uninstall")
+        } catch {
+            // Expected - swiftly should not be found
+        }
+        
+        print("✓ Default location cleanup verification passed")
+    }
+
+    private func verifyProfileCleanup() async throws {
+        print("Verifying shell profile cleanup")
+        
+        let profilePaths: [FilePath] = [
+            fs.home / ".zprofile",
+            fs.home / ".bash_profile", 
+            fs.home / ".bash_login",
+            fs.home / ".profile",
+            fs.home / ".config/fish/conf.d/swiftly.fish"
+        ]
+        
+        let swiftlySourcePattern = ". \".*\\.swiftly/env\\.sh\""
+        let fishSourcePattern = "source \".*\\.swiftly/env\\.fish\""
+        let commentPattern = "# Added by swiftly"
+        
+        for profilePath in profilePaths {
+            guard try await fs.exists(atPath: profilePath) else { continue }
+            
+            let contents = try String(contentsOf: profilePath, encoding: .utf8)
+            
+            // Check that swiftly-related lines are removed
+            if contents.range(of: swiftlySourcePattern, options: .regularExpression) != nil ||
+               contents.range(of: fishSourcePattern, options: .regularExpression) != nil ||
+               contents.contains(commentPattern) {
+                throw TestError("Swiftly references still found in profile file: \(profilePath)")
+            }
+        }
+        
+        print("✓ Shell profile cleanup verification passed")
+    }
+}
+
+struct TestError: Error {
+    let message: String
+    
+    init(_ message: String) {
+        self.message = message
     }
 }

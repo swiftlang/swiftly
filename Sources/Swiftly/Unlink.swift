@@ -44,8 +44,8 @@ struct Unlink: SwiftlyCommand {
         }
 
         if pathChanged {
-            await ctx.print(Messages.unlinkSuccess)
-            await ctx.print(Messages.refreshShell)
+            await ctx.message(Messages.unlinkSuccess)
+            await ctx.message(Messages.refreshShell)
         }
     }
 
@@ -71,7 +71,7 @@ extension SwiftlyCommand {
     /// - Parameter ctx: The Swiftly context.
     func validateLinked(_ ctx: SwiftlyCoreContext) async throws {
         if try await !self.isLinked(ctx) {
-            await ctx.print(Messages.currentlyUnlinked)
+            await ctx.message(Messages.currentlyUnlinked)
         }
     }
 

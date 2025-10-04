@@ -1,6 +1,7 @@
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
+import SystemPackage
 import Testing
 
 @Suite struct InstallTests {
@@ -255,11 +256,179 @@ import Testing
     }
 
     /// Verify that the installed toolchain will be marked as in-use if the --use flag is specified.
-    @Test(.testHomeMockedToolchain()) func installUseFlag() async throws {
+    @Test(.mockedSwiftlyVersion(), .testHomeMockedToolchain()) func installUseFlag() async throws {
         try await SwiftlyTests.installMockedToolchain(toolchain: .oldStable)
         try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.oldStable.name])
         try await SwiftlyTests.validateInUse(expected: .oldStable)
         try await SwiftlyTests.installMockedToolchain(selector: ToolchainVersion.newStable.name, args: ["--use"])
         try await SwiftlyTests.validateInUse(expected: .newStable)
+    }
+
+    /// Verify that xcode can't be installed like regular toolchains
+    @Test(.testHomeMockedToolchain()) func installXcode() async throws {
+        try await #expect(throws: SwiftlyError.self) {
+            try await SwiftlyTests.runCommand(Install.self, ["install", "xcode", "--post-install-file=\(fs.mktemp())"])
+        }
+    }
+
+    /// Verify that progress information is written to the progress file when specified.
+    @Test(.testHomeMockedToolchain()) func installProgressFile() async throws {
+        let progressFile = fs.mktemp(ext: ".json")
+        try await fs.create(.mode(0o644), file: progressFile)
+
+        try await SwiftlyTests.runCommand(Install.self, [
+            "install", "5.7.0",
+            "--post-install-file=\(fs.mktemp())",
+            "--progress-file=\(progressFile.string)",
+        ])
+
+        #expect(try await fs.exists(atPath: progressFile))
+
+        let decoder = JSONDecoder()
+        let progressContent = try String(contentsOfFile: progressFile.string)
+        let progressInfo = try progressContent.split(separator: "\n")
+            .filter { !$0.isEmpty }
+            .map { line in
+                try decoder.decode(ProgressInfo.self, from: Data(line.utf8))
+            }
+
+        #expect(!progressInfo.isEmpty, "Progress file should contain progress entries")
+
+        // Verify that at least one step progress entry exists
+        let hasStepEntry = progressInfo.contains { info in
+            if case .step = info { return true }
+            return false
+        }
+        #expect(hasStepEntry, "Progress file should contain step progress entries")
+
+        // Verify that a completion entry exists
+        let hasCompletionEntry = progressInfo.contains { info in
+            if case .complete = info { return true }
+            return false
+        }
+        #expect(hasCompletionEntry, "Progress file should contain completion entry")
+
+        // Clean up
+        try FileManager.default.removeItem(atPath: progressFile.string)
+    }
+
+#if os(Linux) || os(macOS)
+    @Test(.testHomeMockedToolchain())
+    func installProgressFileNamedPipe() async throws {
+        let tempDir = NSTemporaryDirectory()
+        let pipePath = tempDir + "swiftly_install_progress_pipe"
+
+        let result = mkfifo(pipePath, 0o644)
+        guard result == 0 else {
+            return // Skip test if mkfifo syscall failed
+        }
+
+        defer {
+            try? FileManager.default.removeItem(atPath: pipePath)
+        }
+
+        let decoder = JSONDecoder()
+
+        let readerTask = Task {
+            var receivedMessages: [ProgressInfo] = []
+
+            guard let fileHandle = FileHandle(forReadingAtPath: pipePath) else { throw SwiftlyError(message: "Unable to open file handle at \(pipePath)") }
+            defer { fileHandle.closeFile() }
+
+            var buffer = Data()
+
+            while true {
+                let data = fileHandle.availableData
+                if data.isEmpty {
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                    continue
+                }
+
+                buffer.append(data)
+
+                while let newlineRange = buffer.range(of: "\n".data(using: .utf8)!) {
+                    let lineData = buffer.subdata(in: 0..<newlineRange.lowerBound)
+                    buffer.removeSubrange(0..<newlineRange.upperBound)
+
+                    if !lineData.isEmpty {
+                        if let progress = try? decoder.decode(ProgressInfo.self, from: lineData) {
+                            receivedMessages.append(progress)
+                            if case .complete = progress {
+                                return receivedMessages
+                            }
+                        }
+                    }
+                }
+            }
+
+            return receivedMessages
+        }
+
+        let installTask = Task {
+            try await SwiftlyTests.runCommand(Install.self, [
+                "install", "5.7.0",
+                "--post-install-file=\(fs.mktemp())",
+                "--progress-file=\(pipePath)",
+            ])
+        }
+
+        let readerResult = await readerTask.result
+        try await installTask.value
+
+        let receivedMessages = try readerResult.get()
+
+        #expect(!receivedMessages.isEmpty, "Named pipe should receive progress entries")
+
+        let hasCompletionEntry = receivedMessages.contains { info in
+            if case .complete = info { return true }
+            return false
+        }
+        #expect(hasCompletionEntry, "Named pipe should receive completion entry")
+
+        for message in receivedMessages {
+            switch message {
+            case let .step(timestamp, percent, text):
+                #expect(timestamp.timeIntervalSince1970 > 0)
+                #expect(percent >= 0 && percent <= 100)
+                #expect(!text.isEmpty)
+            case let .complete(success):
+                #expect(success == true)
+            }
+        }
+    }
+#endif
+
+    /// Tests that `install` command with JSON format outputs correctly structured JSON.
+    @Test(.testHomeMockedToolchain()) func installJsonFormat() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Install.self, ["install", "5.7.0", "--post-install-file=\(fs.mktemp())", "--format", "json"], format: .json
+        )
+
+        let installInfo = try JSONDecoder().decode(
+            InstallInfo.self,
+            from: output[0].data(using: .utf8)!
+        )
+
+        #expect(installInfo.version.name == "5.7.0")
+        #expect(installInfo.alreadyInstalled == false)
+    }
+
+    /// Tests that `install` command with JSON format correctly indicates when toolchain is already installed.
+    @Test(.testHomeMockedToolchain()) func installJsonFormatAlreadyInstalled() async throws {
+        // First install the toolchain
+        try await SwiftlyTests.runCommand(Install.self, ["install", "5.7.0", "--post-install-file=\(fs.mktemp())"])
+
+        // Then try to install it again with JSON format
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Install.self, ["install", "5.7.0", "--post-install-file=\(fs.mktemp())", "--format", "json"], format: .json
+        )
+
+        let installInfo = try JSONDecoder().decode(
+            InstallInfo.self,
+            from: output[0].data(using: .utf8)!
+        )
+
+        #expect(installInfo.version.name == "5.7.0")
+        #expect(installInfo.alreadyInstalled == true)
     }
 }

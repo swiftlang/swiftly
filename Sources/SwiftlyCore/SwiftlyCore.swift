@@ -2,7 +2,7 @@ import Foundation
 import SwiftlyWebsiteAPI
 import SystemPackage
 
-public let version = SwiftlyVersion(major: 1, minor: 1, patch: 0, suffix: "dev")
+public let version = SwiftlyVersion(major: 1, minor: 2, patch: 0, suffix: "dev")
 
 /// Protocol defining a handler for information swiftly intends to print to stdout.
 /// This is currently only used to intercept print statements for testing.
@@ -37,58 +37,80 @@ public struct SwiftlyCoreContext: Sendable {
     /// The output handler to use, if any.
     public var outputHandler: (any OutputHandler)?
 
-    /// The input probider to use, if any
+    /// The output handler for error streams
+    public var errorOutputHandler: (any OutputHandler)?
+
+    /// The input provider to use, if any
     public var inputProvider: (any InputProvider)?
 
-    public init() {
+    /// The terminal info provider
+    public var terminal: any Terminal
+
+    /// The format
+    public var format: OutputFormat = .text
+
+    public init(format: SwiftlyCore.OutputFormat = .text) {
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
         self.currentDirectory = fs.cwd
+        self.format = format
+        self.terminal = SystemTerminal()
     }
 
     public init(httpClient: SwiftlyHTTPClient) {
         self.httpClient = httpClient
         self.currentDirectory = fs.cwd
+        self.terminal = SystemTerminal()
     }
 
     /// Pass the provided string to the set output handler if any.
     /// If no output handler has been set, just print to stdout.
-    public func print(_ string: String = "", terminator: String? = nil) async {
-        // Get terminal size or use default width
-        let terminalWidth = self.getTerminalWidth()
-        let wrappedString = string.isEmpty ? string : string.wrapText(to: terminalWidth)
-
+    public func print(_ string: String = "") async {
         guard let handler = self.outputHandler else {
-            if let terminator {
-                Swift.print(wrappedString, terminator: terminator)
-            } else {
-                Swift.print(wrappedString)
-            }
+            Swift.print(string)
             return
         }
-        await handler.handleOutputLine(wrappedString + (terminator ?? ""))
+        await handler.handleOutputLine(string)
     }
 
-    /// Detects the terminal width in columns
-    private func getTerminalWidth() -> Int {
-#if os(macOS) || os(Linux)
-        var size = winsize()
-#if os(OpenBSD)
-        // TIOCGWINSZ is a complex macro, so we need the flattened value.
-        let tiocgwinsz = UInt(0x4008_7468)
-        let result = ioctl(STDOUT_FILENO, tiocgwinsz, &size)
-#else
-        let result = ioctl(STDOUT_FILENO, UInt(TIOCGWINSZ), &size)
-#endif
+    public func message(_ string: String = "", terminator: String? = nil) async {
+        let wrappedString = self.wrappedMessage(string) + (terminator ?? "")
 
-        if result == 0 && Int(size.ws_col) > 0 {
-            return Int(size.ws_col)
+        if self.format == .json {
+            await self.printError(wrappedString)
+            return
+        } else {
+            await self.print(wrappedString)
         }
-#endif
-        return 80 // Default width if terminal size detection fails
+    }
+
+    private func wrappedMessage(_ string: String) -> String {
+        let terminalWidth = self.terminal.width()
+        return string.isEmpty ? string : string.wrapText(to: terminalWidth)
+    }
+
+    public func printError(_ string: String = "") async {
+        if let handler = self.errorOutputHandler {
+            await handler.handleOutputLine(string)
+        } else {
+            if let data = (string + "\n").data(using: .utf8) {
+                try? FileHandle.standardError.write(contentsOf: data)
+            }
+        }
+    }
+
+    public func output(_ data: OutputData) async throws {
+        let formattedOutput: String
+        switch self.format {
+        case .text:
+            formattedOutput = TextOutputFormatter().format(data)
+        case .json:
+            formattedOutput = try JSONOutputFormatter().format(data)
+        }
+        await self.print(formattedOutput)
     }
 
     public func readLine(prompt: String) async -> String? {
-        await self.print(prompt, terminator: ": \n")
+        await self.message(prompt, terminator: ": \n")
         guard let provider = self.inputProvider else {
             return Swift.readLine(strippingNewline: true)
         }
@@ -96,6 +118,10 @@ public struct SwiftlyCoreContext: Sendable {
     }
 
     public func promptForConfirmation(defaultBehavior: Bool) async -> Bool {
+        if self.format == .json {
+            await self.message("Assuming \(defaultBehavior ? "yes" : "no") due to JSON format")
+            return defaultBehavior
+        }
         let options: String
         if defaultBehavior {
             options = "(Y/n)"
@@ -109,7 +135,7 @@ public struct SwiftlyCoreContext: Sendable {
                         ?? (defaultBehavior ? "y" : "n")).lowercased()
 
             guard ["y", "n", ""].contains(answer) else {
-                await self.print(
+                await self.message(
                     "Please input either \"y\" or \"n\", or press ENTER to use the default.")
                 continue
             }

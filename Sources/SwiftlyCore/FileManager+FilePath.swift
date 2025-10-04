@@ -60,7 +60,7 @@ public enum FileSystem {
         case mode(Int)
     }
 
-    public static func create(_ options: CreateOptions..., file: FilePath, contents: Data?) async throws {
+    public static func create(_ options: CreateOptions..., file: FilePath, contents: Data? = nil) async throws {
         try await Self.create(options, file: file, contents: contents)
     }
 

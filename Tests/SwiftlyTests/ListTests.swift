@@ -46,15 +46,22 @@ import Testing
         }
 
         let output = try await SwiftlyTests.runWithMockedIO(List.self, args)
+        let lines = output.flatMap { $0.split(separator: "\n").map(String.init) }
 
-        let parsedToolchains = output.compactMap { outputLine in
+        let parsedToolchains = lines.compactMap { outputLine in
+#if !os(macOS)
             Set<ToolchainVersion>.allToolchains().first {
-                outputLine.contains(String(describing: $0))
+                outputLine.hasPrefix(String(describing: $0))
             }
+#else
+            (Set<ToolchainVersion>.allToolchains() + [.xcodeVersion]).first {
+                outputLine.hasPrefix(String(describing: $0))
+            }
+#endif
         }
 
         // Ensure extra toolchains weren't accidentally included in the output.
-        guard parsedToolchains.count == output.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") }).count else {
+        guard parsedToolchains.count == lines.filter({ $0.hasPrefix("Swift") || $0.contains("-snapshot") || $0.hasPrefix("xcode") }).count else {
             throw SwiftlyTestError(message: "unexpected listed toolchains in \(output)")
         }
 
@@ -66,7 +73,11 @@ import Testing
     @Test func list() async throws {
         try await self.runListTest {
             let toolchains = try await self.runList(selector: nil)
+#if !os(macOS)
             #expect(toolchains == Self.sortedReleaseToolchains + Self.sortedSnapshotToolchains)
+#else
+            #expect(toolchains == Self.sortedReleaseToolchains + Self.sortedSnapshotToolchains + [.xcodeVersion])
+#endif
         }
     }
 
@@ -127,8 +138,9 @@ import Testing
             }
 
             let output = try await SwiftlyTests.runWithMockedIO(List.self, listArgs)
+            let lines = output.flatMap { $0.split(separator: "\n").map(String.init) }
 
-            let inUse = output.filter { $0.contains("in use") }
+            let inUse = lines.filter { $0.contains("in use") && $0.contains(toolchain.name) }
             #expect(inUse == ["\(toolchain) (in use) (default)"])
         }
 
@@ -159,9 +171,15 @@ import Testing
 
     /// Tests that `list` properly handles the case where no toolchains have been installed yet.
     @Test(.testHome(Self.homeName)) func listEmpty() async throws {
+#if !os(macOS)
+        let systemToolchains: [ToolchainVersion] = []
+#else
+        let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
+#endif
+
         try await SwiftlyTests.withMockedSwiftlyVersion(latestSwiftlyVersion: Self.swiftlyVersion) {
             var toolchains = try await self.runList(selector: nil)
-            #expect(toolchains == [])
+            #expect(toolchains == systemToolchains)
 
             toolchains = try await self.runList(selector: "5")
             #expect(toolchains == [])
@@ -171,6 +189,100 @@ import Testing
 
             toolchains = try await self.runList(selector: "5.7-snapshot")
             #expect(toolchains == [])
+
+#if os(macOS)
+            toolchains = try await self.runList(selector: "xcode")
+            #expect(toolchains == systemToolchains)
+#endif
+        }
+    }
+
+    /// Tests that running `list` command with JSON format outputs correctly structured JSON.
+    @Test func listJsonFormat() async throws {
+        try await self.runListTest {
+            let output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "--format", "json"], format: .json
+            )
+
+            let listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+#if !os(macOS)
+            let systemToolchains: [ToolchainVersion] = []
+#else
+            let systemToolchains: [ToolchainVersion] = [.xcodeVersion]
+#endif
+
+            #expect(listInfo.toolchains.count == Set<ToolchainVersion>.allToolchains().count + systemToolchains.count)
+
+            for toolchain in listInfo.toolchains {
+                #expect(toolchain.version.name.isEmpty == false)
+                #expect(toolchain.inUse != nil)
+                #expect(toolchain.isDefault != nil)
+            }
+        }
+    }
+
+    /// Tests that running `list` command with JSON format and selector outputs filtered results.
+    @Test func listJsonFormatWithSelector() async throws {
+        try await self.runListTest {
+            var output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "5", "--format", "json"], format: .json
+            )
+
+            var listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+            #expect(listInfo.toolchains.count == Self.sortedReleaseToolchains.count)
+
+            for toolchain in listInfo.toolchains {
+                #expect(toolchain.version.isStableRelease())
+            }
+
+            output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "main-snapshot", "--format", "json"], format: .json
+            )
+
+            listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+            #expect(listInfo.toolchains.count == 2)
+
+            for toolchain in listInfo.toolchains {
+                #expect(toolchain.version.isSnapshot())
+                if let snapshot = toolchain.version.asSnapshot {
+                    #expect(snapshot.branch == .main)
+                }
+            }
+        }
+    }
+
+    /// Tests that the JSON output correctly indicates which toolchain is in use.
+    @Test func listJsonFormatInUse() async throws {
+        try await self.runListTest {
+            try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.newStable.name])
+
+            let output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "--format", "json"], format: .json
+            )
+
+            let listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+            let inUseToolchains = listInfo.toolchains.filter(\.inUse)
+            #expect(inUseToolchains.count == 1)
+
+            let inUseToolchain = inUseToolchains[0]
+            #expect(inUseToolchain.version.name == ToolchainVersion.newStable.name)
+            #expect(inUseToolchain.isDefault == true)
         }
     }
 }

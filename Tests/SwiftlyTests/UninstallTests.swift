@@ -8,7 +8,9 @@ import Testing
 
     /// Tests that `swiftly uninstall` successfully handles being invoked when no toolchains have been installed yet.
     @Test(.mockHomeToolchains(Self.homeName, toolchains: []), .mockedSwiftlyVersion()) func uninstallNoInstalledToolchains() async throws {
-        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
+        try await #require(throws: Uninstall.UninstallCancelledError.self) {
+            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
+        }
 
         try await SwiftlyTests.validateInstalledToolchains(
             [],
@@ -33,7 +35,9 @@ import Testing
             }
 
             // Ensure that uninstalling when no toolchains are installed is handled gracefully.
-            try await SwiftlyTests.runCommand(Uninstall.self, ["uninstall", "latest"])
+            try await #require(throws: Uninstall.UninstallCancelledError.self) {
+                try await SwiftlyTests.runCommand(Uninstall.self, ["uninstall", "latest"])
+            }
         }
     }
 
@@ -51,7 +55,9 @@ import Testing
             )
         }
 
-        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
+        try await #require(throws: Uninstall.UninstallCancelledError.self) {
+            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "1.2.3"], input: ["y"])
+        }
 
         try await SwiftlyTests.validateInstalledToolchains(
             installed,
@@ -73,7 +79,9 @@ import Testing
             )
         }
 
-        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "main-snapshot-2022-01-01"], input: ["y"])
+        try await #require(throws: Uninstall.UninstallCancelledError.self) {
+            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "main-snapshot-2022-01-01"], input: ["y"])
+        }
 
         try await SwiftlyTests.validateInstalledToolchains(
             installed,
@@ -239,7 +247,9 @@ import Testing
     /// Tests that aborting an uninstall works correctly.
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: .allToolchains(), inUse: .oldStable)) func uninstallAbort() async throws {
         let preConfig = try await Config.load()
-        _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["n"])
+        try await #require(throws: Uninstall.UninstallCancelledError.self) {
+            _ = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", ToolchainVersion.oldStable.name], input: ["n"])
+        }
         try await SwiftlyTests.validateInstalledToolchains(
             .allToolchains(),
             description: "abort uninstall"
@@ -279,5 +289,199 @@ import Testing
             [.oldStable, .newStable, .oldReleaseSnapshot],
             description: "uninstall did not uninstall all toolchains"
         )
+    }
+
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [])) func uninstallXcode() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(Uninstall.self, ["uninstall", "-y", ToolchainVersion.xcodeVersion.name], throws: Uninstall.UninstallCancelledError.self)
+        #expect(!output.filter { $0.contains("No toolchains can be uninstalled that match \"xcode\"") || $0.contains("No toolchains match these selectors: xcode") }.isEmpty)
+    }
+
+    // MARK: - Multiple Selector Tests
+
+    /// Tests that multiple valid selectors work correctly
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable, .oldMainSnapshot, .newMainSnapshot]))
+    func uninstallMultipleValidSelectors() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Uninstall.self,
+            ["uninstall", ToolchainVersion.oldStable.name, ToolchainVersion.newMainSnapshot.name],
+            input: ["y"]
+        )
+
+        // Verify both toolchains were uninstalled
+        try await SwiftlyTests.validateInstalledToolchains(
+            [.newStable, .oldMainSnapshot],
+            description: "multiple valid selectors should uninstall both toolchains"
+        )
+
+        // Verify output shows confirmation message but no total summary
+        #expect(output.contains { $0.contains("The following toolchains will be uninstalled:") })
+        #expect(output.contains { $0.contains("Successfully uninstalled") && $0.contains("from 2 selector(s)") })
+    }
+
+    /// Tests deduplication when selectors overlap
+    @Test(.mockedSwiftlyVersion())
+    func uninstallOverlappingSelectors() async throws {
+        // Set up test with stable releases that can overlap
+        try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: [.oldStable, .oldStableNewPatch]) {
+            let output = try await SwiftlyTests.runWithMockedIO(
+                Uninstall.self,
+                ["uninstall", "5.6", ToolchainVersion.oldStable.name], // 5.6 selector matches both 5.6.0 and 5.6.3
+                input: ["y"]
+            )
+
+            // Should uninstall both toolchains (5.6 matches both)
+            try await SwiftlyTests.validateInstalledToolchains(
+                [],
+                description: "overlapping selectors should deduplicate correctly"
+            )
+
+            // Verify toolchains are shown in flat list format
+            #expect(output.contains { $0.contains("The following toolchains will be uninstalled:") })
+        }
+    }
+
+    /// Tests multiple selectors with progress indication
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable, .oldMainSnapshot]))
+    func uninstallMultipleSelectorsProgress() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Uninstall.self,
+            ["uninstall", "-y", ToolchainVersion.oldStable.name, ToolchainVersion.newStable.name, ToolchainVersion.oldMainSnapshot.name]
+        )
+
+        // Verify progress indicators appear
+        #expect(output.contains { $0.contains("[1/3] Processing") })
+        #expect(output.contains { $0.contains("[2/3] Processing") })
+        #expect(output.contains { $0.contains("[3/3] Processing") })
+
+        try await SwiftlyTests.validateInstalledToolchains(
+            [],
+            description: "multiple selectors with progress should uninstall all"
+        )
+    }
+
+    // MARK: - Error Handling Tests
+
+    /// Tests mixed valid and invalid selectors with user choice to proceed
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable]))
+    func uninstallMixedValidInvalidSelectors() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Uninstall.self,
+            ["uninstall", ToolchainVersion.oldStable.name, "invalid-selector", ToolchainVersion.newStable.name],
+            input: ["y", "y"] // First y for error prompt, second y for confirmation
+        )
+
+        // Should show error about invalid selector
+        #expect(output.contains { $0.contains("Invalid toolchain selectors: invalid-selector") })
+
+        // Should ask user if they want to proceed with valid ones
+        #expect(output.contains { $0.contains("Found 2 toolchain(s) from valid selectors. Continue") })
+
+        // Should uninstall the valid ones
+        try await SwiftlyTests.validateInstalledToolchains(
+            [],
+            description: "should proceed with valid selectors after user confirmation"
+        )
+    }
+
+    /// Tests mixed valid and invalid selectors with user choice to abort
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable]))
+    func uninstallMixedValidInvalidSelectorsAbort() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Uninstall.self,
+            ["uninstall", ToolchainVersion.oldStable.name, "invalid-selector"],
+            input: ["n"], // Abort at error prompt
+            throws: Uninstall.UninstallCancelledError.self
+        )
+
+        // Should show error and abort
+        #expect(output.contains { $0.contains("Invalid toolchain selectors: invalid-selector") })
+        #expect(output.contains { $0.contains("Aborting uninstall") })
+
+        // Should not uninstall anything
+        try await SwiftlyTests.validateInstalledToolchains(
+            [.oldStable, .newStable],
+            description: "should not uninstall anything when user aborts"
+        )
+    }
+
+    /// Tests selectors with no matches
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable]))
+    func uninstallNoMatchSelectors() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Uninstall.self,
+            ["uninstall", "main-snapshot", "5.99.0"], // Neither installed
+            throws: Uninstall.UninstallCancelledError.self
+        )
+
+        #expect(output.contains { $0.contains("No toolchains match these selectors: main-snapshot, 5.99.0") })
+        #expect(output.contains { $0.contains("No valid toolchains found to uninstall") })
+
+        // Nothing should be uninstalled
+        try await SwiftlyTests.validateInstalledToolchains(
+            [.oldStable],
+            description: "no-match selectors should not uninstall anything"
+        )
+    }
+
+    /// Tests all invalid selectors
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable]))
+    func uninstallAllInvalidSelectors() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Uninstall.self,
+            ["uninstall", "invalid-1", "invalid-2"],
+            throws: Uninstall.UninstallCancelledError.self
+        )
+
+        #expect(output.contains { $0.contains("Invalid toolchain selectors: invalid-1, invalid-2") })
+        #expect(output.contains { $0.contains("No valid toolchains found to uninstall") })
+
+        try await SwiftlyTests.validateInstalledToolchains(
+            [.oldStable],
+            description: "all invalid selectors should not uninstall anything"
+        )
+    }
+
+    // MARK: - Edge Cases
+
+    /// Tests multiple selectors where some result in empty matches after filtering
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable]))
+    func uninstallMultipleSelectorsFiltered() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Uninstall.self,
+            ["uninstall", ToolchainVersion.oldStable.name, "xcode"], // xcode gets filtered out
+            input: ["y", "y"] // First y for error prompt, second y for confirmation
+        )
+
+        // Should only uninstall the valid, non-filtered toolchain
+        try await SwiftlyTests.validateInstalledToolchains(
+            [],
+            description: "should handle filtering correctly"
+        )
+
+        // Should show multiple selector completion message since we provided 2 selectors
+        #expect(output.contains { $0.contains("The following toolchains will be uninstalled:") })
+        #expect(output.contains { $0.contains("Successfully uninstalled 1 toolchain(s) from 2 selector(s)") })
+    }
+
+    /// Tests multiple selectors with in-use toolchain replacement
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(Self.homeName, toolchains: [.oldStable, .newStable, .oldMainSnapshot], inUse: .oldStable))
+    func uninstallMultipleSelectorsInUse() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Uninstall.self,
+            ["uninstall", "-y", ToolchainVersion.oldStable.name, ToolchainVersion.oldMainSnapshot.name]
+        )
+
+        // Should uninstall both
+        try await SwiftlyTests.validateInstalledToolchains(
+            [.newStable],
+            description: "should uninstall multiple including in-use"
+        )
+
+        // Should switch to newStable since oldStable was in-use and got uninstalled
+        try await SwiftlyTests.validateInUse(expected: .newStable)
+
+        // Should show progress for multiple toolchains
+        #expect(output.contains { $0.contains("[1/2] Processing") })
+        #expect(output.contains { $0.contains("[2/2] Processing") })
     }
 }

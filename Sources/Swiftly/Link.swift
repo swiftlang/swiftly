@@ -43,13 +43,13 @@ struct Link: SwiftlyCommand {
         )
 
         if pathChanged {
-            await ctx.print("""
+            await ctx.message("""
             Linked swiftly to Swift \(toolchainVersion.name).
 
             \(Messages.refreshShell)
             """)
         } else {
-            await ctx.print("""
+            await ctx.message("""
             Swiftly is already linked to Swift \(toolchainVersion.name).
             """)
         }

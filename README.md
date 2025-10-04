@@ -70,14 +70,14 @@ NOTE: This will not uninstall any toolchains you have installed unless you do so
 
 1. (Optional) Remove all installed toolchains with `swiftly uninstall all`.
 
-2. Remove any sections added by swiftly in your `.zprofile`, `.bash_profile`, `.profile`, or `fish/conf.d` files. These sections might look like this:
+2. Remove the swiftly home and bin directories. The default location might be `~/.swiftpm` or `.local/share/swiftly`. You can refer to the environment variables `SWIFTLY_HOME_DIR` and `SWIFTLY_BIN_DIR` in your associated profile file (`.zprofile`, `.bash_profile`, `.profile`, or `fish/conf.d`).
+
+3. Remove any sections added by swiftly in your `.zprofile`, `.bash_profile`, `.profile`, or `fish/conf.d` files. These sections might look like this:
 
    ```sh
    # Added by swiftly
    . "/Users/<USERNAME>/.swiftly/env.sh"
    ```
-
-3. Remove the swfitly home and bin directories. The default location might be `~/.swiftpm` or `.local/share/swiftly`
 
 4. Restart your shell and check you have correctly removed the swiftly environment.
 

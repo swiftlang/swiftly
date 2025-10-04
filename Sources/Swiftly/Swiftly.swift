@@ -52,8 +52,8 @@ public struct Swiftly: SwiftlyCommand {
         ]
     )
 
-    public static func createDefaultContext() -> SwiftlyCoreContext {
-        SwiftlyCoreContext()
+    public static func createDefaultContext(format: SwiftlyCore.OutputFormat = .text) -> SwiftlyCoreContext {
+        SwiftlyCoreContext(format: format)
     }
 
     /// The list of directories that swiftly needs to exist in order to execute.
@@ -96,6 +96,7 @@ extension Data {
 }
 
 extension SwiftlyCommand {
+    @discardableResult
     public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) async throws -> () -> Void {
         for requiredDir in Swiftly.requiredDirectories(ctx) {
             guard try await fs.exists(atPath: requiredDir) else {
@@ -131,6 +132,30 @@ extension SwiftlyCommand {
                     FileHandle.standardError.write(data)
                 }
             }
+        }
+    }
+
+    public static func handlePathChange(_ ctx: SwiftlyCoreContext) async throws {
+        let shell =
+            if let s = ProcessInfo.processInfo.environment["SHELL"]
+        {
+            s
+        } else {
+            try await Swiftly.currentPlatform.getShell()
+        }
+
+        // Fish doesn't cache its path, so this instruction is not necessary.
+        if !shell.hasSuffix("fish") {
+            await ctx.message(
+                """
+                NOTE: Swiftly has updated some elements in your path and your shell may not yet be
+                aware of the changes. You can update your shell's environment by running
+
+                hash -r
+
+                or restarting your shell.
+
+                """)
         }
     }
 }

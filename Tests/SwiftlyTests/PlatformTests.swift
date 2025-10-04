@@ -87,6 +87,22 @@ import Testing
         #expect(0 == toolchains.count)
     }
 
+#if os(macOS)
+    @Test(.mockedSwiftlyVersion(), .testHome()) func findXcodeToolchainLocation() async throws {
+        // GIVEN: the xcode toolchain
+        // AND there is xcode installed
+        guard let swiftLocation = try? await Swiftly.currentPlatform.runProgramOutput("xcrun", "-f", "swift"), swiftLocation != "" else {
+            return
+        }
+
+        // WHEN: the location of the xcode toolchain can be found
+        let toolchainLocation = try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .xcodeVersion)
+
+        // THEN: the xcode toolchain matches the currently selected xcode toolchain
+        #expect(toolchainLocation.string == swiftLocation.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: "/usr/bin/swift", with: ""))
+    }
+#endif
+
 #if os(macOS) || os(Linux)
     @Test(
         .mockedSwiftlyVersion(),
@@ -106,7 +122,7 @@ import Testing
         let newEnv = try await Swiftly.currentPlatform.proxyEnv(SwiftlyTests.ctx, env: env, toolchain: .newStable)
 
         // THEN: the toolchain's bin directory is added to the beginning of the PATH
-        #expect(newEnv["PATH"]!.hasPrefix((Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable) / "usr/bin").string))
+        #expect(newEnv["PATH"]!.hasPrefix(((try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable)) / "usr/bin").string))
 
         // AND: the swiftly bin directory is removed from the PATH
         #expect(!newEnv["PATH"]!.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string))

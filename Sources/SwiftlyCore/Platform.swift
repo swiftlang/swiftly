@@ -129,10 +129,10 @@ public protocol Platform: Sendable {
     func getShell() async throws -> String
 
     /// Find the location where the toolchain should be installed.
-    func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> FilePath
+    func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
 
     /// Find the location of the toolchain binaries.
-    func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> FilePath
+    func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
 }
 
 extension Platform {
@@ -164,7 +164,7 @@ extension Platform {
     func proxyEnv(_ ctx: SwiftlyCoreContext, env: [String: String], toolchain: ToolchainVersion) async throws -> [String: String] {
         var newEnv = env
 
-        let tcPath = self.findToolchainLocation(ctx, toolchain) / "usr/bin"
+        let tcPath = try await self.findToolchainLocation(ctx, toolchain) / "usr/bin"
         guard try await fs.exists(atPath: tcPath) else {
             throw SwiftlyError(
                 message:
@@ -193,7 +193,7 @@ extension Platform {
     /// the exit code and program information.
     ///
     public func proxy(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String], _ env: [String: String] = [:]) async throws {
-        let tcPath = self.findToolchainLocation(ctx, toolchain) / "usr/bin"
+        let tcPath = (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
 
         let commandTcPath = tcPath / command
         let commandToRun = if try await fs.exists(atPath: commandTcPath) {
@@ -225,7 +225,7 @@ extension Platform {
     /// the exit code and program information.
     ///
     public func proxyOutput(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws -> String? {
-        let tcPath = self.findToolchainLocation(ctx, toolchain) / "usr/bin"
+        let tcPath = (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
 
         let commandTcPath = tcPath / command
         let commandToRun = if try await fs.exists(atPath: commandTcPath) {
@@ -404,7 +404,7 @@ extension Platform {
             return
         }
 
-        await ctx.print("Installing swiftly in \(swiftlyHomeBin)...")
+        await ctx.message("Installing swiftly in \(swiftlyHomeBin)...")
 
         if try await fs.exists(atPath: swiftlyHomeBin) {
             try await fs.remove(atPath: swiftlyHomeBin)
@@ -414,7 +414,7 @@ extension Platform {
             try await fs.move(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
         } catch {
             try await fs.copy(atPath: cmdAbsolute, toPath: swiftlyHomeBin)
-            await ctx.print(
+            await ctx.message(
                 "Swiftly has been copied into the installation directory. You can remove '\(cmdAbsolute)'. It is no longer needed."
             )
         }
@@ -479,9 +479,9 @@ extension Platform {
         return try await fs.exists(atPath: swiftlyHomeBin) ? swiftlyHomeBin : nil
     }
 
-    public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> FilePath
+    public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
     {
-        self.findToolchainLocation(ctx, toolchain) / "usr/bin"
+        (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
     }
 
 #endif

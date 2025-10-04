@@ -70,7 +70,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
             """
         }
 
-        try await allCmds.write(to: URL(fileURLWithPath: self.outputFile), atomically: true, encoding: .utf8)
+        try allCmds.write(to: URL(fileURLWithPath: self.outputFile), atomically: true, encoding: .utf8)
     }
 
     struct Vars {
@@ -176,14 +176,12 @@ struct GenerateCommandModels: AsyncParsableCommand {
 
         private func argSwitchCase(_ arg: ArgumentInfoV0) -> String {
             let flag = arg.kind == .flag
-            var name: String?
-            if let longName = arg.names?.filter { $0.kind == .long }.first?.name {
-                name = "--" + longName
-            } else if let shortName = arg.names?.filter { $0.kind == .short }.first?.name {
-                name = "-" + shortName
-            } else if let longNameWithSingleDash = arg.names?.filter { $0.kind == .longWithSingleDash }.first?.name {
-                name = "-" + longNameWithSingleDash
-            }
+            let name: String? = arg.names?.compactMap { name in
+                switch name.kind {
+                case .long: return "--" + name.name
+                case .short, .longWithSingleDash: return "-" + name.name
+                }
+            }.first
 
             guard let name else { fatalError("Unable to find a suitable argument name for \(arg)") }
 

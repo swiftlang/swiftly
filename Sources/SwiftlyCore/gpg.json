@@ -13,6 +13,7 @@
         "shouldDisplay": true,
         "arguments": [
           {
+            "parsingStrategy": "default",
             "valueName": "key",
             "shouldDisplay": true,
             "kind": "positional",
@@ -29,6 +30,7 @@
         "shouldDisplay": true,
         "arguments": [
           {
+            "parsingStrategy": "default",
             "valueName": "detached-signature",
             "shouldDisplay": true,
             "kind": "positional",
@@ -36,6 +38,7 @@
             "isRepeating": false
           },
           {
+            "parsingStrategy": "default",
             "valueName": "signed-data",
             "shouldDisplay": true,
             "kind": "positional",

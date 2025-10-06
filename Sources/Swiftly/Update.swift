@@ -62,7 +62,7 @@ struct Update: SwiftlyCommand {
 
     @OptionGroup var root: GlobalOptions
 
-    @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
+    @Flag(inversion: .prefixedNo, help: "Verify (or not) the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
     @Option(help: ArgumentHelp(

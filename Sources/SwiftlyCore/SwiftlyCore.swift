@@ -2,7 +2,7 @@ import Foundation
 import SwiftlyWebsiteAPI
 import SystemPackage
 
-public let version = SwiftlyVersion(major: 1, minor: 1, patch: 0, suffix: "dev")
+public let version = SwiftlyVersion(major: 1, minor: 1, patch: 0)
 
 /// Protocol defining a handler for information swiftly intends to print to stdout.
 /// This is currently only used to intercept print statements for testing.

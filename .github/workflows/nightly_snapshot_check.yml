@@ -1,5 +1,8 @@
 name: Smoke Test - Nightly Swift Toolchain
 
+permissions:
+  contents: read
+
 on:
   schedule:
     - cron: '30 3 * * *'

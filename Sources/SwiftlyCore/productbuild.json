@@ -16,6 +16,7 @@
           "kind": "long",
           "name": "synthesize"
         },
+        "parsingStrategy": "default",
         "valueName": "synthesize",
         "isOptional": true,
         "isRepeating": false,
@@ -33,6 +34,7 @@
           "kind": "long",
           "name": "distribution"
         },
+        "parsingStrategy": "default",
         "valueName": "dist-path",
         "isOptional": true,
         "isRepeating": false,
@@ -50,6 +52,7 @@
           "kind": "long",
           "name": "package"
         },
+        "parsingStrategy": "default",
         "valueName": "pkg-path",
         "isOptional": false,
         "isRepeating": false,
@@ -67,6 +70,7 @@
           "kind": "long",
           "name": "package-path"
         },
+        "parsingStrategy": "default",
         "valueName": "search-path",
         "isOptional": true,
         "isRepeating": false,
@@ -84,6 +88,7 @@
           "kind": "long",
           "name": "sign"
         },
+        "parsingStrategy": "default",
         "valueName": "cert",
         "isOptional": true,
         "isRepeating": false,
@@ -91,6 +96,7 @@
         "shouldDisplay": true
       },
       {
+        "parsingStrategy": "default",
         "valueName": "output-path",
         "isOptional": false,
         "isRepeating": false,

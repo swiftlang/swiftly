@@ -16,6 +16,7 @@
           "kind": "longWithSingleDash",
           "name": "verbose"
         },
+        "parsingStrategy": "default",
         "valueName": "verbose",
         "shouldDisplay": true,
         "kind": "flag",
@@ -33,6 +34,7 @@
           "kind": "longWithSingleDash",
           "name": "pkg"
         },
+        "parsingStrategy": "default",
         "valueName": "pkg",
         "shouldDisplay": true,
         "kind": "option",
@@ -50,6 +52,7 @@
           "kind": "longWithSingleDash",
           "name": "target"
         },
+        "parsingStrategy": "default",
         "valueName": "target",
         "shouldDisplay": true,
         "kind": "option",

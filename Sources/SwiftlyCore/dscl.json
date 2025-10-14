@@ -16,6 +16,7 @@
           "kind": "long",
           "name": "datasource"
         },
+        "parsingStrategy": "default",
         "valueName": "datasource",
         "isOptional": true,
         "isRepeating": false,
@@ -32,6 +33,7 @@
         "shouldDisplay": true,
         "arguments": [
           {
+            "parsingStrategy": "default",
             "valueName": "path",
             "shouldDisplay": true,
             "kind": "positional",
@@ -39,6 +41,7 @@
             "isRepeating": false
           },
           {
+            "parsingStrategy": "default",
             "valueName": "key",
             "shouldDisplay": true,
             "kind": "positional",

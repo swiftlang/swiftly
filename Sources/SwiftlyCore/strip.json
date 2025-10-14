@@ -6,6 +6,7 @@
     "shouldDisplay": true,
     "arguments": [
       {
+        "parsingStrategy": "default",
         "valueName": "name",
         "isOptional": false,
         "isRepeating": true,

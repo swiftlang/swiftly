@@ -1,9 +1,9 @@
 import ArgumentParser
 import AsyncHTTPClient
 import Foundation
+import NIOFileSystem
 import SwiftlyCore
 import SystemPackage
-import NIOFileSystem
 
 #if os(macOS)
 import MacOSPlatform

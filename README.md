@@ -59,7 +59,12 @@ This command checks to see if there are new versions of swiftly itself and upgra
 
 ## Uninstalling swiftly
 
-Currently, only manual uninstallation is supported. If you need to uninstall swiftly, please follow the instructions below:
+swiftly can be safely removed with the following command:
+
+`swiftly self-uninstall`
+
+<details>
+<summary>If you want to do so manually, please follow the instructions below:</summary>
 
 NOTE: This will not uninstall any toolchains you have installed unless you do so manually with `swiftly uninstall all`.
 
@@ -75,6 +80,8 @@ NOTE: This will not uninstall any toolchains you have installed unless you do so
    ```
 
 4. Restart your shell and check you have correctly removed the swiftly environment.
+
+</details>
 
 ## Contributing
 

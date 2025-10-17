@@ -1,6 +1,7 @@
 import ArgumentParser
 import AsyncHTTPClient
 import Foundation
+import NIOFileSystem
 import SwiftlyCore
 import SystemPackage
 
@@ -16,7 +17,7 @@ let currentPlatform = MacOS()
 let currentPlatform = Linux()
 #endif
 
-typealias fs = FileSystem
+typealias fs = SwiftlyCore.FileSystem
 typealias sys = SystemCommand
 
 extension Runnable {
@@ -156,12 +157,14 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         guard libarchiveResponse.status == .ok else {
             throw Error(message: "Download failed with status: \(libarchiveResponse.status)")
         }
-        let buf = try await libarchiveResponse.body.collect(upTo: 20 * 1024 * 1024)
-        guard let contents = buf.getBytes(at: 0, length: buf.readableBytes) else {
-            throw Error(message: "Unable to read all of the bytes")
+
+        try await NIOFileSystem.FileSystem.shared.withFileHandle(forWritingAt: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz", options: .newFile(replaceExisting: true)) { fileHandle in
+            var pos: Int64 = 0
+
+            for try await buffer in libarchiveResponse.body {
+                pos += try await fileHandle.write(contentsOf: buffer, toAbsoluteOffset: pos)
+            }
         }
-        let data = Data(contents)
-        try data.write(to: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz")
 
         let libArchiveTarShaActual = try await sys.sha256sum(files: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz").output(currentPlatform)
         guard let libArchiveTarShaActual, libArchiveTarShaActual.starts(with: libArchiveTarSha) else {

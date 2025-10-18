@@ -138,7 +138,8 @@ let package = Package(
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ],
-            path: "Tools/build-swiftly-release"
+            path: "Tools/build-swiftly-release",
+            exclude: ["musl-clang"],
         ),
         .target(
             name: "LinuxPlatform",

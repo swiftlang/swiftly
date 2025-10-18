@@ -92,13 +92,13 @@ struct TestSwiftly: AsyncParsableCommand {
             Foundation.exit(2)
         }
 
-        guard case let swiftlyArchive = FilePath(swiftlyArchive) else { fatalError("") }
+        let swiftlyArchiveFile = FilePath(swiftlyArchive)
 
         print("Extracting swiftly release")
 #if os(Linux)
-        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchive)).run(currentPlatform, quiet: false)
+        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchiveFile)).run(currentPlatform, quiet: false)
 #elseif os(macOS)
-        try await sys.installer(.verbose, .pkg(swiftlyArchive), .target("CurrentUserHomeDirectory")).run(currentPlatform, quiet: false)
+        try await sys.installer(.verbose, .pkg(swiftlyArchiveFile), .target("CurrentUserHomeDirectory")).run(currentPlatform, quiet: false)
 #endif
 
 #if os(Linux)

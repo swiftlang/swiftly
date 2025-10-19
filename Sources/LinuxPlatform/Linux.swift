@@ -18,6 +18,7 @@ public struct Linux: Platform {
         .rhel9,
         .amazonlinux2,
         .debian12,
+        .gentoo,
     ]
 
     public init() {}
@@ -227,6 +228,25 @@ public struct Linux: Platform {
                 "gcc",
                 "libstdc++-12-dev",
             ]
+        case "gentoo":
+            [
+                "dev-vcs/git",
+                "app-arch/unzip",
+                "app-crypt/gnupg",
+                "net-misc/curl",
+                "dev-libs/libxml2",
+                "sys-libs/readline",
+                "dev-db/sqlite",
+                "sys-devel/binutils",
+                "sys-devel/gcc",
+                "sys-libs/glibc",
+                "dev-lang/python",
+                "sys-apps/util-linux",
+                "sys-libs/zlib",
+                "sys-libs/ncurses",
+                "dev-libs/icu",
+                "dev-util/pkgconf",
+            ]
         default:
             []
         }
@@ -250,6 +270,8 @@ public struct Linux: Platform {
             "yum"
         case "debian12":
             "apt-get"
+        case "gentoo":
+            "emerge"
         default:
             nil
         }
@@ -322,6 +344,10 @@ public struct Linux: Platform {
                 return false
             case "yum":
                 try self.runProgram("yum", "list", "installed", package, quiet: true)
+                return true
+            case "emerge":
+                // Use portage's qlist to check if package is installed
+                try self.runProgram("qlist", "-I", package, quiet: true)
                 return true
             default:
                 return true
@@ -586,6 +612,8 @@ public struct Linux: Platform {
             }
 
             return .rhel9
+        } else if id == "gentoo" || (idlike ?? "").contains("gentoo") {
+            return .gentoo
         } else if let pd = [
             PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2404, .debian12, .fedora39,
         ].first(where: { $0.name == id + versionID }) {

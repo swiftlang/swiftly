@@ -5,6 +5,12 @@ import SystemPackage
 import Testing
 
 @Suite struct InitTests {
+    @Test func migrationsHasCurrentSwiftlyVersion() async throws {
+        // If the current swiftly version isn't in the migration list then it should be added there to
+        // support future self updates.
+        #expect(!migrations.filter { $0.matches(SwiftlyCore.version) }.isEmpty)
+    }
+
     @Test(.testHome(), arguments: ["/bin/bash", "/bin/zsh", "/bin/fish"]) func initFresh(_ shell: String) async throws {
         // GIVEN: a fresh user account without swiftly installed
         try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))

@@ -128,7 +128,7 @@ struct Update: SwiftlyCommand {
         )
 
         try await Uninstall.execute(ctx, parameters.oldToolchain, &config, verbose: self.root.verbose)
-        await ctx.message("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
+        await ctx.message("Successfully updated \(parameters.oldToolchain) -> \(newToolchain)")
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {

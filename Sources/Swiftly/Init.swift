@@ -3,6 +3,30 @@ import Foundation
 import SwiftlyCore
 import SystemPackage
 
+public enum SwiftlyVersionMigration {
+    case exact(SwiftlyVersion)
+    case minor(SwiftlyVersion)
+
+    public func matches(_ version: SwiftlyVersion) -> Bool {
+        switch self {
+        case let .exact(v):
+            return version.major == v.major && version.minor == v.minor && version.patch == v.patch && version.suffix == v.suffix
+        case let .minor(v):
+            return version.major == v.major && version.minor == v.minor
+        }
+    }
+}
+
+public var migrations: [SwiftlyVersionMigration] {
+    [
+        .exact(.init(major: 0, minor: 4, patch: 0, suffix: "dev")),
+        .exact(.init(major: 0, minor: 4, patch: 0)),
+        .minor(.init(major: 1, minor: 0, patch: 0)),
+        .minor(.init(major: 1, minor: 1, patch: 0)),
+        .minor(.init(major: 1, minor: 2, patch: 0)),
+    ]
+}
+
 struct Init: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
         abstract: "Perform swiftly initialization into your user account."
@@ -44,15 +68,7 @@ struct Init: SwiftlyCommand {
 
         var config = try? await Config.load(ctx)
 
-        if var config, !overwrite &&
-            (
-                config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0, suffix: "dev") ||
-                    config.version == SwiftlyVersion(major: 0, minor: 4, patch: 0) ||
-                    (config.version.major == 1 && config.version.minor == 0) ||
-                    (config.version.major == 1 && config.version.minor == 1) ||
-                    (config.version.major == 1 && config.version.minor == 2)
-            )
-        {
+        if var config, !overwrite && !migrations.filter({ $0.matches(config.version) }).isEmpty {
             // This is a simple upgrade from the 0.4.0 pre-releases, or 1.x
 
             // Move our executable over to the correct place

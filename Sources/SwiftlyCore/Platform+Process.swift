@@ -103,11 +103,23 @@ extension Platform {
     public func runProgram(_ args: [String], quiet: Bool = false, env: [String: String]? = nil)
         async throws
     {
+        let environment: Subprocess.Environment = if let env {
+            .inherit.updating(
+                .init(
+                    uniqueKeysWithValues: env.map {
+                        (Subprocess.Environment.Key(stringLiteral: $0.key), Optional($0.value))
+                    }
+                )
+            )
+        } else {
+            .inherit
+        }
+
         if !quiet {
             let result = try await run(
                 .path("/usr/bin/env"),
                 arguments: .init(args),
-                environment: env != nil ? .inherit.updating(env ?? [:]) : .inherit,
+                environment: environment,
                 input: .fileDescriptor(.standardInput, closeAfterSpawningProcess: false),
                 output: .fileDescriptor(.standardOutput, closeAfterSpawningProcess: false),
                 error: .fileDescriptor(.standardError, closeAfterSpawningProcess: false),
@@ -120,7 +132,7 @@ extension Platform {
             let result = try await run(
                 .path("/usr/bin/env"),
                 arguments: .init(args),
-                environment: env != nil ? .inherit.updating(env ?? [:]) : .inherit,
+                environment: environment,
                 output: .discarded,
                 error: .discarded,
             )
@@ -152,10 +164,22 @@ extension Platform {
     public func runProgramOutput(_ program: String, _ args: [String], env: [String: String]? = nil)
         async throws -> String?
     {
+        let environment: Subprocess.Environment = if let env {
+            .inherit.updating(
+                .init(
+                    uniqueKeysWithValues: env.map {
+                        (Subprocess.Environment.Key(stringLiteral: $0.key), Optional($0.value))
+                    }
+                )
+            )
+        } else {
+            .inherit
+        }
+
         let result = try await run(
             .path("/usr/bin/env"),
             arguments: .init([program] + args),
-            environment: env != nil ? .inherit.updating(env ?? [:]) : .inherit,
+            environment: environment,
             output: .string(limit: 10 * 1024 * 1024, encoding: UTF8.self),
             error: .fileDescriptor(.standardError, closeAfterSpawningProcess: false)
         )

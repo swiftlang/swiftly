@@ -107,7 +107,7 @@ extension Platform {
             .inherit.updating(
                 .init(
                     uniqueKeysWithValues: env.map {
-                        (Subprocess.Environment.Key(stringLiteral: $0.key), Optional($0.value))
+                        (Subprocess.Environment.Key(stringLiteral: $0.key), $0.value)
                     }
                 )
             )
@@ -168,7 +168,7 @@ extension Platform {
             .inherit.updating(
                 .init(
                     uniqueKeysWithValues: env.map {
-                        (Subprocess.Environment.Key(stringLiteral: $0.key), Optional($0.value))
+                        (Subprocess.Environment.Key(stringLiteral: $0.key), $0.value)
                     }
                 )
             )

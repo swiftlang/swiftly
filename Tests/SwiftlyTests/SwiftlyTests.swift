@@ -161,6 +161,27 @@ extension Trait where Self == MockedSwiftlyVersionTrait {
     static func mockedSwiftlyVersion(_ name: String = "testHome") -> Self { Self(name) }
 }
 
+struct WithShellTrait: TestTrait, TestScoping {
+    let shell: String
+
+    init(_ shell: String) {
+        self.shell = shell
+    }
+
+    func provideScope(for _: Test, testCase _: Test.Case?, performing function: @Sendable () async throws -> Void) async throws {
+        var ctx = SwiftlyTests.ctx
+        ctx.mockedShell = self.shell
+        try await SwiftlyTests.$ctx.withValue(ctx) {
+            try await function()
+        }
+    }
+}
+
+extension Trait where Self == WithShellTrait {
+    /// Run the test with the provided shell.
+    static func withShell(_ shell: String) -> Self { Self(shell) }
+}
+
 struct MockHomeToolchainsTrait: TestTrait, TestScoping {
     var name: String = "testHome"
     var toolchains: Set<ToolchainVersion> = .allToolchains()
@@ -237,9 +258,11 @@ public enum SwiftlyTests {
         try await cmd.run(Self.ctx)
     }
 
+    public struct NoError: Error {}
+
     /// Run this command, using the provided input as the stdin (in lines). Returns an array of captured
     /// output lines.
-    static func runWithMockedIO<T: SwiftlyCommand>(_ commandType: T.Type, _ arguments: [String], quiet: Bool = false, input: [String]? = nil, format: SwiftlyCore.OutputFormat = .text) async throws -> [String] {
+    static func runWithMockedIO<T: SwiftlyCommand, E: Error>(_ commandType: T.Type, _ arguments: [String], quiet: Bool = false, input: [String]? = nil, format: SwiftlyCore.OutputFormat = .text, throws expectedError: E.Type = NoError.self) async throws -> [String] {
         let handler = TestOutputHandler(quiet: quiet)
         let provider: (any InputProvider)? = if let input {
             TestInputProvider(lines: input)
@@ -263,7 +286,13 @@ public enum SwiftlyTests {
             )
         }
 
-        try await cmd.run(ctx)
+        if expectedError != NoError.self {
+            try await #expect(throws: expectedError) {
+                try await cmd.run(ctx)
+            }
+        } else {
+            try await cmd.run(ctx)
+        }
 
         return await handler.lines
     }
@@ -336,6 +365,7 @@ public enum SwiftlyTests {
                 if cleanBinDir {
                     try await fs.remove(atPath: Swiftly.currentPlatform.swiftlyBinDir(Self.ctx))
                 }
+                throw error
             }
         }
     }

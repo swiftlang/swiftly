@@ -1,6 +1,7 @@
 import ArgumentParser
 import AsyncHTTPClient
 import Foundation
+import NIOFileSystem
 import SwiftlyCore
 import SystemPackage
 
@@ -16,7 +17,7 @@ let currentPlatform = MacOS()
 let currentPlatform = Linux()
 #endif
 
-typealias fs = FileSystem
+typealias fs = SwiftlyCore.FileSystem
 typealias sys = SystemCommand
 
 extension Runnable {
@@ -137,8 +138,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try await sys.swift().package().reset().run(currentPlatform)
 
         // Build a specific version of libarchive with a check on the tarball's SHA256
-        let libArchiveVersion = "3.7.9"
-        let libArchiveTarSha = "aa90732c5a6bdda52fda2ad468ac98d75be981c15dde263d7b5cf6af66fd009f"
+        let libArchiveVersion = "3.8.1"
+        let libArchiveTarSha = "bde832a5e3344dc723cfe9cc37f8e54bde04565bfe6f136bc1bd31ab352e9fab"
 
         let buildCheckoutsDir = fs.cwd / ".build/checkouts"
         let libArchivePath = buildCheckoutsDir / "libarchive-\(libArchiveVersion)"
@@ -150,17 +151,20 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try? await fs.remove(atPath: libArchivePath)
 
         // Download libarchive
+        let httpExecutor = HTTPRequestExecutorImpl()
         let libarchiveRequest = HTTPClientRequest(url: "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
-        let libarchiveResponse = try await HTTPClient.shared.execute(libarchiveRequest, timeout: .seconds(60))
+        let libarchiveResponse = try await httpExecutor.httpClient.execute(libarchiveRequest, timeout: .seconds(60))
         guard libarchiveResponse.status == .ok else {
             throw Error(message: "Download failed with status: \(libarchiveResponse.status)")
         }
-        let buf = try await libarchiveResponse.body.collect(upTo: 20 * 1024 * 1024)
-        guard let contents = buf.getBytes(at: 0, length: buf.readableBytes) else {
-            throw Error(message: "Unable to read all of the bytes")
+
+        try await NIOFileSystem.FileSystem.shared.withFileHandle(forWritingAt: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz", options: .newFile(replaceExisting: true)) { fileHandle in
+            var pos: Int64 = 0
+
+            for try await buffer in libarchiveResponse.body {
+                pos += try await fileHandle.write(contentsOf: buffer, toAbsoluteOffset: pos)
+            }
         }
-        let data = Data(contents)
-        try data.write(to: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz")
 
         let libArchiveTarShaActual = try await sys.sha256sum(files: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz").output(currentPlatform)
         guard let libArchiveTarShaActual, libArchiveTarShaActual.starts(with: libArchiveTarSha) else {
@@ -180,8 +184,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         }
 
         let swiftVersion = swiftVerMatch.output.1
-
-        let httpExecutor = HTTPRequestExecutorImpl()
         guard let swiftRelease = (try await httpExecutor.getReleaseToolchains()).first(where: { $0.name == swiftVersion }) else {
             throw Error(message: "Unable to find swift release using swift.org API: \(swiftVersion)")
         }

@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install [<version>] [--use] [--verify|no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--format=<format>] [--assume-yes] [--verbose] [--version] [--help]
+swiftly install [<version>] [--use] [--verify] [--no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--format=<format>] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **version:**
@@ -67,9 +67,14 @@ NOTE: Swiftly downloads toolchains to a temporary file that it later cleans duri
 *Mark the newly installed toolchain as in-use.*
 
 
-**--verify|no-verify:**
+**--verify:**
 
-*Verify the toolchain's PGP signature before proceeding with installation.*
+*Verify (or not) the toolchain's PGP signature before proceeding with installation.*
+
+
+**--no-verify:**
+
+*Verify (or not) the toolchain's PGP signature before proceeding with installation.*
 
 
 **--post-install-file=\<post-install-file\>:**
@@ -252,21 +257,25 @@ macOS ONLY: There is a special selector for swiftly to use your Xcode toolchain.
 Remove an installed toolchain.
 
 ```
-swiftly uninstall <toolchain> [--assume-yes] [--verbose] [--version] [--help]
+swiftly uninstall <toolchains>... [--assume-yes] [--verbose] [--version] [--help]
 ```
 
-**toolchain:**
+**toolchains:**
 
 *The toolchain(s) to uninstall.*
 
 
-The toolchain selector provided determines which toolchains to uninstall. Specific toolchains can be uninstalled by using their full names as the selector, for example a full stable release version with patch (a.b.c):
+The list of toolchain selectors determines which toolchains to uninstall. Specific toolchains can be uninstalled by using their full names as the selector, for example a full stable release version with patch (a.b.c):
 
     $ swiftly uninstall 5.2.1
 
 Or a full snapshot name with date (a.b-snapshot-YYYY-mm-dd):
 
     $ swiftly uninstall 5.7-snapshot-2022-06-20
+
+Multiple toolchain selectors can uninstall multiple toolchains at once:
+
+    $ swiftly uninstall 5.2.1 6.0.1
 
 Less specific selectors can be used to uninstall multiple toolchains at once. For instance, the patch version can be omitted to uninstall all toolchains associated with a given minor version release:
 
@@ -361,7 +370,7 @@ The installed snapshots for a given development branch can be listed by specifyi
 Update an installed toolchain to a newer version.
 
 ```
-swiftly update [<toolchain>] [--assume-yes] [--verbose] [--verify|no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly update [<toolchain>] [--assume-yes] [--verbose] [--verify] [--no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **toolchain:**
@@ -412,9 +421,14 @@ A specific snapshot toolchain can be updated by including the date:
 *Enable verbose reporting from swiftly*
 
 
-**--verify|no-verify:**
+**--verify:**
 
-*Verify the toolchain's PGP signature before proceeding with installation.*
+*Verify (or not) the toolchain's PGP signature before proceeding with installation.*
+
+
+**--no-verify:**
+
+*Verify (or not) the toolchain's PGP signature before proceeding with installation.*
 
 
 **--post-install-file=\<post-install-file\>:**
@@ -578,6 +592,36 @@ The script will receive the argument '+abcde' followed by '+xyz'.
 
 
 
+## self-uninstall
+
+Uninstall swiftly itself.
+
+```
+swiftly self-uninstall [--assume-yes] [--verbose] [--version] [--help]
+```
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
+
+**--version:**
+
+*Show the version.*
+
+
+**--help:**
+
+*Show help information.*
+
+
+
+
 ## link
 
 Link swiftly so it resumes management of the active toolchain.
@@ -652,6 +696,24 @@ Unlinks swiftly until swiftly is linked again with:
 **--help:**
 
 *Show help information.*
+
+
+
+
+## help
+
+Show subcommand help information.
+
+```
+swiftly help [<subcommands>...]  [--version]
+```
+
+**subcommands:**
+
+
+**--version:**
+
+*Show the version.*
 
 
 

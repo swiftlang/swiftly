@@ -21,7 +21,7 @@ swiftly --generate-completion-script <shell>
         Otherwise, you'll need to add a path for completion scripts to your function path, and turn on completion script autoloading. First, add these lines to ~/.zshrc:
 
         ```
-        fpath=(~/.zsh/completion $fpath)
+        fpath=(~/.zsh/completions $fpath)
         autoload -U compinit
         compinit
         ```
@@ -29,7 +29,7 @@ swiftly --generate-completion-script <shell>
         Next, create the completion directory and add the swiftly completions to it:
 
         ```
-        mkdir -p ~/.zsh/completion && swiftly --generate-completion-script zsh > ~/.zsh/completions/swiftly
+        mkdir -p ~/.zsh/completions && swiftly --generate-completion-script zsh > ~/.zsh/completions/_swiftly
         ```
     }
 

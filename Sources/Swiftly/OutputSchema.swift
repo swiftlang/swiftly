@@ -249,7 +249,7 @@ struct InstallToolchainInfo: OutputData {
         let versionContainer = try container.nestedContainer(
             keyedBy: ToolchainVersionCodingKeys.self, forKey: .version
         )
-        let name = try versionContainer.decode(String.self, forKey: .name)
+        _ = try versionContainer.decode(String.self, forKey: .name)
 
         switch try versionContainer.decode(String.self, forKey: .type) {
         case "stable":

@@ -62,7 +62,7 @@ struct Update: SwiftlyCommand {
 
     @OptionGroup var root: GlobalOptions
 
-    @Flag(inversion: .prefixedNo, help: "Verify the toolchain's PGP signature before proceeding with installation.")
+    @Flag(inversion: .prefixedNo, help: "Verify (or not) the toolchain's PGP signature before proceeding with installation.")
     var verify = true
 
     @Option(help: ArgumentHelp(
@@ -128,7 +128,7 @@ struct Update: SwiftlyCommand {
         )
 
         try await Uninstall.execute(ctx, parameters.oldToolchain, &config, verbose: self.root.verbose)
-        await ctx.message("Successfully updated \(parameters.oldToolchain) ⟶ \(newToolchain)")
+        await ctx.message("Successfully updated \(parameters.oldToolchain) -> \(newToolchain)")
 
         if let postInstallScript {
             guard let postInstallFile = self.postInstallFile else {
@@ -192,7 +192,7 @@ struct Update: SwiftlyCommand {
             default:
                 fatalError("unreachable")
             }
-        case let .xcode:
+        case .xcode:
             throw SwiftlyError(message: "xcode cannot be updated from swiftly")
         }
     }

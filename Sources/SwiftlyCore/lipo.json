@@ -6,9 +6,10 @@
     "shouldDisplay": true,
     "arguments": [
       {
+        "parsingStrategy": "default",
         "valueName": "input_file",
         "isOptional": false,
-        "isRepeating": true, 
+        "isRepeating": true,
         "kind": "positional",
         "shouldDisplay": true
       }
@@ -32,6 +33,7 @@
               "kind": "longWithSingleDash",
               "name": "output"
             },
+            "parsingStrategy": "default",
             "valueName": "output",
             "shouldDisplay": true,
             "kind": "option",

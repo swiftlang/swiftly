@@ -1,5 +1,8 @@
 name: Pull Request
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     types: [opened, reopened, synchronize]
@@ -39,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ["ubuntu:20.04", "ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
+        container: ["ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
     container:
       image: ${{ matrix.container }}
     steps:
@@ -48,9 +51,9 @@ jobs:
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build and Test
-        # UBI 9 and Ubuntu 20.04 - See https://github.com/swiftlang/swift/issues/80908
+        # UBI 9 - See https://github.com/swiftlang/swift/issues/80908
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80909
-        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swift build --build-tests; elif [[ "${{ matrix.container }}" == "ubuntu:20.04" ]]; then swift build --build-tests; else swift test; fi'
+        run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swift build --build-tests; else swift test; fi'
 
   releasebuildcheck:
     name: Release Build Check / Linux
@@ -178,7 +181,7 @@ jobs:
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Generate Swiftly CLI Reference and Check for Differences
-        run: swift package plugin --allow-writing-to-package-directory generate-docs-reference && bash -c 'git config --global --add safe.directory $(pwd)' && git diff --exit-code Documentation/SwiftlyDocs.docc/swiftly-cli-reference.md || (echo "The documentation hasn't been updated with the latest swiftly command-line reference. Please run `swift package plugin generate-docs-reference` and commit/push the changes."; exit 1)
+        run: swift package plugin --allow-writing-to-package-directory generate-docs-reference && bash -c 'git config --global --add safe.directory $(pwd)' && git diff --exit-code Documentation/SwiftlyDocs.docc/swiftly-cli-reference.md || (echo "The documentation hasn't been updated with the latest swiftly command-line reference. Please run 'swift package plugin generate-docs-reference' and commit/push the changes."; exit 1)
       - name: Generate Documentation Set
         run: swift package --allow-writing-to-directory .build/docs generate-documentation --target SwiftlyDocs --output-path .build/docs
       - name: Upload Documentation Artifacts

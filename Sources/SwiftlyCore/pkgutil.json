@@ -16,6 +16,7 @@
           "kind": "long",
           "name": "verbose"
         },
+        "parsingStrategy": "default",
         "valueName": "verbose",
         "shouldDisplay": true,
         "kind": "flag",
@@ -33,6 +34,7 @@
           "kind": "long",
           "name": "volume"
         },
+        "parsingStrategy": "default",
         "valueName": "volume",
         "shouldDisplay": true,
         "kind": "option",
@@ -49,6 +51,7 @@
         "shouldDisplay": true,
         "arguments": [
           {
+            "parsingStrategy": "default",
             "valueName": "pkg-path",
             "shouldDisplay": true,
             "kind": "positional",
@@ -65,6 +68,7 @@
         "shouldDisplay": true,
         "arguments": [
           {
+            "parsingStrategy": "default",
             "valueName": "pkg-path",
             "shouldDisplay": true,
             "kind": "positional",
@@ -72,6 +76,7 @@
             "isRepeating": false
           },
           {
+            "parsingStrategy": "default",
             "valueName": "dir-path",
             "shouldDisplay": true,
             "kind": "positional",
@@ -88,6 +93,7 @@
         "shouldDisplay": true,
         "arguments": [
           {
+            "parsingStrategy": "default",
             "valueName": "pkg-id",
             "shouldDisplay": true,
             "kind": "positional",
@@ -95,7 +101,7 @@
             "isRepeating": false
           }
         ]
-      },
+      }
     ]
   }
 }

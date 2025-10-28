@@ -31,7 +31,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.7.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.2"),
         .package(url: "https://github.com/apple/swift-system", from: "1.4.2"),
-        .package(url: "https://github.com/swiftlang/swift-subprocess", revision: "afc1f734feb29c3a1ebbd97cc1fe943f8e5d80e5"),
+        .package(url: "https://github.com/swiftlang/swift-subprocess", revision: "0.2.1"),
         // This dependency provides the correct version of the formatter so that you can run `swift run swiftformat Package.swift Plugins/ Sources/ Tests/`
         .package(url: "https://github.com/nicklockwood/SwiftFormat", exact: "0.49.18"),
     ],
@@ -139,6 +139,7 @@ let package = Package(
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "_NIOFileSystem", package: "swift-nio"),
             ],
             path: "Tools/build-swiftly-release"
         ),

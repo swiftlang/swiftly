@@ -65,7 +65,8 @@ struct SelfUpdate: SwiftlyCommand {
             fatalError("Unsupported OS")
 #endif
 
-            guard version > SwiftlyCore.version else {
+            // Allow newer or identical versions to help self-update testing of a release
+            guard version >= SwiftlyCore.version else {
                 await ctx.print("Self-update does not support downgrading to an older version or re-installing the current version. Current version is \(SwiftlyCore.version) and requested version is \(version).")
                 return SwiftlyCore.version
             }

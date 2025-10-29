@@ -278,11 +278,12 @@ struct GenerateCommandModels: AsyncParsableCommand {
 
         let configFunc: String
         if path.count == 0 {
+            let genArgs = options.asArgs + vars.asArgs
             configFunc = """
             public func config() -> Configuration {
-                var genArgs: [String] = []
+                \(genArgs.isEmpty ? "let" : "var") genArgs: [String] = []
 
-                \((options.asArgs + vars.asArgs).joined(separator: "\n" + indent(1)))
+                \(genArgs.joined(separator: "\n" + indent(1)))
 
                 return Configuration(
                     executable: self.executable,

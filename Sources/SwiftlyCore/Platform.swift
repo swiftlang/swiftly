@@ -46,6 +46,9 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
     public static let debian12 = PlatformDefinition(
         name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"
     )
+    public static let gentoo = PlatformDefinition(
+        name: "gentoo", nameFull: "gentoo", namePretty: "Gentoo Linux"
+    )
 }
 
 public struct RunProgramError: Swift.Error {

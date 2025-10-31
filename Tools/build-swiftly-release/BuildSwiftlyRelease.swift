@@ -25,7 +25,7 @@ extension Runnable {
     // Runs the command while echoing the full command-line to stdout for logging and reproduction
     func runEcho(environment: Environment = .inherit, quiet: Bool = false) async throws {
         let config = self.config()
-        if !quiet { print("\(config)") }
+        if !quiet { print("\(config.executable) \(config.arguments)") }
         try await self.run(environment: environment, quiet: quiet)
     }
 }
@@ -181,7 +181,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             .name("swift"),
             arguments: ["--version"]
         )
-        print("\(swiftVersionCmd)")
+        print("\(swiftVersionCmd.executable) \(swiftVersionCmd.arguments)")
 
         let swiftVerOutput = (try await Subprocess.run(swiftVersionCmd, output: .string(limit: 1024))).standardOutput ?? ""
         guard let swiftVerMatch = try swiftVerRegex.firstMatch(in: swiftVerOutput) else {
@@ -236,7 +236,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             ],
             environment: customEnv,
         )
-        print("\(configCmd)")
+        print("\(configCmd.executable) \(configCmd.arguments)")
 
         let result = try await Subprocess.run(
             configCmd,

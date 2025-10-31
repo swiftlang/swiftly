@@ -98,6 +98,7 @@ public struct Linux: Platform {
                 "tzdata",
                 "git",
                 "unzip",
+                "zip",
                 "pkg-config",
             ]
         case "ubuntu2004":
@@ -105,6 +106,7 @@ public struct Linux: Platform {
                 "binutils",
                 "git",
                 "unzip",
+                "zip",
                 "gnupg2",
                 "libc6-dev",
                 "libcurl4-openssl-dev",
@@ -124,6 +126,7 @@ public struct Linux: Platform {
                 "binutils",
                 "git",
                 "unzip",
+                "zip",
                 "gnupg2",
                 "libc6-dev",
                 "libcurl4-openssl-dev",
@@ -144,6 +147,7 @@ public struct Linux: Platform {
                 "binutils",
                 "git",
                 "unzip",
+                "zip",
                 "gnupg2",
                 "libc6-dev",
                 "libcurl4-openssl-dev",
@@ -165,6 +169,7 @@ public struct Linux: Platform {
                 "gcc",
                 "git",
                 "unzip",
+                "zip",
                 "glibc-static",
                 "gzip",
                 "libbsd",
@@ -201,6 +206,7 @@ public struct Linux: Platform {
                 "gcc",
                 "git",
                 "unzip",
+                "zip",
                 "libcurl-devel",
                 "libedit-devel",
                 "libicu-devel",
@@ -227,6 +233,8 @@ public struct Linux: Platform {
                 "git",
                 "gcc",
                 "libstdc++-12-dev",
+                "unzip",
+                "zip",
             ]
         default:
             []

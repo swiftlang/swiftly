@@ -141,7 +141,8 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "_NIOFileSystem", package: "swift-nio"),
             ],
-            path: "Tools/build-swiftly-release"
+            path: "Tools/build-swiftly-release",
+            exclude: ["musl-clang"],
         ),
         .target(
             name: "LinuxPlatform",

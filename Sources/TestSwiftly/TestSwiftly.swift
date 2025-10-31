@@ -4,10 +4,6 @@ import Subprocess
 import SwiftlyCore
 import SystemPackage
 
-#if os(macOS)
-import System
-#endif
-
 #if os(Linux)
 import LinuxPlatform
 #elseif os(macOS)
@@ -97,7 +93,7 @@ struct TestSwiftly: AsyncParsableCommand {
             Foundation.exit(2)
         }
 
-        guard case let swiftlyArchive = SystemPackage.FilePath(swiftlyArchive) else { fatalError("") }
+        guard case let swiftlyArchive = FilePath(swiftlyArchive) else { fatalError("") }
 
         print("Extracting swiftly release")
 #if os(Linux)
@@ -107,14 +103,14 @@ struct TestSwiftly: AsyncParsableCommand {
 #endif
 
 #if os(Linux)
-        let extractedSwiftly = SystemPackage.FilePath("./swiftly")
+        let extractedSwiftly = FilePath("./swiftly")
 #elseif os(macOS)
-        let extractedSwiftly = System.FilePath((fs.home / ".swiftly/bin/swiftly").string)
+        let extractedSwiftly = FilePath((fs.home / ".swiftly/bin/swiftly").string)
 #endif
 
         var env: Environment = .inherit
-        let shell = SystemPackage.FilePath(try await currentPlatform.getShell())
-        var customLoc: SystemPackage.FilePath?
+        let shell = FilePath(try await currentPlatform.getShell())
+        var customLoc: FilePath?
 
         if self.customLocation {
             customLoc = fs.mktemp()
@@ -184,7 +180,7 @@ struct TestSwiftly: AsyncParsableCommand {
         try await self.testSelfUninstall(customLoc: customLoc, shell: shell, env: env)
     }
 
-    private func testSelfUninstall(customLoc: SystemPackage.FilePath?, shell: SystemPackage.FilePath, env: Environment) async throws {
+    private func testSelfUninstall(customLoc: FilePath?, shell: FilePath, env: Environment) async throws {
         if let customLoc = customLoc {
             // Test self-uninstall for custom location
             try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swiftly self-uninstall --assume-yes")).run(environment: env)
@@ -200,7 +196,7 @@ struct TestSwiftly: AsyncParsableCommand {
         }
     }
 
-    private func verifyCustomLocationCleanup(customLoc: SystemPackage.FilePath) async throws {
+    private func verifyCustomLocationCleanup(customLoc: FilePath) async throws {
         print("Verifying cleanup for custom location at \(customLoc)")
 
         // Check that swiftly binary is removed
@@ -228,7 +224,7 @@ struct TestSwiftly: AsyncParsableCommand {
         print("✓ Custom location cleanup verification passed")
     }
 
-    private func verifyDefaultLocationCleanup(shell: SystemPackage.FilePath, env: Environment) async throws {
+    private func verifyDefaultLocationCleanup(shell: FilePath, env: Environment) async throws {
         print("Verifying cleanup for default location")
 
         let swiftlyHome = fs.home / ".swiftly"
@@ -273,7 +269,7 @@ struct TestSwiftly: AsyncParsableCommand {
     private func verifyProfileCleanup() async throws {
         print("Verifying shell profile cleanup")
 
-        let profilePaths: [SystemPackage.FilePath] = [
+        let profilePaths: [FilePath] = [
             fs.home / ".zprofile",
             fs.home / ".bash_profile",
             fs.home / ".bash_login",

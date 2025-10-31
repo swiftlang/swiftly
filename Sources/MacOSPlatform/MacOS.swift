@@ -1,7 +1,6 @@
 import Foundation
 import Subprocess
 import SwiftlyCore
-import System
 import SystemPackage
 
 typealias sys = SwiftlyCore.SystemCommand
@@ -19,21 +18,21 @@ public struct SwiftPkgInfo: Codable {
 public struct MacOS: Platform {
     public init() {}
 
-    public var defaultSwiftlyHomeDir: SystemPackage.FilePath {
+    public var defaultSwiftlyHomeDir: FilePath {
         fs.home / ".swiftly"
     }
 
-    public var defaultToolchainsDirectory: SystemPackage.FilePath {
+    public var defaultToolchainsDirectory: FilePath {
         fs.home / "Library/Developer/Toolchains"
     }
 
-    public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> SystemPackage.FilePath {
+    public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "bin" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { FilePath($0) }
             ?? fs.home / ".swiftly/bin"
     }
 
-    public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> SystemPackage.FilePath {
+    public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "Toolchains" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { FilePath($0) }
             // This is where the installer will put the toolchains, and where Xcode can find them
@@ -57,7 +56,7 @@ public struct MacOS: Platform {
     }
 
     public func install(
-        _ ctx: SwiftlyCoreContext, from tmpFile: SystemPackage.FilePath, version: ToolchainVersion, verbose: Bool
+        _ ctx: SwiftlyCoreContext, from tmpFile: FilePath, version: ToolchainVersion, verbose: Bool
     ) async throws {
         guard try await fs.exists(atPath: tmpFile) else {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
@@ -110,7 +109,7 @@ public struct MacOS: Platform {
         }
     }
 
-    public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: SystemPackage.FilePath) async throws {
+    public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: FilePath) async throws {
         guard try await fs.exists(atPath: archive) else {
             throw SwiftlyError(message: "\(archive) doesn't exist")
         }
@@ -144,7 +143,13 @@ public struct MacOS: Platform {
             try await sys.tar(.directory(installDir)).extract(.verbose, .archive(payload)).run(quiet: false)
         }
 
-        _ = try await run(.path(System.FilePath((userHomeDir / ".swiftly/bin/swiftly").string)), arguments: ["init"], input: .standardInput, output: .standardOutput, error: .standardError)
+        let config = Configuration(
+            .path(FilePath((userHomeDir / ".swiftly/bin/swiftly").string)), arguments: ["init"]
+        )
+        let result = try await run(config, input: .standardInput, output: .standardOutput, error: .standardError)
+        if !result.terminationStatus.isSuccess {
+            throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
+        }
     }
 
     public func uninstall(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, verbose: Bool)
@@ -174,14 +179,14 @@ public struct MacOS: Platform {
     }
 
     public func verifyToolchainSignature(
-        _: SwiftlyCoreContext, toolchainFile _: ToolchainFile, archive _: SystemPackage.FilePath, verbose _: Bool
+        _: SwiftlyCoreContext, toolchainFile _: ToolchainFile, archive _: FilePath, verbose _: Bool
     ) async throws {
         // No signature verification is required on macOS since the pkg files have their own signing
         //  mechanism and the swift.org downloadables are trusted by stock macOS installations.
     }
 
     public func verifySwiftlySignature(
-        _: SwiftlyCoreContext, archiveDownloadURL _: URL, archive _: SystemPackage.FilePath, verbose _: Bool
+        _: SwiftlyCoreContext, archiveDownloadURL _: URL, archive _: FilePath, verbose _: Bool
     ) async throws {
         // No signature verification is required on macOS since the pkg files have their own signing
         //  mechanism and the swift.org downloadables are trusted by stock macOS installations.
@@ -203,11 +208,11 @@ public struct MacOS: Platform {
         return "/bin/zsh"
     }
 
-    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> SystemPackage.FilePath
+    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
     {
         if toolchain == .xcodeVersion {
             // Print the toolchain location with the help of xcrun
-            if let xcrunLocation = try? await run(.path(SystemPackage.FilePath("/usr/bin/xcrun")), arguments: ["-f", "swift"], output: .string(limit: 1024 * 10)).standardOutput {
+            if let xcrunLocation = try? await run(.path(FilePath("/usr/bin/xcrun")), arguments: ["-f", "swift"], output: .string(limit: 1024 * 10)).standardOutput {
                 return FilePath(xcrunLocation.replacingOccurrences(of: "\n", with: "")).removingLastComponent().removingLastComponent().removingLastComponent()
             }
         }

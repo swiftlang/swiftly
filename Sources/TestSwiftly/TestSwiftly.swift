@@ -93,13 +93,13 @@ struct TestSwiftly: AsyncParsableCommand {
             Foundation.exit(2)
         }
 
-        guard case let swiftlyArchive = FilePath(swiftlyArchive) else { fatalError("") }
+        let swiftlyArchiveFile = FilePath(swiftlyArchive)
 
         print("Extracting swiftly release")
 #if os(Linux)
-        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchive)).run()
+        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchiveFile)).run()
 #elseif os(macOS)
-        try await sys.installer(.verbose, .pkg(swiftlyArchive), .target("CurrentUserHomeDirectory")).run()
+        try await sys.installer(.verbose, .pkg(swiftlyArchiveFile), .target("CurrentUserHomeDirectory")).run()
 #endif
 
 #if os(Linux)
@@ -160,7 +160,11 @@ struct TestSwiftly: AsyncParsableCommand {
 
         if NSUserName() == "root" {
             if try await fs.exists(atPath: "./post-install.sh") {
-                _ = try await Subprocess.run(.path(shell), arguments: ["./post-install.sh"], input: .standardInput, output: .standardOutput, error: .standardError)
+                let config = Configuration(.path(shell), arguments: ["./post-install.sh"])
+                let result = try await Subprocess.run(config, input: .standardInput, output: .standardOutput, error: .standardError)
+                if !result.terminationStatus.isSuccess {
+                    throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
+                }
             }
             swiftReady = true
         } else if try await fs.exists(atPath: "./post-install.sh") {

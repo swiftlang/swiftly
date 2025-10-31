@@ -10,7 +10,6 @@ import Testing
 
 #if os(macOS)
 import MacOSPlatform
-import System
 #endif
 
 import AsyncHTTPClient
@@ -73,7 +72,7 @@ extension Config {
 
 extension SwiftlyCoreContext {
     public init(
-        mockedHomeDir: SystemPackage.FilePath?,
+        mockedHomeDir: FilePath?,
         httpRequestExecutor: HTTPRequestExecutor,
         outputHandler: (any OutputHandler)?,
         inputProvider: (any InputProvider)?,
@@ -284,7 +283,7 @@ public enum SwiftlyTests {
         return await handler.lines
     }
 
-    static func getTestHomePath(name: String) -> SystemPackage.FilePath {
+    static func getTestHomePath(name: String) -> FilePath {
         fs.tmp / "swiftly-tests-\(name)-\(UUID())"
     }
 
@@ -461,7 +460,7 @@ public enum SwiftlyTests {
     }
 
     /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given FilePath.
-    static func getMockedToolchainVersion(at path: SystemPackage.FilePath) throws -> ToolchainVersion {
+    static func getMockedToolchainVersion(at path: FilePath) throws -> ToolchainVersion {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: path.string)
 
@@ -512,7 +511,7 @@ public actor TestInputProvider: SwiftlyCore.InputProvider {
 
 /// Wrapper around a `swift` executable used to execute swift commands.
 public struct SwiftExecutable {
-    public let path: SystemPackage.FilePath
+    public let path: FilePath
 
     private static func stableRegex() -> Regex<(Substring, Substring)> {
         try! Regex("swift-([^-]+)-RELEASE")

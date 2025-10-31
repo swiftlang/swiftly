@@ -36,6 +36,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
 
         var allCmds = """
         import SystemPackage
+        import Subprocess
 
 
         """
@@ -276,17 +277,36 @@ struct GenerateCommandModels: AsyncParsableCommand {
             """
         }
 
-        let configFunc: String
+        let argumentsFunc: String
         if path.count == 0 {
-            configFunc = """
-            public func config() -> Configuration {
+            argumentsFunc = """
+            public func commandArgs() -> [String] {
                 var genArgs: [String] = []
 
                 \((options.asArgs + vars.asArgs).joined(separator: "\n" + indent(1)))
 
+                return genArgs
+            }
+            """.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n" + indent(1))
+        } else {
+            argumentsFunc = """
+            public func commandArgs() -> [String] {
+                var genArgs: [String] = self.parent.commandArgs() + ["\(execName)"]
+
+                \((options.asArgs + vars.asArgs).joined(separator: "\n" + indent(1)))
+
+                return genArgs
+            }
+            """.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n" + indent(1))
+        }
+
+        let configFunc: String
+        if path.count == 0 {
+            configFunc = """
+            public func config() -> Configuration {
                 return Configuration(
                     executable: self.executable,
-                    arguments: Arguments(genArgs),
+                    arguments: Arguments(self.commandArgs()),
                     environment: .inherit
                 )
             }
@@ -296,13 +316,7 @@ struct GenerateCommandModels: AsyncParsableCommand {
             public func config() -> Configuration {
                 var c = self.parent.config()
 
-                var genArgs = c.arguments.storage.map(\\.description)
-
-                genArgs.append("\(execName)")
-
-                \((options.asArgs + vars.asArgs).joined(separator: "\n" + indent(1)))
-
-                c.arguments = .init(genArgs)
+                c.arguments = .init(self.commandArgs())
 
                 return c
             }
@@ -336,6 +350,8 @@ struct GenerateCommandModels: AsyncParsableCommand {
             public init(\(([path.count == 0 ? "executable: Executable" : "parent: \(command.superCommands!.last!)Command"] + options.asSignature(structName) + vars.asSignature).joined(separator: ", "))) {
                 \(([path.count == 0 ? "self.executable = executable" : "self.parent = parent"] + options.asInitialization + vars.asInitializations).joined(separator: "\n" + indent(2)))
             }
+
+            \(argumentsFunc)
 
             \(configFunc)
 

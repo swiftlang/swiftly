@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import Subprocess
 import SwiftlyCore
 
 @main
@@ -67,11 +68,24 @@ public enum Proxy {
             guard ProcessInfo.processInfo.environment["SWIFTLY_PROXY_IN_PROGRESS"] == nil else {
                 throw SwiftlyError(message: "Circular swiftly proxy invocation")
             }
-            let env = ["SWIFTLY_PROXY_IN_PROGRESS": "1"]
 
-            try await Swiftly.currentPlatform.proxy(ctx, toolchain, binName, Array(CommandLine.arguments[1...]), env)
+            let env = try await Swiftly.currentPlatform.proxyEnvironment(ctx, env: .inherit, toolchain: toolchain)
+
+            _ = try await Subprocess.run(
+                .name(binName),
+                arguments: Arguments(Array(CommandLine.arguments[1...])),
+                environment: env.updating(["SWIFTLY_PROXY_IN_PROGRESS": "1"]),
+                input: .standardInput,
+                output: .standardOutput,
+                error: .standardError
+            )
         } catch let terminated as RunProgramError {
-            exit(terminated.exitCode)
+            switch terminated.terminationStatus {
+            case let .exited(code):
+                exit(code)
+            case .unhandledException:
+                exit(1)
+            }
         } catch let error as SwiftlyError {
             await ctx.message(error.message)
             exit(1)

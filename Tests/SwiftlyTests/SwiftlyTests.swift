@@ -2,6 +2,7 @@ import _StringProcessing
 import ArgumentParser
 import Foundation
 import OpenAPIRuntime
+import Subprocess
 @testable import Swiftly
 @testable import SwiftlyCore
 import SwiftlyWebsiteAPI
@@ -9,6 +10,7 @@ import Testing
 
 #if os(macOS)
 import MacOSPlatform
+import System
 #endif
 
 import AsyncHTTPClient
@@ -25,24 +27,9 @@ extension Tag {
     @Tag static var large: Self
 }
 
-extension Executable {
+extension Subprocess.Executable {
     public func exists() async throws -> Bool {
-        switch self.storage {
-        case let .path(p):
-            return (try await FileSystem.exists(atPath: p))
-        case let .executable(e):
-            let path = ProcessInfo.processInfo.environment["PATH"]
-
-            guard let path else { return false }
-
-            for p in path.split(separator: ":") {
-                if try await FileSystem.exists(atPath: FilePath(String(p)) / e) {
-                    return true
-                }
-            }
-
-            return false
-        }
+        (try? self.resolveExecutablePath(in: .inherit)) != nil
     }
 }
 
@@ -86,7 +73,7 @@ extension Config {
 
 extension SwiftlyCoreContext {
     public init(
-        mockedHomeDir: FilePath?,
+        mockedHomeDir: SystemPackage.FilePath?,
         httpRequestExecutor: HTTPRequestExecutor,
         outputHandler: (any OutputHandler)?,
         inputProvider: (any InputProvider)?,
@@ -297,7 +284,7 @@ public enum SwiftlyTests {
         return await handler.lines
     }
 
-    static func getTestHomePath(name: String) -> FilePath {
+    static func getTestHomePath(name: String) -> SystemPackage.FilePath {
         fs.tmp / "swiftly-tests-\(name)-\(UUID())"
     }
 
@@ -474,7 +461,7 @@ public enum SwiftlyTests {
     }
 
     /// Get the toolchain version of a mocked executable installed via `installMockedToolchain` at the given FilePath.
-    static func getMockedToolchainVersion(at path: FilePath) throws -> ToolchainVersion {
+    static func getMockedToolchainVersion(at path: SystemPackage.FilePath) throws -> ToolchainVersion {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: path.string)
 
@@ -525,7 +512,7 @@ public actor TestInputProvider: SwiftlyCore.InputProvider {
 
 /// Wrapper around a `swift` executable used to execute swift commands.
 public struct SwiftExecutable {
-    public let path: FilePath
+    public let path: SystemPackage.FilePath
 
     private static func stableRegex() -> Regex<(Substring, Substring)> {
         try! Regex("swift-([^-]+)-RELEASE")
@@ -998,7 +985,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             .root(swiftlyDir),
             package_output_path: pkg
         )
-        .run(Swiftly.currentPlatform)
+        .run()
 
         let data = try Data(contentsOf: pkg)
         try await fs.remove(atPath: tmp)
@@ -1045,7 +1032,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             .root(toolchainDir),
             package_output_path: pkg
         )
-        .run(Swiftly.currentPlatform)
+        .run()
 
         let pkgData = try Data(contentsOf: pkg)
         try await fs.remove(atPath: tmp)

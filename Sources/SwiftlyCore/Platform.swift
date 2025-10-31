@@ -1,4 +1,5 @@
 import Foundation
+import Subprocess
 import SystemPackage
 
 public struct PlatformDefinition: Codable, Equatable, Sendable {
@@ -49,9 +50,13 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
 }
 
 public struct RunProgramError: Swift.Error {
-    public let exitCode: Int32
-    public let program: String
-    public let arguments: [String]
+    public let terminationStatus: TerminationStatus
+    public let config: Configuration
+
+    public init(terminationStatus: TerminationStatus, config: Configuration) {
+        self.terminationStatus = terminationStatus
+        self.config = config
+    }
 }
 
 public protocol Platform: Sendable {

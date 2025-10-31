@@ -1,7 +1,12 @@
 import ArgumentParser
 import Foundation
+import Subprocess
 import SwiftlyCore
 import SystemPackage
+
+#if os(macOS)
+import System
+#endif
 
 #if os(Linux)
 import LinuxPlatform
@@ -92,55 +97,58 @@ struct TestSwiftly: AsyncParsableCommand {
             Foundation.exit(2)
         }
 
-        guard case let swiftlyArchive = FilePath(swiftlyArchive) else { fatalError("") }
+        guard case let swiftlyArchive = SystemPackage.FilePath(swiftlyArchive) else { fatalError("") }
 
         print("Extracting swiftly release")
 #if os(Linux)
-        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchive)).run(currentPlatform, quiet: false)
+        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchive)).run(quiet: false)
 #elseif os(macOS)
-        try await sys.installer(.verbose, .pkg(swiftlyArchive), .target("CurrentUserHomeDirectory")).run(currentPlatform, quiet: false)
+        try await sys.installer(.verbose, .pkg(swiftlyArchive), .target("CurrentUserHomeDirectory")).run(quiet: false)
 #endif
 
 #if os(Linux)
-        let extractedSwiftly = FilePath("./swiftly")
+        let extractedSwiftly = SystemPackage.FilePath("./swiftly")
 #elseif os(macOS)
-        let extractedSwiftly = fs.home / ".swiftly/bin/swiftly"
+        let extractedSwiftly = System.FilePath((fs.home / ".swiftly/bin/swiftly").string)
 #endif
 
-        var env = ProcessInfo.processInfo.environment
-        let shell = FilePath(try await currentPlatform.getShell())
-        var customLoc: FilePath?
+        var env: Environment = .inherit
+        let shell = SystemPackage.FilePath(try await currentPlatform.getShell())
+        var customLoc: SystemPackage.FilePath?
 
         if self.customLocation {
             customLoc = fs.mktemp()
 
             print("Installing swiftly to custom location \(customLoc!)")
-            env["SWIFTLY_HOME_DIR"] = customLoc!.string
-            env["SWIFTLY_BIN_DIR"] = (customLoc! / "bin").string
-            env["SWIFTLY_TOOLCHAINS_DIR"] = (customLoc! / "toolchains").string
 
-            try await currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--no-modify-profile", "--skip-install", quiet: false, env: env)
-            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(currentPlatform, env: env, quiet: false)
+            env = env.updating([
+                "SWIFTLY_HOME_DIR": customLoc!.string,
+                "SWIFTLY_BIN_DIR": (customLoc! / "bin").string,
+                "SWIFTLY_TOOLCHAINS_DIR": (customLoc! / "toolchains").string,
+            ])
+
+            _ = try await Subprocess.run(.path(extractedSwiftly), arguments: ["init", "--assume-yes", "--no-modify-profile", "--skip-install"], environment: env, input: .standardInput, output: .standardOutput, error: .standardError)
+            _ = try await sh(executable: .path(shell), .login, .command(". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(environment: env, output: .standardOutput, error: .standardError)
         } else {
             print("Installing swiftly to the default location.")
             // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
             if shell.ends(with: "bash") {
-                env["BASH_ENV"] = (fs.home / ".profile").string
+                env = env.updating(["BASH_ENV": (fs.home / ".profile").string])
             } else if shell.ends(with: "zsh") {
-                env["ZDOTDIR"] = fs.home.string
+                env = env.updating(["ZDOTDIR": fs.home.string])
             } else if shell.ends(with: "fish") {
-                env["XDG_CONFIG_HOME"] = (fs.home / ".config").string
+                env = env.updating(["XDG_CONFIG_HOME": (fs.home / ".config").string])
             }
 
-            try await currentPlatform.runProgram(extractedSwiftly.string, "init", "--assume-yes", "--skip-install", quiet: false, env: env)
-            try await sh(executable: .path(shell), .login, .command("swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(currentPlatform, env: env, quiet: false)
+            _ = try await Subprocess.run(.path(extractedSwiftly), arguments: ["init", "--assume-yes", "--skip-install"], environment: env, input: .standardInput, output: .standardOutput, error: .standardError)
+            _ = try await sh(executable: .path(shell), .login, .command("swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(environment: env, output: .standardOutput, error: .standardError)
         }
 
         var swiftReady = false
 
         if NSUserName() == "root" {
             if try await fs.exists(atPath: "./post-install.sh") {
-                try await currentPlatform.runProgram(shell.string, "./post-install.sh", quiet: false)
+                _ = try await Subprocess.run(.path(shell), arguments: ["./post-install.sh"], input: .standardInput, output: .standardOutput, error: .standardError)
             }
             swiftReady = true
         } else if try await fs.exists(atPath: "./post-install.sh") {
@@ -150,9 +158,9 @@ struct TestSwiftly: AsyncParsableCommand {
         }
 
         if let customLoc = customLoc, swiftReady {
-            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swift --version")).run(currentPlatform, env: env, quiet: false)
+            _ = try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swift --version")).run(environment: env, output: .standardOutput, error: .standardError)
         } else if swiftReady {
-            try await sh(executable: .path(shell), .login, .command("swift --version")).run(currentPlatform, env: env, quiet: false)
+            _ = try await sh(executable: .path(shell), .login, .command("swift --version")).run(environment: env, output: .standardOutput, error: .standardError)
         }
 
         // Test self-uninstall functionality
@@ -160,23 +168,23 @@ struct TestSwiftly: AsyncParsableCommand {
         try await self.testSelfUninstall(customLoc: customLoc, shell: shell, env: env)
     }
 
-    private func testSelfUninstall(customLoc: FilePath?, shell: FilePath, env: [String: String]) async throws {
+    private func testSelfUninstall(customLoc: SystemPackage.FilePath?, shell: SystemPackage.FilePath, env: Environment) async throws {
         if let customLoc = customLoc {
             // Test self-uninstall for custom location
-            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swiftly self-uninstall --assume-yes")).run(currentPlatform, env: env, quiet: false)
+            _ = try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swiftly self-uninstall --assume-yes")).run(environment: env, output: .standardOutput, error: .standardError)
 
             // Verify cleanup for custom location
             try await self.verifyCustomLocationCleanup(customLoc: customLoc)
         } else {
             // Test self-uninstall for default location
-            try await sh(executable: .path(shell), .login, .command("swiftly self-uninstall --assume-yes")).run(currentPlatform, env: env, quiet: false)
+            _ = try await sh(executable: .path(shell), .login, .command("swiftly self-uninstall --assume-yes")).run(environment: env, output: .standardOutput, error: .standardError)
 
             // Verify cleanup for default location
             try await self.verifyDefaultLocationCleanup(shell: shell, env: env)
         }
     }
 
-    private func verifyCustomLocationCleanup(customLoc: FilePath) async throws {
+    private func verifyCustomLocationCleanup(customLoc: SystemPackage.FilePath) async throws {
         print("Verifying cleanup for custom location at \(customLoc)")
 
         // Check that swiftly binary is removed
@@ -204,7 +212,7 @@ struct TestSwiftly: AsyncParsableCommand {
         print("✓ Custom location cleanup verification passed")
     }
 
-    private func verifyDefaultLocationCleanup(shell: FilePath, env: [String: String]) async throws {
+    private func verifyDefaultLocationCleanup(shell: SystemPackage.FilePath, env: Environment) async throws {
         print("Verifying cleanup for default location")
 
         let swiftlyHome = fs.home / ".swiftly"
@@ -237,7 +245,7 @@ struct TestSwiftly: AsyncParsableCommand {
 
         // Verify swiftly command is no longer available
         do {
-            try await sh(executable: .path(shell), .login, .command("which swiftly")).run(currentPlatform, env: env, quiet: true)
+            _ = try await sh(executable: .path(shell), .login, .command("which swiftly")).run(environment: env, output: .standardOutput, error: .standardError)
             throw TestError("swiftly command is still available in PATH after uninstall")
         } catch {
             // Expected - swiftly should not be found
@@ -249,7 +257,7 @@ struct TestSwiftly: AsyncParsableCommand {
     private func verifyProfileCleanup() async throws {
         print("Verifying shell profile cleanup")
 
-        let profilePaths: [FilePath] = [
+        let profilePaths: [SystemPackage.FilePath] = [
             fs.home / ".zprofile",
             fs.home / ".bash_profile",
             fs.home / ".bash_login",

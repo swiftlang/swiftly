@@ -101,9 +101,9 @@ struct TestSwiftly: AsyncParsableCommand {
 
         print("Extracting swiftly release")
 #if os(Linux)
-        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchive)).run(quiet: false)
+        try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchive)).run()
 #elseif os(macOS)
-        try await sys.installer(.verbose, .pkg(swiftlyArchive), .target("CurrentUserHomeDirectory")).run(quiet: false)
+        try await sys.installer(.verbose, .pkg(swiftlyArchive), .target("CurrentUserHomeDirectory")).run()
 #endif
 
 #if os(Linux)
@@ -127,8 +127,16 @@ struct TestSwiftly: AsyncParsableCommand {
                 "SWIFTLY_TOOLCHAINS_DIR": (customLoc! / "toolchains").string,
             ])
 
-            _ = try await Subprocess.run(.path(extractedSwiftly), arguments: ["init", "--assume-yes", "--no-modify-profile", "--skip-install"], environment: env, input: .standardInput, output: .standardOutput, error: .standardError)
-            _ = try await sh(executable: .path(shell), .login, .command(". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(environment: env, output: .standardOutput, error: .standardError)
+            let config = Configuration(
+                .path(extractedSwiftly),
+                arguments: ["init", "--assume-yes", "--no-modify-profile", "--skip-install"],
+                environment: env
+            )
+            let result = try await Subprocess.run(config, output: .standardOutput, error: .standardError)
+            if !result.terminationStatus.isSuccess {
+                throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
+            }
+            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc! / "env.sh")\" && swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(environment: env, quiet: false)
         } else {
             print("Installing swiftly to the default location.")
             // Setting this environment helps to ensure that the profile gets sourced with bash, even if it is not in an interactive shell
@@ -140,8 +148,16 @@ struct TestSwiftly: AsyncParsableCommand {
                 env = env.updating(["XDG_CONFIG_HOME": (fs.home / ".config").string])
             }
 
-            _ = try await Subprocess.run(.path(extractedSwiftly), arguments: ["init", "--assume-yes", "--skip-install"], environment: env, input: .standardInput, output: .standardOutput, error: .standardError)
-            _ = try await sh(executable: .path(shell), .login, .command("swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(environment: env, output: .standardOutput, error: .standardError)
+            let config = Configuration(
+                .path(extractedSwiftly),
+                arguments: ["init", "--assume-yes", "--skip-install"],
+                environment: env
+            )
+            let result = try await Subprocess.run(config, output: .standardOutput, error: .standardError)
+            if !result.terminationStatus.isSuccess {
+                throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
+            }
+            try await sh(executable: .path(shell), .login, .command("swiftly install --assume-yes latest --post-install-file=./post-install.sh")).run(environment: env)
         }
 
         var swiftReady = false
@@ -158,9 +174,9 @@ struct TestSwiftly: AsyncParsableCommand {
         }
 
         if let customLoc = customLoc, swiftReady {
-            _ = try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swift --version")).run(environment: env, output: .standardOutput, error: .standardError)
+            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swift --version")).run(environment: env)
         } else if swiftReady {
-            _ = try await sh(executable: .path(shell), .login, .command("swift --version")).run(environment: env, output: .standardOutput, error: .standardError)
+            try await sh(executable: .path(shell), .login, .command("swift --version")).run(environment: env)
         }
 
         // Test self-uninstall functionality
@@ -171,13 +187,13 @@ struct TestSwiftly: AsyncParsableCommand {
     private func testSelfUninstall(customLoc: SystemPackage.FilePath?, shell: SystemPackage.FilePath, env: Environment) async throws {
         if let customLoc = customLoc {
             // Test self-uninstall for custom location
-            _ = try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swiftly self-uninstall --assume-yes")).run(environment: env, output: .standardOutput, error: .standardError)
+            try await sh(executable: .path(shell), .login, .command(". \"\(customLoc / "env.sh")\" && swiftly self-uninstall --assume-yes")).run(environment: env)
 
             // Verify cleanup for custom location
             try await self.verifyCustomLocationCleanup(customLoc: customLoc)
         } else {
             // Test self-uninstall for default location
-            _ = try await sh(executable: .path(shell), .login, .command("swiftly self-uninstall --assume-yes")).run(environment: env, output: .standardOutput, error: .standardError)
+            try await sh(executable: .path(shell), .login, .command("swiftly self-uninstall --assume-yes")).run(environment: env)
 
             // Verify cleanup for default location
             try await self.verifyDefaultLocationCleanup(shell: shell, env: env)
@@ -245,7 +261,7 @@ struct TestSwiftly: AsyncParsableCommand {
 
         // Verify swiftly command is no longer available
         do {
-            _ = try await sh(executable: .path(shell), .login, .command("which swiftly")).run(environment: env, output: .standardOutput, error: .standardError)
+            try await sh(executable: .path(shell), .login, .command("which swiftly")).run(environment: env)
             throw TestError("swiftly command is still available in PATH after uninstall")
         } catch {
             // Expected - swiftly should not be found

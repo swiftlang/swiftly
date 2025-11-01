@@ -95,7 +95,7 @@ public struct MacOS: Platform {
                 // We permit the signature verification to fail during testing
                 await ctx.message("Signature verification failed, which is allowable during testing with mocked toolchains")
             }
-            try await sys.pkgutil(.verbose).expand(pkg_path: tmpFile, dir_path: tmpDir).run()
+            try await sys.pkgutil(.verbose).expand(pkg_path: tmpFile, dir_path: tmpDir).run(quiet: !verbose)
 
             // There's a slight difference in the location of the special Payload file between official swift packages
             // and the ones that are mocked here in the test framework.

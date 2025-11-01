@@ -142,9 +142,9 @@ public struct CommandLineTests {
 
         // AND a simple history
         try "Some text".write(to: tmp / "foo.txt", atomically: true)
-        try await run(.name("git"), arguments: ["-C", "\(tmp)", "add", "foo.txt"], output: .discarded)
-        try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "user.email", "user@example.com"], output: .discarded)
-        try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "commit.gpgsign", "false"], output: .discarded)
+        #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "add", "foo.txt"], output: .standardOutput).terminationStatus.isSuccess)
+        #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "user.email", "user@example.com"], output: .standardOutput).terminationStatus.isSuccess)
+        #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "commit.gpgsign", "false"], output: .standardOutput).terminationStatus.isSuccess)
         try await sys.git(.workingDir(tmp)).commit(.message("Initial commit")).run()
         try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run()
 

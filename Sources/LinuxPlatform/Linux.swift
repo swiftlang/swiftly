@@ -1,4 +1,5 @@
 import Foundation
+import Subprocess
 import SwiftlyCore
 import SystemPackage
 
@@ -263,7 +264,13 @@ public struct Linux: Platform {
         }
 
         if requireSignatureValidation {
-            guard (try? self.runProgram("gpg", "--version", quiet: true)) != nil else {
+            let result = try await run(
+                .name("gpg"),
+                arguments: ["--version"],
+                output: .discarded
+            )
+
+            if !result.terminationStatus.isSuccess {
                 var msg = "gpg is not installed. "
                 if let manager {
                     msg += """
@@ -283,11 +290,9 @@ public struct Linux: Platform {
             try await fs.withTemporary(files: tmpFile) {
                 try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
                 if let mockedHomeDir = ctx.mockedHomeDir {
-                    var env = ProcessInfo.processInfo.environment
-                    env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
-                    try await sys.gpg()._import(key: tmpFile).run(self, env: env, quiet: true)
+                    try await sys.gpg()._import(key: tmpFile).run(environment: .inherit.updating(["GNUPGHOME": (mockedHomeDir / ".gnupg").string]), quiet: true)
                 } else {
-                    try await sys.gpg()._import(key: tmpFile).run(self, quiet: true)
+                    try await sys.gpg()._import(key: tmpFile).run(quiet: true)
                 }
             }
         }
@@ -315,7 +320,12 @@ public struct Linux: Platform {
         do {
             switch manager {
             case "apt-get":
-                if let pkgList = try await self.runProgramOutput("dpkg", "-l", package) {
+                let result = try await run(.name("dpkg"), arguments: ["-l", package], output: .string(limit: 100 * 1024))
+                if !result.terminationStatus.isSuccess {
+                    return false
+                }
+
+                if let pkgList = result.standardOutput {
                     // The package might be listed but not in an installed non-error state.
                     //
                     // Look for something like this:
@@ -329,8 +339,8 @@ public struct Linux: Platform {
                 }
                 return false
             case "yum":
-                try self.runProgram("yum", "list", "installed", package, quiet: true)
-                return true
+                let result = try await run(.name("yum"), arguments: ["list", "installed", package], output: .discarded)
+                return result.terminationStatus.isSuccess
             default:
                 return true
             }
@@ -390,7 +400,15 @@ public struct Linux: Platform {
                 tmpDir / String(name)
             }
 
-            try self.runProgram((tmpDir / "swiftly").string, "init")
+            let config = Configuration(
+                executable: .path(tmpDir / "swiftly"),
+                arguments: ["init"]
+            )
+
+            let result = try await run(config, output: .standardOutput, error: .standardError)
+            if !result.terminationStatus.isSuccess {
+                throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
+            }
         }
     }
 
@@ -424,11 +442,9 @@ public struct Linux: Platform {
             await ctx.message("Verifying toolchain signature...")
             do {
                 if let mockedHomeDir = ctx.mockedHomeDir {
-                    var env = ProcessInfo.processInfo.environment
-                    env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
-                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(self, env: env, quiet: false)
+                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(environment: .inherit.updating(["GNUPGHOME": (mockedHomeDir / ".gnupg").string]), quiet: false)
                 } else {
-                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(self, quiet: !verbose)
+                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(quiet: !verbose)
                 }
             } catch {
                 throw SwiftlyError(message: "Signature verification failed: \(error).")
@@ -453,11 +469,9 @@ public struct Linux: Platform {
             await ctx.message("Verifying swiftly signature...")
             do {
                 if let mockedHomeDir = ctx.mockedHomeDir {
-                    var env = ProcessInfo.processInfo.environment
-                    env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
-                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(self, env: env, quiet: false)
+                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(environment: .inherit.updating(["GNUPGHOME": (mockedHomeDir / ".gnupg").string]), quiet: false)
                 } else {
-                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(self, quiet: !verbose)
+                    try await sys.gpg().verify(detached_signature: sigFile, signed_data: archive).run(quiet: !verbose)
                 }
             } catch {
                 throw SwiftlyError(message: "Signature verification failed: \(error).")
@@ -611,7 +625,7 @@ public struct Linux: Platform {
 
     public func getShell() async throws -> String {
         let userName = ProcessInfo.processInfo.userName
-        if let entry = try await sys.getent(database: "passwd", key: userName).entries(self).first {
+        if let entry = try await sys.getent(database: "passwd", key: userName).entries().first {
             if let shell = entry.last { return shell }
         }
 

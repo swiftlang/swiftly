@@ -1,5 +1,6 @@
 import AsyncHTTPClient
 import Foundation
+import Subprocess
 @testable import Swiftly
 @testable import SwiftlyCore
 import SwiftlyWebsiteAPI
@@ -170,9 +171,7 @@ private func withGpg(_ body: ((Runnable) async throws -> Void) async throws -> V
     try await fs.mkdir(.parents, atPath: gpgHome)
     try await fs.withTemporary(files: gpgHome) {
         func runGpg(_ runnable: Runnable) async throws {
-            var env = ProcessInfo.processInfo.environment
-            env["GNUPGHOME"] = gpgHome.string
-            try await runnable.run(Swiftly.currentPlatform, env: env, quiet: false)
+            try await runnable.run(environment: .inherit.updating(["GNUPGHOME": gpgHome.string]), quiet: false)
         }
 
         try await body(runGpg)

@@ -1,3 +1,4 @@
+import ArgumentParser
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
@@ -83,5 +84,24 @@ import Testing
         (command, selector) = try Run.extractProxyArguments(command: ["swift", "build"])
         #expect(["swift", "build"] == command)
         #expect(nil == selector)
+    }
+
+    /// Tests the help functionality of the `run` command
+    @Test(.testHomeMockedToolchain()) func runHelp() async throws {
+        // Test --help is handled correctly
+        do {
+            try await SwiftlyTests.runCommand(Run.self, ["run", "--help"])
+            #expect(false)
+        } catch {
+            #expect(error is CleanExit)
+        }
+
+        // Test -h is handled correctly
+        do {
+            try await SwiftlyTests.runCommand(Run.self, ["run", "-h"])
+            #expect(false)
+        } catch {
+            #expect(error is CleanExit)
+        }
     }
 }

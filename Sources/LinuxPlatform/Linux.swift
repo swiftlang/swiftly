@@ -278,18 +278,7 @@ public struct Linux: Platform {
                 throw SwiftlyError(message: msg)
             }
 
-            let tmpFile = self.getTempFilePath()
-            try await fs.create(.mode(0o600), file: tmpFile, contents: nil)
-            try await fs.withTemporary(files: tmpFile) {
-                try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
-                if let mockedHomeDir = ctx.mockedHomeDir {
-                    var env = ProcessInfo.processInfo.environment
-                    env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
-                    try await sys.gpg()._import(key: tmpFile).run(self, env: env, quiet: true)
-                } else {
-                    try await sys.gpg()._import(key: tmpFile).run(self, quiet: true)
-                }
-            }
+            try await importGpgKeys(ctx)
         }
 
         guard let manager = manager else {
@@ -432,6 +421,22 @@ public struct Linux: Platform {
                 }
             } catch {
                 throw SwiftlyError(message: "Signature verification failed: \(error).")
+            }
+        }
+    }
+
+    /// Import Swift.org GPG keys for signature verification
+    private func importGpgKeys(_ ctx: SwiftlyCoreContext) async throws {
+        let tmpFile = self.getTempFilePath()
+        try await fs.create(.mode(0o600), file: tmpFile, contents: nil)
+        try await fs.withTemporary(files: tmpFile) {
+            try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
+            if let mockedHomeDir = ctx.mockedHomeDir {
+                var env = ProcessInfo.processInfo.environment
+                env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
+                try await sys.gpg()._import(key: tmpFile).run(self, env: env, quiet: true)
+            } else {
+                try await sys.gpg()._import(key: tmpFile).run(self, quiet: true)
             }
         }
     }

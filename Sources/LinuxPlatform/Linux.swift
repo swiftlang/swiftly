@@ -401,6 +401,9 @@ public struct Linux: Platform {
     public func verifyToolchainSignature(
         _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: FilePath, verbose: Bool
     ) async throws {
+        // Ensure GPG keys are imported before attempting signature verification
+        try await importGpgKeys(ctx)
+        
         if verbose {
             await ctx.message("Downloading toolchain signature...")
         }
@@ -444,6 +447,9 @@ public struct Linux: Platform {
     public func verifySwiftlySignature(
         _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: FilePath, verbose: Bool
     ) async throws {
+        // Ensure GPG keys are imported before attempting signature verification
+        try await importGpgKeys(ctx)
+        
         if verbose {
             await ctx.message("Downloading swiftly signature...")
         }

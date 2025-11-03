@@ -63,7 +63,7 @@ struct Run: SwiftlyCommand {
         var config = try await Config.load(ctx)
 
         // Handle the specific case where help is requested of the run subcommand
-        if command == ["--help"] {
+        if command == ["--help"] || command == ["-h"] {
             throw CleanExit.helpRequest(self)
         }
 

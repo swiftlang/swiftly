@@ -509,7 +509,7 @@ struct Install: SwiftlyCommand {
 
             return .snapshot(firstSnapshot)
         case .xcode:
-            throw SwiftlyError(message: "xcode toolchains are not available from swift.org")
+            return .xcode
         }
     }
 }

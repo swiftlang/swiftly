@@ -254,8 +254,14 @@ struct Install: SwiftlyCommand {
             let installInfo = InstallInfo(
                 version: version, alreadyInstalled: true
             )
+            let pathChanged = if useInstalledToolchain {
+                try await Use.execute(ctx, version, globalDefault: false, verbose: verbose, &config)
+            } else {
+                false
+            }
+
             try await ctx.output(installInfo)
-            return (nil, false)
+            return (nil, pathChanged)
         }
 
         // Ensure the system is set up correctly before downloading it. Problems that prevent installation

@@ -264,6 +264,25 @@ import Testing
         try await SwiftlyTests.validateInUse(expected: .newStable)
     }
 
+    /// Verify that the pre-installed toolchain will be marked as in-use if the --use flag is specified.
+    @Test(.mockedSwiftlyVersion(), .testHomeMockedToolchain()) func installUseFlagOnAlreadyInstalledToolchain() async throws {
+        // GIVEN we install an old toolchain
+        try await SwiftlyTests.installMockedToolchain(toolchain: .oldStable)
+        // AND we use the toolchain
+        try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.oldStable.name])
+        // THEN the old toolchain should be in use/selected
+        try await SwiftlyTests.validateInUse(expected: .oldStable)
+        // GIVEN a new toolchain is installled without `--use`
+        try await SwiftlyTests.installMockedToolchain(selector: ToolchainVersion.newStable.name)
+        // THEN the old toolchain is in use/selected
+        try await SwiftlyTests.validateInUse(expected: .oldStable)
+
+        // AND GIVEN we installing the new toolchain again with `-use`
+        try await SwiftlyTests.installMockedToolchain(selector: ToolchainVersion.newStable.name, args: ["--use"])
+        // THEN the new toolchain should be in use/selected
+        try await SwiftlyTests.validateInUse(expected: .newStable)
+    }
+
     /// Verify that xcode can't be installed like regular toolchains
     @Test(.testHomeMockedToolchain()) func installXcode() async throws {
         try await #expect(throws: SwiftlyError.self) {

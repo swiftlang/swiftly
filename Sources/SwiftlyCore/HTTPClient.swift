@@ -550,7 +550,7 @@ public struct SwiftlyHTTPClient: Sendable {
         {
         // These are new platforms that aren't yet in the list of known platforms in the OpenAPI schema
         case PlatformDefinition.ubuntu2404.name, PlatformDefinition.debian12.name,
-             PlatformDefinition.fedora39.name:
+             PlatformDefinition.fedora39.name, PlatformDefinition.gentoo.name:
             .init(platform.name)
 
         case PlatformDefinition.ubuntu2204.name:

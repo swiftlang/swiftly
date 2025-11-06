@@ -107,4 +107,15 @@ import Testing
             #expect(error is CleanExit)
         }
     }
+
+    /// Tests the version functionality of the `run` command
+    @Test(.testHomeMockedToolchain()) func runVersion() async throws {
+        // Test --version is handled correctly
+        do {
+            try await SwiftlyTests.runCommand(Run.self, ["run", "--version"])
+            #expect(false)
+        } catch {
+            #expect(error is CleanExit)
+        }
+    }
 }

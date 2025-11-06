@@ -2,8 +2,8 @@ import Foundation
 import SystemPackage
 
 extension SystemCommand.dsclCommand.readCommand: Output {
-    public func properties(_ p: Platform) async throws -> [(key: String, value: String)] {
-        let output = try await self.output(p)
+    public func properties(_: Platform) async throws -> [(key: String, value: String)] {
+        let output = try await self.output(limit: 1024 * 100)
         guard let output else { return [] }
 
         var props: [(key: String, value: String)] = []
@@ -21,8 +21,8 @@ extension SystemCommand.lipoCommand.createCommand: Runnable {}
 extension SystemCommand.pkgbuildCommand: Runnable {}
 
 extension SystemCommand.getentCommand: Output {
-    public func entries(_ platform: Platform) async throws -> [[String]] {
-        let output = try await output(platform)
+    public func entries() async throws -> [[String]] {
+        let output = try await output(limit: 1024 * 100)
         guard let output else { return [] }
 
         var entries: [[String]] = []

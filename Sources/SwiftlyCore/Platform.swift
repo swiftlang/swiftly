@@ -1,4 +1,5 @@
 import Foundation
+import Subprocess
 import SystemPackage
 
 public struct PlatformDefinition: Codable, Equatable, Sendable {
@@ -49,9 +50,13 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
 }
 
 public struct RunProgramError: Swift.Error {
-    public let exitCode: Int32
-    public let program: String
-    public let arguments: [String]
+    public let terminationStatus: TerminationStatus
+    public let config: Configuration
+
+    public init(terminationStatus: TerminationStatus, config: Configuration) {
+        self.terminationStatus = terminationStatus
+        self.config = config
+    }
 }
 
 public protocol Platform: Sendable {
@@ -161,192 +166,6 @@ extension Platform {
     }
 
 #if os(macOS) || os(Linux)
-    func proxyEnv(_ ctx: SwiftlyCoreContext, env: [String: String], toolchain: ToolchainVersion) async throws -> [String: String] {
-        var newEnv = env
-
-        let tcPath = try await self.findToolchainLocation(ctx, toolchain) / "usr/bin"
-        guard try await fs.exists(atPath: tcPath) else {
-            throw SwiftlyError(
-                message:
-                "Toolchain \(toolchain) could not be located in \(tcPath). You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again."
-            )
-        }
-
-        var pathComponents = (newEnv["PATH"] ?? "").split(separator: ":").map { String($0) }
-
-        // The toolchain goes to the beginning of the PATH
-        pathComponents.removeAll(where: { $0 == tcPath.string })
-        pathComponents = [tcPath.string] + pathComponents
-
-        // Remove swiftly bin directory from the PATH entirely
-        let swiftlyBinDir = self.swiftlyBinDir(ctx)
-        pathComponents.removeAll(where: { $0 == swiftlyBinDir.string })
-
-        newEnv["PATH"] = String(pathComponents.joined(separator: ":"))
-
-        return newEnv
-    }
-
-    /// Proxy the invocation of the provided command to the chosen toolchain.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func proxy(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String], _ env: [String: String] = [:]) async throws {
-        let tcPath = (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
-
-        let commandTcPath = tcPath / command
-        let commandToRun = if try await fs.exists(atPath: commandTcPath) {
-            commandTcPath.string
-        } else {
-            command
-        }
-
-        var newEnv = try await self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain)
-        for (key, value) in env {
-            newEnv[key] = value
-        }
-
-#if os(macOS)
-        // On macOS, we try to set SDKROOT if its empty for tools like clang++ that need it to
-        // find standard libraries that aren't in the toolchain, like libc++. Here we
-        // use xcrun to tell us what the default sdk root should be.
-        if newEnv["SDKROOT"] == nil {
-            newEnv["SDKROOT"] = (try? await self.runProgramOutput("/usr/bin/xcrun", "--show-sdk-path"))?.replacingOccurrences(of: "\n", with: "")
-        }
-#endif
-
-        try self.runProgram([commandToRun] + arguments, env: newEnv)
-    }
-
-    /// Proxy the invocation of the provided command to the chosen toolchain and capture the output.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func proxyOutput(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion, _ command: String, _ arguments: [String]) async throws -> String? {
-        let tcPath = (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
-
-        let commandTcPath = tcPath / command
-        let commandToRun = if try await fs.exists(atPath: commandTcPath) {
-            commandTcPath.string
-        } else {
-            command
-        }
-
-        return try await self.runProgramOutput(commandToRun, arguments, env: self.proxyEnv(ctx, env: ProcessInfo.processInfo.environment, toolchain: toolchain))
-    }
-
-    /// Run a program.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func runProgram(_ args: String..., quiet: Bool = false, env: [String: String]? = nil)
-        throws
-    {
-        try self.runProgram([String](args), quiet: quiet, env: env)
-    }
-
-    /// Run a program.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func runProgram(_ args: [String], quiet: Bool = false, env: [String: String]? = nil)
-        throws
-    {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = args
-
-        if let env {
-            process.environment = env
-        }
-
-        if quiet {
-            process.standardOutput = nil
-            process.standardError = nil
-        }
-
-        try process.run()
-        // Attach this process to our process group so that Ctrl-C and other signals work
-        let pgid = tcgetpgrp(STDOUT_FILENO)
-        if pgid != -1 {
-            tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
-        }
-
-        defer {
-            if pgid != -1 {
-                tcsetpgrp(STDOUT_FILENO, pgid)
-            }
-        }
-
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            throw RunProgramError(exitCode: process.terminationStatus, program: args.first!, arguments: Array(args.dropFirst()))
-        }
-    }
-
-    /// Run a program and capture its output.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func runProgramOutput(_ program: String, _ args: String..., env: [String: String]? = nil)
-        async throws -> String?
-    {
-        try await self.runProgramOutput(program, [String](args), env: env)
-    }
-
-    /// Run a program and capture its output.
-    ///
-    /// In the case where the command exit with a non-zero exit code a RunProgramError is thrown with
-    /// the exit code and program information.
-    ///
-    public func runProgramOutput(_ program: String, _ args: [String], env: [String: String]? = nil)
-        async throws -> String?
-    {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = [program] + args
-
-        if let env {
-            process.environment = env
-        }
-
-        let outPipe = Pipe()
-        process.standardInput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        process.standardOutput = outPipe
-
-        try process.run()
-        // Attach this process to our process group so that Ctrl-C and other signals work
-        let pgid = tcgetpgrp(STDOUT_FILENO)
-        if pgid != -1 {
-            tcsetpgrp(STDOUT_FILENO, process.processIdentifier)
-        }
-        defer {
-            if pgid != -1 {
-                tcsetpgrp(STDOUT_FILENO, pgid)
-            }
-        }
-
-        let outData = try outPipe.fileHandleForReading.readToEnd()
-
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            throw RunProgramError(exitCode: process.terminationStatus, program: program, arguments: args)
-        }
-
-        if let outData {
-            return String(data: outData, encoding: .utf8)
-        } else {
-            return nil
-        }
-    }
 
     // Install ourselves in the final location
     public func installSwiftlyBin(_ ctx: SwiftlyCoreContext) async throws {

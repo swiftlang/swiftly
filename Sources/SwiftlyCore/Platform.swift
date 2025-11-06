@@ -169,44 +169,14 @@ extension Platform {
 
     // Install ourselves in the final location
     public func installSwiftlyBin(_ ctx: SwiftlyCoreContext) async throws {
-        // First, let's find out where we are.
-        let cmd = CommandLine.arguments[0]
-
-        var cmdAbsolute: FilePath?
-
-        if cmd.hasPrefix("/") {
-            cmdAbsolute = FilePath(cmd)
-        } else {
-            let pathEntries = ([fs.cwd.string] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map
-                {
-                    FilePath($0) / cmd
-                }
-
-            for pathEntry in pathEntries {
-                if try await fs.exists(atPath: pathEntry) {
-                    cmdAbsolute = pathEntry
-                    break
-                }
-            }
-        }
-
         // We couldn't find ourselves in the usual places. Assume that no installation is necessary
         // since we were most likely invoked at SWIFTLY_BIN_DIR already.
-        guard let cmdAbsolute else {
+        guard let cmdAbsolute = try await self.absoluteCommandPath() else {
             return
         }
 
-        // If swiftly is symlinked then we leave it where it is, such as in a homebrew installation.
-        if let _ = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute) {
-            return
-        }
-
-        // Proceed to installation only if we're in the user home directory, or a non-system location.
-        let userHome = fs.home
-
-        let systemRoots: [FilePath] = ["/usr", "/opt", "/bin"]
-
-        guard cmdAbsolute.starts(with: userHome) || systemRoots.filter({ cmdAbsolute.starts(with: $0) }).first == nil else {
+        // Make sure swiftly is not system managed.
+        if try await self.isSystemManaged(cmdAbsolute) {
             return
         }
 
@@ -242,55 +212,24 @@ extension Platform {
     // Find the location where swiftly should be executed.
     public func findSwiftlyBin(_ ctx: SwiftlyCoreContext) async throws -> FilePath? {
         let swiftlyHomeBin = self.swiftlyBinDir(ctx) / "swiftly"
-
-        // First, let's find out where we are.
-        let cmd = CommandLine.arguments[0]
-        var cmdAbsolute: FilePath?
-        if cmd.hasPrefix("/") {
-            cmdAbsolute = FilePath(cmd)
-        } else {
-            let pathEntries = ([fs.cwd.string] + (ProcessInfo.processInfo.environment["PATH"]?.components(separatedBy: ":") ?? [])).map
-                {
-                    FilePath($0) / cmd
-                }
-
-            for pathEntry in pathEntries {
-                if try await fs.exists(atPath: pathEntry) {
-                    cmdAbsolute = pathEntry
-                    break
-                }
+        guard let cmdAbsolute = try await self.absoluteCommandPath() else {
+            if try await fs.exists(atPath: swiftlyHomeBin) {
+                // We couldn't find ourselves in the usual places, so if we're not going to be installing
+                // swiftly then we can assume that we are running from the final location.
+                return swiftlyHomeBin
             }
+            return nil
         }
 
-        // We couldn't find ourselves in the usual places, so if we're not going to be installing
-        // swiftly then we can assume that we are running from the final location.
-        let homeBinExists = try await fs.exists(atPath: swiftlyHomeBin)
-        if cmdAbsolute == nil && homeBinExists {
-            return swiftlyHomeBin
-        }
-
-        // If swiftly is a symlink then something else, such as homebrew, is managing it.
-        if cmdAbsolute != nil {
-            if let _ = try? FileManager.default.destinationOfSymbolicLink(atPath: cmdAbsolute!) {
-                return cmdAbsolute
-            }
-        }
-
-        let systemRoots: [FilePath] = ["/usr", "/opt", "/bin"]
-
-        // If we are system managed then we know where swiftly should be.
-        let userHome = fs.home
-
-        if let cmdAbsolute, !cmdAbsolute.starts(with: userHome) && systemRoots.filter({ cmdAbsolute.starts(with: $0) }).first != nil {
+        if try await self.isSystemManaged(cmdAbsolute) {
             return cmdAbsolute
         }
 
         // If we're running inside an xctest then we don't have a location for this swiftly.
-        guard let cmdAbsolute,
-              !(
-                  (cmdAbsolute.string.hasSuffix("xctest") || cmdAbsolute.string.hasSuffix("swiftpm-testing-helper"))
-                      && CommandLine.arguments.contains { $0.contains("InstallTests") }
-              )
+        guard !(
+            (cmdAbsolute.string.hasSuffix("xctest") || cmdAbsolute.string.hasSuffix("swiftpm-testing-helper"))
+                && CommandLine.arguments.contains { $0.contains("InstallTests") }
+        )
         else {
             return nil
         }
@@ -301,6 +240,38 @@ extension Platform {
     public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
     {
         (try await self.findToolchainLocation(ctx, toolchain)) / "usr/bin"
+    }
+
+    private func absoluteCommandPath() async throws -> FilePath? {
+        let cmd = CommandLine.arguments[0]
+        if cmd.hasPrefix("/") {
+            return FilePath(cmd)
+        }
+        let localCmd = FilePath(fs.cwd.string) / cmd
+        if try await fs.exists(atPath: localCmd) {
+            return localCmd
+        }
+        guard let path = ProcessInfo.processInfo.environment["PATH"] else {
+            return nil
+        }
+        let pathEntries = path.components(separatedBy: ":").map { FilePath($0) / cmd }
+        for pathEntry in pathEntries where try await fs.exists(atPath: pathEntry) {
+            return pathEntry
+        }
+        return nil
+    }
+
+    private func isSystemManaged(_ path: FilePath) async throws -> Bool {
+        // If swiftly is symlinked then we leave it where it is, such as in a Homebrew installation.
+        if try await fs.isSymLink(atPath: path) {
+            return true
+        }
+        if path.starts(with: fs.home) {
+            // In user's home directory, so not system managed.
+            return false
+        }
+        // With a system prefix?
+        return ["/usr", "/opt", "/bin"].contains { path.starts(with: $0) }
     }
 
 #endif

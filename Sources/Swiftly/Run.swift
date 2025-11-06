@@ -69,6 +69,11 @@ struct Run: SwiftlyCommand {
             throw CleanExit.helpRequest(self)
         }
 
+        // Handle the spcific case where version is requested of the run subcommand
+        if command == ["--version"] {
+            throw CleanExit.message(String(describing: SwiftlyCore.version))
+        }
+
         let (command, selector) = try Self.extractProxyArguments(command: self.command)
 
         let toolchain: ToolchainVersion?

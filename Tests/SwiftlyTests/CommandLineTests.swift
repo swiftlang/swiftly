@@ -1,4 +1,5 @@
 import Foundation
+import Subprocess
 @testable import Swiftly
 @testable import SwiftlyCore
 import SystemPackage
@@ -9,13 +10,17 @@ public typealias sys = SystemCommand
 @Suite
 public struct CommandLineTests {
     @Test func testDsclModel() {
-        var config = sys.dscl(datasource: ".").read(path: .init("/Users/swiftly"), key: ["UserShell"]).config()
+        var cmd = sys.dscl(datasource: ".").read(path: .init("/Users/swiftly"), key: ["UserShell"])
+        var config = cmd.config()
+        var args = cmd.commandArgs()
         #expect(config.executable == .name("dscl"))
-        #expect(config.arguments.storage.map(\.description) == [".", "-read", "/Users/swiftly", "UserShell"])
+        #expect(args == [".", "-read", "/Users/swiftly", "UserShell"])
 
-        config = sys.dscl(datasource: ".").read(path: .init("/Users/swiftly"), key: ["UserShell", "Picture"]).config()
+        cmd = sys.dscl(datasource: ".").read(path: .init("/Users/swiftly"), key: ["UserShell", "Picture"])
+        config = cmd.config()
+        args = cmd.commandArgs()
         #expect(config.executable == .name("dscl"))
-        #expect(config.arguments.storage.map(\.description) == [".", "-read", "/Users/swiftly", "UserShell", "Picture"])
+        #expect(args == [".", "-read", "/Users/swiftly", "UserShell", "Picture"])
     }
 
     @Test(
@@ -26,58 +31,101 @@ public struct CommandLineTests {
     )
     func testDscl() async throws {
         let properties = try await sys.dscl(datasource: ".").read(path: fs.home, key: ["UserShell"]).properties(Swiftly.currentPlatform)
-        #expect(properties.count == 1) // Only one shell for the current user
+
+        guard properties.count == 1 else {
+            Issue.record("Unexpected number of properties. There is only one shell for the current user.")
+            return
+        }
+
         #expect(properties[0].key == "UserShell") // The one property key should be the one that is requested
     }
 
     @Test func testLipo() {
-        var config = sys.lipo(input_file: "swiftly1", "swiftly2").create(.output("swiftly-universal")).config()
+        var cmd = sys.lipo(input_file: "swiftly1", "swiftly2").create(.output("swiftly-universal"))
+        var config = cmd.config()
+        var args = cmd.commandArgs()
 
         #expect(config.executable == .name("lipo"))
-        #expect(config.arguments.storage.map(\.description) == ["swiftly1", "swiftly2", "-create", "-output", "swiftly-universal"])
+        #expect(args == ["swiftly1", "swiftly2", "-create", "-output", "swiftly-universal"])
 
-        config = sys.lipo(input_file: "swiftly").create(.output("swiftly-universal-with-one-arch")).config()
+        cmd = sys.lipo(input_file: "swiftly").create(.output("swiftly-universal-with-one-arch"))
+        config = cmd.config()
+        args = cmd.commandArgs()
+
         #expect(config.executable == .name("lipo"))
-        #expect(config.arguments.storage.map(\.description) == ["swiftly", "-create", "-output", "swiftly-universal-with-one-arch"])
+        #expect(args == ["swiftly", "-create", "-output", "swiftly-universal-with-one-arch"])
     }
 
     @Test func testPkgbuild() {
-        var config = sys.pkgbuild(.root("mypath"), package_output_path: "outputDir").config()
-        #expect(String(describing: config) == "pkgbuild --root mypath outputDir")
+        var cmd = sys.pkgbuild(.root("mypath"), package_output_path: "outputDir")
+        var config = cmd.config()
+        var args = cmd.commandArgs()
+        #expect(config.executable == .name("pkgbuild"))
+        #expect(args == ["--root", "mypath", "outputDir"])
 
-        config = sys.pkgbuild(.version("1234"), .root("somepath"), package_output_path: "output").config()
-        #expect(String(describing: config) == "pkgbuild --version 1234 --root somepath output")
+        cmd = sys.pkgbuild(.version("1234"), .root("somepath"), package_output_path: "output")
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("pkgbuild"))
+        #expect(args == ["--version", "1234", "--root", "somepath", "output"])
 
-        config = sys.pkgbuild(.install_location("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .sign("mycert"), .root("someroot"), package_output_path: "my.pkg").config()
-        #expect(String(describing: config) == "pkgbuild --install-location /usr/local --version 1.0.0 --identifier org.foo.bar --sign mycert --root someroot my.pkg")
+        cmd = sys.pkgbuild(.install_location("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .sign("mycert"), .root("someroot"), package_output_path: "my.pkg")
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("pkgbuild"))
+        #expect(args == ["--install-location", "/usr/local", "--version", "1.0.0", "--identifier", "org.foo.bar", "--sign", "mycert", "--root", "someroot", "my.pkg"])
 
-        config = sys.pkgbuild(.install_location("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .root("someroot"), package_output_path: "my.pkg").config()
-        #expect(String(describing: config) == "pkgbuild --install-location /usr/local --version 1.0.0 --identifier org.foo.bar --root someroot my.pkg")
+        cmd = sys.pkgbuild(.install_location("/usr/local"), .version("1.0.0"), .identifier("org.foo.bar"), .root("someroot"), package_output_path: "my.pkg")
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("pkgbuild"))
+        #expect(args == ["--install-location", "/usr/local", "--version", "1.0.0", "--identifier", "org.foo.bar", "--root", "someroot", "my.pkg"])
     }
 
     @Test func testGetent() {
-        var config = sys.getent(database: "passwd", key: "swiftly").config()
-        #expect(String(describing: config) == "getent passwd swiftly")
+        var cmd = sys.getent(database: "passwd", key: "swiftly")
+        var config = cmd.config()
+        var args = cmd.commandArgs()
+        #expect(config.executable == .name("getent"))
+        #expect(args == ["passwd", "swiftly"])
 
-        config = sys.getent(database: "foo", key: "abc", "def").config()
-        #expect(String(describing: config) == "getent foo abc def")
+        cmd = sys.getent(database: "foo", key: "abc", "def")
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("getent"))
+        #expect(args == ["foo", "abc", "def"])
     }
 
     @Test func testGitModel() {
-        var config = sys.git().log(.max_count("1"), .pretty("format:%d")).config()
-        #expect(String(describing: config) == "git log --max-count 1 --pretty format:%d")
+        var cmd = sys.git().log(.max_count("1"), .pretty("format:%d"))
+        var config = cmd.config()
+        var args = cmd.commandArgs()
+        #expect(config.executable == .name("git"))
+        #expect(args == ["log", "--max-count", "1", "--pretty", "format:%d"])
 
-        config = sys.git().log().config()
-        #expect(String(describing: config) == "git log")
+        cmd = sys.git().log()
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("git"))
+        #expect(args == ["log"])
 
-        config = sys.git().log(.pretty("foo")).config()
-        #expect(String(describing: config) == "git log --pretty foo")
+        cmd = sys.git().log(.pretty("foo"))
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("git"))
+        #expect(args == ["log", "--pretty", "foo"])
 
-        config = sys.git().diffindex(.quiet, tree_ish: "HEAD").config()
-        #expect(String(describing: config) == "git diff-index --quiet HEAD")
+        var indexCmd = sys.git().diffindex(.quiet, tree_ish: "HEAD")
+        config = indexCmd.config()
+        args = indexCmd.commandArgs()
+        #expect(config.executable == .name("git"))
+        #expect(args == ["diff-index", "--quiet", "HEAD"])
 
-        config = sys.git().diffindex(tree_ish: "main").config()
-        #expect(String(describing: config) == "git diff-index main")
+        indexCmd = sys.git().diffindex(tree_ish: "main")
+        config = indexCmd.config()
+        args = indexCmd.commandArgs()
+        #expect(config.executable == .name("git"))
+        #expect(args == ["diff-index", "main"])
     }
 
     @Test(
@@ -90,18 +138,18 @@ public struct CommandLineTests {
         // GIVEN a simple git repository
         let tmp = fs.mktemp()
         try await fs.mkdir(atPath: tmp)
-        try await sys.git(.workingDir(tmp))._init().run(Swiftly.currentPlatform)
+        try await sys.git(.workingDir(tmp))._init().run()
 
         // AND a simple history
         try "Some text".write(to: tmp / "foo.txt", atomically: true)
-        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "add", "foo.txt")
-        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "config", "--local", "user.email", "user@example.com")
-        try await Swiftly.currentPlatform.runProgram("git", "-C", "\(tmp)", "config", "--local", "commit.gpgsign", "false")
-        try await sys.git(.workingDir(tmp)).commit(.message("Initial commit")).run(Swiftly.currentPlatform)
-        try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run(Swiftly.currentPlatform)
+        try #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "add", "foo.txt"], output: .standardOutput).terminationStatus.isSuccess)
+        try #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "user.email", "user@example.com"], output: .standardOutput).terminationStatus.isSuccess)
+        try #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "commit.gpgsign", "false"], output: .standardOutput).terminationStatus.isSuccess)
+        try await sys.git(.workingDir(tmp)).commit(.message("Initial commit")).run()
+        try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run()
 
         // WHEN inspecting the log
-        let log = try await sys.git(.workingDir(tmp)).log(.max_count("1")).output(Swiftly.currentPlatform)!
+        let log = try await sys.git(.workingDir(tmp)).log(.max_count("1")).output(limit: 1024 * 10)!
         // THEN it is not empty
         #expect(log != "")
 
@@ -109,23 +157,35 @@ public struct CommandLineTests {
         try "Some new text".write(to: tmp / "foo.txt", atomically: true)
 
         // THEN diff index finds a change
-        try await #expect(throws: Error.self) {
-            try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run(Swiftly.currentPlatform)
+        await #expect(throws: Error.self) {
+            try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run()
         }
     }
 
     @Test func testTarModel() {
-        var config = sys.tar(.directory("/some/cool/stuff")).create(.compressed, .archive("abc.tgz"), files: ["a", "b"]).config()
-        #expect(String(describing: config) == "tar -C /some/cool/stuff --create -z --file abc.tgz a b")
+        var cmd = sys.tar(.directory("/some/cool/stuff")).create(.compressed, .archive("abc.tgz"), files: ["a", "b"])
+        var config = cmd.config()
+        var args = cmd.commandArgs()
+        #expect(config.executable == .name("tar"))
+        #expect(args == ["-C", "/some/cool/stuff", "--create", "-z", "--file", "abc.tgz", "a", "b"])
 
-        config = sys.tar().create(.archive("myarchive.tar"), files: nil).config()
-        #expect(String(describing: config) == "tar --create --file myarchive.tar")
+        cmd = sys.tar().create(.archive("myarchive.tar"), files: nil)
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("tar"))
+        #expect(args == ["--create", "--file", "myarchive.tar"])
 
-        config = sys.tar(.directory("/this/is/the/place")).extract(.compressed, .archive("def.tgz")).config()
-        #expect(String(describing: config) == "tar -C /this/is/the/place --extract -z --file def.tgz")
+        var extractCmd = sys.tar(.directory("/this/is/the/place")).extract(.compressed, .archive("def.tgz"))
+        config = extractCmd.config()
+        args = extractCmd.commandArgs()
+        #expect(config.executable == .name("tar"))
+        #expect(args == ["-C", "/this/is/the/place", "--extract", "-z", "--file", "def.tgz"])
 
-        config = sys.tar().extract(.archive("somearchive.tar")).config()
-        #expect(String(describing: config) == "tar --extract --file somearchive.tar")
+        extractCmd = sys.tar().extract(.archive("somearchive.tar"))
+        config = extractCmd.config()
+        args = extractCmd.commandArgs()
+        #expect(config.executable == .name("tar"))
+        #expect(args == ["--extract", "--file", "somearchive.tar"])
     }
 
     @Test(
@@ -138,49 +198,67 @@ public struct CommandLineTests {
         let tmp = fs.mktemp()
         try await fs.mkdir(atPath: tmp)
         let readme = "README.md"
-        try await "README".write(to: tmp / readme, atomically: true)
+        try "README".write(to: tmp / readme, atomically: true)
 
         let arch = fs.mktemp(ext: "tar")
         let archCompressed = fs.mktemp(ext: "tgz")
 
-        try await sys.tar(.directory(tmp)).create(.verbose, .archive(arch), files: [FilePath(readme)]).run(Swiftly.currentPlatform)
-        try await sys.tar(.directory(tmp)).create(.verbose, .compressed, .archive(archCompressed), files: [FilePath(readme)]).run(Swiftly.currentPlatform)
+        try await sys.tar(.directory(tmp)).create(.verbose, .archive(arch), files: [FilePath(readme)]).run()
+        try await sys.tar(.directory(tmp)).create(.verbose, .compressed, .archive(archCompressed), files: [FilePath(readme)]).run()
 
         let tmp2 = fs.mktemp()
         try await fs.mkdir(atPath: tmp2)
 
-        try await sys.tar(.directory(tmp2)).extract(.verbose, .archive(arch)).run(Swiftly.currentPlatform)
+        try await sys.tar(.directory(tmp2)).extract(.verbose, .archive(arch)).run()
 
-        let contents = try await String(contentsOf: tmp2 / readme, encoding: .utf8)
+        let contents = try String(contentsOf: tmp2 / readme, encoding: .utf8)
         #expect(contents == "README")
 
         let tmp3 = fs.mktemp()
         try await fs.mkdir(atPath: tmp3)
 
-        try await sys.tar(.directory(tmp3)).extract(.verbose, .compressed, .archive(archCompressed)).run(Swiftly.currentPlatform)
+        try await sys.tar(.directory(tmp3)).extract(.verbose, .compressed, .archive(archCompressed)).run()
 
-        let contents2 = try await String(contentsOf: tmp3 / readme, encoding: .utf8)
+        let contents2 = try String(contentsOf: tmp3 / readme, encoding: .utf8)
         #expect(contents2 == "README")
     }
 
     @Test func testSwiftModel() async throws {
-        var config = sys.swift().package().reset().config()
-        #expect(String(describing: config) == "swift package reset")
+        let cmd = sys.swift().package().reset()
+        var config = cmd.config()
+        var args = cmd.commandArgs()
+        #expect(config.executable == .name("swift"))
+        #expect(args == ["package", "reset"])
 
-        config = sys.swift().package().clean().config()
-        #expect(String(describing: config) == "swift package clean")
+        let cleanCmd = sys.swift().package().clean()
+        config = cleanCmd.config()
+        args = cleanCmd.commandArgs()
+        #expect(config.executable == .name("swift"))
+        #expect(args == ["package", "clean"])
 
-        config = sys.swift().sdk().install(.checksum("deadbeef"), bundle_path_or_url: "path/to/bundle").config()
-        #expect(String(describing: config) == "swift sdk install --checksum deadbeef path/to/bundle")
+        let installCmd = sys.swift().sdk().install(.checksum("deadbeef"), bundle_path_or_url: "path/to/bundle")
+        config = installCmd.config()
+        args = installCmd.commandArgs()
+        #expect(config.executable == .name("swift"))
+        #expect(args == ["sdk", "install", "--checksum", "deadbeef", "path/to/bundle"])
 
-        config = sys.swift().sdk().remove([], sdk_id_or_bundle_name: "some.bundle").config()
-        #expect(String(describing: config) == "swift sdk remove some.bundle")
+        let removeCmd = sys.swift().sdk().remove([], sdk_id_or_bundle_name: "some.bundle")
+        config = removeCmd.config()
+        args = removeCmd.commandArgs()
+        #expect(config.executable == .name("swift"))
+        #expect(args == ["sdk", "remove", "some.bundle"])
 
-        config = sys.swift().build(.arch("x86_64"), .configuration("release"), .pkg_config_path("path/to/pc"), .swift_sdk("sdk.id"), .static_swift_stdlib, .product("product1")).config()
-        #expect(String(describing: config) == "swift build --arch x86_64 --configuration release --pkg-config-path path/to/pc --swift-sdk sdk.id --static-swift-stdlib --product product1")
+        var buildCmd = sys.swift().build(.arch("x86_64"), .configuration("release"), .pkg_config_path("path/to/pc"), .swift_sdk("sdk.id"), .static_swift_stdlib, .product("product1"))
+        config = buildCmd.config()
+        args = buildCmd.commandArgs()
+        #expect(config.executable == .name("swift"))
+        #expect(args == ["build", "--arch", "x86_64", "--configuration", "release", "--pkg-config-path", "path/to/pc", "--swift-sdk", "sdk.id", "--static-swift-stdlib", "--product", "product1"])
 
-        config = sys.swift().build().config()
-        #expect(String(describing: config) == "swift build")
+        buildCmd = sys.swift().build()
+        config = buildCmd.config()
+        args = buildCmd.commandArgs()
+        #expect(config.executable == .name("swift"))
+        #expect(args == ["build"])
     }
 
     @Test(
@@ -192,57 +270,93 @@ public struct CommandLineTests {
     func testSwift() async throws {
         let tmp = fs.mktemp()
         try await fs.mkdir(atPath: tmp)
-        try await sys.swift().package()._init(.package_path(tmp), .type("executable")).run(Swiftly.currentPlatform)
-        try await sys.swift().build(.package_path(tmp), .configuration("release"))
+        try await sys.swift().package()._init(.package_path(tmp), .type("executable")).run()
+        try await sys.swift().build(.package_path(tmp), .configuration("release")).run()
     }
 
     @Test func testMake() async throws {
-        var config = sys.make().install().config()
-        #expect(String(describing: config) == "make install")
+        let cmd = sys.make().install()
+        let config = cmd.config()
+        let args = cmd.commandArgs()
+        #expect(config.executable == .name("make"))
+        #expect(args == ["install"])
     }
 
     @Test func testStrip() async throws {
-        var config = sys.strip(name: FilePath("foo")).config()
-        #expect(String(describing: config) == "strip foo")
+        let cmd = sys.strip(name: FilePath("foo"))
+        let config = cmd.config()
+        let args = cmd.commandArgs()
+        #expect(config.executable == .name("strip"))
+        #expect(args == ["foo"])
     }
 
     @Test func testSha256Sum() async throws {
-        var config = sys.sha256sum(files: FilePath("abcde")).config()
-        #expect(String(describing: config) == "sha256sum abcde")
+        let cmd = sys.sha256sum(files: FilePath("abcde"))
+        let config = cmd.config()
+        let args = cmd.commandArgs()
+        #expect(config.executable == .name("sha256sum"))
+        #expect(args == ["abcde"])
     }
 
     @Test func testProductBuild() async throws {
-        var config = sys.productbuild(.synthesize, .pkg_path(FilePath("mypkg")), output_path: FilePath("distribution")).config()
-        #expect(String(describing: config) == "productbuild --synthesize --package mypkg distribution")
+        var cmd = sys.productbuild(.synthesize, .pkg_path(FilePath("mypkg")), output_path: FilePath("distribution"))
+        var config = cmd.config()
+        var args = cmd.commandArgs()
+        #expect(config.executable == .name("productbuild"))
+        #expect(args == ["--synthesize", "--package", "mypkg", "distribution"])
 
-        config = sys.productbuild(.dist_path(FilePath("mydist")), output_path: FilePath("product")).config()
-        #expect(String(describing: config) == "productbuild --distribution mydist product")
+        cmd = sys.productbuild(.dist_path(FilePath("mydist")), output_path: FilePath("product"))
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("productbuild"))
+        #expect(args == ["--distribution", "mydist", "product"])
 
-        config = sys.productbuild(.dist_path(FilePath("mydist")), .search_path(FilePath("pkgpath")), .cert("mycert"), output_path: FilePath("myproduct")).config()
-        #expect(String(describing: config) == "productbuild --distribution mydist --package-path pkgpath --sign mycert myproduct")
+        cmd = sys.productbuild(.dist_path(FilePath("mydist")), .search_path(FilePath("pkgpath")), .cert("mycert"), output_path: FilePath("myproduct"))
+        config = cmd.config()
+        args = cmd.commandArgs()
+        #expect(config.executable == .name("productbuild"))
+        #expect(args == ["--distribution", "mydist", "--package-path", "pkgpath", "--sign", "mycert", "myproduct"])
     }
 
     @Test func testGpg() async throws {
-        var config = sys.gpg()._import(key: FilePath("somekeys.asc")).config()
-        #expect(String(describing: config) == "gpg --import somekeys.asc")
+        let cmd = sys.gpg()._import(key: FilePath("somekeys.asc"))
+        var config = cmd.config()
+        var args = cmd.commandArgs()
+        #expect(config.executable == .name("gpg"))
+        #expect(args == ["--import", "somekeys.asc"])
 
-        config = sys.gpg().verify(detached_signature: FilePath("file.sig"), signed_data: FilePath("file")).config()
-        #expect(String(describing: config) == "gpg --verify file.sig file")
+        let verifyCmd = sys.gpg().verify(detached_signature: FilePath("file.sig"), signed_data: FilePath("file"))
+        config = verifyCmd.config()
+        args = verifyCmd.commandArgs()
+        #expect(config.executable == .name("gpg"))
+        #expect(args == ["--verify", "file.sig", "file"])
     }
 
     @Test func testPkgutil() async throws {
-        var config = sys.pkgutil(.verbose).checksignature(pkg_path: FilePath("path/to/my.pkg")).config()
-        #expect(String(describing: config) == "pkgutil --verbose --check-signature path/to/my.pkg")
+        let checkSigCmd = sys.pkgutil(.verbose).checksignature(pkg_path: FilePath("path/to/my.pkg"))
+        var config = checkSigCmd.config()
+        var args = checkSigCmd.commandArgs()
+        #expect(config.executable == .name("pkgutil"))
+        #expect(args == ["--verbose", "--check-signature", "path/to/my.pkg"])
 
-        config = sys.pkgutil(.verbose).expand(pkg_path: FilePath("path/to/my.pkg"), dir_path: FilePath("expand/to/here")).config()
-        #expect(String(describing: config) == "pkgutil --verbose --expand path/to/my.pkg expand/to/here")
+        let expandCmd = sys.pkgutil(.verbose).expand(pkg_path: FilePath("path/to/my.pkg"), dir_path: FilePath("expand/to/here"))
+        config = expandCmd.config()
+        args = expandCmd.commandArgs()
+        #expect(config.executable == .name("pkgutil"))
+        #expect(args == ["--verbose", "--expand", "path/to/my.pkg", "expand/to/here"])
 
-        config = sys.pkgutil(.volume("/Users/foo")).forget(pkg_id: "com.example.pkg").config()
-        #expect(String(describing: config) == "pkgutil --volume /Users/foo --forget com.example.pkg")
+        let forgetCmd = sys.pkgutil(.volume("/Users/foo")).forget(pkg_id: "com.example.pkg")
+        config = forgetCmd.config()
+        args = forgetCmd.commandArgs()
+        #expect(config.executable == .name("pkgutil"))
+        #expect(args == ["--volume", "/Users/foo", "--forget", "com.example.pkg"])
     }
 
     @Test func testInstaller() async throws {
-        var config = sys.installer(.verbose, .pkg(FilePath("path/to/my.pkg")), .target("CurrentUserHomeDirectory")).config()
-        #expect(String(describing: config) == "installer -verbose -pkg path/to/my.pkg -target CurrentUserHomeDirectory")
+        let cmd = sys.installer(.verbose, .pkg(FilePath("path/to/my.pkg")), .target("CurrentUserHomeDirectory"))
+        let config = cmd.config()
+        let args = cmd.commandArgs()
+        #expect(config.executable == .name("installer"))
+        #expect(args == ["-verbose", "-pkg", "path/to/my.pkg", "-target", "CurrentUserHomeDirectory"])
     }
 }

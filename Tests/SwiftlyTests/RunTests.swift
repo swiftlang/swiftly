@@ -1,3 +1,4 @@
+import ArgumentParser
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
@@ -27,7 +28,7 @@ import Testing
         // WHEN: invoking the run command with a selector argument for a toolchain that isn't installed
         do {
             try await SwiftlyTests.runCommand(Run.self, ["run", "swift", "+1.2.3", "--version"])
-            #expect(false)
+            Issue.record("This was expected to fail with an error because the toolchain isn't installed")
         } catch let e as SwiftlyError {
             #expect(e.message.contains("didn't match any of the installed toolchains"))
         }
@@ -38,7 +39,10 @@ import Testing
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func runEnvironment() async throws {
         // The toolchains directory should be the fist entry on the path
         let output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $PATH"])
-        #expect(output.count == 1)
+        guard output.count == 1 else {
+            Issue.record("Expecting one line of output: \(output)")
+            return
+        }
         #expect(output[0].contains(Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx).string))
     }
 
@@ -83,5 +87,35 @@ import Testing
         (command, selector) = try Run.extractProxyArguments(command: ["swift", "build"])
         #expect(["swift", "build"] == command)
         #expect(nil == selector)
+    }
+
+    /// Tests the help functionality of the `run` command
+    @Test(.testHomeMockedToolchain()) func runHelp() async throws {
+        // Test --help is handled correctly
+        do {
+            try await SwiftlyTests.runCommand(Run.self, ["run", "--help"])
+            #expect(false)
+        } catch {
+            #expect(error is CleanExit)
+        }
+
+        // Test -h is handled correctly
+        do {
+            try await SwiftlyTests.runCommand(Run.self, ["run", "-h"])
+            #expect(false)
+        } catch {
+            #expect(error is CleanExit)
+        }
+    }
+
+    /// Tests the version functionality of the `run` command
+    @Test(.testHomeMockedToolchain()) func runVersion() async throws {
+        // Test --version is handled correctly
+        do {
+            try await SwiftlyTests.runCommand(Run.self, ["run", "--version"])
+            #expect(false)
+        } catch {
+            #expect(error is CleanExit)
+        }
     }
 }

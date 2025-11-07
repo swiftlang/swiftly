@@ -1,4 +1,5 @@
 import Foundation
+import Subprocess
 @testable import Swiftly
 @testable import SwiftlyCore
 import SystemPackage
@@ -91,7 +92,7 @@ import Testing
     @Test(.mockedSwiftlyVersion(), .testHome()) func findXcodeToolchainLocation() async throws {
         // GIVEN: the xcode toolchain
         // AND there is xcode installed
-        guard let swiftLocation = try? await Swiftly.currentPlatform.runProgramOutput("xcrun", "-f", "swift"), swiftLocation != "" else {
+        guard let swiftLocation = try? await run(.name("xcrun"), arguments: ["-f", "swift"], output: .string(limit: 1024 * 10)).standardOutput, swiftLocation != "" else {
             return
         }
 
@@ -116,17 +117,18 @@ import Testing
         ]
     ) func proxyEnv(_ path: String) async throws {
         // GIVEN: a PATH that may contain the swiftly bin directory
-        let env = ["PATH": path.replacing("SWIFTLY_BIN_DIR", with: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string)]
+        let env: Environment = .custom(["PATH": path.replacing("SWIFTLY_BIN_DIR", with: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string)])
 
         // WHEN: proxying to an installed toolchain
-        let newEnv = try await Swiftly.currentPlatform.proxyEnv(SwiftlyTests.ctx, env: env, toolchain: .newStable)
+        let newEnv = try await Swiftly.currentPlatform.proxyEnvironment(SwiftlyTests.ctx, env: env, toolchain: .newStable)
 
         // THEN: the toolchain's bin directory is added to the beginning of the PATH
-        #expect(newEnv["PATH"]!.hasPrefix(((try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable)) / "usr/bin").string))
+        // #expect(newEnv.description == "")
+        #expect(newEnv.description.contains("PATH: \"\((try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable)) / "usr/bin"):"))
 
         // AND: the swiftly bin directory is removed from the PATH
-        #expect(!newEnv["PATH"]!.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string))
-        #expect(!newEnv["PATH"]!.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string))
+        #expect(!newEnv.description.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string))
+        #expect(!newEnv.description.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string))
     }
 #endif
 }

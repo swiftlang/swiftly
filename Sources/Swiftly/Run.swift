@@ -1,6 +1,8 @@
 import ArgumentParser
 import Foundation
+import Subprocess
 import SwiftlyCore
+import SystemPackage
 
 struct Run: SwiftlyCommand {
     public static let configuration = CommandConfiguration(
@@ -63,8 +65,13 @@ struct Run: SwiftlyCommand {
         var config = try await Config.load(ctx)
 
         // Handle the specific case where help is requested of the run subcommand
-        if command == ["--help"] {
+        if command == ["--help"] || command == ["-h"] {
             throw CleanExit.helpRequest(self)
+        }
+
+        // Handle the spcific case where version is requested of the run subcommand
+        if command == ["--version"] {
+            throw CleanExit.message(String(describing: SwiftlyCore.version))
         }
 
         let (command, selector) = try Self.extractProxyArguments(command: self.command)
@@ -93,24 +100,47 @@ struct Run: SwiftlyCommand {
             throw SwiftlyError(message: "No installed swift toolchain is selected from either from a .swift-version file, or the default. You can try using one that's already installed with `swiftly use <toolchain version>` or install a new toolchain to use with `swiftly install --use <toolchain version>`.")
         }
 
-        do {
-            if let outputHandler = ctx.outputHandler {
-                if let output = try await Swiftly.currentPlatform.proxyOutput(ctx, toolchain, command[0], [String](command[1...])) {
-                    for line in output.split(separator: "\n") {
-                        await outputHandler.handleOutputLine(String(line))
-                    }
+        let env: Environment = try await Swiftly.currentPlatform.proxyEnvironment(ctx, env: .inherit, toolchain: toolchain)
+
+        let commandPath = FilePath(command[0])
+        let executable: Executable
+        if try await fs.exists(atPath: commandPath) {
+            executable = .path(commandPath)
+        } else {
+            // Search the toolchain ourselves to find the correct executable path. Subprocess's default search
+            // paths will interfere with preferring the selected toolchain over system toolchains.
+            let tcBinPath = try await Swiftly.currentPlatform.findToolchainLocation(ctx, toolchain) / "usr/bin"
+            let toolPath = tcBinPath / command[0]
+            if try await fs.exists(atPath: toolPath) && toolPath.isLexicallyNormal {
+                executable = .path(toolPath)
+            } else {
+                executable = .name(command[0])
+            }
+        }
+
+        let processConfig = Configuration(
+            executable: executable,
+            arguments: Arguments([String](command[1...])),
+            environment: env
+        )
+
+        if let outputHandler = ctx.outputHandler {
+            let result = try await Subprocess.run(processConfig) { _, output in
+                for try await line in output.lines() {
+                    await outputHandler.handleOutputLine(line.replacing("\n", with: ""))
                 }
-                return
             }
 
-            try await Swiftly.currentPlatform.proxy(ctx, toolchain, command[0], [String](command[1...]))
-        } catch let terminated as RunProgramError {
-            if ctx.mockedHomeDir != nil {
-                throw terminated
+            if !result.terminationStatus.isSuccess {
+                throw RunProgramError(terminationStatus: result.terminationStatus, config: processConfig)
             }
-            Foundation.exit(terminated.exitCode)
-        } catch {
-            throw error
+
+            return
+        }
+
+        let result = try await Subprocess.run(.path(FilePath(command[0])), arguments: Arguments([String](command[1...])), environment: env, input: .standardInput, output: .standardOutput, error: .standardError)
+        if !result.terminationStatus.isSuccess {
+            throw RunProgramError(terminationStatus: result.terminationStatus, config: processConfig)
         }
     }
 

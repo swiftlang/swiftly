@@ -71,7 +71,7 @@ extension SwiftlyCommand {
     /// - Parameter ctx: The Swiftly context.
     func validateLinked(_ ctx: SwiftlyCoreContext) async throws {
         if try await !self.isLinked(ctx) {
-            await ctx.message(Messages.currentlyUnlinked)
+            await ctx.printError(Messages.currentlyUnlinked)
         }
     }
 

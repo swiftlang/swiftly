@@ -453,9 +453,7 @@ public struct Linux: Platform {
         try await fs.withTemporary(files: tmpFile) {
             try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
             if let mockedHomeDir = ctx.mockedHomeDir {
-                var env = ProcessInfo.processInfo.environment
-                env["GNUPGHOME"] = (mockedHomeDir / ".gnupg").string
-                try await sys.gpg()._import(key: tmpFile).run(environment: .init(env), quiet: true)
+                try await sys.gpg()._import(key: tmpFile).run(environment: .inherit.updating(["GNUPGHOME": (mockedHomeDir / ".gnupg").string]), quiet: true)
             } else {
                 try await sys.gpg()._import(key: tmpFile).run(quiet: true)
             }

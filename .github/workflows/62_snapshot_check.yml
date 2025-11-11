@@ -30,6 +30,7 @@ jobs:
   tests-selfhosted-macos:
     name: Test (Smoke Test - Nightly Swift Toolchain) / macOS Sequoia ARM64
     runs-on: [self-hosted, macos, sequoia, ARM64]
+    if: ${{ github.repository == 'swiftlang/swiftly' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

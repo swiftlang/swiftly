@@ -285,16 +285,7 @@ public struct Linux: Platform {
                 throw SwiftlyError(message: msg)
             }
 
-            let tmpFile = self.getTempFilePath()
-            try await fs.create(.mode(0o600), file: tmpFile, contents: nil)
-            try await fs.withTemporary(files: tmpFile) {
-                try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
-                if let mockedHomeDir = ctx.mockedHomeDir {
-                    try await sys.gpg()._import(key: tmpFile).run(environment: .inherit.updating(["GNUPGHOME": (mockedHomeDir / ".gnupg").string]), quiet: true)
-                } else {
-                    try await sys.gpg()._import(key: tmpFile).run(quiet: true)
-                }
-            }
+            try await self.importGpgKeys(ctx)
         }
 
         guard let manager = manager else {
@@ -430,6 +421,9 @@ public struct Linux: Platform {
     public func verifyToolchainSignature(
         _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: FilePath, verbose: Bool
     ) async throws {
+        // Ensure GPG keys are imported before attempting signature verification
+        try await self.importGpgKeys(ctx)
+
         if verbose {
             await ctx.message("Downloading toolchain signature...")
         }
@@ -452,9 +446,26 @@ public struct Linux: Platform {
         }
     }
 
+    /// Import Swift.org GPG keys for signature verification
+    private func importGpgKeys(_ ctx: SwiftlyCoreContext) async throws {
+        let tmpFile = self.getTempFilePath()
+        try await fs.create(.mode(0o600), file: tmpFile, contents: nil)
+        try await fs.withTemporary(files: tmpFile) {
+            try await ctx.httpClient.getGpgKeys().download(to: tmpFile)
+            if let mockedHomeDir = ctx.mockedHomeDir {
+                try await sys.gpg()._import(key: tmpFile).run(environment: .inherit.updating(["GNUPGHOME": (mockedHomeDir / ".gnupg").string]), quiet: true)
+            } else {
+                try await sys.gpg()._import(key: tmpFile).run(quiet: true)
+            }
+        }
+    }
+
     public func verifySwiftlySignature(
         _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: FilePath, verbose: Bool
     ) async throws {
+        // Ensure GPG keys are imported before attempting signature verification
+        try await self.importGpgKeys(ctx)
+
         if verbose {
             await ctx.message("Downloading swiftly signature...")
         }

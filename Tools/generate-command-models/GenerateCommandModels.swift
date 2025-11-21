@@ -277,28 +277,16 @@ struct GenerateCommandModels: AsyncParsableCommand {
             """
         }
 
-        let argumentsFunc: String
-        if path.count == 0 {
-            argumentsFunc = """
-            public func commandArgs() -> [String] {
-                var genArgs: [String] = []
+        let genArgs = options.asArgs + vars.asArgs
+        let argumentsFunc = """
+        public func commandArgs() -> [String] {
+            \(genArgs.isEmpty ? "let" : "var") genArgs: [String] = \(path.count == 0 ? "[]" : "self.parent.commandArgs() + [\"\(execName)\"]")
 
-                \((options.asArgs + vars.asArgs).joined(separator: "\n" + indent(1)))
+                \(genArgs.joined(separator: "\n" + indent(1)))
 
-                return genArgs
-            }
-            """.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n" + indent(1))
-        } else {
-            argumentsFunc = """
-            public func commandArgs() -> [String] {
-                var genArgs: [String] = self.parent.commandArgs() + ["\(execName)"]
-
-                \((options.asArgs + vars.asArgs).joined(separator: "\n" + indent(1)))
-
-                return genArgs
-            }
-            """.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n" + indent(1))
+            return genArgs
         }
+        """.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n" + indent(1))
 
         let configFunc: String
         if path.count == 0 {

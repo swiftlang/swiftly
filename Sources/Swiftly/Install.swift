@@ -59,6 +59,9 @@ struct Install: SwiftlyCommand {
         help: "Verify (or not) the toolchain's PGP signature before proceeding with installation."
     )
     var verify = true
+    
+    @Flag(name: .shortAndLong, help: "Hides the install progress animation.")
+    var quiet = false
 
     @Option(
         help: ArgumentHelp(
@@ -87,7 +90,7 @@ struct Install: SwiftlyCommand {
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case version, use, verify, postInstallFile, root, progressFile, format
+        case version, use, verify, postInstallFile, root, progressFile, format, quiet
     }
 
     mutating func run() async throws {
@@ -118,7 +121,8 @@ struct Install: SwiftlyCommand {
             verifySignature: self.verify,
             verbose: self.root.verbose,
             assumeYes: self.root.assumeYes,
-            progressFile: self.progressFile
+            progressFile: self.progressFile,
+            hideProgressAnimation: quiet
         )
 
         if pathChanged {
@@ -248,7 +252,8 @@ struct Install: SwiftlyCommand {
         verifySignature: Bool,
         verbose: Bool,
         assumeYes: Bool,
-        progressFile: FilePath? = nil
+        progressFile: FilePath? = nil,
+        hideProgressAnimation: Bool = false
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
             let installInfo = InstallInfo(
@@ -309,8 +314,10 @@ struct Install: SwiftlyCommand {
             }
 
             let animation: ProgressReporterProtocol? =
-                if let progressFile
+                if hideProgressAnimation
             {
+                nil
+            } else if let progressFile {
                 try JsonFileProgressReporter(ctx, filePath: progressFile)
             } else if ctx.format == .json {
                 ConsoleProgressReporter(stream: stderrStream, header: "Downloading \(version)")

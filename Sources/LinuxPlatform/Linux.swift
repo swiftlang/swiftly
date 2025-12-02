@@ -263,7 +263,7 @@ public struct Linux: Platform {
                         \(manager) -y install gpg
                     """
                 } else {
-                    msg += "you can install gpg to get signature verifications of the toolchahins."
+                    msg += "you can install gpg to get signature verifications of the toolchains."
                 }
                 msg += "\n" + Self.skipVerificationMessage
 

@@ -77,7 +77,7 @@ struct Use: SwiftlyCommand {
         var config = try await Config.load(ctx)
 
         // Only validate linked state if we're not printing the location
-        if !printLocation {
+        if !self.printLocation {
             try await validateLinked(ctx)
         }
 

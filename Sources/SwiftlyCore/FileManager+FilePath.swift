@@ -79,8 +79,13 @@ public enum FileSystem {
         try FileManager.default.contentsOfDir(atPath: atPath)
     }
 
-    public static func readlink(atPath: FilePath) async throws -> FilePath {
-        try FileManager.default.destinationOfSymbolicLink(atPath: atPath)
+    public static func readlink(atPath: FilePath, follow: Bool) async throws -> FilePath {
+        let path = try FileManager.default.destinationOfSymbolicLink(atPath: atPath)
+        if follow {
+            return FilePath(URL(fileURLWithPath: path.string).resolvingSymlinksInPath().path)
+        } else {
+            return path
+        }
     }
 
     public static func isSymLink(atPath: FilePath) async throws -> Bool {

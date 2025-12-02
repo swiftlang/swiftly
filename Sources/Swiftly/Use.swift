@@ -76,7 +76,10 @@ struct Use: SwiftlyCommand {
 
         var config = try await Config.load(ctx)
 
-        try await validateLinked(ctx)
+        // Only validate linked state if we're not printing the location
+        if !printLocation {
+            try await validateLinked(ctx)
+        }
 
         // This is the bare use command where we print the selected toolchain version (or the path to it)
         guard let toolchain = self.toolchain else {

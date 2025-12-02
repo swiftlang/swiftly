@@ -165,7 +165,7 @@ struct Install: SwiftlyCommand {
 
             for bin in swiftlyBinDirContents {
                 do {
-                    let linkTarget = try await fs.readlink(atPath: swiftlyBinDir / bin)
+                    let linkTarget = try await fs.readlink(atPath: swiftlyBinDir / bin, follow: false)
                     if linkTarget == proxyTo {
                         existingProxies.append(bin)
                     }

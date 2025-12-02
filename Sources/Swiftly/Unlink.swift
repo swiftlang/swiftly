@@ -55,7 +55,7 @@ struct Unlink: SwiftlyCommand {
             let swiftlyBinDirContents = (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
             var proxies = [String]()
             for file in swiftlyBinDirContents {
-                let linkTarget = try? await fs.readlink(atPath: swiftlyBinDir / file)
+                let linkTarget = try? await fs.readlink(atPath: swiftlyBinDir / file, follow: true)
                 if linkTarget == proxyTo {
                     proxies.append(file)
                 }
@@ -93,7 +93,7 @@ extension SwiftlyCommand {
             }
 
             let potentialProxyPath = swiftlyBinDir / file
-            if let linkTarget = try? await fs.readlink(atPath: potentialProxyPath), linkTarget == proxyTo {
+            if let linkTarget = try? await fs.readlink(atPath: potentialProxyPath, follow: true), linkTarget == proxyTo {
                 return true
             }
         }

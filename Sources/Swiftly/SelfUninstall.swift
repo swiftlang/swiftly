@@ -110,7 +110,7 @@ struct SelfUninstall: SwiftlyCommand {
                 let fullPath = swiftlyBin / entry
                 guard try await fs.exists(atPath: fullPath) else { continue }
                 if try await fs.isSymLink(atPath: fullPath) {
-                    let dest = try await fs.readlink(atPath: fullPath)
+                    let dest = try await fs.readlink(atPath: fullPath, follow: false)
                     if dest == swiftlyBinary {
                         if verbose {
                             await ctx.print("Removing symlink: \(fullPath) -> \(dest)")

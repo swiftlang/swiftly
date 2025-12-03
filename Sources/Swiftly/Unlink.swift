@@ -92,12 +92,35 @@ extension SwiftlyCommand {
                 continue
             }
 
-            let potentialProxyPath = swiftlyBinDir / file
-            if let linkTarget = try? await fs.readlink(atPath: potentialProxyPath), linkTarget == proxyTo {
+            if await (swiftlyBinDir / file).linksTo(proxyTo) {
                 return true
             }
         }
 
+        return false
+    }
+}
+
+extension FilePath {
+    fileprivate func linksTo(_ other: FilePath) async -> Bool {
+        var path = self
+        var jumps = 0
+        while jumps < 10 { // More than 10 jumps is probably a symlink loop.
+            if path == other {
+                return true
+            }
+            jumps += 1
+            do {
+                let jumpTarget = try await fs.readlink(atPath: path)
+                path = if jumpTarget.isAbsolute {
+                    jumpTarget
+                } else {
+                    path.parent.pushing(jumpTarget).lexicallyNormalized()
+                }
+            } catch {
+                break
+            }
+        }
         return false
     }
 }

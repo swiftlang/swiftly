@@ -305,7 +305,7 @@ struct Install: SwiftlyCommand {
                     category = "development"
                 }
             case .xcode:
-                fatalError("unreachable: xcode toolchain cannot be installed with swiftly")
+                throw SwiftlyError(message: "xcode toolchain is installed with Xcode")
             }
 
             let animation: ProgressReporterProtocol? =
@@ -515,7 +515,7 @@ struct Install: SwiftlyCommand {
 
             return .snapshot(firstSnapshot)
         case .xcode:
-            throw SwiftlyError(message: "xcode toolchains are not available from swift.org")
+            return .xcode
         }
     }
 }

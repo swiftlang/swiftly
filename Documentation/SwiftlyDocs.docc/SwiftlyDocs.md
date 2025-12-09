@@ -22,6 +22,8 @@ It provides a single path to install, update, remove, or run commands with a spe
 - <doc:update-toolchain>
 - <doc:automated-install>
 
+- <doc:trouble>
+
 ### Reference
 
 - <doc:swiftly-cli-reference>

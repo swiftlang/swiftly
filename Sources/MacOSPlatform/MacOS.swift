@@ -62,9 +62,10 @@ public struct MacOS: Platform {
         // shell script for installing developer tools on macOS.
         if !result.terminationStatus.isSuccess {
             await ctx.print("""
-            \nWARNING: Could not find a macOS SDK on the system. A macOS SDK is required for the toolchain to work correctly. Please install one via Xcode (https://developer.apple.com/xcode) or run the following command on your machine to install the command line developer tools: `xcode-select --install`. 
+            \nWARNING: Could not find a macOS SDK on the system. A macOS SDK is required for the toolchain to work correctly. Please install one via Xcode (https://developer.apple.com/xcode) or run the following command on your machine to install the Command Line Tools for Xcode:\n`xcode-select --install`.
 
-            If developer tools are located at a non-default location on disk, use `sudo xcode-select --switch path/to/Xcode.app` to specify the Xcode that you wish to use for command line developer tools.\n
+            More information on installing the Command Line Tools can be found here: https://developer.apple.com/documentation/xcode/installing-the-command-line-tools/#Install-the-Command-Line-Tools-package-in-Terminal. If developer tools are located at a non-default location on disk, use the following command to specify the Xcode that you wish to use for Command Line Tools for Xcode:
+            `sudo xcode-select --switch path/to/Xcode.app`\n
             """)
         }
 

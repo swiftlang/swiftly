@@ -51,15 +51,11 @@ public struct MacOS: Platform {
         requireSignatureValidation _: Bool
     ) async throws -> String? {
         // Ensure that there is in fact a macOS SDK installed so the toolchain is usable.
-        let result = try await run(
-            .path(SystemPackage.FilePath("/usr/bin/xcrun")),
-            arguments: ["--show-sdk-path", "--sdk", "macosx"],
-            output: .string(limit: 1024 * 10)
-        )
-
-        // Simply print warnings to the user stdout rather than returning a shell script, as there is not a simple
-        // shell script for installing developer tools on macOS.
-        if !result.terminationStatus.isSuccess {
+        guard let result = try await self.runProgramOutput(
+            "/usr/bin/xcrun", "--show-sdk-path", "--sdk", "macosx"
+        ) else {
+            // Simply print warnings to the user stdout rather than returning a shell script, as there is not a simple
+            // shell script for installing developer tools on macOS.
             await ctx.print("""
             \nWARNING: Could not find a macOS SDK on the system. A macOS SDK is required for the toolchain to work correctly. Please install one via Xcode (https://developer.apple.com/xcode) or run the following command on your machine to install the Command Line Tools for Xcode:
             xcode-select --install
@@ -67,9 +63,10 @@ public struct MacOS: Platform {
             More information on installing the Command Line Tools can be found here: https://developer.apple.com/documentation/xcode/installing-the-command-line-tools/#Install-the-Command-Line-Tools-package-in-Terminal. If developer tools are located at a non-default location on disk, use the following command to specify the Xcode that you wish to use for Command Line Tools for Xcode:
             sudo xcode-select --switch path/to/Xcode.app\n
             """)
+            return nil
         }
 
-        let sdkPath = result.standardOutput?.replacingOccurrences(of: "\n", with: "")
+        let sdkPath = result.replacingOccurrences(of: "\n", with: "")
 
         if sdkPath == nil {
             await ctx.print("WARNING: Could not read output of '/usr/bin/xcrun --show-sdk-path --sdk macosx'. Ensure your macOS SDK is installed properly for the swift toolchain to work.")

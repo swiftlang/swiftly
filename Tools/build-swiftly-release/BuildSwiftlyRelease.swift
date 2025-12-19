@@ -205,12 +205,37 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             throw Error(message: "Swift release \(swiftVersion) has no Static SDK offering")
         }
 
-        try await sys.swift().sdk().install(.checksum(sdkPlatform.checksum ?? "deadbeef"), bundle_path_or_url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz").runEcho()
+        // try await sys.swift().sdk().install(.checksum(sdkPlatform.checksum ?? "deadbeef"), bundle_path_or_url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz").runEcho()
+
+        // Download and extract SDK into the build checkouts directory
+        let sdkRequest = HTTPClientRequest(url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz")
+        let sdkResponse = try await httpExecutor.httpClient.execute(sdkRequest, timeout: .seconds(60))
+        guard sdkResponse.status == .ok else {
+            throw Error(message: "Download failed with status: \(sdkResponse.status)")
+        }
+
+        try await NIOFileSystem.FileSystem.shared.withFileHandle(forWritingAt: buildCheckoutsDir / "static-linux-sdk.tar.gz", options: .newFile(replaceExisting: true)) { fileHandle in
+            var pos: Int64 = 0
+
+            for try await buffer in sdkResponse.body {
+                pos += try await fileHandle.write(contentsOf: buffer, toAbsoluteOffset: pos)
+            }
+        }
+
+        guard let sdkShaActual = try await sys.sha256sum(files: buildCheckoutsDir / "static-linux-sdk.tar.gz").output(limit: 1024) else { throw Error(message: "Unable to calculate sha256sum of static-linux-sdk.tar.gz") }
+        guard sdkShaActual.starts(with: sdkPlatform.checksum ?? "beefdead") else {
+            throw Error(message: "The static linux sdk tar.gz file sha256sum is \(sdkShaActual), but expected \(sdkPlatform.checksum)")
+        }
+
+        let sdkDir = fs.mktemp()
+        try await fs.mkdir(atPath: sdkDir)
+
+        try await sys.tar(.directory(sdkDir)).extract(.compressed, .archive(buildCheckoutsDir / "static-linux-sdk.tar.gz")).runEcho()
 
         var customEnv: Environment = .inherit
         customEnv = customEnv.updating([
             "CC": "\(cwd)/Tools/build-swiftly-release/musl-clang",
-            "MUSL_PREFIX": "\(fs.home / ".swiftpm/swift-sdks/\(sdkName).artifactbundle/\(sdkName)/swift-linux-musl/musl-1.2.5.sdk/\(arch)/usr")",
+            "MUSL_PREFIX": "\(sdkDir / "\(sdkName).artifactbundle/\(sdkName)/swift-linux-musl/musl-1.2.5.sdk/\(arch)/usr")",
         ])
 
         let configCmd = Configuration(
@@ -254,7 +279,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         FileManager.default.changeCurrentDirectoryPath(cwd.string)
 
-        try await sys.swift().build(.swift_sdk("\(arch)-swift-linux-musl"), .product("swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .static_swift_stdlib, .configuration("release")).runEcho()
+        try await sys.swift().build(.swift_sdks_path(sdkDir.string), .swift_sdk("swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"), .arch(arch), .product("swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .configuration("release")).runEcho()
 
         let releaseDir = cwd / ".build/release"
 
@@ -263,11 +288,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         try await self.collectLicenses(releaseDir)
 
-#if arch(arm64)
-        let releaseArchive = releaseDir / "swiftly-\(version)-aarch64.tar.gz"
-#else
-        let releaseArchive = releaseDir / "swiftly-\(version)-x86_64.tar.gz"
-#endif
+        let releaseArchive = releaseDir / "swiftly-\(version)-\(arch).tar.gz"
 
         try await sys.tar(.directory(releaseDir)).create(.compressed, .archive(releaseArchive), files: ["swiftly", "LICENSE.txt"]).runEcho()
 
@@ -288,7 +309,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             print(testArchive)
         }
 
-        try await sys.swift().sdk().remove(sdk_id_or_bundle_name: sdkName).runEcho()
+        try await fs.remove(atPath: sdkDir)
     }
 
     func buildMacOSRelease(cert: String?, identifier: String) async throws {

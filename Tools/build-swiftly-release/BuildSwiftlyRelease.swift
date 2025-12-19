@@ -301,7 +301,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             let testArchive = debugDir / "test-swiftly-linux-x86_64.tar.gz"
 #endif
 
-            try await sys.swift().build(.swift_sdks_path(sdkDir.string),.swift_sdk("swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"), .arch(arch), .product("test-swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .configuration("debug")).runEcho()
+            try await sys.swift().build(.swift_sdks_path(sdkDir.string), .swift_sdk("swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"), .arch(arch), .product("test-swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .configuration("debug")).runEcho()
             try await sys.tar(.directory(debugDir)).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).runEcho()
 
             print(testArchive)

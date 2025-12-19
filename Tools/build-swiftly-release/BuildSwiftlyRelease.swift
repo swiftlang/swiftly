@@ -173,7 +173,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try await sys.tar(.directory(buildCheckoutsDir)).extract(.compressed, .archive(buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz")).runEcho()
 
         let cwd = fs.cwd
-        FileManager.default.changeCurrentDirectoryPath(libArchivePath.string)
+        _ = FileManager.default.changeCurrentDirectoryPath(libArchivePath.string)
 
         let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.?\\d*) ")
 
@@ -205,8 +205,6 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             throw Error(message: "Swift release \(swiftVersion) has no Static SDK offering")
         }
 
-        // try await sys.swift().sdk().install(.checksum(sdkPlatform.checksum ?? "deadbeef"), bundle_path_or_url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz").runEcho()
-
         // Download and extract SDK into the build checkouts directory
         let sdkRequest = HTTPClientRequest(url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz")
         let sdkResponse = try await httpExecutor.httpClient.execute(sdkRequest, timeout: .seconds(60))
@@ -224,7 +222,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         guard let sdkShaActual = try await sys.sha256sum(files: buildCheckoutsDir / "static-linux-sdk.tar.gz").output(limit: 1024) else { throw Error(message: "Unable to calculate sha256sum of static-linux-sdk.tar.gz") }
         guard sdkShaActual.starts(with: sdkPlatform.checksum ?? "beefdead") else {
-            throw Error(message: "The static linux sdk tar.gz file sha256sum is \(sdkShaActual), but expected \(sdkPlatform.checksum)")
+            throw Error(message: "The static linux sdk tar.gz file sha256sum is \(sdkShaActual), but expected \(sdkPlatform.checksum ?? "none")")
         }
 
         let sdkDir = fs.mktemp()
@@ -277,7 +275,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         try await sys.make().install().runEcho()
 
-        FileManager.default.changeCurrentDirectoryPath(cwd.string)
+        _ = FileManager.default.changeCurrentDirectoryPath(cwd.string)
 
         try await sys.swift().build(.swift_sdks_path(sdkDir.string), .swift_sdk("swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"), .arch(arch), .product("swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .configuration("release")).runEcho()
 
@@ -303,7 +301,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             let testArchive = debugDir / "test-swiftly-linux-x86_64.tar.gz"
 #endif
 
-            try await sys.swift().build(.swift_sdk("\(arch)-swift-linux-musl"), .product("test-swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .static_swift_stdlib, .configuration("debug")).runEcho()
+            try await sys.swift().build(.swift_sdks_path(sdkDir.string),.swift_sdk("swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"), .arch(arch), .product("test-swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .configuration("debug")).runEcho()
             try await sys.tar(.directory(debugDir)).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).runEcho()
 
             print(testArchive)

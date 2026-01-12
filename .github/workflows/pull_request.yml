@@ -25,6 +25,7 @@ jobs:
   macos-tests-selfhosted:
     name: Test (Self Hosted) / macOS Sequoia ARM64
     runs-on: [self-hosted, macos, sequoia, ARM64]
+    if: ${{ github.repository == 'swiftlang/swiftly' }}
     strategy:
       fail-fast: false
     steps:
@@ -85,6 +86,7 @@ jobs:
   releasebuildcheckmacos:
     name: Release Build Check / macOS
     runs-on: [self-hosted, macos, sequoia, ARM64]
+    if: ${{ github.repository == 'swiftlang/swiftly' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

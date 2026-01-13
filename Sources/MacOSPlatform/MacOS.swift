@@ -18,6 +18,8 @@ public struct SwiftPkgInfo: Codable {
 public struct MacOS: Platform {
     public init() {}
 
+    private let SWIFTLY_TOOLCHAINS_DIR = "SWIFTLY_TOOLCHAINS_DIR"
+
     public var defaultSwiftlyHomeDir: FilePath {
         fs.home / ".swiftly"
     }
@@ -34,7 +36,7 @@ public struct MacOS: Platform {
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "Toolchains" }
-            ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { FilePath($0) }
+            ?? ProcessInfo.processInfo.environment[self.SWIFTLY_TOOLCHAINS_DIR].map { FilePath($0) }
             // This is where the installer will put the toolchains, and where Xcode can find them
             ?? self.defaultToolchainsDirectory
     }
@@ -278,7 +280,53 @@ public struct MacOS: Platform {
             return newEnv
         }
 
-        newEnv = newEnv.updating(["TOOLCHAINS": bundleID])
+        // If someday the two tools in the toolchain that require xcrun were to remove their dependency on it then
+        // we can determine the maximum toolchain version where these environment variables are needed and abort early
+        // here.
+
+        let TOOLCHAINS: Environment.Key = "TOOLCHAINS"
+        let DEVELOPER_DIR: Environment.Key = "DEVELOPER_DIR"
+
+        if let existingToolchains = ProcessInfo.processInfo.environment[TOOLCHAINS.rawValue], existingToolchains != bundleID {
+            throw SwiftlyError(message: "You have already set \(TOOLCHAINS.rawValue) environment variable to \(existingToolchains), but swiftly has picked another toolchain. Please unset it or `swiftly use xcode` to use the Xcode selection mechanism.")
+        }
+        newEnv = newEnv.updating([TOOLCHAINS: bundleID])
+
+        // Set a compatible DEVELOPER_DIR in case of a custom swiftly toolchain location (not ~/Library/Developer/Toolchains)
+        if let swiftlyToolchainsDir = ProcessInfo.processInfo.environment[SWIFTLY_TOOLCHAINS_DIR],
+           case let customToolchainsDir = FilePath(swiftlyToolchainsDir),
+           customToolchainsDir != defaultToolchainsDirectory
+        {
+            let developerDir: FilePath
+
+            // This is a DEVELOPER_DIR compatible path, so just set it to the parent of that
+            if customToolchainsDir.lastComponent == "Toolchains" {
+                developerDir = customToolchainsDir.parent
+            } else {
+                // Otherwise, we will use a symlink to create the necessary structure from within SWIFTLY_HOME
+                let toolchainsLinkDir = swiftlyHomeDir(ctx) / "Swiftly Developer" / "Toolchains"
+
+                // Create the directory if it doesn't already exist
+                if !(try await fs.exists(atPath: toolchainsLinkDir.parent)) {
+                    try await fs.mkdir(atPath: toolchainsLinkDir.parent)
+                }
+
+                // Create the symlink if it doesn't already exist
+                if !(try await fs.exists(atPath: toolchainsLinkDir)) {
+                    try await fs.symlink(atPath: toolchainsLinkDir, linkPath: customToolchainsDir)
+                }
+
+                developerDir = toolchainsLinkDir.parent
+            }
+
+            if let developerDirEnv = ProcessInfo.processInfo.environment[DEVELOPER_DIR.rawValue],
+               developerDirEnv != developerDir.string
+            {
+                throw SwiftlyError(message: "You have set \(DEVELOPER_DIR.rawValue) environment variable to \(developerDirEnv), but swiftly is trying to use its own location so that a toolchain can be selected. Please unset the environment variable and try again.")
+            }
+
+            newEnv = newEnv.updating([DEVELOPER_DIR: developerDir.string])
+        }
 
         return newEnv
     }

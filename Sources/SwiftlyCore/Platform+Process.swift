@@ -39,22 +39,7 @@ extension Platform {
         pathComponents.removeAll(where: { $0 == swiftlyBinDir.string })
 
         environment = environment.updating(["PATH": String(pathComponents.joined(separator: ":"))])
-
-#if os(macOS)
-        // On macOS, we try to set SDKROOT if its empty for tools like clang++ that need it to
-        // find standard libraries that aren't in the toolchain, like libc++. Here we
-        // use xcrun to tell us what the default sdk root should be.
-        if ProcessInfo.processInfo.environment["SDKROOT"] == nil {
-            environment = environment.updating([
-                "SDKROOT": try? await run(
-                    .path(SystemPackage.FilePath("/usr/bin/xcrun")),
-                    arguments: ["--show-sdk-path"],
-                    output: .string(limit: 1024 * 10)
-                ).standardOutput?.replacingOccurrences(of: "\n", with: ""),
-            ]
-            )
-        }
-#endif
+        environment = try await self.updateEnvironmentWithToolchain(ctx, environment, toolchain)
 
         return environment
     }

@@ -185,6 +185,22 @@ public struct MacOS: Platform {
 
         let toolchainDir = self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"
 
+        let bundleID = try await findToolchainBundleID(ctx, toolchain)
+
+        try await fs.remove(atPath: toolchainDir)
+
+        if let bundleID {
+            try? await sys.pkgutil(.volume(fs.home)).forget(pkg_id: bundleID).run(quiet: !verbose)
+        }
+    }
+
+    private func findToolchainBundleID(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> String? {
+        guard toolchain != .xcode else {
+            return nil
+        }
+
+        let toolchainDir = self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"
+
         let decoder = PropertyListDecoder()
         let infoPlist = toolchainDir / "Info.plist"
         let data = try await fs.cat(atPath: infoPlist)
@@ -193,9 +209,7 @@ public struct MacOS: Platform {
             throw SwiftlyError(message: "could not decode plist at \(infoPlist)")
         }
 
-        try await fs.remove(atPath: toolchainDir)
-
-        try? await sys.pkgutil(.volume(fs.home)).forget(pkg_id: pkgInfo.CFBundleIdentifier).run(quiet: !verbose)
+        return pkgInfo.CFBundleIdentifier
     }
 
     public func getExecutableName() -> String {
@@ -242,6 +256,31 @@ public struct MacOS: Platform {
         }
 
         return self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"
+    }
+
+    public func updateEnvironmentWithToolchain(_ ctx: SwiftlyCoreContext, _ environment: Environment, _ toolchain: ToolchainVersion) async throws -> Environment {
+        var newEnv = environment
+
+        // On macOS, we try to set SDKROOT if its empty for tools like clang++ that need it to
+        // find standard libraries that aren't in the toolchain, like libc++. Here we
+        // use xcrun to tell us what the default sdk root should be.
+        if ProcessInfo.processInfo.environment["SDKROOT"] == nil {
+            newEnv = newEnv.updating([
+                "SDKROOT": try? await run(
+                    .path(SystemPackage.FilePath("/usr/bin/xcrun")),
+                    arguments: ["--show-sdk-path"],
+                    output: .string(limit: 1024 * 10)
+                ).standardOutput?.replacingOccurrences(of: "\n", with: ""),
+            ])
+        }
+
+        guard let bundleID = try await findToolchainBundleID(ctx, toolchain) else {
+            return newEnv
+        }
+
+        newEnv = newEnv.updating(["TOOLCHAINS": bundleID])
+
+        return newEnv
     }
 
     public static let currentPlatform: any Platform = MacOS()

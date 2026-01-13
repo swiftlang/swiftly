@@ -138,6 +138,9 @@ public protocol Platform: Sendable {
 
     /// Find the location of the toolchain binaries.
     func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath
+
+    /// Update the process environment used when proxying based on the selected toolchain.
+    func updateEnvironmentWithToolchain(_ ctx: SwiftlyCoreContext, _ environment: Environment, _ toolchain: ToolchainVersion) async throws -> Environment
 }
 
 extension Platform {

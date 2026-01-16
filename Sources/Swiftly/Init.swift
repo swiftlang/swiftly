@@ -68,11 +68,82 @@ struct Init: SwiftlyCommand {
 
         var config = try? await Config.load(ctx)
 
+        func oldEnvSh(_ ctx: SwiftlyCoreContext) -> String {
+            """
+            export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
+            export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
+            export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            if [[ ":$PATH:" != *":$SWIFTLY_BIN_DIR:"* ]]; then
+                export PATH="$SWIFTLY_BIN_DIR:$PATH"
+            fi
+
+            """
+        }
+
+        func oldEnvFish(_ ctx: SwiftlyCoreContext) -> String {
+            """
+            set -x SWIFTLY_HOME_DIR "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
+            set -x SWIFTLY_BIN_DIR "\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
+            set -x SWIFTLY_TOOLCHAINS_DIR "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            if not contains "$SWIFTLY_BIN_DIR" $PATH
+                set -x PATH "$SWIFTLY_BIN_DIR" $PATH
+            end
+
+            """
+        }
+
+        func envSh(_ ctx: SwiftlyCoreContext) -> String {
+            """
+            export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
+            export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
+            export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+
+            # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
+            PATH="${PATH//:$SWIFTLY_BIN_DIR/}"
+            PATH="${PATH/#$SWIFTLY_BIN_DIR:/}"
+            export PATH="$SWIFTLY_BIN_DIR:$PATH"
+
+            """
+        }
+
+        func envFish(_ ctx: SwiftlyCoreContext) -> String {
+            """
+            set -x SWIFTLY_HOME_DIR "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
+            set -x SWIFTLY_BIN_DIR "\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
+            set -x SWIFTLY_TOOLCHAINS_DIR "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+
+            # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
+            set -e PATH[(contains -i "$SWIFTLY_BIN_DIR" $PATH)]
+            set -x PATH "$SWIFTLY_BIN_DIR" $PATH
+
+            """
+        }
+
         if var config, !overwrite && !migrations.filter({ $0.matches(config.version) }).isEmpty {
             // This is a simple upgrade from the 0.4.0 pre-releases, or 1.x
 
             // Move our executable over to the correct place
             try await Swiftly.currentPlatform.installSwiftlyBin(ctx)
+
+            // Check for an outdated env.sh, and update it if the contents is recognized.
+            if case let envFile = (Swiftly.currentPlatform.swiftlyHomeDir(ctx)) / "env.sh",
+               (try? await fs.exists(atPath: envFile)) ?? false,
+               let contents = String(data: (try? await fs.cat(atPath: envFile)) ?? Data(), encoding: .utf8),
+               contents == oldEnvSh(ctx)
+            {
+                await ctx.print("Updating shell environment \(envFile)")
+                try Data(envSh(ctx).utf8).write(to: envFile, options: .atomic)
+            }
+
+            // Check for an outdated env.fish, and update it if the contents is recognized.
+            if case let envFile = (Swiftly.currentPlatform.swiftlyHomeDir(ctx)) / "env.fish",
+               (try? await fs.exists(atPath: envFile)) ?? false,
+               let contents = String(data: (try? await fs.cat(atPath: envFile)) ?? Data(), encoding: .utf8),
+               contents == oldEnvFish(ctx)
+            {
+                await ctx.print("Updating fish shell environment \(envFile)")
+                try Data(envFish(ctx).utf8).write(to: envFile, options: .atomic)
+            }
 
             // Update and save the version
             config.version = SwiftlyCore.version
@@ -213,25 +284,9 @@ struct Init: SwiftlyCommand {
             await ctx.message("Creating shell environment file for the user...")
             var env = ""
             if shell.hasSuffix("fish") {
-                env = """
-                set -x SWIFTLY_HOME_DIR "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-                set -x SWIFTLY_BIN_DIR "\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-                set -x SWIFTLY_TOOLCHAINS_DIR "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
-                if not contains "$SWIFTLY_BIN_DIR" $PATH
-                    set -x PATH "$SWIFTLY_BIN_DIR" $PATH
-                end
-
-                """
+                env = envFish(ctx)
             } else {
-                env = """
-                export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-                export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-                export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
-                if [[ ":$PATH:" != *":$SWIFTLY_BIN_DIR:"* ]]; then
-                    export PATH="$SWIFTLY_BIN_DIR:$PATH"
-                fi
-
-                """
+                env = envSh(ctx)
             }
 
             try Data(env.utf8).write(to: envFile, options: .atomic)

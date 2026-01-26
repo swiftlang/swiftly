@@ -31,7 +31,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.7.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.2"),
         .package(url: "https://github.com/apple/swift-system", from: "1.4.2"),
-        .package(url: "https://github.com/swiftlang/swift-subprocess", exact: "0.2.1", traits: []),
+        .package(url: "https://github.com/swiftlang/swift-subprocess", exact: "0.3.0", traits: []),
         // This dependency provides the correct version of the formatter so that you can run `swift run swiftformat Package.swift Plugins/ Sources/ Tests/`
         .package(url: "https://github.com/nicklockwood/SwiftFormat", exact: "0.49.18"),
     ],

@@ -292,32 +292,38 @@ public struct MacOS: Platform {
         }
         newEnv = newEnv.updating([TOOLCHAINS: bundleID])
 
-        // Set a compatible DEVELOPER_DIR in case of a custom swiftly toolchain location (not ~/Library/Developer/Toolchains)
+        // Create a compatible DEVELOPER_DIR in case of a custom swiftly toolchain location (not ~/Library/Developer/Toolchains)
         if let swiftlyToolchainsDir = ProcessInfo.processInfo.environment[SWIFTLY_TOOLCHAINS_DIR],
            case let customToolchainsDir = FilePath(swiftlyToolchainsDir),
            customToolchainsDir != defaultToolchainsDirectory
         {
-            let developerDir: FilePath
 
-            // This is a DEVELOPER_DIR compatible path, so just set it to the parent of that
-            if customToolchainsDir.lastComponent == "Toolchains" {
-                developerDir = customToolchainsDir.parent
-            } else {
-                // Otherwise, we will use a symlink to create the necessary structure from within SWIFTLY_HOME
-                let toolchainsLinkDir = swiftlyHomeDir(ctx) / "Swiftly Developer" / "Toolchains"
+            // Simulate a custom CommandLineTools within the swiftly home directory that satisfies xcrun and allows it to find
+            //  the selected toolchain on the PATH with the selected toolchain in front. This command-line tools will only have
+            //  the expected libxcrun.dylib in it and no other tools in its usr/bin directory so that none are picked up there by xcrun.
 
-                // Create the directory if it doesn't already exist
-                if !(try await fs.exists(atPath: toolchainsLinkDir.parent)) {
-                    try await fs.mkdir(atPath: toolchainsLinkDir.parent)
-                }
-
-                // Create the symlink if it doesn't already exist
-                if !(try await fs.exists(atPath: toolchainsLinkDir)) {
-                    try await fs.symlink(atPath: toolchainsLinkDir, linkPath: customToolchainsDir)
-                }
-
-                developerDir = toolchainsLinkDir.parent
+            // We need a macOS CLT to be installed for this to work
+            let realCltDir = FilePath("/Library/Developer/CommandLineTools")
+            if !(try await fs.exists(atPath: realCltDir)) {
+                throw SwiftlyError(message: "The macOS command line tools must be installed to support a custom SWIFTLY_TOOLCHAIN_DIR for macOS. You can install it using `xcode-select --install`")
             }
+
+            let commandLineToolsDir = swiftlyHomeDir(ctx) / "CommandLineTools"
+            if !(try await fs.exists(atPath: commandLineToolsDir)) {
+                try await fs.mkdir(atPath: commandLineToolsDir)
+            }
+
+            let usrLibDir = commandLineToolsDir / "usr" / "lib"
+            if !(try await fs.exists(atPath: usrLibDir)) {
+                try await fs.mkdir(.parents, atPath: usrLibDir)
+            }
+
+            let xcrunLibLink = usrLibDir / "libxcrun.dylib"
+            if !(try await fs.exists(atPath: xcrunLibLink)) {
+                try await fs.symlink(atPath: xcrunLibLink, linkPath: realCltDir / "usr/lib/libxcrun.dylib")
+            }
+
+            let developerDir: FilePath = commandLineToolsDir
 
             if let developerDirEnv = ProcessInfo.processInfo.environment[DEVELOPER_DIR.rawValue],
                developerDirEnv != developerDir.string

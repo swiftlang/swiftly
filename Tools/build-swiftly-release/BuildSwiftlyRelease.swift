@@ -137,8 +137,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try await sys.swift().package().reset().runEcho()
 
         // Build a specific version of libarchive with a check on the tarball's SHA256
-        let libArchiveVersion = "3.8.1"
-        let libArchiveTarSha = "bde832a5e3344dc723cfe9cc37f8e54bde04565bfe6f136bc1bd31ab352e9fab"
+        let libArchiveVersion = "3.8.5"
+        let libArchiveTarSha = "8a60f3a7bfd59c54ce82ae805a93dba65defd04148c3333b7eaa2102f03b7ffd"
 
         let buildCheckoutsDir = fs.cwd / ".build/checkouts"
         let libArchivePath = buildCheckoutsDir / "libarchive-\(libArchiveVersion)"

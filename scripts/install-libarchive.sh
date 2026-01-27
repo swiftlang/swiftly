@@ -3,7 +3,7 @@
 set -o errexit
 
 # TODO detect platform
-LIBARCHIVE_VERSION=3.8.1
+LIBARCHIVE_VERSION=3.8.5
 
 mkdir /tmp/archive-build
 pushd /tmp/archive-build

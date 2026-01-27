@@ -45,11 +45,20 @@ struct Init: SwiftlyCommand {
     var skipInstall: Bool = false
     @Flag(help: "Quiet shell follow up commands")
     var quietShellFollowup: Bool = false
+    @Option(
+        help: ArgumentHelp(
+            "A file path to a location for a post installation script",
+            discussion: """
+            If the toolchain that is installed has extra post installation steps, they will be
+            written to this file as commands that can be run after the installation.
+            """
+        ))
+    var postInstallFile: FilePath?
 
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case noModifyProfile, overwrite, platform, skipInstall, root, quietShellFollowup
+        case noModifyProfile, overwrite, platform, skipInstall, root, quietShellFollowup, postInstallFile
     }
 
     public mutating func validate() throws {}
@@ -304,7 +313,12 @@ struct Init: SwiftlyCommand {
         }
 
         if let postInstall {
-            await ctx.message(Messages.postInstall(postInstall))
+            guard let postInstallFile = self.postInstallFile else {
+                await ctx.message(Messages.postInstall(postInstall))
+            }
+            try Data(postInstall.utf8).write(
+                to: postInstallFile, options: .atomic
+            )
         }
     }
 }

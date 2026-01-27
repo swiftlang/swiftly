@@ -260,7 +260,7 @@ public struct MacOS: Platform {
         return self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"
     }
 
-    public func updateEnvironmentWithToolchain(_ ctx: SwiftlyCoreContext, _ environment: Environment, _ toolchain: ToolchainVersion) async throws -> Environment {
+    public func updateEnvironmentWithToolchain(_ ctx: SwiftlyCoreContext, _ environment: Environment, _ toolchain: ToolchainVersion, path: String) async throws -> Environment {
         var newEnv = environment
 
         // On macOS, we try to set SDKROOT if its empty for tools like clang++ that need it to
@@ -286,6 +286,7 @@ public struct MacOS: Platform {
 
         let TOOLCHAINS: Environment.Key = "TOOLCHAINS"
         let DEVELOPER_DIR: Environment.Key = "DEVELOPER_DIR"
+        let PATH: Environment.Key = "PATH"
 
         if let existingToolchains = ProcessInfo.processInfo.environment[TOOLCHAINS.rawValue], existingToolchains != bundleID {
             throw SwiftlyError(message: "You have already set \(TOOLCHAINS.rawValue) environment variable to \(existingToolchains), but swiftly has picked another toolchain. Please unset it or `swiftly use xcode` to use the Xcode selection mechanism.")
@@ -297,7 +298,6 @@ public struct MacOS: Platform {
            case let customToolchainsDir = FilePath(swiftlyToolchainsDir),
            customToolchainsDir != defaultToolchainsDirectory
         {
-
             // Simulate a custom CommandLineTools within the swiftly home directory that satisfies xcrun and allows it to find
             //  the selected toolchain on the PATH with the selected toolchain in front. This command-line tools will only have
             //  the expected libxcrun.dylib in it and no other tools in its usr/bin directory so that none are picked up there by xcrun.
@@ -332,6 +332,7 @@ public struct MacOS: Platform {
             }
 
             newEnv = newEnv.updating([DEVELOPER_DIR: developerDir.string])
+            newEnv = newEnv.updating([PATH: path + ":" + (realCltDir / "usr/bin").string])
         }
 
         return newEnv

@@ -39,7 +39,7 @@ extension Platform {
         pathComponents.removeAll(where: { $0 == swiftlyBinDir.string })
 
         environment = environment.updating(["PATH": String(pathComponents.joined(separator: ":"))])
-        environment = try await self.updateEnvironmentWithToolchain(ctx, environment, toolchain)
+        environment = try await self.updateEnvironmentWithToolchain(ctx, environment, toolchain, path: String(pathComponents.joined(separator: ":")))
 
         return environment
     }

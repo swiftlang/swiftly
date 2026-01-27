@@ -649,5 +649,10 @@ public struct Linux: Platform {
         self.swiftlyToolchainsDir(ctx) / "\(toolchain.name)"
     }
 
+    public func updateEnvironmentWithToolchain(_: SwiftlyCoreContext, _ environment: Environment, _: ToolchainVersion, path _: String) async throws -> Environment {
+        // No explicit environment customization with the Linux platform
+        environment
+    }
+
     public static let currentPlatform: any Platform = Linux()
 }

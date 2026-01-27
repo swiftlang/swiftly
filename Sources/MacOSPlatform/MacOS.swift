@@ -18,6 +18,8 @@ public struct SwiftPkgInfo: Codable {
 public struct MacOS: Platform {
     public init() {}
 
+    private let SWIFTLY_TOOLCHAINS_DIR = "SWIFTLY_TOOLCHAINS_DIR"
+
     public var defaultSwiftlyHomeDir: FilePath {
         fs.home / ".swiftly"
     }
@@ -34,7 +36,7 @@ public struct MacOS: Platform {
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "Toolchains" }
-            ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { FilePath($0) }
+            ?? ProcessInfo.processInfo.environment[self.SWIFTLY_TOOLCHAINS_DIR].map { FilePath($0) }
             // This is where the installer will put the toolchains, and where Xcode can find them
             ?? self.defaultToolchainsDirectory
     }
@@ -185,6 +187,22 @@ public struct MacOS: Platform {
 
         let toolchainDir = self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"
 
+        let bundleID = try await findToolchainBundleID(ctx, toolchain)
+
+        try await fs.remove(atPath: toolchainDir)
+
+        if let bundleID {
+            try? await sys.pkgutil(.volume(fs.home)).forget(pkg_id: bundleID).run(quiet: !verbose)
+        }
+    }
+
+    private func findToolchainBundleID(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> String? {
+        guard toolchain != .xcode else {
+            return nil
+        }
+
+        let toolchainDir = self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"
+
         let decoder = PropertyListDecoder()
         let infoPlist = toolchainDir / "Info.plist"
         let data = try await fs.cat(atPath: infoPlist)
@@ -193,9 +211,7 @@ public struct MacOS: Platform {
             throw SwiftlyError(message: "could not decode plist at \(infoPlist)")
         }
 
-        try await fs.remove(atPath: toolchainDir)
-
-        try? await sys.pkgutil(.volume(fs.home)).forget(pkg_id: pkgInfo.CFBundleIdentifier).run(quiet: !verbose)
+        return pkgInfo.CFBundleIdentifier
     }
 
     public func getExecutableName() -> String {
@@ -242,6 +258,84 @@ public struct MacOS: Platform {
         }
 
         return self.swiftlyToolchainsDir(ctx) / "\(toolchain.identifier).xctoolchain"
+    }
+
+    public func updateEnvironmentWithToolchain(_ ctx: SwiftlyCoreContext, _ environment: Environment, _ toolchain: ToolchainVersion, path: String) async throws -> Environment {
+        var newEnv = environment
+
+        // On macOS, we try to set SDKROOT if its empty for tools like clang++ that need it to
+        // find standard libraries that aren't in the toolchain, like libc++. Here we
+        // use xcrun to tell us what the default sdk root should be.
+        if ProcessInfo.processInfo.environment["SDKROOT"] == nil {
+            newEnv = newEnv.updating([
+                "SDKROOT": try? await run(
+                    .path(SystemPackage.FilePath("/usr/bin/xcrun")),
+                    arguments: ["--show-sdk-path"],
+                    output: .string(limit: 1024 * 10)
+                ).standardOutput?.replacingOccurrences(of: "\n", with: ""),
+            ])
+        }
+
+        guard let bundleID = try await findToolchainBundleID(ctx, toolchain) else {
+            return newEnv
+        }
+
+        // If someday the two tools in the toolchain that require xcrun were to remove their dependency on it then
+        // we can determine the maximum toolchain version where these environment variables are needed and abort early
+        // here.
+
+        let TOOLCHAINS: Environment.Key = "TOOLCHAINS"
+        let DEVELOPER_DIR: Environment.Key = "DEVELOPER_DIR"
+        let PATH: Environment.Key = "PATH"
+
+        if let existingToolchains = ProcessInfo.processInfo.environment[TOOLCHAINS.rawValue], existingToolchains != bundleID {
+            throw SwiftlyError(message: "You have already set \(TOOLCHAINS.rawValue) environment variable to \(existingToolchains), but swiftly has picked another toolchain. Please unset it or `swiftly use xcode` to use the Xcode selection mechanism.")
+        }
+        newEnv = newEnv.updating([TOOLCHAINS: bundleID])
+
+        // Create a compatible DEVELOPER_DIR in case of a custom swiftly toolchain location (not ~/Library/Developer/Toolchains)
+        if let swiftlyToolchainsDir = ProcessInfo.processInfo.environment[SWIFTLY_TOOLCHAINS_DIR],
+           case let customToolchainsDir = FilePath(swiftlyToolchainsDir),
+           customToolchainsDir != defaultToolchainsDirectory
+        {
+            // Simulate a custom CommandLineTools within the swiftly home directory that satisfies xcrun and allows it to find
+            //  the selected toolchain on the PATH with the selected toolchain in front. This command-line tools will only have
+            //  the expected libxcrun.dylib in it and no other tools in its usr/bin directory so that none are picked up there by xcrun.
+
+            // We need a macOS CLT to be installed for this to work
+            let realCltDir = FilePath("/Library/Developer/CommandLineTools")
+            if !(try await fs.exists(atPath: realCltDir)) {
+                throw SwiftlyError(message: "The macOS command line tools must be installed to support a custom SWIFTLY_TOOLCHAIN_DIR for macOS. You can install it using `xcode-select --install`")
+            }
+
+            let commandLineToolsDir = swiftlyHomeDir(ctx) / "CommandLineTools"
+            if !(try await fs.exists(atPath: commandLineToolsDir)) {
+                try await fs.mkdir(atPath: commandLineToolsDir)
+            }
+
+            let usrLibDir = commandLineToolsDir / "usr" / "lib"
+            if !(try await fs.exists(atPath: usrLibDir)) {
+                try await fs.mkdir(.parents, atPath: usrLibDir)
+            }
+
+            let xcrunLibLink = usrLibDir / "libxcrun.dylib"
+            if !(try await fs.exists(atPath: xcrunLibLink)) {
+                try await fs.symlink(atPath: xcrunLibLink, linkPath: realCltDir / "usr/lib/libxcrun.dylib")
+            }
+
+            let developerDir: FilePath = commandLineToolsDir
+
+            if let developerDirEnv = ProcessInfo.processInfo.environment[DEVELOPER_DIR.rawValue],
+               developerDirEnv != developerDir.string
+            {
+                throw SwiftlyError(message: "You have set \(DEVELOPER_DIR.rawValue) environment variable to \(developerDirEnv), but swiftly is trying to use its own location so that a toolchain can be selected. Please unset the environment variable and try again.")
+            }
+
+            newEnv = newEnv.updating([DEVELOPER_DIR: developerDir.string])
+            newEnv = newEnv.updating([PATH: path + ":" + (realCltDir / "usr/bin").string])
+        }
+
+        return newEnv
     }
 
     public static let currentPlatform: any Platform = MacOS()

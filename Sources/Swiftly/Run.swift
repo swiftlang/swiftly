@@ -138,7 +138,7 @@ struct Run: SwiftlyCommand {
             return
         }
 
-        let result = try await Subprocess.run(.path(FilePath(command[0])), arguments: Arguments([String](command[1...])), environment: env, input: .standardInput, output: .standardOutput, error: .standardError)
+        let result = try await Subprocess.run(processConfig, input: .standardInput, output: .standardOutput, error: .standardError)
         if !result.terminationStatus.isSuccess {
             throw RunProgramError(terminationStatus: result.terminationStatus, config: processConfig)
         }

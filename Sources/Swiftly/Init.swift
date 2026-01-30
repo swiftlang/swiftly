@@ -304,7 +304,10 @@ struct Init: SwiftlyCommand {
         }
 
         if let postInstall {
-            await ctx.message(Messages.postInstall(postInstall))
+            // This is a plain print instead of a ctx.message to avoid line wrapping of the
+            // post install script. When it is wrapped then it is harder to copy and paste
+            // the contents from the terminal.
+            print("\(Messages.postInstall(postInstall))")
         }
     }
 }

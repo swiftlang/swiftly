@@ -69,17 +69,13 @@ public struct MacOS: Platform {
             sudo xcode-select --switch path/to/Xcode.app\n
             """
 
-            if ctx.format == .text {
-                await ctx.print(msg)
-            } else {
-                await ctx.printError(msg)
-            }
+            await ctx.message(msg)
         }
 
         let sdkPath = result.standardOutput?.replacingOccurrences(of: "\n", with: "")
 
         if sdkPath == nil {
-            await ctx.print("WARNING: Could not read output of '/usr/bin/xcrun --show-sdk-path --sdk macosx'. Ensure your macOS SDK is installed properly for the swift toolchain to work.")
+            await ctx.message("WARNING: Could not read output of '/usr/bin/xcrun --show-sdk-path --sdk macosx'. Ensure your macOS SDK is installed properly for the swift toolchain to work.")
         }
 
         return nil

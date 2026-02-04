@@ -55,11 +55,16 @@ struct List: SwiftlyCommand {
         let toolchains = config.listInstalledToolchains(selector: selector).sorted { $0 > $1 }
         let (inUse, _) = try await selectToolchain(ctx, config: &config)
 
-        let installedToolchainInfos = toolchains.compactMap { toolchain -> InstallToolchainInfo? in
-            InstallToolchainInfo(
-                version: toolchain,
-                inUse: inUse == toolchain,
-                isDefault: toolchain == config.inUse
+        var installedToolchainInfos: [InstallToolchainInfo] = []
+        for toolchain in toolchains {
+            let location = "\(try await Swiftly.currentPlatform.findToolchainLocation(ctx, toolchain))"
+            installedToolchainInfos.append(
+                InstallToolchainInfo(
+                    version: toolchain,
+                    inUse: inUse == toolchain,
+                    isDefault: toolchain == config.inUse,
+                    location: location
+                )
             )
         }
 

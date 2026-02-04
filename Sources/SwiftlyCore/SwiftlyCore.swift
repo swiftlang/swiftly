@@ -72,14 +72,14 @@ public struct SwiftlyCoreContext: Sendable {
         await handler.handleOutputLine(string)
     }
 
-    public func message(_ string: String = "", terminator: String? = nil) async {
-        let wrappedString = self.wrappedMessage(string) + (terminator ?? "")
+    public func message(_ string: String = "", terminator: String? = nil, wrap: Bool = true) async {
+        let messageString = (wrap ? self.wrappedMessage(string) : string) + (terminator ?? "")
 
         if self.format == .json {
-            await self.printError(wrappedString)
+            await self.printError(messageString)
             return
         } else {
-            await self.print(wrappedString)
+            await self.print(messageString)
         }
     }
 

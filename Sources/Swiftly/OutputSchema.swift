@@ -182,11 +182,13 @@ struct InstallToolchainInfo: OutputData {
     let version: ToolchainVersion
     let inUse: Bool
     let isDefault: Bool
+    let location: String
 
-    init(version: ToolchainVersion, inUse: Bool, isDefault: Bool) {
+    init(version: ToolchainVersion, inUse: Bool, isDefault: Bool, location: String) {
         self.version = version
         self.inUse = inUse
         self.isDefault = isDefault
+        self.location = location
     }
 
     var description: String {
@@ -205,12 +207,14 @@ struct InstallToolchainInfo: OutputData {
         case version
         case inUse
         case isDefault
+        case location
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.inUse, forKey: .inUse)
         try container.encode(self.isDefault, forKey: .isDefault)
+        try container.encode(self.location, forKey: .location)
 
         // Encode the version as a object
         var versionContainer = container.nestedContainer(
@@ -244,6 +248,7 @@ struct InstallToolchainInfo: OutputData {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.inUse = try container.decode(Bool.self, forKey: .inUse)
         self.isDefault = try container.decode(Bool.self, forKey: .isDefault)
+        self.location = try container.decode(String.self, forKey: .location)
 
         // Decode the version as a object
         let versionContainer = try container.nestedContainer(

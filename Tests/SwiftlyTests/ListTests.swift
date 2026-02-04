@@ -285,4 +285,21 @@ import Testing
             #expect(inUseToolchain.isDefault == true)
         }
     }
+
+    @Test func listJsonFormatIncludesLocation() async throws {
+        try await self.runListTest {
+            let output = try await SwiftlyTests.runWithMockedIO(
+                List.self, ["list", "--format", "json"], format: .json
+            )
+
+            let listInfo = try JSONDecoder().decode(
+                InstalledToolchainsListInfo.self,
+                from: output[0].data(using: .utf8)!
+            )
+
+            for toolchain in listInfo.toolchains {
+                #expect(toolchain.location.isEmpty == false)
+            }
+        }
+    }
 }

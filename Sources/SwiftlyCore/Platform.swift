@@ -269,7 +269,7 @@ extension Platform {
         if try await fs.isSymLink(atPath: path) {
             return true
         }
-        if path.contains(".linuxbrew/Cellar/") {
+        if path.string.contains(".linuxbrew/Cellar/") {
             // Linuxbrew installation like /home/linuxbrew/.linuxbrew/Cellar/swiftly/1.1.1/bin/swiftly
             return true
         }

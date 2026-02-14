@@ -55,10 +55,10 @@ struct Init: SwiftlyCommand {
     public mutating func validate() throws {}
 
     mutating func run() async throws {
-        try await self.run(Swiftly.createDefaultContext())
+        try await self.run(Swiftly.createDefaultContext(options: self.root))
     }
 
-    mutating func run(_ ctx: SwiftlyCoreContext = Swiftly.createDefaultContext()) async throws {
+    mutating func run(_ ctx: SwiftlyCoreContext) async throws {
         try await Self.execute(ctx, assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, quietShellFollowup: self.quietShellFollowup)
     }
 

@@ -9,6 +9,8 @@ struct Run: SwiftlyCommand {
         abstract: "Run a command while proxying to the selected toolchain commands."
     )
 
+    @OptionGroup var root: GlobalOptions
+
     @Argument(parsing: .captureForPassthrough, help: ArgumentHelp(
         "Run a command while proxying to the selected toolchain commands.",
         discussion: """
@@ -56,7 +58,7 @@ struct Run: SwiftlyCommand {
     var command: [String]
 
     mutating func run() async throws {
-        try await self.run(Swiftly.createDefaultContext())
+        try await self.run(Swiftly.createDefaultContext(options: self.root))
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {

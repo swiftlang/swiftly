@@ -91,7 +91,7 @@ struct Install: SwiftlyCommand {
     }
 
     mutating func run() async throws {
-        try await self.run(Swiftly.createDefaultContext(format: self.format))
+        try await self.run(Swiftly.createDefaultContext(format: self.format, options: self.root))
     }
 
     private func swiftlyHomeDir(_ ctx: SwiftlyCoreContext) -> FilePath {

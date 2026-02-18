@@ -140,7 +140,7 @@ struct TestSwiftly: AsyncParsableCommand {
                 env = env.updating(["BASH_ENV": (fs.home / ".profile").string])
             } else if shell.ends(with: "zsh") {
                 env = env.updating(["ZDOTDIR": fs.home.string])
-            } else if shell.ends(with: "fish") {
+            } else if shell.ends(with: "fish") || shell.ends(with: "nu") {
                 env = env.updating(["XDG_CONFIG_HOME": (fs.home / ".config").string])
             }
 
@@ -210,13 +210,21 @@ struct TestSwiftly: AsyncParsableCommand {
         }
 
         // Check that env files are removed
-        let envSh = customLoc / "env.sh"
+        let envSh   = customLoc / "env.sh"
         let envFish = customLoc / "env.fish"
+        let envNu   = customLoc / "env.nu"
+        let envMx   = customLoc / "env.mx"
         guard !(try await fs.exists(atPath: envSh)) else {
             throw TestError("env.sh still exists at \(envSh)")
         }
         guard !(try await fs.exists(atPath: envFish)) else {
             throw TestError("env.fish still exists at \(envFish)")
+        }
+        guard !(try await fs.exists(atPath: envNu)) else {
+            throw TestError("env.nu still exists at \(envNu)")
+        }
+        guard !(try await fs.exists(atPath: envMx)) else {
+            throw TestError("env.mx still exists at \(envMx)")
         }
 
         // Check that config is removed
@@ -241,13 +249,21 @@ struct TestSwiftly: AsyncParsableCommand {
         }
 
         // Check that env files are removed
-        let envSh = swiftlyHome / "env.sh"
+        let envSh   = swiftlyHome / "env.sh"
         let envFish = swiftlyHome / "env.fish"
+        let envNu   = swiftlyHome / "env.nu"
+        let envMx   = swiftlyHome / "env.mx"
         guard !(try await fs.exists(atPath: envSh)) else {
             throw TestError("env.sh still exists at \(envSh)")
         }
         guard !(try await fs.exists(atPath: envFish)) else {
             throw TestError("env.fish still exists at \(envFish)")
+        }
+        guard !(try await fs.exists(atPath: envNu)) else {
+            throw TestError("env.nu still exists at \(envNu)")
+        }
+        guard !(try await fs.exists(atPath: envNu)) else {
+            throw TestError("env.mx still exists at \(envMx)")
         }
 
         // Check that config is removed
@@ -277,12 +293,17 @@ struct TestSwiftly: AsyncParsableCommand {
             fs.home / ".zprofile",
             fs.home / ".bash_profile",
             fs.home / ".bash_login",
+            fs.home / ".murex_profile",
             fs.home / ".profile",
             fs.home / ".config/fish/conf.d/swiftly.fish",
+            fs.home / ".config/nushell/autoload/swiftly.nu",
+            fs.home / "Library/Application Support/nushell/autoload/swiftly.nu",
         ]
 
-        let swiftlySourcePattern = ". \".*\\.swiftly/env\\.sh\""
+        let shSourcePattern = ". \".*\\.swiftly/env\\.sh\""
         let fishSourcePattern = "source \".*\\.swiftly/env\\.fish\""
+        let nuSourcePattern = "source \".*\\.swiftly/env\\.nu\""
+        let murexSourcePattern = "source \".*\\.swiftly/env\\.mx\""
         let commentPattern = "# Added by swiftly"
 
         for profilePath in profilePaths {
@@ -291,8 +312,10 @@ struct TestSwiftly: AsyncParsableCommand {
             let contents = try String(contentsOf: profilePath, encoding: .utf8)
 
             // Check that swiftly-related lines are removed
-            if contents.range(of: swiftlySourcePattern, options: .regularExpression) != nil ||
+            if contents.range(of: shSourcePattern, options: .regularExpression) != nil ||
                 contents.range(of: fishSourcePattern, options: .regularExpression) != nil ||
+                contents.range(of: nuSourcePattern, options: .regularExpression) != nil ||
+                contents.range(of: murexSourcePattern, options: .regularExpression) != nil ||
                 contents.contains(commentPattern)
             {
                 throw TestError("Swiftly references still found in profile file: \(profilePath)")

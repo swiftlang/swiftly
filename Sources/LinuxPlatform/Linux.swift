@@ -73,10 +73,7 @@ public struct Linux: Platform {
         }
     }
 
-    public func verifySystemPrerequisitesForInstall(
-        _ ctx: SwiftlyCoreContext, platformName: String, version _: ToolchainVersion,
-        requireSignatureValidation: Bool
-    ) async throws -> String? {
+    public func getSystemPrerequisites(platformName: String) -> [String] {
         // TODO: these are hard-coded until we have a place to query for these based on the toolchain version
         // These lists were copied from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
         let packages: [String] =
@@ -240,6 +237,10 @@ public struct Linux: Platform {
             []
         }
 
+        return packages
+    }
+
+    public func getSystemPackageManager(platformName: String) -> String? {
         let manager: String? =
             switch platformName
         {
@@ -262,6 +263,17 @@ public struct Linux: Platform {
         default:
             nil
         }
+
+        return manager
+    }
+
+    public func verifySystemPrerequisitesForInstall(
+        _ ctx: SwiftlyCoreContext, platformName: String, version _: ToolchainVersion,
+        requireSignatureValidation: Bool
+    ) async throws -> String? {
+        let packages: [String] = getSystemPrerequisites(platformName: platformName)
+
+        let manager: String? = getSystemPackageManager(platformName: platformName)
 
         if requireSignatureValidation {
             let result = try await run(

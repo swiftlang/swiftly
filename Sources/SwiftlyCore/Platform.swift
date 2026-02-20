@@ -112,6 +112,21 @@ public protocol Platform: Sendable {
         _ ctx: SwiftlyCoreContext, platformName: String, version: ToolchainVersion,
         requireSignatureValidation: Bool
     ) async throws -> String?
+    
+   /// Returns the list of system requirements needed to install a swift toolchain on the provided platform.
+   ///
+   /// `platformName` is the platform name of the system
+   ///
+    func getSystemPrerequisites(platformName: String) -> [String]
+    
+    /// Returns true if a given system is installed on the system.
+    func isSystemPackageInstalled(_ manager: String?, _ package: String) async -> Bool
+
+    /// Returns the package manger if it exists for the given platform
+    ///
+    /// `platformName` is the platform name of the system
+    ///
+    func getSystemPackageManager(platformName: String) -> String?
 
     /// Downloads the signature file associated with the archive and verifies it matches the downloaded archive.
     /// Throws an error if the signature does not match.

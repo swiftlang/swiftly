@@ -113,10 +113,7 @@ struct Init: SwiftlyCommand {
             set -x SWIFTLY_TOOLCHAINS_DIR "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
 
             # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
-            while set -l index (contains -i "$SWIFTLY_BIN_DIR" $PATH)
-                set -e PATH[$index]
-            end
-            set -x PATH "$SWIFTLY_BIN_DIR" $PATH
+            fish_add_path -mP "$SWIFTLY_BIN_DIR"
 
             """
         }

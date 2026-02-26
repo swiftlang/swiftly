@@ -304,7 +304,23 @@ public struct Linux: Platform {
             return nil
         }
 
-        return "\(manager) -y install \(missingPackages.joined(separator: " "))"
+        var result: String = 
+            switch platformName {
+        case "ubuntu1804":
+            "\(manager) update && "
+        case "ubuntu2004":
+            "\(manager) update && "
+        case "ubuntu2204":
+            "\(manager) update && "
+        case "ubuntu2404":
+            "\(manager) update && "
+        default:
+            ""
+        }
+
+        result += "\(manager) -y install \(missingPackages.joined(separator: " "))"
+
+        return result
     }
 
     public func isSystemPackageInstalled(_ manager: String?, _ package: String) async -> Bool {

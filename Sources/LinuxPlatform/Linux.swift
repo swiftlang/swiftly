@@ -304,7 +304,7 @@ public struct Linux: Platform {
             return nil
         }
 
-        var result: String = 
+        var result: String =
             switch platformName
         {
         case "ubuntu1804":

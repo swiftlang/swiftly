@@ -305,7 +305,8 @@ public struct Linux: Platform {
         }
 
         var result: String = 
-            switch platformName {
+            switch platformName
+        {
         case "ubuntu1804":
             "\(manager) update && "
         case "ubuntu2004":

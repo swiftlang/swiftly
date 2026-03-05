@@ -121,6 +121,38 @@ struct Init: SwiftlyCommand {
             """
         }
 
+        func envNu(_ ctx: SwiftlyCoreContext) -> String {
+            """
+            $env.SWIFTLY_HOME_DIR = "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
+            $env.SWIFTLY_BIN_DIR = "\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
+            $env.SWIFTLY_TOOLCHAINS_DIR = "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+
+            # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
+            $env.PATH = $env.PATH | where ($it | path expand) != $env.SWIFTLY_BIN_DIR | prepend $env.SWIFTLY_BIN_DIR
+            """
+        }
+
+        func envMurex(_ ctx: SwiftlyCoreContext) -> String {
+            """
+            export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
+            export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
+            export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            
+            # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
+            $PATH | !match $SWIFTLY_BIN_DIR | prepend $SWIFTLY_BIN_DIR | export PATH
+            """
+        }
+
+        let shell = if let mockedShell = ctx.mockedShell {
+            mockedShell
+        } else {
+            if let s = ProcessInfo.processInfo.environment["SHELL"] {
+                s
+            } else {
+                try await Swiftly.currentPlatform.getShell()
+            }
+        }
+        
         if var config, !overwrite && !migrations.filter({ $0.matches(config.version) }).isEmpty {
             // This is a simple upgrade from the 0.4.0 pre-releases, or 1.x
 
@@ -152,7 +184,9 @@ struct Init: SwiftlyCommand {
 
             try config.save(ctx)
 
-            return
+            if !shell.hasSuffix("nu") && !shell.hasSuffix("murex") {
+                return
+            }
         }
 
         if let config, !overwrite && config.version != SwiftlyCore.version {
@@ -221,34 +255,34 @@ struct Init: SwiftlyCommand {
                 throw SwiftlyError(message: "swiftly installation has been cancelled")
             }
         }
-
-        let shell = if let mockedShell = ctx.mockedShell {
-            mockedShell
-        } else {
-            if let s = ProcessInfo.processInfo.environment["SHELL"] {
-                s
+        
+        let envFile: FilePath =
+            if shell.hasSuffix("fish") {
+                Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.fish"
+            } else if shell.hasSuffix("nu") {
+                Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.nu"
+            } else if shell.hasSuffix("murex") {
+                Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.mx"
             } else {
-                try await Swiftly.currentPlatform.getShell()
+                Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.sh"
             }
-        }
+        
+        // It would be tidier to just use the source command for every shell, instead of
+        // using the . command for zsh and bash. But I'll leave it unchanged for now.
+        let sourceLine: String =
+            if shell.hasSuffix("zsh") || shell.hasSuffix("bash") {
+                """
 
-        let envFile: FilePath
-        let sourceLine: String
-        if shell.hasSuffix("fish") {
-            envFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.fish"
-            sourceLine = """
+                # Added by swiftly
+                . "\(envFile)"
+                """
+            } else {
+                """
 
-            # Added by swiftly
-            source "\(envFile)"
-            """
-        } else {
-            envFile = Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.sh"
-            sourceLine = """
-
-            # Added by swiftly
-            . "\(envFile)"
-            """
-        }
+                # Added by swiftly
+                source "\(envFile)"
+                """
+            }
 
         if overwrite {
             try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))
@@ -284,19 +318,21 @@ struct Init: SwiftlyCommand {
 
         if overwrite || !envFileExists {
             await ctx.message("Creating shell environment file for the user...")
-            var env = ""
-            if shell.hasSuffix("fish") {
-                env = envFish(ctx)
-            } else {
-                env = envSh(ctx)
-            }
+            let env: String =
+                if shell.hasSuffix("fish") {
+                    envFish(ctx)
+                } else if shell.hasSuffix("nu") {
+                    envNu(ctx)
+                } else if shell.hasSuffix("murex") {
+                    envMurex(ctx)
+                } else {
+                    envSh(ctx)
+                }
 
             try Data(env.utf8).write(to: envFile, options: .atomic)
         }
 
         if !noModifyProfile {
-            await ctx.message("Updating profile...")
-
             let userHome = ctx.mockedHomeDir ?? fs.home
 
             let profileHome: FilePath
@@ -320,9 +356,27 @@ struct Init: SwiftlyCommand {
                     try await fs.mkdir(.parents, atPath: confDir)
                     profileHome = confDir / "swiftly.fish"
                 }
+            } else if shell.hasSuffix("nu") {
+                if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"], case let xdgConfigURL = FilePath(xdgConfigHome) {
+                    let confDir = xdgConfigURL / "nushell/autoload"
+                    try await fs.mkdir(.parents, atPath: confDir)
+                    profileHome = confDir / "swiftly.nu"
+                } else {
+#if os(macOS)
+                    let confDir = userHome / "Library/Application Support/nushell/autoload"
+#else
+                    let confDir = userHome / ".config/nushell/autoload"
+#endif
+                    try await fs.mkdir(.parents, atPath: confDir)
+                    profileHome = confDir / "swiftly.nu"
+                }
+            } else if shell.hasSuffix("murex") {
+                profileHome = userHome / ".murex_profile"
             } else {
                 profileHome = userHome / ".profile"
             }
+          
+            await ctx.message("Adding to shell profile at \(profileHome)...")
 
             var addEnvToProfile = false
             do {
@@ -349,9 +403,11 @@ struct Init: SwiftlyCommand {
         }
 
         if !quietShellFollowup {
+            // Show the source line without the "Added by swiftly" comment
             await ctx.message("""
             To begin using installed swiftly from your current shell, first run the following command:
-                \(sourceLine)
+            
+                $ \(sourceLine.components(separatedBy: .newlines).last!)
 
             """)
         }

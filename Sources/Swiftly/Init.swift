@@ -407,7 +407,7 @@ struct Init: SwiftlyCommand {
             await ctx.message("""
             To begin using installed swiftly from your current shell, first run the following command:
             
-                $ \(sourceLine.components(separatedBy: .newlines).last!)
+                \(sourceLine.components(separatedBy: .newlines).last!)
 
             """)
         }

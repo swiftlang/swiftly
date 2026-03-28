@@ -3,7 +3,7 @@ public enum Messages {
     Swiftly is now unlinked and will not manage the active toolchain until the following
     command is run:
 
-        $ swiftly link
+        swiftly link
 
 
     """
@@ -12,7 +12,7 @@ public enum Messages {
     Swiftly is currently unlinked and will not manage the active toolchain. You can run
     the following command to link swiftly to the active toolchain:
 
-        $ swiftly link
+        swiftly link
 
 
     """
@@ -23,7 +23,7 @@ public enum Messages {
         You can run the following script as the system administrator (e.g. root) to prepare
         your system:
 
-            $ \(command)
+            \(command)
 
         """
     }
@@ -33,7 +33,7 @@ public enum Messages {
         NOTE: Swiftly has updated some elements in your PATH and your shell may not yet be
         aware of the changes. You can update your shell's environment by running
 
-            $ \(command)
+            \(command)
 
         or restarting your shell.
 

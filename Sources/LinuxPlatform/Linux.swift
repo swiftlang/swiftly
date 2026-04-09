@@ -330,7 +330,7 @@ public struct Linux: Platform {
                 }
                 return false
             case "yum":
-                let result = try await run(.name("yum"), arguments: ["list", "installed", package], output: .discarded)
+                let result = try await run(.name("yum"), arguments: ["list", "--installed", package], output: .string(limit: 100 * 1024))
                 return result.terminationStatus.isSuccess
             default:
                 return true

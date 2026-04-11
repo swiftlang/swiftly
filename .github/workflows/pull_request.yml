@@ -69,14 +69,14 @@ jobs:
       - name: Build Artifact
         run: swift run build-swiftly-release --test --skip "999.0.0"
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: swiftly-release-x86_64
           path: .build/release/swiftly-*.tar.gz
           if-no-files-found: error
           retention-days: 1
       - name: Upload Tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-swiftly-linux-x86_64
           path: .build/debug/test-swiftly-linux-x86_64.tar.gz
@@ -95,14 +95,14 @@ jobs:
       - name: Build Artifact
         run: swift run build-swiftly-release --test --skip "999.0.0"
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: swiftly-release-darwin
           path: .build/release/swiftly-*.pkg
           if-no-files-found: error
           retention-days: 1
       - name: Upload Tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-swiftly-macos
           path: .build/release/test-swiftly-macos.tar.gz
@@ -187,7 +187,7 @@ jobs:
       - name: Generate Documentation Set
         run: swift package --allow-writing-to-directory .build/docs generate-documentation --target SwiftlyDocs --output-path .build/docs
       - name: Upload Documentation Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: swiftly-docs
           path: .build/docs/**

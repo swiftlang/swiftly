@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build and Test
@@ -48,7 +48,7 @@ jobs:
       image: ${{ matrix.container }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build and Test
@@ -63,7 +63,7 @@ jobs:
       image: "redhat/ubi9"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build Artifact
@@ -89,7 +89,7 @@ jobs:
     if: ${{ github.repository == 'swiftlang/swiftly' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build Artifact
@@ -164,7 +164,7 @@ jobs:
       image: ubuntu:22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Check format
@@ -179,7 +179,7 @@ jobs:
       - name: Install git
         run: apt-get update && apt-get -y install git
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Generate Swiftly CLI Reference and Check for Differences

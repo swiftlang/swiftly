@@ -24,6 +24,7 @@ public var migrations: [SwiftlyVersionMigration] {
         .minor(.init(major: 1, minor: 0, patch: 0)),
         .minor(.init(major: 1, minor: 1, patch: 0)),
         .minor(.init(major: 1, minor: 2, patch: 0)),
+        .minor(.init(major: 1, minor: 3, patch: 0)),
     ]
 }
 

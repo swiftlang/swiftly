@@ -37,7 +37,7 @@ jobs:
       - name: Build Release Artifact
         run: swift run build-swiftly-release --use-rhel-ubi9 "${SKIP}" "${VERSION}"
       - name: Upload Release Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: swiftly-release-x86_64
           path: .build/release/swiftly-*.tar.gz
@@ -45,7 +45,7 @@ jobs:
       - name: Build Documentation Artifacts
         run: swift package --allow-writing-to-directory .build/docs generate-documentation --target SwiftlyDocs --output-path .build/docs
       - name: Upload Documentation Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: swiftly-docs
           path: .build/docs/**
@@ -65,7 +65,7 @@ jobs:
       - name: Build Release Artifact
         run: swift run build-swiftly-release "${SKIP}" "${VERSION}"
       - name: Upload Release Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: swiftly-release-x86_64
           path: .build/release/swiftly-*.tar.gz

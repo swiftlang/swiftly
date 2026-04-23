@@ -254,9 +254,9 @@ public struct Linux: Platform {
         case "amazonlinux2":
             "yum"
         case "ubi9":
-            "yum"
+            "dnf"
         case "fedora39":
-            "yum"
+            "dnf"
         case "debian12":
             "apt-get"
         default:
@@ -329,6 +329,9 @@ public struct Linux: Platform {
                     return pkgList.contains("\nii ")
                 }
                 return false
+            case "dnf":
+                let result = try await run(.name("dnf"), arguments: ["list", "--installed", package], output: .discarded)
+                return result.terminationStatus.isSuccess
             case "yum":
                 let result = try await run(.name("yum"), arguments: ["list", "installed", package], output: .discarded)
                 return result.terminationStatus.isSuccess

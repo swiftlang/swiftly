@@ -135,9 +135,11 @@ import Testing
         let architectures: [SwiftlyWebsiteAPI.Components.Schemas.Architecture]
         let branches: [ToolchainVersion.Snapshot.Branch]
 
-        init(platform: PlatformDefinition,
+        init(
+            platform: PlatformDefinition,
             architectures: [SwiftlyWebsiteAPI.Components.Schemas.Architecture] = [.x8664, .aarch64],
-            branches: [ToolchainVersion.Snapshot.Branch] = [.main, .release(major:6, minor: 1)]) {
+            branches: [ToolchainVersion.Snapshot.Branch] = [.main, .release(major: 6, minor: 1)]
+        ) {
             self.platform = platform
             self.architectures = architectures
             self.branches = branches
@@ -148,25 +150,26 @@ import Testing
         static let ubuntu2204 = ToolchainSpecifier(platform: .ubuntu2204)
         static let rhel9 = ToolchainSpecifier(platform: .rhel9)
         static let fedora39 = ToolchainSpecifier(platform: .fedora39)
-        static let fedora41 = ToolchainSpecifier(platform: .fedora41,
-                                branches: [.release(major:6, minor: 3)])
+        static let fedora41 = ToolchainSpecifier(
+            platform: .fedora41,
+            branches: [.release(major: 6, minor: 3)]
+        )
         static let amazonlinux2 = ToolchainSpecifier(platform: .amazonlinux2)
         static let debian12 = ToolchainSpecifier(platform: .debian12)
     }
 
     @Test(
         .tags(.large),
-        arguments:
-            [
-                ToolchainSpecifier.macOS,
-                .ubuntu2404,
-                .ubuntu2204,
-                .rhel9,
-                .fedora39,
-                .fedora41,
-                .amazonlinux2,
-                .debian12,
-            ]
+        arguments: [
+            ToolchainSpecifier.macOS,
+            .ubuntu2404,
+            .ubuntu2204,
+            .rhel9,
+            .fedora39,
+            .fedora41,
+            .amazonlinux2,
+            .debian12,
+        ]
     ) func getToolchainMetadataFromSwiftOrg(_ toolchainData: ToolchainSpecifier) async throws {
         guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {
             return

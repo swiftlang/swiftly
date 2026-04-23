@@ -56,6 +56,24 @@ jobs:
         # UBI 9 - See https://github.com/swiftlang/swift/issues/80909
         run: bash -c 'if [[ "${{ matrix.container }}" == "redhat/ubi9" ]]; then swift build --build-tests; else swift test; fi'
 
+  # Verify new platforms without a released Swiftly build
+  tests-bootstrapped:
+    name: Test (Bootstrapped) / ${{ matrix.container }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        container: ["swiftlang/swift:nightly-6.3-fedora41"]
+    container:
+      image: ${{ matrix.container }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare the action
+        run: ./scripts/prep-gh-action.sh
+      - name: Build and Test
+        run: swift test
+
   releasebuildcheck:
     name: Release Build Check / Linux
     runs-on: ubuntu-latest

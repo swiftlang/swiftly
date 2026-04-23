@@ -410,6 +410,10 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
             PlatformDefinition(
                 name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39"
             )
+        case "Fedora 41":
+            PlatformDefinition(
+                name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"
+            )
         default:
             nil
         }
@@ -550,7 +554,7 @@ public struct SwiftlyHTTPClient: Sendable {
         {
         // These are new platforms that aren't yet in the list of known platforms in the OpenAPI schema
         case PlatformDefinition.ubuntu2404.name, PlatformDefinition.debian12.name,
-             PlatformDefinition.fedora39.name:
+             PlatformDefinition.fedora39.name, PlatformDefinition.fedora41.name:
             .init(platform.name)
 
         case PlatformDefinition.ubuntu2204.name:

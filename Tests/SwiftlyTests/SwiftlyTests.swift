@@ -648,6 +648,8 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             "Debian 12"
         case PlatformDefinition(name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39"):
             "Fedora 39"
+        case PlatformDefinition(name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"):
+            "Fedora 41"
         case PlatformDefinition.macOS:
             "Xcode" // NOTE: this is not actually a platform that gets added in the swift.org API for macos/xcode
         default:

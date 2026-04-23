@@ -41,6 +41,9 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
     public static let fedora39 = PlatformDefinition(
         name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39"
     )
+    public static let fedora41 = PlatformDefinition(
+        name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"
+    )
     public static let amazonlinux2 = PlatformDefinition(
         name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2"
     )

@@ -16,6 +16,7 @@ public struct Linux: Platform {
         .ubuntu2004,
         .ubuntu1804,
         .fedora39,
+        .fedora41,
         .rhel9,
         .amazonlinux2,
         .debian12,
@@ -200,7 +201,7 @@ public struct Linux: Platform {
                 "unzip",
                 "zip",
             ]
-        case "fedora39":
+        case "fedora39", "fedora41":
             [
                 "binutils",
                 "gcc",
@@ -254,9 +255,9 @@ public struct Linux: Platform {
         case "amazonlinux2":
             "yum"
         case "ubi9":
-            "yum"
-        case "fedora39":
-            "yum"
+            "dnf"
+        case "fedora39", "fedora41":
+            "dnf"
         case "debian12":
             "apt-get"
         default:
@@ -329,6 +330,9 @@ public struct Linux: Platform {
                     return pkgList.contains("\nii ")
                 }
                 return false
+            case "dnf":
+                let result = try await run(.name("dnf"), arguments: ["list", "--installed", package], output:.discarded)
+                return result.terminationStatus.isSuccess
             case "yum":
                 let result = try await run(.name("yum"), arguments: ["list", "installed", package], output: .discarded)
                 return result.terminationStatus.isSuccess
@@ -620,7 +624,13 @@ public struct Linux: Platform {
 
             return .rhel9
         } else if let pd = [
-            PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2404, .debian12, .fedora39,
+            PlatformDefinition.ubuntu1804,
+                .ubuntu2004,
+                .ubuntu2204,
+                .ubuntu2404,
+                .debian12,
+                .fedora39,
+                .fedora41,
         ].first(where: { $0.name == id + versionID }) {
             return pd
         }

@@ -30,6 +30,10 @@ public struct SwiftlyCoreContext: Sendable {
     /// for testing purposes.
     public var mockedShell: String?
 
+    /// Whether to skip the check for swiftly updates.
+    /// This is helpful when offline, as update checks would timeout
+    public var skipUpdatesCheck: Bool
+
     /// This is the default http client that swiftly uses for its network
     /// requests.
     public var httpClient: SwiftlyHTTPClient
@@ -49,17 +53,25 @@ public struct SwiftlyCoreContext: Sendable {
     /// The format
     public var format: OutputFormat = .text
 
-    public init(format: SwiftlyCore.OutputFormat = .text) {
+    public init(
+        format: SwiftlyCore.OutputFormat = .text,
+        skipUpdatesCheck: Bool = false
+    ) {
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
         self.currentDirectory = fs.cwd
         self.format = format
         self.terminal = SystemTerminal()
+        self.skipUpdatesCheck = skipUpdatesCheck
     }
 
-    public init(httpClient: SwiftlyHTTPClient) {
+    public init(
+        httpClient: SwiftlyHTTPClient,
+        skipUpdatesCheck: Bool = false
+    ) {
         self.httpClient = httpClient
         self.currentDirectory = fs.cwd
         self.terminal = SystemTerminal()
+        self.skipUpdatesCheck = skipUpdatesCheck
     }
 
     /// Pass the provided string to the set output handler if any.

@@ -118,7 +118,8 @@ struct Install: SwiftlyCommand {
             verifySignature: self.verify,
             verbose: self.root.verbose,
             assumeYes: self.root.assumeYes,
-            progressFile: self.progressFile
+            progressFile: self.progressFile,
+            quiet: self.root.quiet
         )
 
         if pathChanged {
@@ -248,7 +249,8 @@ struct Install: SwiftlyCommand {
         verifySignature: Bool,
         verbose: Bool,
         assumeYes: Bool,
-        progressFile: FilePath? = nil
+        progressFile: FilePath? = nil,
+        quiet: Bool = false
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
         guard !config.installedToolchains.contains(version) else {
             let installInfo = InstallInfo(
@@ -309,14 +311,15 @@ struct Install: SwiftlyCommand {
             }
 
             let animation: ProgressReporterProtocol? =
-                if let progressFile
-            {
-                try JsonFileProgressReporter(ctx, filePath: progressFile)
-            } else if ctx.format == .json {
-                ConsoleProgressReporter(stream: stderrStream, header: "Downloading \(version)")
-            } else {
-                ConsoleProgressReporter(stream: stdoutStream, header: "Downloading \(version)")
-            }
+                if quiet {
+                    QuietProgressReporter()
+                } else if let progressFile {
+                    try JsonFileProgressReporter(ctx, filePath: progressFile)
+                } else if ctx.format == .json {
+                    ConsoleProgressReporter(stream: stderrStream, header: "Downloading \(version)")
+                } else {
+                    ConsoleProgressReporter(stream: stdoutStream, header: "Downloading \(version)")
+                }
 
             defer {
                 try? animation?.close()

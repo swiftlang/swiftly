@@ -1,0 +1,7 @@
+Swiftly is currently unlinked and will not manage the active toolchain. You can run
+the following command to link swiftly to the active toolchain:
+
+    $ swiftly link
+
+
+Swift 5.9.2 is already installed

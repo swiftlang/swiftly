@@ -1,0 +1,8 @@
+Swiftly is currently unlinked and will not manage the active toolchain. You can run
+the following command to link swiftly to the active toolchain:
+
+    $ swiftly link
+
+
+Fetching the latest main branch snapshot...
+main-snapshot-2026-05-07 is already installed

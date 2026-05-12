@@ -324,6 +324,20 @@ import Testing
                 // THEN: the use command reports this toolchain to be in use
                 #expect(output.contains(where: { $0.contains(ToolchainVersion.newMainSnapshot.name) }))
 
+                // GIVEN: a directory with no swift version file but containing a Package.swift
+                try await fs.remove(atPath: versionFile)
+                let packageFile = SwiftlyTests.ctx.currentDirectory / "Package.swift"
+                try "// swift-tools-version:6.3".write(to: packageFile, atomically: true)
+                // WHEN: using a toolchain version
+                try await SwiftlyTests.runCommand(
+                    Use.self, ["use", ToolchainVersion.newReleaseSnapshot.name]
+                )
+                // THEN: a swift version file is created
+                #expect(try await fs.exists(atPath: versionFile))
+                // THEN: the version file contains the specified version
+                versionFileContents = try String(contentsOf: versionFile)
+                #expect(ToolchainVersion.newReleaseSnapshot.name == versionFileContents)
+
                 // GIVEN: a directory with no swift version file at the top of a git repository
                 try await fs.remove(atPath: versionFile)
                 let gitDir = SwiftlyTests.ctx.currentDirectory / ".git"

@@ -193,7 +193,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             throw Error(message: "Unable to find swift release using swift.org API: \(swiftVersion)")
         }
 
-        let sdkName = "swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"
+        let sdkName = "swift-\(swiftVersion)-RELEASE_static-linux-0.1.0"
 
 #if arch(arm64)
         let arch = "aarch64"

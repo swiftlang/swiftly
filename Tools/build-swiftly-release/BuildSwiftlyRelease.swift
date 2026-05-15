@@ -154,7 +154,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let libarchiveRequest = HTTPClientRequest(url: "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
         let libarchiveResponse = try await httpExecutor.httpClient.execute(libarchiveRequest, timeout: .seconds(60))
         guard libarchiveResponse.status == .ok else {
-            throw Error(message: "Download failed with status: \(libarchiveResponse.status)")
+            throw Error(message: "Download failed with status: \(libarchiveResponse.status) \(libarchiveRequest.url)")
         }
 
         try await NIOFileSystem.FileSystem.shared.withFileHandle(forWritingAt: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz", options: .newFile(replaceExisting: true)) { fileHandle in

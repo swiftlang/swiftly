@@ -206,10 +206,10 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         }
 
         // Download and extract SDK into the build checkouts directory
-        let sdkRequest = HTTPClientRequest(url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz")
+        let sdkRequest = HTTPClientRequest(url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.1.0.artifactbundle.tar.gz")
         let sdkResponse = try await httpExecutor.httpClient.execute(sdkRequest, timeout: .seconds(60))
         guard sdkResponse.status == .ok else {
-            throw Error(message: "Download failed with status: \(sdkResponse.status)")
+            throw Error(message: "Download failed with status: \(sdkResponse.status) \(sdkRequest.url)")
         }
 
         try await NIOFileSystem.FileSystem.shared.withFileHandle(forWritingAt: buildCheckoutsDir / "static-linux-sdk.tar.gz", options: .newFile(replaceExisting: true)) { fileHandle in

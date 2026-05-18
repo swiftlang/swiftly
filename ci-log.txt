@@ -1,0 +1,799 @@
+Swiftly is currently unlinked and will not manage the active toolchain. You can run
+the following command to link swiftly to the active toolchain:
+
+    $ swiftly link
+
+
+Fetching the latest main branch snapshot...
+Installing main-snapshot-2026-05-07
+Downloading main-snapshot-2026-05-07
+0%: Downloaded 0.1 MiB of 1866.0 MiB
+0%: Downloaded 0.6 MiB of 1866.0 MiB
+0%: Downloaded 3.0 MiB of 1866.0 MiB
+0%: Downloaded 7.1 MiB of 1866.0 MiB
+0%: Downloaded 8.9 MiB of 1866.0 MiB
+0%: Downloaded 11.5 MiB of 1866.0 MiB
+0%: Downloaded 14.0 MiB of 1866.0 MiB
+0%: Downloaded 15.5 MiB of 1866.0 MiB
+0%: Downloaded 18.5 MiB of 1866.0 MiB
+1%: Downloaded 20.6 MiB of 1866.0 MiB
+1%: Downloaded 24.2 MiB of 1866.0 MiB
+1%: Downloaded 26.7 MiB of 1866.0 MiB
+1%: Downloaded 29.2 MiB of 1866.0 MiB
+1%: Downloaded 32.3 MiB of 1866.0 MiB
+1%: Downloaded 36.2 MiB of 1866.0 MiB
+2%: Downloaded 39.2 MiB of 1866.0 MiB
+2%: Downloaded 41.8 MiB of 1866.0 MiB
+2%: Downloaded 44.8 MiB of 1866.0 MiB
+2%: Downloaded 47.9 MiB of 1866.0 MiB
+2%: Downloaded 51.0 MiB of 1866.0 MiB
+2%: Downloaded 53.7 MiB of 1866.0 MiB
+3%: Downloaded 57.1 MiB of 1866.0 MiB
+3%: Downloaded 60.5 MiB of 1866.0 MiB
+3%: Downloaded 63.7 MiB of 1866.0 MiB
+3%: Downloaded 66.9 MiB of 1866.0 MiB
+3%: Downloaded 66.9 MiB of 1866.0 MiB
+3%: Downloaded 71.8 MiB of 1866.0 MiB
+4%: Downloaded 75.1 MiB of 1866.0 MiB
+4%: Downloaded 79.1 MiB of 1866.0 MiB
+4%: Downloaded 80.7 MiB of 1866.0 MiB
+4%: Downloaded 83.8 MiB of 1866.0 MiB
+4%: Downloaded 86.5 MiB of 1866.0 MiB
+4%: Downloaded 89.9 MiB of 1866.0 MiB
+4%: Downloaded 93.2 MiB of 1866.0 MiB
+5%: Downloaded 96.6 MiB of 1866.0 MiB
+5%: Downloaded 99.3 MiB of 1866.0 MiB
+5%: Downloaded 99.8 MiB of 1866.0 MiB
+5%: Downloaded 101.7 MiB of 1866.0 MiB
+5%: Downloaded 104.4 MiB of 1866.0 MiB
+5%: Downloaded 106.8 MiB of 1866.0 MiB
+5%: Downloaded 110.3 MiB of 1866.0 MiB
+6%: Downloaded 112.7 MiB of 1866.0 MiB
+6%: Downloaded 115.7 MiB of 1866.0 MiB
+6%: Downloaded 119.0 MiB of 1866.0 MiB
+6%: Downloaded 121.1 MiB of 1866.0 MiB
+6%: Downloaded 125.4 MiB of 1866.0 MiB
+6%: Downloaded 128.9 MiB of 1866.0 MiB
+7%: Downloaded 131.4 MiB of 1866.0 MiB
+7%: Downloaded 134.2 MiB of 1866.0 MiB
+7%: Downloaded 138.6 MiB of 1866.0 MiB
+7%: Downloaded 141.7 MiB of 1866.0 MiB
+7%: Downloaded 143.8 MiB of 1866.0 MiB
+7%: Downloaded 145.9 MiB of 1866.0 MiB
+8%: Downloaded 149.4 MiB of 1866.0 MiB
+8%: Downloaded 151.9 MiB of 1866.0 MiB
+8%: Downloaded 153.5 MiB of 1866.0 MiB
+8%: Downloaded 156.7 MiB of 1866.0 MiB
+8%: Downloaded 160.4 MiB of 1866.0 MiB
+8%: Downloaded 163.8 MiB of 1866.0 MiB
+8%: Downloaded 166.9 MiB of 1866.0 MiB
+9%: Downloaded 170.1 MiB of 1866.0 MiB
+9%: Downloaded 172.6 MiB of 1866.0 MiB
+9%: Downloaded 176.3 MiB of 1866.0 MiB
+9%: Downloaded 179.7 MiB of 1866.0 MiB
+9%: Downloaded 181.5 MiB of 1866.0 MiB
+9%: Downloaded 183.4 MiB of 1866.0 MiB
+9%: Downloaded 186.5 MiB of 1866.0 MiB
+10%: Downloaded 188.7 MiB of 1866.0 MiB
+10%: Downloaded 191.5 MiB of 1866.0 MiB
+10%: Downloaded 192.1 MiB of 1866.0 MiB
+10%: Downloaded 196.0 MiB of 1866.0 MiB
+10%: Downloaded 199.4 MiB of 1866.0 MiB
+10%: Downloaded 202.4 MiB of 1866.0 MiB
+11%: Downloaded 205.5 MiB of 1866.0 MiB
+11%: Downloaded 208.9 MiB of 1866.0 MiB
+11%: Downloaded 211.2 MiB of 1866.0 MiB
+11%: Downloaded 215.6 MiB of 1866.0 MiB
+11%: Downloaded 218.0 MiB of 1866.0 MiB
+11%: Downloaded 220.1 MiB of 1866.0 MiB
+12%: Downloaded 224.0 MiB of 1866.0 MiB
+12%: Downloaded 227.1 MiB of 1866.0 MiB
+12%: Downloaded 231.1 MiB of 1866.0 MiB
+12%: Downloaded 234.3 MiB of 1866.0 MiB
+12%: Downloaded 236.6 MiB of 1866.0 MiB
+12%: Downloaded 240.0 MiB of 1866.0 MiB
+13%: Downloaded 243.7 MiB of 1866.0 MiB
+13%: Downloaded 245.8 MiB of 1866.0 MiB
+13%: Downloaded 248.9 MiB of 1866.0 MiB
+13%: Downloaded 252.0 MiB of 1866.0 MiB
+13%: Downloaded 254.3 MiB of 1866.0 MiB
+13%: Downloaded 257.9 MiB of 1866.0 MiB
+13%: Downloaded 260.6 MiB of 1866.0 MiB
+14%: Downloaded 264.5 MiB of 1866.0 MiB
+14%: Downloaded 266.8 MiB of 1866.0 MiB
+14%: Downloaded 269.2 MiB of 1866.0 MiB
+14%: Downloaded 271.0 MiB of 1866.0 MiB
+14%: Downloaded 272.4 MiB of 1866.0 MiB
+14%: Downloaded 275.5 MiB of 1866.0 MiB
+14%: Downloaded 279.6 MiB of 1866.0 MiB
+15%: Downloaded 283.0 MiB of 1866.0 MiB
+15%: Downloaded 286.0 MiB of 1866.0 MiB
+15%: Downloaded 288.5 MiB of 1866.0 MiB
+15%: Downloaded 291.7 MiB of 1866.0 MiB
+15%: Downloaded 295.2 MiB of 1866.0 MiB
+15%: Downloaded 298.1 MiB of 1866.0 MiB
+16%: Downloaded 303.2 MiB of 1866.0 MiB
+16%: Downloaded 306.9 MiB of 1866.0 MiB
+16%: Downloaded 312.5 MiB of 1866.0 MiB
+16%: Downloaded 315.5 MiB of 1866.0 MiB
+17%: Downloaded 319.3 MiB of 1866.0 MiB
+17%: Downloaded 321.7 MiB of 1866.0 MiB
+17%: Downloaded 324.4 MiB of 1866.0 MiB
+17%: Downloaded 326.7 MiB of 1866.0 MiB
+17%: Downloaded 329.1 MiB of 1866.0 MiB
+17%: Downloaded 331.9 MiB of 1866.0 MiB
+17%: Downloaded 334.9 MiB of 1866.0 MiB
+18%: Downloaded 338.2 MiB of 1866.0 MiB
+18%: Downloaded 341.2 MiB of 1866.0 MiB
+18%: Downloaded 346.5 MiB of 1866.0 MiB
+18%: Downloaded 348.8 MiB of 1866.0 MiB
+18%: Downloaded 352.2 MiB of 1866.0 MiB
+19%: Downloaded 355.4 MiB of 1866.0 MiB
+19%: Downloaded 357.7 MiB of 1866.0 MiB
+19%: Downloaded 360.7 MiB of 1866.0 MiB
+19%: Downloaded 363.9 MiB of 1866.0 MiB
+19%: Downloaded 366.9 MiB of 1866.0 MiB
+19%: Downloaded 369.1 MiB of 1866.0 MiB
+19%: Downloaded 371.7 MiB of 1866.0 MiB
+20%: Downloaded 374.0 MiB of 1866.0 MiB
+20%: Downloaded 376.4 MiB of 1866.0 MiB
+20%: Downloaded 379.5 MiB of 1866.0 MiB
+20%: Downloaded 381.5 MiB of 1866.0 MiB
+20%: Downloaded 386.2 MiB of 1866.0 MiB
+20%: Downloaded 387.5 MiB of 1866.0 MiB
+20%: Downloaded 390.6 MiB of 1866.0 MiB
+21%: Downloaded 393.5 MiB of 1866.0 MiB
+21%: Downloaded 395.8 MiB of 1866.0 MiB
+21%: Downloaded 398.8 MiB of 1866.0 MiB
+21%: Downloaded 402.9 MiB of 1866.0 MiB
+21%: Downloaded 405.2 MiB of 1866.0 MiB
+21%: Downloaded 408.4 MiB of 1866.0 MiB
+22%: Downloaded 411.6 MiB of 1866.0 MiB
+22%: Downloaded 415.9 MiB of 1866.0 MiB
+22%: Downloaded 419.1 MiB of 1866.0 MiB
+22%: Downloaded 421.3 MiB of 1866.0 MiB
+22%: Downloaded 422.7 MiB of 1866.0 MiB
+22%: Downloaded 424.8 MiB of 1866.0 MiB
+22%: Downloaded 427.2 MiB of 1866.0 MiB
+23%: Downloaded 430.1 MiB of 1866.0 MiB
+23%: Downloaded 432.2 MiB of 1866.0 MiB
+23%: Downloaded 434.8 MiB of 1866.0 MiB
+23%: Downloaded 437.0 MiB of 1866.0 MiB
+23%: Downloaded 441.5 MiB of 1866.0 MiB
+23%: Downloaded 443.4 MiB of 1866.0 MiB
+23%: Downloaded 446.3 MiB of 1866.0 MiB
+24%: Downloaded 448.5 MiB of 1866.0 MiB
+24%: Downloaded 450.4 MiB of 1866.0 MiB
+24%: Downloaded 452.7 MiB of 1866.0 MiB
+24%: Downloaded 455.0 MiB of 1866.0 MiB
+24%: Downloaded 457.5 MiB of 1866.0 MiB
+24%: Downloaded 460.7 MiB of 1866.0 MiB
+24%: Downloaded 464.2 MiB of 1866.0 MiB
+24%: Downloaded 465.3 MiB of 1866.0 MiB
+25%: Downloaded 469.2 MiB of 1866.0 MiB
+25%: Downloaded 471.5 MiB of 1866.0 MiB
+25%: Downloaded 474.9 MiB of 1866.0 MiB
+25%: Downloaded 476.6 MiB of 1866.0 MiB
+25%: Downloaded 480.2 MiB of 1866.0 MiB
+25%: Downloaded 482.7 MiB of 1866.0 MiB
+26%: Downloaded 485.7 MiB of 1866.0 MiB
+26%: Downloaded 487.9 MiB of 1866.0 MiB
+26%: Downloaded 490.7 MiB of 1866.0 MiB
+26%: Downloaded 492.8 MiB of 1866.0 MiB
+26%: Downloaded 495.8 MiB of 1866.0 MiB
+26%: Downloaded 499.1 MiB of 1866.0 MiB
+26%: Downloaded 502.3 MiB of 1866.0 MiB
+27%: Downloaded 505.9 MiB of 1866.0 MiB
+27%: Downloaded 510.2 MiB of 1866.0 MiB
+27%: Downloaded 513.4 MiB of 1866.0 MiB
+27%: Downloaded 515.0 MiB of 1866.0 MiB
+27%: Downloaded 517.5 MiB of 1866.0 MiB
+27%: Downloaded 520.2 MiB of 1866.0 MiB
+28%: Downloaded 523.3 MiB of 1866.0 MiB
+28%: Downloaded 526.5 MiB of 1866.0 MiB
+28%: Downloaded 529.7 MiB of 1866.0 MiB
+28%: Downloaded 532.0 MiB of 1866.0 MiB
+28%: Downloaded 534.4 MiB of 1866.0 MiB
+28%: Downloaded 538.3 MiB of 1866.0 MiB
+29%: Downloaded 542.5 MiB of 1866.0 MiB
+29%: Downloaded 544.8 MiB of 1866.0 MiB
+29%: Downloaded 547.0 MiB of 1866.0 MiB
+29%: Downloaded 549.3 MiB of 1866.0 MiB
+29%: Downloaded 552.2 MiB of 1866.0 MiB
+29%: Downloaded 554.6 MiB of 1866.0 MiB
+29%: Downloaded 557.3 MiB of 1866.0 MiB
+30%: Downloaded 560.0 MiB of 1866.0 MiB
+30%: Downloaded 560.4 MiB of 1866.0 MiB
+30%: Downloaded 562.0 MiB of 1866.0 MiB
+30%: Downloaded 564.7 MiB of 1866.0 MiB
+30%: Downloaded 567.0 MiB of 1866.0 MiB
+30%: Downloaded 568.6 MiB of 1866.0 MiB
+30%: Downloaded 571.1 MiB of 1866.0 MiB
+30%: Downloaded 574.3 MiB of 1866.0 MiB
+30%: Downloaded 577.4 MiB of 1866.0 MiB
+31%: Downloaded 579.4 MiB of 1866.0 MiB
+31%: Downloaded 580.4 MiB of 1866.0 MiB
+31%: Downloaded 583.3 MiB of 1866.0 MiB
+31%: Downloaded 585.7 MiB of 1866.0 MiB
+31%: Downloaded 587.4 MiB of 1866.0 MiB
+31%: Downloaded 591.5 MiB of 1866.0 MiB
+31%: Downloaded 594.2 MiB of 1866.0 MiB
+31%: Downloaded 596.4 MiB of 1866.0 MiB
+32%: Downloaded 598.1 MiB of 1866.0 MiB
+32%: Downloaded 601.0 MiB of 1866.0 MiB
+32%: Downloaded 603.0 MiB of 1866.0 MiB
+32%: Downloaded 606.5 MiB of 1866.0 MiB
+32%: Downloaded 609.7 MiB of 1866.0 MiB
+32%: Downloaded 612.7 MiB of 1866.0 MiB
+32%: Downloaded 615.0 MiB of 1866.0 MiB
+33%: Downloaded 619.0 MiB of 1866.0 MiB
+33%: Downloaded 621.9 MiB of 1866.0 MiB
+33%: Downloaded 624.1 MiB of 1866.0 MiB
+33%: Downloaded 627.2 MiB of 1866.0 MiB
+33%: Downloaded 630.2 MiB of 1866.0 MiB
+33%: Downloaded 633.6 MiB of 1866.0 MiB
+34%: Downloaded 636.8 MiB of 1866.0 MiB
+34%: Downloaded 640.4 MiB of 1866.0 MiB
+34%: Downloaded 643.5 MiB of 1866.0 MiB
+34%: Downloaded 648.2 MiB of 1866.0 MiB
+34%: Downloaded 651.5 MiB of 1866.0 MiB
+35%: Downloaded 655.0 MiB of 1866.0 MiB
+35%: Downloaded 657.3 MiB of 1866.0 MiB
+35%: Downloaded 661.2 MiB of 1866.0 MiB
+35%: Downloaded 662.2 MiB of 1866.0 MiB
+35%: Downloaded 665.0 MiB of 1866.0 MiB
+35%: Downloaded 668.8 MiB of 1866.0 MiB
+35%: Downloaded 671.2 MiB of 1866.0 MiB
+36%: Downloaded 672.5 MiB of 1866.0 MiB
+36%: Downloaded 676.2 MiB of 1866.0 MiB
+36%: Downloaded 679.2 MiB of 1866.0 MiB
+36%: Downloaded 682.8 MiB of 1866.0 MiB
+36%: Downloaded 686.3 MiB of 1866.0 MiB
+37%: Downloaded 690.5 MiB of 1866.0 MiB
+37%: Downloaded 693.7 MiB of 1866.0 MiB
+37%: Downloaded 696.9 MiB of 1866.0 MiB
+37%: Downloaded 700.0 MiB of 1866.0 MiB
+37%: Downloaded 702.7 MiB of 1866.0 MiB
+37%: Downloaded 706.3 MiB of 1866.0 MiB
+38%: Downloaded 710.2 MiB of 1866.0 MiB
+38%: Downloaded 713.9 MiB of 1866.0 MiB
+38%: Downloaded 717.0 MiB of 1866.0 MiB
+38%: Downloaded 719.4 MiB of 1866.0 MiB
+38%: Downloaded 722.7 MiB of 1866.0 MiB
+38%: Downloaded 724.9 MiB of 1866.0 MiB
+39%: Downloaded 729.4 MiB of 1866.0 MiB
+39%: Downloaded 731.1 MiB of 1866.0 MiB
+39%: Downloaded 736.5 MiB of 1866.0 MiB
+39%: Downloaded 738.1 MiB of 1866.0 MiB
+39%: Downloaded 739.5 MiB of 1866.0 MiB
+39%: Downloaded 743.0 MiB of 1866.0 MiB
+39%: Downloaded 746.3 MiB of 1866.0 MiB
+40%: Downloaded 748.9 MiB of 1866.0 MiB
+40%: Downloaded 753.0 MiB of 1866.0 MiB
+40%: Downloaded 756.3 MiB of 1866.0 MiB
+40%: Downloaded 757.5 MiB of 1866.0 MiB
+40%: Downloaded 758.8 MiB of 1866.0 MiB
+40%: Downloaded 764.1 MiB of 1866.0 MiB
+41%: Downloaded 767.1 MiB of 1866.0 MiB
+41%: Downloaded 769.2 MiB of 1866.0 MiB
+41%: Downloaded 771.4 MiB of 1866.0 MiB
+41%: Downloaded 775.7 MiB of 1866.0 MiB
+41%: Downloaded 779.5 MiB of 1866.0 MiB
+41%: Downloaded 782.6 MiB of 1866.0 MiB
+42%: Downloaded 785.7 MiB of 1866.0 MiB
+42%: Downloaded 788.7 MiB of 1866.0 MiB
+42%: Downloaded 792.0 MiB of 1866.0 MiB
+42%: Downloaded 795.6 MiB of 1866.0 MiB
+42%: Downloaded 799.0 MiB of 1866.0 MiB
+42%: Downloaded 802.2 MiB of 1866.0 MiB
+43%: Downloaded 805.0 MiB of 1866.0 MiB
+43%: Downloaded 807.2 MiB of 1866.0 MiB
+43%: Downloaded 809.1 MiB of 1866.0 MiB
+43%: Downloaded 812.7 MiB of 1866.0 MiB
+43%: Downloaded 816.0 MiB of 1866.0 MiB
+43%: Downloaded 819.2 MiB of 1866.0 MiB
+44%: Downloaded 822.4 MiB of 1866.0 MiB
+44%: Downloaded 824.6 MiB of 1866.0 MiB
+44%: Downloaded 827.0 MiB of 1866.0 MiB
+44%: Downloaded 830.4 MiB of 1866.0 MiB
+44%: Downloaded 833.7 MiB of 1866.0 MiB
+44%: Downloaded 837.0 MiB of 1866.0 MiB
+44%: Downloaded 839.4 MiB of 1866.0 MiB
+45%: Downloaded 841.5 MiB of 1866.0 MiB
+45%: Downloaded 844.6 MiB of 1866.0 MiB
+45%: Downloaded 847.2 MiB of 1866.0 MiB
+45%: Downloaded 850.0 MiB of 1866.0 MiB
+45%: Downloaded 852.8 MiB of 1866.0 MiB
+45%: Downloaded 854.8 MiB of 1866.0 MiB
+46%: Downloaded 859.4 MiB of 1866.0 MiB
+46%: Downloaded 862.8 MiB of 1866.0 MiB
+46%: Downloaded 866.0 MiB of 1866.0 MiB
+46%: Downloaded 868.9 MiB of 1866.0 MiB
+46%: Downloaded 871.2 MiB of 1866.0 MiB
+46%: Downloaded 874.3 MiB of 1866.0 MiB
+47%: Downloaded 877.6 MiB of 1866.0 MiB
+47%: Downloaded 881.0 MiB of 1866.0 MiB
+47%: Downloaded 883.8 MiB of 1866.0 MiB
+47%: Downloaded 885.5 MiB of 1866.0 MiB
+47%: Downloaded 887.4 MiB of 1866.0 MiB
+47%: Downloaded 889.0 MiB of 1866.0 MiB
+47%: Downloaded 891.4 MiB of 1866.0 MiB
+47%: Downloaded 894.5 MiB of 1866.0 MiB
+48%: Downloaded 897.2 MiB of 1866.0 MiB
+48%: Downloaded 899.6 MiB of 1866.0 MiB
+48%: Downloaded 900.8 MiB of 1866.0 MiB
+48%: Downloaded 904.4 MiB of 1866.0 MiB
+48%: Downloaded 907.6 MiB of 1866.0 MiB
+48%: Downloaded 910.9 MiB of 1866.0 MiB
+48%: Downloaded 911.9 MiB of 1866.0 MiB
+48%: Downloaded 913.1 MiB of 1866.0 MiB
+49%: Downloaded 915.5 MiB of 1866.0 MiB
+49%: Downloaded 919.5 MiB of 1866.0 MiB
+49%: Downloaded 922.7 MiB of 1866.0 MiB
+49%: Downloaded 926.9 MiB of 1866.0 MiB
+49%: Downloaded 929.3 MiB of 1866.0 MiB
+49%: Downloaded 932.8 MiB of 1866.0 MiB
+50%: Downloaded 935.8 MiB of 1866.0 MiB
+50%: Downloaded 939.5 MiB of 1866.0 MiB
+50%: Downloaded 942.6 MiB of 1866.0 MiB
+50%: Downloaded 945.0 MiB of 1866.0 MiB
+50%: Downloaded 946.7 MiB of 1866.0 MiB
+50%: Downloaded 948.7 MiB of 1866.0 MiB
+51%: Downloaded 951.9 MiB of 1866.0 MiB
+51%: Downloaded 954.9 MiB of 1866.0 MiB
+51%: Downloaded 958.1 MiB of 1866.0 MiB
+51%: Downloaded 960.2 MiB of 1866.0 MiB
+51%: Downloaded 965.6 MiB of 1866.0 MiB
+51%: Downloaded 968.6 MiB of 1866.0 MiB
+52%: Downloaded 970.7 MiB of 1866.0 MiB
+52%: Downloaded 974.5 MiB of 1866.0 MiB
+52%: Downloaded 976.5 MiB of 1866.0 MiB
+52%: Downloaded 979.0 MiB of 1866.0 MiB
+52%: Downloaded 982.2 MiB of 1866.0 MiB
+52%: Downloaded 985.2 MiB of 1866.0 MiB
+52%: Downloaded 988.7 MiB of 1866.0 MiB
+53%: Downloaded 990.8 MiB of 1866.0 MiB
+53%: Downloaded 992.6 MiB of 1866.0 MiB
+53%: Downloaded 996.0 MiB of 1866.0 MiB
+53%: Downloaded 998.3 MiB of 1866.0 MiB
+53%: Downloaded 1001.7 MiB of 1866.0 MiB
+53%: Downloaded 1004.8 MiB of 1866.0 MiB
+54%: Downloaded 1008.3 MiB of 1866.0 MiB
+54%: Downloaded 1011.7 MiB of 1866.0 MiB
+54%: Downloaded 1013.9 MiB of 1866.0 MiB
+54%: Downloaded 1016.5 MiB of 1866.0 MiB
+54%: Downloaded 1020.4 MiB of 1866.0 MiB
+54%: Downloaded 1023.2 MiB of 1866.0 MiB
+54%: Downloaded 1025.8 MiB of 1866.0 MiB
+55%: Downloaded 1028.6 MiB of 1866.0 MiB
+55%: Downloaded 1030.7 MiB of 1866.0 MiB
+55%: Downloaded 1032.3 MiB of 1866.0 MiB
+55%: Downloaded 1037.2 MiB of 1866.0 MiB
+55%: Downloaded 1040.2 MiB of 1866.0 MiB
+55%: Downloaded 1042.2 MiB of 1866.0 MiB
+55%: Downloaded 1044.9 MiB of 1866.0 MiB
+56%: Downloaded 1047.9 MiB of 1866.0 MiB
+56%: Downloaded 1049.9 MiB of 1866.0 MiB
+56%: Downloaded 1054.0 MiB of 1866.0 MiB
+56%: Downloaded 1057.3 MiB of 1866.0 MiB
+56%: Downloaded 1058.3 MiB of 1866.0 MiB
+56%: Downloaded 1061.5 MiB of 1866.0 MiB
+57%: Downloaded 1064.3 MiB of 1866.0 MiB
+57%: Downloaded 1065.9 MiB of 1866.0 MiB
+57%: Downloaded 1067.5 MiB of 1866.0 MiB
+57%: Downloaded 1068.7 MiB of 1866.0 MiB
+57%: Downloaded 1070.9 MiB of 1866.0 MiB
+57%: Downloaded 1074.0 MiB of 1866.0 MiB
+57%: Downloaded 1077.5 MiB of 1866.0 MiB
+57%: Downloaded 1079.1 MiB of 1866.0 MiB
+57%: Downloaded 1081.1 MiB of 1866.0 MiB
+58%: Downloaded 1083.5 MiB of 1866.0 MiB
+58%: Downloaded 1085.0 MiB of 1866.0 MiB
+58%: Downloaded 1085.8 MiB of 1866.0 MiB
+58%: Downloaded 1089.5 MiB of 1866.0 MiB
+58%: Downloaded 1093.0 MiB of 1866.0 MiB
+58%: Downloaded 1095.6 MiB of 1866.0 MiB
+58%: Downloaded 1098.6 MiB of 1866.0 MiB
+58%: Downloaded 1100.0 MiB of 1866.0 MiB
+59%: Downloaded 1102.6 MiB of 1866.0 MiB
+59%: Downloaded 1105.8 MiB of 1866.0 MiB
+59%: Downloaded 1108.3 MiB of 1866.0 MiB
+59%: Downloaded 1111.5 MiB of 1866.0 MiB
+59%: Downloaded 1113.2 MiB of 1866.0 MiB
+59%: Downloaded 1114.8 MiB of 1866.0 MiB
+59%: Downloaded 1116.6 MiB of 1866.0 MiB
+60%: Downloaded 1120.1 MiB of 1866.0 MiB
+60%: Downloaded 1121.7 MiB of 1866.0 MiB
+60%: Downloaded 1123.0 MiB of 1866.0 MiB
+60%: Downloaded 1125.5 MiB of 1866.0 MiB
+60%: Downloaded 1128.5 MiB of 1866.0 MiB
+60%: Downloaded 1131.0 MiB of 1866.0 MiB
+60%: Downloaded 1132.1 MiB of 1866.0 MiB
+60%: Downloaded 1135.4 MiB of 1866.0 MiB
+60%: Downloaded 1135.8 MiB of 1866.0 MiB
+60%: Downloaded 1136.4 MiB of 1866.0 MiB
+61%: Downloaded 1139.1 MiB of 1866.0 MiB
+61%: Downloaded 1142.2 MiB of 1866.0 MiB
+61%: Downloaded 1145.8 MiB of 1866.0 MiB
+61%: Downloaded 1147.7 MiB of 1866.0 MiB
+61%: Downloaded 1149.4 MiB of 1866.0 MiB
+61%: Downloaded 1153.0 MiB of 1866.0 MiB
+61%: Downloaded 1155.4 MiB of 1866.0 MiB
+62%: Downloaded 1159.0 MiB of 1866.0 MiB
+62%: Downloaded 1162.6 MiB of 1866.0 MiB
+62%: Downloaded 1166.2 MiB of 1866.0 MiB
+62%: Downloaded 1169.8 MiB of 1866.0 MiB
+62%: Downloaded 1172.4 MiB of 1866.0 MiB
+63%: Downloaded 1176.1 MiB of 1866.0 MiB
+63%: Downloaded 1178.8 MiB of 1866.0 MiB
+63%: Downloaded 1183.3 MiB of 1866.0 MiB
+63%: Downloaded 1186.3 MiB of 1866.0 MiB
+63%: Downloaded 1189.5 MiB of 1866.0 MiB
+63%: Downloaded 1192.6 MiB of 1866.0 MiB
+64%: Downloaded 1196.1 MiB of 1866.0 MiB
+64%: Downloaded 1200.0 MiB of 1866.0 MiB
+64%: Downloaded 1202.6 MiB of 1866.0 MiB
+64%: Downloaded 1207.7 MiB of 1866.0 MiB
+64%: Downloaded 1210.7 MiB of 1866.0 MiB
+65%: Downloaded 1213.5 MiB of 1866.0 MiB
+65%: Downloaded 1217.8 MiB of 1866.0 MiB
+65%: Downloaded 1220.4 MiB of 1866.0 MiB
+65%: Downloaded 1221.5 MiB of 1866.0 MiB
+65%: Downloaded 1226.5 MiB of 1866.0 MiB
+65%: Downloaded 1228.9 MiB of 1866.0 MiB
+65%: Downloaded 1230.8 MiB of 1866.0 MiB
+66%: Downloaded 1233.5 MiB of 1866.0 MiB
+66%: Downloaded 1236.6 MiB of 1866.0 MiB
+66%: Downloaded 1238.3 MiB of 1866.0 MiB
+66%: Downloaded 1240.1 MiB of 1866.0 MiB
+66%: Downloaded 1242.1 MiB of 1866.0 MiB
+66%: Downloaded 1244.1 MiB of 1866.0 MiB
+66%: Downloaded 1246.8 MiB of 1866.0 MiB
+66%: Downloaded 1249.7 MiB of 1866.0 MiB
+67%: Downloaded 1251.8 MiB of 1866.0 MiB
+67%: Downloaded 1252.5 MiB of 1866.0 MiB
+67%: Downloaded 1257.2 MiB of 1866.0 MiB
+67%: Downloaded 1258.9 MiB of 1866.0 MiB
+67%: Downloaded 1259.2 MiB of 1866.0 MiB
+67%: Downloaded 1260.2 MiB of 1866.0 MiB
+67%: Downloaded 1261.5 MiB of 1866.0 MiB
+67%: Downloaded 1264.4 MiB of 1866.0 MiB
+67%: Downloaded 1266.9 MiB of 1866.0 MiB
+68%: Downloaded 1269.1 MiB of 1866.0 MiB
+68%: Downloaded 1272.0 MiB of 1866.0 MiB
+68%: Downloaded 1274.5 MiB of 1866.0 MiB
+68%: Downloaded 1275.4 MiB of 1866.0 MiB
+68%: Downloaded 1275.4 MiB of 1866.0 MiB
+68%: Downloaded 1280.2 MiB of 1866.0 MiB
+68%: Downloaded 1283.5 MiB of 1866.0 MiB
+68%: Downloaded 1285.1 MiB of 1866.0 MiB
+68%: Downloaded 1287.2 MiB of 1866.0 MiB
+69%: Downloaded 1288.0 MiB of 1866.0 MiB
+69%: Downloaded 1290.9 MiB of 1866.0 MiB
+69%: Downloaded 1294.5 MiB of 1866.0 MiB
+69%: Downloaded 1297.7 MiB of 1866.0 MiB
+69%: Downloaded 1299.5 MiB of 1866.0 MiB
+69%: Downloaded 1302.6 MiB of 1866.0 MiB
+69%: Downloaded 1304.5 MiB of 1866.0 MiB
+70%: Downloaded 1307.0 MiB of 1866.0 MiB
+70%: Downloaded 1310.8 MiB of 1866.0 MiB
+70%: Downloaded 1314.0 MiB of 1866.0 MiB
+70%: Downloaded 1316.4 MiB of 1866.0 MiB
+70%: Downloaded 1320.7 MiB of 1866.0 MiB
+70%: Downloaded 1322.0 MiB of 1866.0 MiB
+71%: Downloaded 1326.6 MiB of 1866.0 MiB
+71%: Downloaded 1328.5 MiB of 1866.0 MiB
+71%: Downloaded 1330.4 MiB of 1866.0 MiB
+71%: Downloaded 1335.9 MiB of 1866.0 MiB
+71%: Downloaded 1338.4 MiB of 1866.0 MiB
+71%: Downloaded 1342.1 MiB of 1866.0 MiB
+72%: Downloaded 1345.1 MiB of 1866.0 MiB
+72%: Downloaded 1348.4 MiB of 1866.0 MiB
+72%: Downloaded 1351.8 MiB of 1866.0 MiB
+72%: Downloaded 1354.2 MiB of 1866.0 MiB
+72%: Downloaded 1356.3 MiB of 1866.0 MiB
+72%: Downloaded 1358.7 MiB of 1866.0 MiB
+73%: Downloaded 1363.0 MiB of 1866.0 MiB
+73%: Downloaded 1366.6 MiB of 1866.0 MiB
+73%: Downloaded 1369.7 MiB of 1866.0 MiB
+73%: Downloaded 1372.2 MiB of 1866.0 MiB
+73%: Downloaded 1373.6 MiB of 1866.0 MiB
+73%: Downloaded 1376.5 MiB of 1866.0 MiB
+73%: Downloaded 1379.9 MiB of 1866.0 MiB
+74%: Downloaded 1381.5 MiB of 1866.0 MiB
+74%: Downloaded 1384.9 MiB of 1866.0 MiB
+74%: Downloaded 1388.5 MiB of 1866.0 MiB
+74%: Downloaded 1390.6 MiB of 1866.0 MiB
+74%: Downloaded 1393.1 MiB of 1866.0 MiB
+74%: Downloaded 1397.2 MiB of 1866.0 MiB
+75%: Downloaded 1401.0 MiB of 1866.0 MiB
+75%: Downloaded 1403.2 MiB of 1866.0 MiB
+75%: Downloaded 1404.2 MiB of 1866.0 MiB
+75%: Downloaded 1407.6 MiB of 1866.0 MiB
+75%: Downloaded 1408.7 MiB of 1866.0 MiB
+75%: Downloaded 1414.0 MiB of 1866.0 MiB
+75%: Downloaded 1415.0 MiB of 1866.0 MiB
+75%: Downloaded 1416.3 MiB of 1866.0 MiB
+76%: Downloaded 1418.6 MiB of 1866.0 MiB
+76%: Downloaded 1422.9 MiB of 1866.0 MiB
+76%: Downloaded 1425.4 MiB of 1866.0 MiB
+76%: Downloaded 1429.2 MiB of 1866.0 MiB
+76%: Downloaded 1432.3 MiB of 1866.0 MiB
+76%: Downloaded 1436.2 MiB of 1866.0 MiB
+77%: Downloaded 1438.5 MiB of 1866.0 MiB
+77%: Downloaded 1441.8 MiB of 1866.0 MiB
+77%: Downloaded 1446.2 MiB of 1866.0 MiB
+77%: Downloaded 1448.4 MiB of 1866.0 MiB
+77%: Downloaded 1449.2 MiB of 1866.0 MiB
+77%: Downloaded 1454.3 MiB of 1866.0 MiB
+78%: Downloaded 1457.2 MiB of 1866.0 MiB
+78%: Downloaded 1459.4 MiB of 1866.0 MiB
+78%: Downloaded 1461.6 MiB of 1866.0 MiB
+78%: Downloaded 1462.6 MiB of 1866.0 MiB
+78%: Downloaded 1464.4 MiB of 1866.0 MiB
+78%: Downloaded 1467.1 MiB of 1866.0 MiB
+78%: Downloaded 1467.6 MiB of 1866.0 MiB
+78%: Downloaded 1472.9 MiB of 1866.0 MiB
+79%: Downloaded 1475.2 MiB of 1866.0 MiB
+79%: Downloaded 1476.3 MiB of 1866.0 MiB
+79%: Downloaded 1479.5 MiB of 1866.0 MiB
+79%: Downloaded 1481.5 MiB of 1866.0 MiB
+79%: Downloaded 1485.6 MiB of 1866.0 MiB
+79%: Downloaded 1487.6 MiB of 1866.0 MiB
+79%: Downloaded 1489.9 MiB of 1866.0 MiB
+79%: Downloaded 1492.3 MiB of 1866.0 MiB
+80%: Downloaded 1494.9 MiB of 1866.0 MiB
+80%: Downloaded 1496.6 MiB of 1866.0 MiB
+80%: Downloaded 1499.4 MiB of 1866.0 MiB
+80%: Downloaded 1500.1 MiB of 1866.0 MiB
+80%: Downloaded 1504.4 MiB of 1866.0 MiB
+80%: Downloaded 1506.0 MiB of 1866.0 MiB
+80%: Downloaded 1508.9 MiB of 1866.0 MiB
+80%: Downloaded 1510.3 MiB of 1866.0 MiB
+80%: Downloaded 1510.5 MiB of 1866.0 MiB
+81%: Downloaded 1514.0 MiB of 1866.0 MiB
+81%: Downloaded 1516.9 MiB of 1866.0 MiB
+81%: Downloaded 1520.2 MiB of 1866.0 MiB
+81%: Downloaded 1521.0 MiB of 1866.0 MiB
+81%: Downloaded 1522.8 MiB of 1866.0 MiB
+81%: Downloaded 1523.8 MiB of 1866.0 MiB
+81%: Downloaded 1528.4 MiB of 1866.0 MiB
+82%: Downloaded 1531.7 MiB of 1866.0 MiB
+82%: Downloaded 1535.0 MiB of 1866.0 MiB
+82%: Downloaded 1537.2 MiB of 1866.0 MiB
+82%: Downloaded 1538.4 MiB of 1866.0 MiB
+82%: Downloaded 1539.6 MiB of 1866.0 MiB
+82%: Downloaded 1543.1 MiB of 1866.0 MiB
+82%: Downloaded 1545.2 MiB of 1866.0 MiB
+82%: Downloaded 1548.4 MiB of 1866.0 MiB
+83%: Downloaded 1551.2 MiB of 1866.0 MiB
+83%: Downloaded 1552.9 MiB of 1866.0 MiB
+83%: Downloaded 1555.0 MiB of 1866.0 MiB
+83%: Downloaded 1558.3 MiB of 1866.0 MiB
+83%: Downloaded 1561.0 MiB of 1866.0 MiB
+83%: Downloaded 1563.6 MiB of 1866.0 MiB
+83%: Downloaded 1565.5 MiB of 1866.0 MiB
+84%: Downloaded 1567.6 MiB of 1866.0 MiB
+84%: Downloaded 1569.3 MiB of 1866.0 MiB
+84%: Downloaded 1572.0 MiB of 1866.0 MiB
+84%: Downloaded 1574.3 MiB of 1866.0 MiB
+84%: Downloaded 1576.9 MiB of 1866.0 MiB
+84%: Downloaded 1579.7 MiB of 1866.0 MiB
+84%: Downloaded 1581.8 MiB of 1866.0 MiB
+84%: Downloaded 1583.2 MiB of 1866.0 MiB
+85%: Downloaded 1586.3 MiB of 1866.0 MiB
+85%: Downloaded 1588.7 MiB of 1866.0 MiB
+85%: Downloaded 1590.0 MiB of 1866.0 MiB
+85%: Downloaded 1594.0 MiB of 1866.0 MiB
+85%: Downloaded 1595.1 MiB of 1866.0 MiB
+85%: Downloaded 1600.0 MiB of 1866.0 MiB
+85%: Downloaded 1604.5 MiB of 1866.0 MiB
+86%: Downloaded 1606.6 MiB of 1866.0 MiB
+86%: Downloaded 1609.4 MiB of 1866.0 MiB
+86%: Downloaded 1611.7 MiB of 1866.0 MiB
+86%: Downloaded 1615.2 MiB of 1866.0 MiB
+86%: Downloaded 1619.0 MiB of 1866.0 MiB
+86%: Downloaded 1622.6 MiB of 1866.0 MiB
+87%: Downloaded 1625.2 MiB of 1866.0 MiB
+87%: Downloaded 1627.7 MiB of 1866.0 MiB
+87%: Downloaded 1629.0 MiB of 1866.0 MiB
+87%: Downloaded 1631.3 MiB of 1866.0 MiB
+87%: Downloaded 1633.3 MiB of 1866.0 MiB
+87%: Downloaded 1636.8 MiB of 1866.0 MiB
+87%: Downloaded 1640.3 MiB of 1866.0 MiB
+88%: Downloaded 1642.9 MiB of 1866.0 MiB
+88%: Downloaded 1646.4 MiB of 1866.0 MiB
+88%: Downloaded 1649.3 MiB of 1866.0 MiB
+88%: Downloaded 1652.8 MiB of 1866.0 MiB
+88%: Downloaded 1655.7 MiB of 1866.0 MiB
+88%: Downloaded 1657.5 MiB of 1866.0 MiB
+88%: Downloaded 1658.9 MiB of 1866.0 MiB
+89%: Downloaded 1662.3 MiB of 1866.0 MiB
+89%: Downloaded 1665.8 MiB of 1866.0 MiB
+89%: Downloaded 1669.0 MiB of 1866.0 MiB
+89%: Downloaded 1674.9 MiB of 1866.0 MiB
+89%: Downloaded 1676.1 MiB of 1866.0 MiB
+89%: Downloaded 1677.1 MiB of 1866.0 MiB
+90%: Downloaded 1681.1 MiB of 1866.0 MiB
+90%: Downloaded 1684.9 MiB of 1866.0 MiB
+90%: Downloaded 1687.6 MiB of 1866.0 MiB
+90%: Downloaded 1690.2 MiB of 1866.0 MiB
+90%: Downloaded 1693.8 MiB of 1866.0 MiB
+90%: Downloaded 1696.4 MiB of 1866.0 MiB
+91%: Downloaded 1700.4 MiB of 1866.0 MiB
+91%: Downloaded 1703.9 MiB of 1866.0 MiB
+91%: Downloaded 1705.8 MiB of 1866.0 MiB
+91%: Downloaded 1705.9 MiB of 1866.0 MiB
+91%: Downloaded 1709.1 MiB of 1866.0 MiB
+91%: Downloaded 1712.7 MiB of 1866.0 MiB
+91%: Downloaded 1715.9 MiB of 1866.0 MiB
+92%: Downloaded 1717.8 MiB of 1866.0 MiB
+92%: Downloaded 1719.8 MiB of 1866.0 MiB
+92%: Downloaded 1722.6 MiB of 1866.0 MiB
+92%: Downloaded 1725.3 MiB of 1866.0 MiB
+92%: Downloaded 1730.1 MiB of 1866.0 MiB
+92%: Downloaded 1731.2 MiB of 1866.0 MiB
+92%: Downloaded 1732.8 MiB of 1866.0 MiB
+93%: Downloaded 1735.8 MiB of 1866.0 MiB
+93%: Downloaded 1737.6 MiB of 1866.0 MiB
+93%: Downloaded 1740.1 MiB of 1866.0 MiB
+93%: Downloaded 1742.8 MiB of 1866.0 MiB
+93%: Downloaded 1744.6 MiB of 1866.0 MiB
+93%: Downloaded 1746.2 MiB of 1866.0 MiB
+93%: Downloaded 1749.6 MiB of 1866.0 MiB
+93%: Downloaded 1753.2 MiB of 1866.0 MiB
+94%: Downloaded 1754.1 MiB of 1866.0 MiB
+94%: Downloaded 1755.0 MiB of 1866.0 MiB
+94%: Downloaded 1757.6 MiB of 1866.0 MiB
+94%: Downloaded 1758.4 MiB of 1866.0 MiB
+94%: Downloaded 1761.8 MiB of 1866.0 MiB
+94%: Downloaded 1764.8 MiB of 1866.0 MiB
+94%: Downloaded 1766.3 MiB of 1866.0 MiB
+94%: Downloaded 1768.6 MiB of 1866.0 MiB
+94%: Downloaded 1770.3 MiB of 1866.0 MiB
+94%: Downloaded 1771.8 MiB of 1866.0 MiB
+95%: Downloaded 1775.3 MiB of 1866.0 MiB
+95%: Downloaded 1779.2 MiB of 1866.0 MiB
+95%: Downloaded 1782.8 MiB of 1866.0 MiB
+95%: Downloaded 1785.2 MiB of 1866.0 MiB
+95%: Downloaded 1790.6 MiB of 1866.0 MiB
+96%: Downloaded 1793.5 MiB of 1866.0 MiB
+96%: Downloaded 1795.4 MiB of 1866.0 MiB
+96%: Downloaded 1798.9 MiB of 1866.0 MiB
+96%: Downloaded 1801.0 MiB of 1866.0 MiB
+96%: Downloaded 1802.8 MiB of 1866.0 MiB
+96%: Downloaded 1808.8 MiB of 1866.0 MiB
+97%: Downloaded 1810.8 MiB of 1866.0 MiB
+97%: Downloaded 1813.7 MiB of 1866.0 MiB
+97%: Downloaded 1815.7 MiB of 1866.0 MiB
+97%: Downloaded 1817.3 MiB of 1866.0 MiB
+97%: Downloaded 1818.9 MiB of 1866.0 MiB
+97%: Downloaded 1822.6 MiB of 1866.0 MiB
+97%: Downloaded 1826.7 MiB of 1866.0 MiB
+98%: Downloaded 1829.4 MiB of 1866.0 MiB
+98%: Downloaded 1832.7 MiB of 1866.0 MiB
+98%: Downloaded 1834.0 MiB of 1866.0 MiB
+98%: Downloaded 1838.6 MiB of 1866.0 MiB
+98%: Downloaded 1840.4 MiB of 1866.0 MiB
+98%: Downloaded 1843.9 MiB of 1866.0 MiB
+99%: Downloaded 1847.8 MiB of 1866.0 MiB
+99%: Downloaded 1850.7 MiB of 1866.0 MiB
+99%: Downloaded 1851.0 MiB of 1866.0 MiB
+99%: Downloaded 1853.0 MiB of 1866.0 MiB
+99%: Downloaded 1856.0 MiB of 1866.0 MiB
+99%: Downloaded 1858.4 MiB of 1866.0 MiB
+99%: Downloaded 1861.8 MiB of 1866.0 MiB
+100%: Downloaded 1866.0 MiB of 1866.0 MiB
+installer: Package name is Swift Open Source Xcode Toolchain
+installer: Installing at base path /Users/khushi
+installer: Preparing for installation….....
+installer: Preparing the disk….....
+installer: Preparing Swift Open Source Xcode Toolchain….....
+installer: Waiting for other installations to complete….....
+installer: Configuring the installation….....
+installer: 	
+#
+installer: Writing files….....
+installer: Writing files….....
+installer: Writing files….....
+installer: Writing files….....
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+#
+installer: Writing files….....
+installer: Writing files….....
+#
+installer: Moving items into place….....
+#
+installer: Running package scripts….....
+#
+installer: Registering updated components….....
+#
+installer: Registering updated components….....
+#
+installer: Registering updated components….....
+installer: Registering updated components….....
+installer: Registering updated components….....
+installer: Registering updated components….....
+installer: Registering updated components….....
+#
+installer: 	Running installer actions…
+installer: 	
+installer: Finishing the Installation….....
+installer: 	
+#
+installer: The software was successfully installed......
+installer: The install was successful.
+Installing package in user home directory...
+main-snapshot-2026-05-07 is installed successfully!

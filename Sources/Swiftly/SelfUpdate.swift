@@ -39,10 +39,10 @@ struct SelfUpdate: SwiftlyCommand {
             )
         }
 
-        let _ = try await Self.execute(ctx, verbose: self.root.verbose, version: self.toVersion)
+        let _ = try await Self.execute(ctx, verbose: self.root.verbose, quiet: self.root.quiet, version: self.toVersion)
     }
 
-    public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool, version swiftlyVersion: SwiftlyVersion?) async throws
+    public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool, quiet: Bool = false, version swiftlyVersion: SwiftlyVersion?) async throws
         -> SwiftlyVersion
     {
         var downloadURL: Foundation.URL?
@@ -116,7 +116,7 @@ struct SelfUpdate: SwiftlyCommand {
         let tmpFile = fs.mktemp()
         try await fs.create(file: tmpFile, contents: nil)
         return try await fs.withTemporary(files: tmpFile) {
-            let animation = PercentProgressAnimation(
+            let animation: PercentProgressAnimation? = quiet ? nil : PercentProgressAnimation(
                 stream: stdoutStream,
                 header: "Downloading swiftly \(version)"
             )
@@ -124,6 +124,7 @@ struct SelfUpdate: SwiftlyCommand {
                 try await ctx.httpClient.getSwiftlyRelease(url: downloadURL).download(
                     to: tmpFile,
                     reportProgress: { progress in
+                        guard let animation = animation else { return }
                         let downloadedMiB = Double(progress.receivedBytes) / (1024.0 * 1024.0)
                         let totalMiB = Double(progress.totalBytes!) / (1024.0 * 1024.0)
 
@@ -136,10 +137,10 @@ struct SelfUpdate: SwiftlyCommand {
                     }
                 )
             } catch {
-                animation.complete(success: false)
+                animation?.complete(success: false)
                 throw error
             }
-            animation.complete(success: true)
+            animation?.complete(success: true)
 
             try await Swiftly.currentPlatform.verifySwiftlySignature(
                 ctx, archiveDownloadURL: downloadURL, archive: tmpFile, verbose: verbose

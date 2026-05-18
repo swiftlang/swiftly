@@ -27,6 +27,9 @@ public struct GlobalOptions: ParsableArguments {
     @Flag(help: "Enable verbose reporting from swiftly")
     var verbose: Bool = false
 
+    @Flag(name: .shortAndLong, help: "Suppress progress output (useful for CI)")
+    var quiet: Bool = false
+
     public init() {}
 }
 

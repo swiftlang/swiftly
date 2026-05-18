@@ -35,6 +35,21 @@ struct ConsoleProgressReporter: ProgressReporterProtocol {
         // No resources to close for console reporter
     }
 }
+/// Progress reporter that suppresses all output (useful for CI environments).
+struct QuietProgressReporter: ProgressReporterProtocol {
+    func update(step: Int, total: Int, text: String) async throws {
+        // Suppress all progress output
+    }
+
+    func complete(success: Bool) async throws {
+        // Suppress completion output
+    }
+
+    func close() throws {
+        // No resources to close
+    }
+}
+
 
 enum ProgressInfo: Codable {
     case step(timestamp: Date, percent: Int, text: String)

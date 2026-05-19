@@ -325,6 +325,11 @@ public struct MacOS: Platform {
                 try await fs.symlink(atPath: xcrunLibLink, linkPath: realCltDir / "usr/lib/libxcrun.dylib")
             }
 
+            let sdksDir = commandLineToolsDir / "SDKs"
+            if !(try await fs.exists(atPath: sdksDir)) {
+                try await fs.symlink(atPath: sdksDir, linkPath: realCltDir / "SDKs")
+            }
+
             let developerDir: FilePath = commandLineToolsDir
 
             if let developerDirEnv = ProcessInfo.processInfo.environment[DEVELOPER_DIR.rawValue],

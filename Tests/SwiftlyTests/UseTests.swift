@@ -351,6 +351,20 @@ import Testing
             }
     }
 
+    /// Tests that `swiftly use --format=json` emits a valid empty JSON object when no toolchain is selected.
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(toolchains: []))
+    func printInUseJsonFormatNoSelection() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Use.self, ["use", "--format", "json"], format: .json
+        )
+
+        let joined = output.joined(separator: "\n")
+        let data = try #require(joined.data(using: .utf8))
+        let json = try JSONSerialization.jsonObject(with: data)
+        let object = try #require(json as? [String: Any])
+        #expect(object.isEmpty)
+    }
+
     /// Tests that running a use command without an argument prints the currently in-use toolchain.
     @Test(.mockedSwiftlyVersion()) func printInUseJsonFormat() async throws {
         let toolchains = [

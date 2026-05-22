@@ -1,6 +1,10 @@
 import Foundation
 import SwiftlyCore
 
+struct EmptyObject: OutputData {
+    var description: String { "" }
+}
+
 struct LocationInfo: OutputData {
     let path: String
 

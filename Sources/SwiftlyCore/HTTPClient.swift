@@ -205,6 +205,25 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     ) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains {
         let response = try await self.websiteClient().listDevToolchains(
             .init(path: .init(branch: branch, platform: platform)))
+        return try Self.devToolchains(from: response, branch: branch)
+    }
+
+    /// Extract the development toolchains from a `listDevToolchains` response.
+    ///
+    /// swift.org responds with a 404 when there are no snapshots published for the requested
+    /// branch, which happens when the branch identifier doesn't exist (or is older than the
+    /// supported `main` and previous x.y releases). That response is surfaced as a typed
+    /// `SnapshotBranchNotFoundError` so callers can present an actionable message instead of the
+    /// raw, low-level HTTP failure.
+    static func devToolchains(
+        from response: SwiftlyWebsiteAPI.Operations.ListDevToolchains.Output,
+        branch: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch
+    ) throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains {
+        if case let .undocumented(statusCode, _) = response, statusCode == 404 {
+            throw SwiftlyHTTPClient.SnapshotBranchNotFoundError(
+                branch: ToolchainVersion.Snapshot.Branch(branch))
+        }
+
         return try response.ok.body.json
     }
 
@@ -348,6 +367,28 @@ extension SwiftlyWebsiteAPI.Components.Schemas.SourceBranch {
 
     public init(_ string: String) {
         self.init(value2: string)
+    }
+}
+
+extension ToolchainVersion.Snapshot.Branch {
+    /// Reconstruct the snapshot branch from the swift.org `SourceBranch` that was used to request
+    /// it. This is the inverse of the mapping performed in `SwiftlyHTTPClient.getSnapshotToolchains`,
+    /// where `.main` becomes the `main` source branch and a release branch becomes its "major.minor"
+    /// string representation.
+    init(_ sourceBranch: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch) {
+        let raw = sourceBranch.value1?.rawValue ?? sourceBranch.value2 ?? "main"
+
+        if raw == "main" {
+            self = .main
+            return
+        }
+
+        let components = raw.split(separator: ".")
+        if components.count == 2, let major = Int(components[0]), let minor = Int(components[1]) {
+            self = .release(major: major, minor: minor)
+        } else {
+            self = .main
+        }
     }
 }
 

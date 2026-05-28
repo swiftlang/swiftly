@@ -205,20 +205,12 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     ) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains {
         let response = try await self.websiteClient().listDevToolchains(
             .init(path: .init(branch: branch, platform: platform)))
-        return try Self.devToolchains(from: response, branch: branch)
-    }
 
-    /// Extract the development toolchains from a `listDevToolchains` response.
-    ///
-    /// swift.org responds with a 404 when there are no snapshots published for the requested
-    /// branch, which happens when the branch identifier doesn't exist (or is older than the
-    /// supported `main` and previous x.y releases). That response is surfaced as a typed
-    /// `SnapshotBranchNotFoundError` so callers can present an actionable message instead of the
-    /// raw, low-level HTTP failure.
-    static func devToolchains(
-        from response: SwiftlyWebsiteAPI.Operations.ListDevToolchains.Output,
-        branch: SwiftlyWebsiteAPI.Components.Schemas.SourceBranch
-    ) throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains {
+        // swift.org responds with a 404 when there are no snapshots published for the requested
+        // branch, which happens when the branch identifier doesn't exist (or is older than the
+        // supported `main` and previous x.y releases). Surface that as a typed
+        // `SnapshotBranchNotFoundError` so callers can present an actionable message instead of
+        // the raw, low-level HTTP failure.
         if case let .undocumented(statusCode, _) = response, statusCode == 404 {
             throw SwiftlyHTTPClient.SnapshotBranchNotFoundError(
                 branch: ToolchainVersion.Snapshot.Branch(branch))

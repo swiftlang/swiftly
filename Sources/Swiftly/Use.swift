@@ -89,6 +89,7 @@ struct Use: SwiftlyCommand {
 
             guard let selectedVersion else {
                 // Return with nothing if there's no toolchain that is selected
+                try await ctx.output(EmptyObject())
                 return
             }
 

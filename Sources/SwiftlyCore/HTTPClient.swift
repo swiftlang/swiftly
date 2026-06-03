@@ -429,8 +429,8 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
 }
 
 extension SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch {
-    private static func snapshotRegex() -> Regex<(Substring, Substring?, Substring?, Substring)> {
-        try! Regex("swift(?:-(\\d+)\\.(\\d+))?-DEVELOPMENT-SNAPSHOT-(\\d{4}-\\d{2}-\\d{2})")
+    private static func snapshotRegex() -> Regex<(Substring, Substring?, Substring?, Substring?, Substring)> {
+        try! Regex("swift(?:-(\\d+)\\.(\\d+)(?:\\.([a-zA-Z0-9]+))?)?-DEVELOPMENT-SNAPSHOT-(\\d{4}-\\d{2}-\\d{2})")
     }
 
     func parseSnapshot() throws -> ToolchainVersion.Snapshot? {
@@ -444,12 +444,13 @@ extension SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch {
                 throw SwiftlyError(
                     message: "malformatted release branch: \"\(majorString).\(minorString)\"")
             }
-            branch = .release(major: major, minor: minor)
+            let patch = match.output.3.map(String.init)
+            branch = .release(major: major, minor: minor, patch: patch)
         } else {
             branch = .main
         }
 
-        return ToolchainVersion.Snapshot(branch: branch, date: String(match.output.3))
+        return ToolchainVersion.Snapshot(branch: branch, date: String(match.output.4))
     }
 }
 
@@ -577,8 +578,8 @@ public struct SwiftlyHTTPClient: Sendable {
         {
         case .main:
             .init(.main)
-        case let .release(major, minor):
-            .init("\(major).\(minor)")
+        case let .release(major, minor, patch):
+            .init("\(major).\(minor)\(patch.map { ".\($0)" } ?? "")")
         }
 
         let devToolchains = try await self.httpRequestExecutor.getSnapshotToolchains(

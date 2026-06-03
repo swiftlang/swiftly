@@ -574,7 +574,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
     }
 
     private static func snapshotURLRegex() -> Regex<Substring> {
-        try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
+        try! Regex("swift(?:-[0-9]+\\.[0-9]+(?:\\.[a-zA-Z0-9]+)?)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
     }
 
     private let executables: [String]
@@ -683,8 +683,8 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             switch snapshotVersion.branch {
             case .main:
                 branch.value1 == .main || branch.value1?.rawValue == "main"
-            case let .release(major, minor):
-                branch.value2 == "\(major).\(minor)" || branch.value1?.rawValue == "\(major).\(minor)"
+            case let .release(major, minor, patch):
+                branch.value2 == "\(major).\(minor)\(patch.map { ".\($0)" } ?? "")" || branch.value1?.rawValue == "\(major).\(minor)\(patch.map { ".\($0)" } ?? "")"
             }
         }
 
@@ -694,7 +694,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
                 date: "",
                 dir: branch.value1 == .main || branch.value2 == "main" ?
                     "swift-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)" :
-                    "swift-6.0-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)",
+                    "swift-\(branchSnapshot.branch.name)-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)",
                 download: "",
                 downloadSignature: nil,
                 debugInfo: nil

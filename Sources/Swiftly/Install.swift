@@ -299,8 +299,9 @@ struct Install: SwiftlyCommand {
                 category = "swift-\(versionString)-release"
             case let .snapshot(release):
                 switch release.branch {
-                case let .release(major, minor):
-                    category = "swift-\(major).\(minor)-branch"
+                case let .release(major, minor, patch):
+                    let patchPart = patch.map { ".\($0)" } ?? ""
+                    category = "swift-\(major).\(minor)\(patchPart)-branch"
                 case .main:
                     category = "development"
                 }

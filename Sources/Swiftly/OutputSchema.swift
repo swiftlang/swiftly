@@ -128,6 +128,9 @@ struct AvailableToolchainInfo: OutputData {
             {
                 try versionContainer.encode(major, forKey: .major)
                 try versionContainer.encode(minor, forKey: .minor)
+                if let branchPatch = snapshot.branch.patch {
+                    try versionContainer.encode(branchPatch, forKey: .patch)
+                }
             }
         case .xcode:
             try versionContainer.encode("system", forKey: .type)
@@ -163,8 +166,8 @@ struct AvailableToolchainsListInfo: OutputData {
                 }
             case .snapshot(.main, nil):
                 "main development snapshot"
-            case let .snapshot(.release(major, minor), nil):
-                "\(major).\(minor) development snapshot"
+            case let .snapshot(.release(major, minor, patch), nil):
+                "\(major).\(minor)\(patch.map { ".\($0)" } ?? "") development snapshot"
             default:
                 "matching"
             }
@@ -242,6 +245,9 @@ struct InstallToolchainInfo: OutputData {
             {
                 try versionContainer.encode(major, forKey: .major)
                 try versionContainer.encode(minor, forKey: .minor)
+                if let branchPatch = snapshot.branch.patch {
+                    try versionContainer.encode(branchPatch, forKey: .patch)
+                }
             }
         case .xcode:
             try versionContainer.encode("system", forKey: .type)
@@ -278,7 +284,8 @@ struct InstallToolchainInfo: OutputData {
             if branchName == "main" {
                 branch = .main
             } else if let major = branchMajor, let minor = branchMinor {
-                branch = .release(major: major, minor: minor)
+                let branchPatch = try? versionContainer.decodeIfPresent(String.self, forKey: .patch)
+                branch = .release(major: major, minor: minor, patch: branchPatch)
             } else {
                 throw DecodingError.dataCorruptedError(
                     forKey: ToolchainVersionCodingKeys.branch,
@@ -328,8 +335,8 @@ struct InstalledToolchainsListInfo: OutputData {
                 }
             case .snapshot(.main, nil):
                 "main development snapshot"
-            case let .snapshot(.release(major, minor), nil):
-                "\(major).\(minor) development snapshot"
+            case let .snapshot(.release(major, minor, patch), nil):
+                "\(major).\(minor)\(patch.map { ".\($0)" } ?? "") development snapshot"
             case .xcode:
                 "xcode"
             default:

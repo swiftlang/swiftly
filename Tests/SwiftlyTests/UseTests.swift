@@ -174,17 +174,18 @@ import Testing
         )
         // Switch to the latest snapshot for the given release.
         guard
-            case let .release(major, minor) = ToolchainVersion.newReleaseSnapshot.asSnapshot!.branch
+            case let .release(major, minor, patch) = ToolchainVersion.newReleaseSnapshot.asSnapshot!.branch
         else {
             fatalError("expected release in snapshot release version")
         }
+        let patchPart = patch.map { ".\($0)" } ?? ""
         try await self.useAndValidate(
-            argument: "\(major).\(minor)-snapshot",
+            argument: "\(major).\(minor)\(patchPart)-snapshot",
             expectedVersion: .newReleaseSnapshot
         )
         // Switch to it again, assert no errors or changes were made.
         try await self.useAndValidate(
-            argument: "\(major).\(minor)-snapshot",
+            argument: "\(major).\(minor)\(patchPart)-snapshot",
             expectedVersion: .newReleaseSnapshot
         )
         // Switch to it again, this time by name. Assert no errors or changes were made.

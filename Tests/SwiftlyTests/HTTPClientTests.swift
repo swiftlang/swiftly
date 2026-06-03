@@ -147,6 +147,10 @@ import Testing
 
         static let macOS = ToolchainSpecifier(platform: .macOS)
         static let ubuntu2404 = ToolchainSpecifier(platform: .ubuntu2404)
+        static let ubuntu2404_6_4_x = ToolchainSpecifier(
+            platform: .ubuntu2404,
+            branches: [.release(major: 6, minor: 4, patch: "x")]
+        )
         static let ubuntu2204 = ToolchainSpecifier(platform: .ubuntu2204)
         static let rhel9 = ToolchainSpecifier(platform: .rhel9)
         static let fedora39 = ToolchainSpecifier(platform: .fedora39)
@@ -163,6 +167,7 @@ import Testing
         arguments: [
             ToolchainSpecifier.macOS,
             .ubuntu2404,
+            .ubuntu2404_6_4_x,
             .ubuntu2204,
             .rhel9,
             .fedora39,

@@ -131,6 +131,20 @@ import Testing
 
     @Test(
         .tags(.large),
+        arguments: [SwiftlyWebsiteAPI.Components.Schemas.Architecture.x8664, .aarch64]
+    ) func get64xSnapshotToolchainsFromSwiftOrg(_ arch: SwiftlyWebsiteAPI.Components.Schemas.Architecture) async throws {
+        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {
+            return
+        }
+
+        let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
+
+        let snapshots = try await httpClient.getSnapshotToolchains(platform: .ubuntu2404, arch: arch.value2!, branch: .release(major: 6, minor: 4, patch: "x"), limit: 5)
+        #expect(1 <= snapshots.count)
+    }
+
+    @Test(
+        .tags(.large),
         arguments:
         [PlatformDefinition.macOS, .ubuntu2404, .ubuntu2204, .rhel9, .fedora39, .amazonlinux2, .debian12],
         [SwiftlyWebsiteAPI.Components.Schemas.Architecture.x8664, .aarch64]

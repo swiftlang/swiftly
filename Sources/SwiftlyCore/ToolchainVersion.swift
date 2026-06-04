@@ -5,14 +5,15 @@ public enum ToolchainVersion: Sendable {
     public struct Snapshot: Equatable, Hashable, CustomStringConvertible, Comparable, Sendable {
         public enum Branch: Equatable, Hashable, CustomStringConvertible, Sendable {
             case main
-            case release(major: Int, minor: Int)
+            case release(major: Int, minor: Int, patch: String? = nil)
 
             public var description: String {
                 switch self {
                 case .main:
                     return "main"
-                case let .release(major, minor):
-                    return "\(major).\(minor) development"
+                case let .release(major, minor, patch):
+                    let patchPart = patch.map { ".\($0)" } ?? ""
+                    return "\(major).\(minor)\(patchPart) development"
                 }
             }
 
@@ -20,23 +21,31 @@ public enum ToolchainVersion: Sendable {
                 switch self {
                 case .main:
                     return "main"
-                case let .release(major, minor):
-                    return "\(major).\(minor)"
+                case let .release(major, minor, patch):
+                    let patchPart = patch.map { ".\($0)" } ?? ""
+                    return "\(major).\(minor)\(patchPart)"
                 }
             }
 
             public var major: Int? {
-                guard case let .release(major, _) = self else {
+                guard case let .release(major, _, _) = self else {
                     return nil
                 }
                 return major
             }
 
             public var minor: Int? {
-                guard case let .release(_, minor) = self else {
+                guard case let .release(_, minor, _) = self else {
                     return nil
                 }
                 return minor
+            }
+
+            public var patch: String? {
+                guard case let .release(_, _, patch) = self else {
+                    return nil
+                }
+                return patch
             }
         }
 
@@ -52,8 +61,9 @@ public enum ToolchainVersion: Sendable {
             switch self.branch {
             case .main:
                 return "main-snapshot-\(self.date)"
-            case let .release(major, minor):
-                return "\(major).\(minor)-snapshot-\(self.date)"
+            case let .release(major, minor, patch):
+                let patchPart = patch.map { ".\($0)" } ?? ""
+                return "\(major).\(minor)\(patchPart)-snapshot-\(self.date)"
             }
         }
 
@@ -110,8 +120,8 @@ public enum ToolchainVersion: Sendable {
         try! Regex("^main-snapshot-(\\d{4}-\\d{2}-\\d{2})$")
     }
 
-    static func releaseSnapshotRegex() -> Regex<(Substring, Substring, Substring, Substring)> {
-        try! Regex("^(\\d+)\\.(\\d+)-snapshot-(\\d{4}-\\d{2}-\\d{2})$")
+    static func releaseSnapshotRegex() -> Regex<(Substring, Substring, Substring, Substring?, Substring)> {
+        try! Regex("^(?:Swift )?(\\d+)\\.(\\d+)(?:\\.([a-zA-Z0-9]+))?-snapshot-(\\d{4}-\\d{2}-\\d{2})$")
     }
 
     /// Parse a toolchain version from the provided string.
@@ -134,7 +144,8 @@ public enum ToolchainVersion: Sendable {
             else {
                 throw SwiftlyError(message: "invalid release snapshot version: \(string)")
             }
-            self = ToolchainVersion(snapshotBranch: .release(major: major, minor: minor), date: String(match.output.3))
+            let patch = match.output.3.map(String.init)
+            self = ToolchainVersion(snapshotBranch: .release(major: major, minor: minor, patch: patch), date: String(match.output.4))
         } else if string == "xcode" {
             self = ToolchainVersion.xcodeVersion
         } else {
@@ -178,8 +189,9 @@ public enum ToolchainVersion: Sendable {
             switch release.branch {
             case .main:
                 return "main-snapshot-\(release.date)"
-            case let .release(major, minor):
-                return "\(major).\(minor)-snapshot-\(release.date)"
+            case let .release(major, minor, patch):
+                let patchPart = patch.map { ".\($0)" } ?? ""
+                return "\(major).\(minor)\(patchPart)-snapshot-\(release.date)"
             }
         case .xcode:
             return "xcode"
@@ -198,8 +210,9 @@ public enum ToolchainVersion: Sendable {
             switch release.branch {
             case .main:
                 return "swift-DEVELOPMENT-SNAPSHOT-\(release.date)-a"
-            case let .release(major, minor):
-                return "swift-\(major).\(minor)-DEVELOPMENT-SNAPSHOT-\(release.date)-a"
+            case let .release(major, minor, patch):
+                let patchPart = patch.map { ".\($0)" } ?? ""
+                return "swift-\(major).\(minor)\(patchPart)-DEVELOPMENT-SNAPSHOT-\(release.date)-a"
             }
         case .xcode:
             return "xcode"
@@ -425,6 +438,13 @@ struct StableReleaseParser: ToolchainSelectorParser {
 ///    - a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
 ///    - a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
 ///    - a.b-DEVELOPMENT-SNAPSHOT
+///    - a.b.z-snapshot-YYYY-mm-dd
+///    - a.b.z-snapshot
+///    - a.b.z-SNAPSHOT-YYYY-mm-dd
+///    - a.b.z-SNAPSHOT
+///    - a.b.z-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
+///    - a.b.z-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
+///    - a.b.z-DEVELOPMENT-SNAPSHOT
 ///    - swift-a.b-snapshot-YYYY-mm-dd
 ///    - swift-a.b-snapshot
 ///    - swift-a.b-SNAPSHOT-YYYY-mm-dd
@@ -432,9 +452,16 @@ struct StableReleaseParser: ToolchainSelectorParser {
 ///    - swift-a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
 ///    - swift-a.b-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
 ///    - swift-a.b-DEVELOPMENT-SNAPSHOT
+///    - swift-a.b.z-snapshot-YYYY-mm-dd
+///    - swift-a.b.z-snapshot
+///    - swift-a.b.z-SNAPSHOT-YYYY-mm-dd
+///    - swift-a.b.z-SNAPSHOT
+///    - swift-a.b.z-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd-a
+///    - swift-a.b.z-DEVELOPMENT-SNAPSHOT-YYYY-mm-dd
+///    - swift-a.b.z-DEVELOPMENT-SNAPSHOT
 struct ReleaseSnapshotParser: ToolchainSelectorParser {
-    static func regex() -> Regex<(Substring, Substring, Substring, Substring?)> {
-        try! Regex("^(?:swift-)?([0-9]+)\\.([0-9]+)-(?:snapshot|DEVELOPMENT-SNAPSHOT|SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
+    static func regex() -> Regex<(Substring, Substring, Substring, Substring?, Substring?)> {
+        try! Regex("^(?:swift-)?([0-9]+)\\.([0-9]+)(?:\\.([a-zA-Z0-9]+))?-(?:snapshot|DEVELOPMENT-SNAPSHOT|SNAPSHOT)(?:-([0-9]{4}-[0-9]{2}-[0-9]{2}))?(?:-a)?$")
     }
 
     func parse(_ input: String) throws -> ToolchainSelector? {
@@ -449,7 +476,8 @@ struct ReleaseSnapshotParser: ToolchainSelectorParser {
             throw SwiftlyError(message: "malformatted version: \(match.output.1).\(match.output.2)")
         }
 
-        return .snapshot(branch: .release(major: major, minor: minor), date: match.output.3.map(String.init))
+        let patch = match.output.3.map(String.init)
+        return .snapshot(branch: .release(major: major, minor: minor, patch: patch), date: match.output.4.map(String.init))
     }
 }
 

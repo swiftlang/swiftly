@@ -113,7 +113,7 @@ struct SelfUpdate: SwiftlyCommand {
 
         guard let version, let downloadURL else { fatalError() }
 
-        let tmpFile = fs.mktemp()
+        let tmpFile = fs.mktemp(ext: ".\(Swiftly.currentPlatform.toolchainFileExtension)")
         try await fs.create(file: tmpFile, contents: nil)
         return try await fs.withTemporary(files: tmpFile) {
             let animation = PercentProgressAnimation(

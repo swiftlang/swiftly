@@ -117,10 +117,12 @@ private final actor UpdateCheckTracker: HTTPRequestExecutor {
         }
     }
 
-    /// Verify that self-update does not make a redundant call to getCurrentSwiftlyRelease via validateSwiftly.
+    /// Verify that SelfUpdate.execute does not make more than one call to getCurrentSwiftlyRelease.
     /// Before the fix, validateSwiftly would call getCurrentSwiftlyRelease for every subcommand,
     /// resulting in two calls during self-update (one from validateSwiftly, one from SelfUpdate.execute).
-    @Test func selfUpdateChecksForUpdatesExactlyOnce() async throws {
+    /// This test exercises execute directly; validateSwiftlyRespectsCheckForUpdatesFlag covers the
+    /// checkForUpdates: false guard in validateSwiftly itself.
+    @Test func selfUpdateExecuteChecksForUpdatesExactlyOnce() async throws {
         try await SwiftlyTests.withTestHome {
             let tracker = UpdateCheckTracker()
             let ctx = SwiftlyCoreContext(

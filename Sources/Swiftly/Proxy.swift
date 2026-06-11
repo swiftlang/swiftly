@@ -72,16 +72,16 @@ public enum Proxy {
             let env = try await Swiftly.currentPlatform.proxyEnvironment(ctx, env: .inherit, toolchain: toolchain)
 
             let cmdConfig = Configuration(
-                .name(binName),
+                executable: .name(binName),
                 arguments: Arguments(Array(CommandLine.arguments[1...])),
                 environment: env.updating(["SWIFTLY_PROXY_IN_PROGRESS": "1"])
             )
 
             let cmdResult = try await Subprocess.run(
                 cmdConfig,
-                input: .standardInput,
-                output: .standardOutput,
-                error: .standardError
+                input: .currentStandardInput,
+                output: .currentStandardOutput,
+                error: .currentStandardError
             )
 
             if !cmdResult.terminationStatus.isSuccess {
@@ -91,7 +91,7 @@ public enum Proxy {
             switch terminated.terminationStatus {
             case let .exited(code):
                 exit(code)
-            case .unhandledException:
+            case .signaled:
                 exit(1)
             }
         } catch let error as SwiftlyError {

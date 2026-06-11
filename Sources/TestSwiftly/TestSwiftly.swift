@@ -124,11 +124,11 @@ struct TestSwiftly: AsyncParsableCommand {
             ])
 
             let config = Configuration(
-                .path(extractedSwiftly),
+                executable: .path(extractedSwiftly),
                 arguments: ["init", "--assume-yes", "--no-modify-profile", "--skip-install"],
                 environment: env
             )
-            let result = try await Subprocess.run(config, output: .standardOutput, error: .standardError)
+            let result = try await Subprocess.run(config, output: .currentStandardOutput, error: .currentStandardError)
             if !result.terminationStatus.isSuccess {
                 throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
             }
@@ -145,11 +145,11 @@ struct TestSwiftly: AsyncParsableCommand {
             }
 
             let config = Configuration(
-                .path(extractedSwiftly),
+                executable: .path(extractedSwiftly),
                 arguments: ["init", "--assume-yes", "--skip-install"],
                 environment: env
             )
-            let result = try await Subprocess.run(config, output: .standardOutput, error: .standardError)
+            let result = try await Subprocess.run(config, output: .currentStandardOutput, error: .currentStandardError)
             if !result.terminationStatus.isSuccess {
                 throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
             }
@@ -160,8 +160,8 @@ struct TestSwiftly: AsyncParsableCommand {
 
         if NSUserName() == "root" {
             if try await fs.exists(atPath: "./post-install.sh") {
-                let config = Configuration(.path(shell), arguments: ["./post-install.sh"])
-                let result = try await Subprocess.run(config, input: .standardInput, output: .standardOutput, error: .standardError)
+                let config = Configuration(executable: .path(shell), arguments: ["./post-install.sh"])
+                let result = try await Subprocess.run(config, input: .currentStandardInput, output: .currentStandardOutput, error: .currentStandardError)
                 if !result.terminationStatus.isSuccess {
                     throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
                 }

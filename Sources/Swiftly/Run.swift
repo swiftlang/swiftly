@@ -125,8 +125,13 @@ struct Run: SwiftlyCommand {
         )
 
         if let outputHandler = ctx.outputHandler {
-            let result = try await Subprocess.run(processConfig) { _, output in
-                for try await line in output.lines() {
+            let result = try await Subprocess.run(
+                processConfig,
+                input: .none,
+                output: .sequence,
+                error: .currentStandardError
+            ) { execution in
+                for try await line in execution.standardOutput.strings() {
                     await outputHandler.handleOutputLine(line.replacing("\n", with: ""))
                 }
             }
@@ -138,7 +143,7 @@ struct Run: SwiftlyCommand {
             return
         }
 
-        let result = try await Subprocess.run(processConfig, input: .standardInput, output: .standardOutput, error: .standardError)
+        let result = try await Subprocess.run(processConfig, input: .currentStandardInput, output: .currentStandardOutput, error: .currentStandardError)
         if !result.terminationStatus.isSuccess {
             throw RunProgramError(terminationStatus: result.terminationStatus, config: processConfig)
         }

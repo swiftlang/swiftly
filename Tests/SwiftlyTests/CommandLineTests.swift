@@ -142,9 +142,16 @@ public struct CommandLineTests {
 
         // AND a simple history
         try "Some text".write(to: tmp / "foo.txt", atomically: true)
-        try #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "add", "foo.txt"], output: .standardOutput).terminationStatus.isSuccess)
-        try #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "user.email", "user@example.com"], output: .standardOutput).terminationStatus.isSuccess)
-        try #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "commit.gpgsign", "false"], output: .standardOutput).terminationStatus.isSuccess)
+        try #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "add", "foo.txt"], output: .currentStandardOutput).terminationStatus.isSuccess)
+        try #require(try await run(.name("git"), arguments: [
+            "-C",
+            "\(tmp)",
+            "config",
+            "--local",
+            "user.email",
+            "user@example.com",
+        ], output: .currentStandardOutput).terminationStatus.isSuccess)
+        try #require(try await run(.name("git"), arguments: ["-C", "\(tmp)", "config", "--local", "commit.gpgsign", "false"], output: .currentStandardOutput).terminationStatus.isSuccess)
         try await sys.git(.workingDir(tmp)).commit(.message("Initial commit")).run()
         try await sys.git(.workingDir(tmp)).diffindex(.quiet, tree_ish: "HEAD").run()
 
@@ -270,7 +277,7 @@ public struct CommandLineTests {
     func testSwift() async throws {
         let tmp = fs.mktemp()
         try await fs.mkdir(atPath: tmp)
-        let swiftExec: Executable = .path(try Executable.name("swift").resolveExecutablePath(in: .inherit))
+        let swiftExec: Executable = .path(try await Executable.name("swift").resolveExecutablePath(in: .inherit))
         try await sys.swift(executable: swiftExec).package()._init(.package_path(tmp), .type("executable")).run()
         try await sys.swift(executable: swiftExec).build(.package_path(tmp), .configuration("release")).run()
     }

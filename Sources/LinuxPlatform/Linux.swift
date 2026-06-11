@@ -317,19 +317,20 @@ public struct Linux: Platform {
                     return false
                 }
 
-                if let pkgList = result.standardOutput {
-                    // The package might be listed but not in an installed non-error state.
-                    //
-                    // Look for something like this:
-                    //
-                    //   Desired=Unknown/Install/Remove/Purge/Hold
-                    //   | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
-                    //   |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
-                    //   ||/
-                    //   ii  pkgfoo         1.0.0ubuntu12        My description goes here....
-                    return pkgList.contains("\nii ")
+                let pkgList = result.standardOutput
+                guard !pkgList.isEmpty else {
+                    return false
                 }
-                return false
+                // The package might be listed but not in an installed non-error state.
+                //
+                // Look for something like this:
+                //
+                //   Desired=Unknown/Install/Remove/Purge/Hold
+                //   | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+                //   |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+                //   ||/
+                //   ii  pkgfoo         1.0.0ubuntu12        My description goes here....
+                return pkgList.contains("\nii ")
             case "dnf":
                 let result = try await run(.name("dnf"), arguments: ["list", "--installed", package], output: .discarded)
                 return result.terminationStatus.isSuccess
@@ -400,7 +401,7 @@ public struct Linux: Platform {
                 arguments: ["init"]
             )
 
-            let result = try await run(config, output: .standardOutput, error: .standardError)
+            let result = try await run(config, output: .currentStandardOutput, error: .currentStandardError)
             if !result.terminationStatus.isSuccess {
                 throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
             }

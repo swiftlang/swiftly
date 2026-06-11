@@ -28,7 +28,7 @@ extension Tag {
 
 extension Subprocess.Executable {
     public func exists() async throws -> Bool {
-        (try? self.resolveExecutablePath(in: .inherit)) != nil
+        (try? await self.resolveExecutablePath(in: .inherit)) != nil
     }
 }
 

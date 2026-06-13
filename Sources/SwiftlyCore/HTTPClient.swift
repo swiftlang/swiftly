@@ -467,6 +467,19 @@ public struct DownloadNotFoundError: LocalizedError {
     }
 }
 
+/// Returns true for branches whose `swift.org` snapshot path uses the `X.Y.x`
+/// shape rather than `X.Y`. As of writing, the 6.4 development branch is
+/// published at `/install/dev/6.4.x/...` while older release branches (6.0–6.3)
+/// remain at `/install/dev/X.Y/...`.
+private func sourceBranchNeedsXPatchSuffix(_ branch: ToolchainVersion.Snapshot.Branch) -> Bool {
+    switch branch {
+    case .release(major: 6, minor: 4, patch: nil):
+        return true
+    default:
+        return false
+    }
+}
+
 /// HTTPClient wrapper used for interfacing with various REST APIs and downloading things.
 public struct SwiftlyHTTPClient: Sendable {
     public let httpRequestExecutor: HTTPRequestExecutor
@@ -578,13 +591,34 @@ public struct SwiftlyHTTPClient: Sendable {
         {
         case .main:
             .init(.main)
+        case let .release(major, minor, nil) where sourceBranchNeedsXPatchSuffix(branch):
+            .init("\(major).\(minor).x")
         case let .release(major, minor, patch):
             .init("\(major).\(minor)\(patch.map { ".\($0)" } ?? "")")
         }
 
-        let devToolchains = try await self.httpRequestExecutor.getSnapshotToolchains(
-            branch: sourceBranch, platform: platformId
-        )
+        let devToolchains: SwiftlyWebsiteAPI.Components.Schemas.DevToolchains
+        do {
+            devToolchains = try await self.httpRequestExecutor.getSnapshotToolchains(branch: sourceBranch, platform: platformId)
+        } catch let originalError {
+            // swift.org changed url schemes and 6.4+ versions need `.x` patch suffix.
+            // For known versions which need this we request the right path based on `sourceBranch`,
+            // but just in case, if an initial lookup fails re-try with `.x` suffix if it applies.
+            guard case let .release(major, minor, nil) = branch else {
+                // We can't append an .x patch if a patch version was already specified.
+                throw originalError
+            }
+
+            // Last resort, retry with .x patch suffix
+            guard let devToolchainsPatched =
+                  try? await self.httpRequestExecutor.getSnapshotToolchains(
+                    branch: .init("\(major).\(minor).x"), platform: platformId) else {
+                // Ignore the last-resort failure, report the original failure
+                throw originalError
+            }
+
+            devToolchains = devToolchainsPatched
+        }
 
         let arch = a ?? cpuArch.value2
 

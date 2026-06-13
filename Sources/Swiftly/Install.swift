@@ -496,9 +496,7 @@ struct Install: SwiftlyCommand {
             do {
                 snapshots = try await ctx.httpClient.getSnapshotToolchains(
                     platform: config.platform, branch: branch, limit: 1
-                ) { snapshot in
-                    snapshot.branch == branch
-                }
+                )
             } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
                 throw SwiftlyError(
                     message:

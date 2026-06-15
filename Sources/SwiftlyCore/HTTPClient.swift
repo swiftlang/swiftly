@@ -611,8 +611,10 @@ public struct SwiftlyHTTPClient: Sendable {
 
             // Last resort, retry with .x patch suffix
             guard let devToolchainsPatched =
-                  try? await self.httpRequestExecutor.getSnapshotToolchains(
-                    branch: .init("\(major).\(minor).x"), platform: platformId) else {
+                try? await self.httpRequestExecutor.getSnapshotToolchains(
+                    branch: .init("\(major).\(minor).x"), platform: platformId
+                )
+            else {
                 // Ignore the last-resort failure, report the original failure
                 throw originalError
             }

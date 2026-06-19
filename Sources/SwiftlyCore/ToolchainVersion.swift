@@ -7,6 +7,17 @@ public enum ToolchainVersion: Sendable {
             case main
             case release(major: Int, minor: Int, patch: String? = nil)
 
+            /// Constructs a release-snapshot branch, normalizing the patch component
+            /// to match the swift.org URL scheme:
+            /// - from Swift 6.4 onward, snapshots live under `/install/dev/X.Y.x/...`,
+            /// - on older releases are passed through as-is.
+            public static func releaseNormalized(major: Int, minor: Int, patch: String?) -> Self {
+                if patch == nil, (major, minor) >= (6, 4) {
+                    return .release(major: major, minor: minor, patch: "x")
+                }
+                return .release(major: major, minor: minor, patch: patch)
+            }
+
             public var description: String {
                 switch self {
                 case .main:
@@ -145,7 +156,7 @@ public enum ToolchainVersion: Sendable {
                 throw SwiftlyError(message: "invalid release snapshot version: \(string)")
             }
             let patch = match.output.3.map(String.init)
-            self = ToolchainVersion(snapshotBranch: .release(major: major, minor: minor, patch: patch), date: String(match.output.4))
+            self = ToolchainVersion(snapshotBranch: .releaseNormalized(major: major, minor: minor, patch: patch), date: String(match.output.4))
         } else if string == "xcode" {
             self = ToolchainVersion.xcodeVersion
         } else {
@@ -477,7 +488,7 @@ struct ReleaseSnapshotParser: ToolchainSelectorParser {
         }
 
         let patch = match.output.3.map(String.init)
-        return .snapshot(branch: .release(major: major, minor: minor, patch: patch), date: match.output.4.map(String.init))
+        return .snapshot(branch: .releaseNormalized(major: major, minor: minor, patch: patch), date: match.output.4.map(String.init))
     }
 }
 

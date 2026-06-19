@@ -39,7 +39,7 @@ import Testing
         try runTest(.snapshot(branch: .main, date: "2023-06-05"), parses)
     }
 
-    @Test func parseReleaseSnapshot() throws {
+    @Test func parseDeprecatedReleaseSnapshot() throws {
         let parses = [
             "5.7-snapshot",
             "5.7-SNAPSHOT",
@@ -61,6 +61,35 @@ import Testing
             "swift-5.7.x-DEVELOPMENT-SNAPSHOT",
         ]
         try runTest(.snapshot(branch: .release(major: 5, minor: 7, patch: "x"), date: nil), parses)
+    }
+
+    @Test func parseReleaseSnapshot() throws {
+        let parses = [
+            "6.4-snapshot",
+            "6.4.x-snapshot",
+            "6.4-SNAPSHOT",
+            "6.4.x-SNAPSHOT",
+            "6.4-DEVELOPMENT-SNAPSHOT",
+            "6.4.x-DEVELOPMENT-SNAPSHOT",
+            "swift-6.4-snapshot",
+            "swift-6.4.x-snapshot",
+            "swift-6.4-SNAPSHOT",
+            "swift-6.4.x-SNAPSHOT",
+            "swift-6.4-DEVELOPMENT-SNAPSHOT",
+            "swift-6.4.x-DEVELOPMENT-SNAPSHOT",
+        ]
+        try runTest(.snapshot(branch: .release(major: 6, minor: 4, patch: "x"), date: nil), parses)
+    }
+
+    @Test func releaseSnapshotXDependingOnVersion() throws {
+        #expect(
+            try ToolchainSelector(parsing: "6.4-snapshot")
+                == ToolchainSelector(parsing: "6.4.x-snapshot")
+        )
+        #expect(
+            try ToolchainSelector(parsing: "5.7-snapshot")
+                != ToolchainSelector(parsing: "5.7.x-snapshot")
+        )
     }
 
     @Test func parseReleaseSnapshotWithDate() throws {

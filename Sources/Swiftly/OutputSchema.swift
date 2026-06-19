@@ -285,7 +285,7 @@ struct InstallToolchainInfo: OutputData {
                 branch = .main
             } else if let major = branchMajor, let minor = branchMinor {
                 let branchPatch = try? versionContainer.decodeIfPresent(String.self, forKey: .patch)
-                branch = .release(major: major, minor: minor, patch: branchPatch)
+                branch = .releaseNormalized(major: major, minor: minor, patch: branchPatch)
             } else {
                 throw DecodingError.dataCorruptedError(
                     forKey: ToolchainVersionCodingKeys.branch,

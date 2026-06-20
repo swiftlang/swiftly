@@ -9,7 +9,7 @@ public protocol Terminal: Sendable {
 public struct SystemTerminal: Terminal {
     /// Detects the terminal width in columns
     public func width() -> Int {
-#if os(macOS) || os(Linux)
+#if os(macOS) || os(Linux) || os(FreeBSD)
         var size = winsize()
 #if os(OpenBSD)
         // TIOCGWINSZ is a complex macro, so we need the flattened value.

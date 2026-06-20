@@ -25,6 +25,8 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
 
     public static let macOS = PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS")
 
+    public static let freebsd = PlatformDefinition(name: "freebsd", nameFull: "freebsd", namePretty: "FreeBSD")
+
     public static let ubuntu2404 = PlatformDefinition(
         name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"
     )
@@ -171,7 +173,7 @@ extension Platform {
         self.swiftlyHomeDir(ctx) / "config.json"
     }
 
-#if os(macOS) || os(Linux)
+#if os(macOS) || os(Linux) || os(FreeBSD)
 
     // Install ourselves in the final location
     public func installSwiftlyBin(_ ctx: SwiftlyCoreContext) async throws {

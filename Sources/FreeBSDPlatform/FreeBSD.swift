@@ -42,9 +42,10 @@ public struct FreeBSD: Platform {
 
     public func verifySwiftlySystemPrerequisites() async throws {
         // Check if the root CA certificates are installed on this system for NIOSSL to use.
-        // This list comes from LinuxCABundle.swift in NIOSSL.
+        // On FreeBSD the trust store is provided by the security/ca_root_nss port
+        // (/usr/local/etc/ssl/cert.pem); /etc/ssl/cert.pem is the base system bundle.
         var foundTrustedCAs = false
-        for crtFile in ["/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt"] {
+        for crtFile in ["/usr/local/etc/ssl/cert.pem", "/etc/ssl/cert.pem", "/usr/local/share/certs/ca-root-nss.crt"] {
             if try await fs.exists(atPath: FilePath(crtFile)) {
                 foundTrustedCAs = true
                 break

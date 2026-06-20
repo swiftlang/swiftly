@@ -418,7 +418,7 @@ public enum SwiftlyTests {
             let actualVersion = try await executable.version()
             #expect(actualVersion == toolchain)
         }
-#elseif os(Linux)
+#elseif os(Linux) || os(FreeBSD)
         // Verify that the toolchains on disk correspond to those in the config.
         for toolchain in toolchains {
             let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir(Self.ctx) / "toolchains/\(toolchain.name)"
@@ -578,7 +578,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
     }
 
     private let executables: [String]
-#if os(Linux)
+#if os(Linux) || os(FreeBSD)
     private var signatures: [String: Data]
 #endif
 
@@ -610,7 +610,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         ]
     ) {
         self.executables = executables ?? ["swift"]
-#if os(Linux)
+#if os(Linux) || os(FreeBSD)
         self.signatures = [:]
 #endif
         self.latestSwiftlyVersion = latestSwiftlyVersion
@@ -768,7 +768,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         HTTPBody(Array(Data(PackageResources.mock_signing_key_private_pgp)))
     }
 
-#if os(Linux)
+#if os(Linux) || os(FreeBSD)
     public func makeMockedSwiftly(from url: URL) async throws -> Data {
         // Check our cache if this is a signature request
         if url.path.hasSuffix(".sig") {

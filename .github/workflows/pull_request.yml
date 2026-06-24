@@ -78,6 +78,13 @@ jobs:
               sed -i '' 's/pthread_rwlock_t> =/pthread_rwlock_t?> =/' "$LOCKS"
             echo "Patched $LOCKS"
           done
+          # swift-log Logging.swift: Glibc.stdout/stderr non-optional on FreeBSD (unlike Linux)
+          LOGGING=$(find .build/checkouts -path "*/swift-log*/Logging.swift" 2>/dev/null | head -1)
+          if [ -n "$LOGGING" ]; then
+            grep -qF "Glibc.stdout!" "$LOGGING" && \
+              sed -i '' 's/Glibc\.stdout!/Glibc.stdout/g; s/Glibc\.stderr!/Glibc.stderr/g' "$LOGGING" && \
+              echo "Patched $LOGGING"
+          fi
           swift build 2>&1
           swift test --filter SwiftlyTests 2>&1
           ENDSSH

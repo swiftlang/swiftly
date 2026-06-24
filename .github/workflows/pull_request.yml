@@ -61,8 +61,8 @@ jobs:
           set -e
           . "$HOME/swift632-env.sh"
           cd "$HOME/ci/swiftly"
-          swift build 2>&1
-          swift test --filter SwiftlyTests 2>&1
+          swift build -Xcc -include -Xcc /usr/include/sys/time.h 2>&1
+          swift test --filter SwiftlyTests -Xcc -include -Xcc /usr/include/sys/time.h 2>&1
           ENDSSH
         timeout-minutes: 60
 

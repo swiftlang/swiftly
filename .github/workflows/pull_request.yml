@@ -22,6 +22,49 @@ jobs:
       shell_check_enabled: false
       unacceptable_language_check_enabled: true
 
+  freebsd-aarch64-tests:
+    name: Test / FreeBSD aarch64
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'networkextension/swiftly' || github.repository == 'swiftlang/swiftly' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install cloudflared
+        run: |
+          curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+          sudo apt-get update && sudo apt-get install -y cloudflared
+      - name: Set up SSH key and known hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.FREEBSD_SSH_KEY }}" > ~/.ssh/freebsd_ci_key
+          chmod 600 ~/.ssh/freebsd_ci_key
+          # Add board host key to known_hosts (keyed by tunnel hostname)
+          echo "${{ secrets.FREEBSD_CF_HOSTNAME }} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFqpy2Vs6oX1K5khxWW7INHC8a6meSaSvNDVXpCSv1Gj" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          cat > ~/.ssh/config << 'EOF'
+          Host freebsd-ci
+            HostName ${{ secrets.FREEBSD_CF_HOSTNAME }}
+            User swift
+            IdentityFile ~/.ssh/freebsd_ci_key
+            ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+      - name: Sync source to board
+        run: |
+          rsync -avz --delete \
+            --exclude='.build' --exclude='.git' \
+            -e "ssh -F ~/.ssh/config" \
+            . freebsd-ci:/home/swift/ci/swiftly/
+      - name: Build and Test on FreeBSD aarch64
+        run: |
+          ssh -F ~/.ssh/config freebsd-ci 'sh -c "
+            . ~/swift632-env.sh
+            cd /home/swift/ci/swiftly
+            swift build 2>&1 | tail -5
+            swift test --filter SwiftlyTests 2>&1
+          "'
+        timeout-minutes: 60
+
   macos-tests-selfhosted:
     name: Test (Self Hosted) / macOS Tahoe ARM64
     runs-on: [self-hosted, macos, tahoe, ARM64]

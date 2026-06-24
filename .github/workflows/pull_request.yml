@@ -35,25 +35,24 @@ jobs:
           echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
           sudo apt-get update && sudo apt-get install -y cloudflared
       - name: Set up SSH key and known hosts
+        env:
+          FREEBSD_SSH_KEY: ${{ secrets.FREEBSD_SSH_KEY }}
+          FREEBSD_CF_HOSTNAME: ${{ secrets.FREEBSD_CF_HOSTNAME }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.FREEBSD_SSH_KEY }}" > ~/.ssh/freebsd_ci_key
-          chmod 600 ~/.ssh/freebsd_ci_key
-          # Add board host key to known_hosts (keyed by tunnel hostname)
-          echo "${{ secrets.FREEBSD_CF_HOSTNAME }} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFqpy2Vs6oX1K5khxWW7INHC8a6meSaSvNDVXpCSv1Gj" >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-          cat > ~/.ssh/config << 'EOF'
-          Host freebsd-ci
-            HostName ${{ secrets.FREEBSD_CF_HOSTNAME }}
-            User swift
-            IdentityFile ~/.ssh/freebsd_ci_key
-            ProxyCommand cloudflared access ssh --hostname %h
-          EOF
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$FREEBSD_SSH_KEY" > "$HOME/.ssh/freebsd_ci_key"
+          chmod 600 "$HOME/.ssh/freebsd_ci_key"
+          printf '%s ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFqpy2Vs6oX1K5khxWW7INHC8a6meSaSvNDVXpCSv1Gj\n' \
+            "$FREEBSD_CF_HOSTNAME" >> "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          printf 'Host freebsd-ci\n  HostName %s\n  User swift\n  IdentityFile %s/.ssh/freebsd_ci_key\n  ProxyCommand cloudflared access ssh --hostname %%h\n' \
+            "$FREEBSD_CF_HOSTNAME" "$HOME" > "$HOME/.ssh/config"
+          chmod 600 "$HOME/.ssh/config"
       - name: Sync source to board
         run: |
           rsync -avz --delete \
             --exclude='.build' --exclude='.git' \
-            -e "ssh -F ~/.ssh/config" \
+            -e "ssh -F $HOME/.ssh/config" \
             . freebsd-ci:/home/swift/ci/swiftly/
       - name: Build and Test on FreeBSD aarch64
         run: |

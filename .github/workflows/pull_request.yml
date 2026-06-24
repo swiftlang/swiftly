@@ -82,6 +82,8 @@ jobs:
               sed -i '' 's/pthread_rwlock_t> =/pthread_rwlock_t?> =/' "$LOCKS"
             grep -qF "LockPrimitive = pthread_mutex_t?" "$LOCKS" || \
               sed -i '' 's/typealias LockPrimitive = pthread_mutex_t$/typealias LockPrimitive = pthread_mutex_t?/' "$LOCKS"
+            grep -qF "pthread_mutexattr_t(bitPattern:" "$LOCKS" || \
+              sed -i '' 's/var attr = pthread_mutexattr_t()/var attr: pthread_mutexattr_t? = pthread_mutexattr_t(bitPattern: 0)/' "$LOCKS"
             echo "Patched $LOCKS"
           done
           # swift-log Logging.swift: Glibc.stdout/stderr non-optional on FreeBSD (unlike Linux)

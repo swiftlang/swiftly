@@ -105,7 +105,10 @@ jobs:
               sed -i '' 's/Glibc\.stdout!/Glibc.stdout/g; s/Glibc\.stderr!/Glibc.stderr/g' "$LOGGING" && \
               echo "Patched $LOGGING"
           fi
-          # swift-subprocess Thread.swift: MutexType/ConditionType need optional on FreeBSD
+          # swift-subprocess Thread.swift: two FreeBSD fixes —
+          # 1) MutexType/ConditionType need optional typealiases (opaque pthread types)
+          # 2) pthread_t() has no default init on FreeBSD; use unsafeBitCast placeholder
+          #    (_subprocess_pthread_create takes _Nonnull ptr so must stay non-optional)
           SUBTHREAD=$(find .build/checkouts -path "*/swift-subprocess*/Thread.swift" 2>/dev/null | head -1)
           if [ -n "$SUBTHREAD" ]; then
             grep -qF "pthread_mutex_t?" "$SUBTHREAD" || {
@@ -114,7 +117,18 @@ jobs:
               /^private typealias ConditionType = pthread_cond_t$/{print $0 "\n#endif"; next}1' \
                 "$SUBTHREAD" > /tmp/_th.swift
               mv /tmp/_th.swift "$SUBTHREAD"
-              echo "Patched $SUBTHREAD"
+              echo "Patched $SUBTHREAD (typealiases)"
+            }
+            grep -qF 'unsafeBitCast(0 as UInt' "$SUBTHREAD" || {
+              awk '/^    var thread = pthread_t\(\)$/{
+                print "#if os(FreeBSD) || os(OpenBSD)"
+                print "    var thread: pthread_t = unsafeBitCast(0 as UInt, to: pthread_t.self)"
+                print "#else"
+                print $0
+                print "#endif"
+                next}1' "$SUBTHREAD" > /tmp/_th.swift
+              mv /tmp/_th.swift "$SUBTHREAD"
+              echo "Patched $SUBTHREAD (pthread_t init)"
             }
           fi
           swift build 2>&1

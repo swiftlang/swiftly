@@ -45,7 +45,7 @@ jobs:
           printf '%s ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFqpy2Vs6oX1K5khxWW7INHC8a6meSaSvNDVXpCSv1Gj\n' \
             "$FREEBSD_CF_HOSTNAME" >> "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
-          printf 'Host freebsd-ci\n  HostName %s\n  User swift\n  IdentityFile %s/.ssh/freebsd_ci_key\n  ProxyCommand cloudflared access ssh --hostname %%h\n' \
+          printf 'Host freebsd-ci\n  HostName %s\n  User swift\n  IdentityFile %s/.ssh/freebsd_ci_key\n  ProxyCommand cloudflared access tcp --hostname %%h\n' \
             "$FREEBSD_CF_HOSTNAME" "$HOME" > "$HOME/.ssh/config"
           chmod 600 "$HOME/.ssh/config"
       - name: Sync source to board

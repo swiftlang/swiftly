@@ -72,8 +72,21 @@ jobs:
           # swift-log Locks.swift: FreeBSD pthread types are opaque pointers like OpenBSD
           LOCKS=$(find .build/checkouts -path "*/swift-log*/Locks.swift" 2>/dev/null | head -1)
           if [ -n "$LOCKS" ]; then
-            grep -q "os(FreeBSD)" "$LOCKS" || \
-              sed -i '' 's/os(OpenBSD)/os(OpenBSD) || os(FreeBSD)/g' "$LOCKS"
+            python3 -c "
+import sys
+with open('$LOCKS', 'r') as f:
+    c = f.read()
+# Lock class: FreeBSD opaque pthread types match OpenBSD (idempotent)
+if 'os(OpenBSD) || os(FreeBSD)' not in c:
+    c = c.replace('os(OpenBSD)', 'os(OpenBSD) || os(FreeBSD)')
+# ReadWriteLock class: add FreeBSD branch for optional rwlock pointer
+old = '    #else\n    fileprivate let rwlock: UnsafeMutablePointer<pthread_rwlock_t> =\n        UnsafeMutablePointer.allocate(capacity: 1)\n    #endif'
+new = '    #elseif os(FreeBSD)\n    fileprivate let rwlock: UnsafeMutablePointer<pthread_rwlock_t?> =\n        UnsafeMutablePointer.allocate(capacity: 1)\n    #else\n    fileprivate let rwlock: UnsafeMutablePointer<pthread_rwlock_t> =\n        UnsafeMutablePointer.allocate(capacity: 1)\n    #endif'
+if old in c:
+    c = c.replace(old, new)
+with open('$LOCKS', 'w') as f:
+    f.write(c)
+"
             echo "Patched $LOCKS"
           fi
           swift build 2>&1

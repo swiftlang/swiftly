@@ -485,7 +485,7 @@ public struct FreeBSD: Platform {
     }
 
     public func detectPlatform(
-        _: SwiftlyCoreContext, disableConfirmation _: Bool, platform: String?,
+        _: SwiftlyCoreContext, disableConfirmation _: Bool, platform: String?
     ) async throws -> PlatformDefinition {
         // Swift.org does not currently publish FreeBSD toolchains, so there is a single
         // supported platform definition. A platform hint, if provided, must match it.
@@ -493,7 +493,7 @@ public struct FreeBSD: Platform {
             guard let pd = self.freebsdPlatforms.first(where: { $0.nameFull == platform }) else {
                 throw SwiftlyError(
                     message:
-                    "Unrecognized platform \(platform). Supported values: \(self.freebsdPlatforms.map(\.nameFull).joined(separator: ", ")).",
+                        "Unrecognized platform \(platform). Supported values: \(self.freebsdPlatforms.map(\.nameFull).joined(separator: ", "))."
                 )
             }
             return pd

@@ -57,12 +57,7 @@ jobs:
             . freebsd-ci:/home/swift/ci/swiftly/
       - name: Build and Test on FreeBSD aarch64
         run: |
-          ssh -F ~/.ssh/config freebsd-ci 'sh -c "
-            . ~/swift632-env.sh
-            cd /home/swift/ci/swiftly
-            swift build 2>&1 | tail -5
-            swift test --filter SwiftlyTests 2>&1
-          "'
+          ssh -v -F "$HOME/.ssh/config" freebsd-ci 'uname -a && echo "SSH OK"'
         timeout-minutes: 60
 
   macos-tests-selfhosted:

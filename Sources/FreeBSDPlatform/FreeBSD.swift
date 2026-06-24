@@ -15,9 +15,9 @@ public struct FreeBSD: Platform {
 
     public var defaultSwiftlyHomeDir: FilePath {
         if let dir = ProcessInfo.processInfo.environment["XDG_DATA_HOME"] {
-            return FilePath(dir) / "swiftly"
+            FilePath(dir) / "swiftly"
         } else {
-            return fs.home / ".local/share/swiftly"
+            fs.home / ".local/share/swiftly"
         }
     }
 
@@ -66,199 +66,197 @@ public struct FreeBSD: Platform {
 
     public func verifySystemPrerequisitesForInstall(
         _ ctx: SwiftlyCoreContext, platformName: String, version _: ToolchainVersion,
-        requireSignatureValidation: Bool
+        requireSignatureValidation: Bool,
     ) async throws -> String? {
         // TODO: these are hard-coded until we have a place to query for these based on the toolchain version
         // These lists were copied from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
         let packages: [String] =
-            switch platformName
-        {
-        case "ubuntu1804":
-            [
-                "libatomic1",
-                "libcurl4-openssl-dev",
-                "libxml2-dev",
-                "libedit2",
-                "libsqlite3-0",
-                "libc6-dev",
-                "binutils",
-                "libgcc-5-dev",
-                "libstdc++-5-dev",
-                "zlib1g-dev",
-                "libpython3.6",
-                "tzdata",
-                "git",
-                "unzip",
-                "zip",
-                "pkg-config",
-            ]
-        case "ubuntu2004":
-            [
-                "binutils",
-                "git",
-                "unzip",
-                "zip",
-                "gnupg2",
-                "libc6-dev",
-                "libcurl4-openssl-dev",
-                "libedit2",
-                "libgcc-9-dev",
-                "libpython3.8",
-                "libsqlite3-0",
-                "libstdc++-9-dev",
-                "libxml2-dev",
-                "libz3-dev",
-                "pkg-config",
-                "tzdata",
-                "zlib1g-dev",
-            ]
-        case "ubuntu2204":
-            [
-                "binutils",
-                "git",
-                "unzip",
-                "zip",
-                "gnupg2",
-                "libc6-dev",
-                "libcurl4-openssl-dev",
-                "libedit2",
-                "libgcc-11-dev",
-                "libpython3-dev",
-                "libsqlite3-0",
-                "libstdc++-11-dev",
-                "libxml2-dev",
-                "libz3-dev",
-                "pkg-config",
-                "python3-lldb-13",
-                "tzdata",
-                "zlib1g-dev",
-            ]
-        case "ubuntu2404":
-            [
-                "binutils",
-                "git",
-                "unzip",
-                "zip",
-                "gnupg2",
-                "libc6-dev",
-                "libcurl4-openssl-dev",
-                "libedit2",
-                "libgcc-13-dev",
-                "libpython3-dev",
-                "libsqlite3-0",
-                "libstdc++-13-dev",
-                "libxml2-dev",
-                "libncurses-dev",
-                "libz3-dev",
-                "pkg-config",
-                "tzdata",
-                "zlib1g-dev",
-            ]
-        case "amazonlinux2":
-            [
-                "binutils",
-                "gcc",
-                "git",
-                "unzip",
-                "zip",
-                "glibc-static",
-                "gzip",
-                "libbsd",
-                "libcurl-devel",
-                "libedit",
-                "libicu",
-                "libsqlite",
-                "libstdc++-static",
-                "libuuid",
-                "libxml2-devel",
-                "openssl-devel",
-                "tar",
-                "tzdata",
-                "zlib-devel",
-            ]
-        case "ubi9":
-            [
-                "git",
-                "gcc-c++",
-                "libcurl-devel",
-                "libedit-devel",
-                "libuuid-devel",
-                "libxml2-devel",
-                "ncurses-devel",
-                "python3-devel",
-                "rsync",
-                "sqlite-devel",
-                "unzip",
-                "zip",
-            ]
-        case "fedora39", "fedora41":
-            [
-                "binutils",
-                "gcc",
-                "git",
-                "unzip",
-                "zip",
-                "libcurl-devel",
-                "libedit-devel",
-                "libicu-devel",
-                "sqlite-devel",
-                "libuuid-devel",
-                "libxml2-devel",
-                "python3-devel",
-                "libstdc++-devel",
-                "libstdc++-static",
-            ]
-        case "debian12":
-            [
-                "binutils", // binutils-gold is a virtual package that points to binutils
-                "libicu-dev",
-                "libcurl4-openssl-dev",
-                "libedit-dev",
-                "libsqlite3-dev",
-                "libncurses-dev",
-                "libpython3-dev",
-                "libxml2-dev",
-                "pkg-config",
-                "uuid-dev",
-                "tzdata",
-                "git",
-                "gcc",
-                "libstdc++-12-dev",
-                "unzip",
-                "zip",
-            ]
-        default:
-            []
-        }
+            switch platformName {
+            case "ubuntu1804":
+                [
+                    "libatomic1",
+                    "libcurl4-openssl-dev",
+                    "libxml2-dev",
+                    "libedit2",
+                    "libsqlite3-0",
+                    "libc6-dev",
+                    "binutils",
+                    "libgcc-5-dev",
+                    "libstdc++-5-dev",
+                    "zlib1g-dev",
+                    "libpython3.6",
+                    "tzdata",
+                    "git",
+                    "unzip",
+                    "zip",
+                    "pkg-config",
+                ]
+            case "ubuntu2004":
+                [
+                    "binutils",
+                    "git",
+                    "unzip",
+                    "zip",
+                    "gnupg2",
+                    "libc6-dev",
+                    "libcurl4-openssl-dev",
+                    "libedit2",
+                    "libgcc-9-dev",
+                    "libpython3.8",
+                    "libsqlite3-0",
+                    "libstdc++-9-dev",
+                    "libxml2-dev",
+                    "libz3-dev",
+                    "pkg-config",
+                    "tzdata",
+                    "zlib1g-dev",
+                ]
+            case "ubuntu2204":
+                [
+                    "binutils",
+                    "git",
+                    "unzip",
+                    "zip",
+                    "gnupg2",
+                    "libc6-dev",
+                    "libcurl4-openssl-dev",
+                    "libedit2",
+                    "libgcc-11-dev",
+                    "libpython3-dev",
+                    "libsqlite3-0",
+                    "libstdc++-11-dev",
+                    "libxml2-dev",
+                    "libz3-dev",
+                    "pkg-config",
+                    "python3-lldb-13",
+                    "tzdata",
+                    "zlib1g-dev",
+                ]
+            case "ubuntu2404":
+                [
+                    "binutils",
+                    "git",
+                    "unzip",
+                    "zip",
+                    "gnupg2",
+                    "libc6-dev",
+                    "libcurl4-openssl-dev",
+                    "libedit2",
+                    "libgcc-13-dev",
+                    "libpython3-dev",
+                    "libsqlite3-0",
+                    "libstdc++-13-dev",
+                    "libxml2-dev",
+                    "libncurses-dev",
+                    "libz3-dev",
+                    "pkg-config",
+                    "tzdata",
+                    "zlib1g-dev",
+                ]
+            case "amazonlinux2":
+                [
+                    "binutils",
+                    "gcc",
+                    "git",
+                    "unzip",
+                    "zip",
+                    "glibc-static",
+                    "gzip",
+                    "libbsd",
+                    "libcurl-devel",
+                    "libedit",
+                    "libicu",
+                    "libsqlite",
+                    "libstdc++-static",
+                    "libuuid",
+                    "libxml2-devel",
+                    "openssl-devel",
+                    "tar",
+                    "tzdata",
+                    "zlib-devel",
+                ]
+            case "ubi9":
+                [
+                    "git",
+                    "gcc-c++",
+                    "libcurl-devel",
+                    "libedit-devel",
+                    "libuuid-devel",
+                    "libxml2-devel",
+                    "ncurses-devel",
+                    "python3-devel",
+                    "rsync",
+                    "sqlite-devel",
+                    "unzip",
+                    "zip",
+                ]
+            case "fedora39", "fedora41":
+                [
+                    "binutils",
+                    "gcc",
+                    "git",
+                    "unzip",
+                    "zip",
+                    "libcurl-devel",
+                    "libedit-devel",
+                    "libicu-devel",
+                    "sqlite-devel",
+                    "libuuid-devel",
+                    "libxml2-devel",
+                    "python3-devel",
+                    "libstdc++-devel",
+                    "libstdc++-static",
+                ]
+            case "debian12":
+                [
+                    "binutils", // binutils-gold is a virtual package that points to binutils
+                    "libicu-dev",
+                    "libcurl4-openssl-dev",
+                    "libedit-dev",
+                    "libsqlite3-dev",
+                    "libncurses-dev",
+                    "libpython3-dev",
+                    "libxml2-dev",
+                    "pkg-config",
+                    "uuid-dev",
+                    "tzdata",
+                    "git",
+                    "gcc",
+                    "libstdc++-12-dev",
+                    "unzip",
+                    "zip",
+                ]
+            default:
+                []
+            }
 
         let manager: String? =
-            switch platformName
-        {
-        case "ubuntu1804":
-            "apt-get"
-        case "ubuntu2004":
-            "apt-get"
-        case "ubuntu2204":
-            "apt-get"
-        case "ubuntu2404":
-            "apt-get"
-        case "amazonlinux2":
-            "yum"
-        case "ubi9":
-            "dnf"
-        case "fedora39", "fedora41":
-            "dnf"
-        case "debian12":
-            "apt-get"
-        default:
-            nil
-        }
+            switch platformName {
+            case "ubuntu1804":
+                "apt-get"
+            case "ubuntu2004":
+                "apt-get"
+            case "ubuntu2204":
+                "apt-get"
+            case "ubuntu2404":
+                "apt-get"
+            case "amazonlinux2":
+                "yum"
+            case "ubi9":
+                "dnf"
+            case "fedora39", "fedora41":
+                "dnf"
+            case "debian12":
+                "apt-get"
+            default:
+                nil
+            }
 
         if requireSignatureValidation {
             let result = try await run(
                 .name("gpg"),
                 arguments: ["--version"],
-                output: .discarded
+                output: .discarded,
             )
 
             if !result.terminationStatus.isSuccess {
@@ -279,7 +277,7 @@ public struct FreeBSD: Platform {
             try await self.importGpgKeys(ctx)
         }
 
-        guard let manager = manager else {
+        guard let manager else {
             return nil
         }
 
@@ -335,13 +333,13 @@ public struct FreeBSD: Platform {
     }
 
     public func install(
-        _ ctx: SwiftlyCoreContext, from tmpFile: FilePath, version: ToolchainVersion, verbose: Bool
+        _ ctx: SwiftlyCoreContext, from tmpFile: FilePath, version: ToolchainVersion, verbose: Bool,
     ) async throws {
         guard try await fs.exists(atPath: tmpFile) else {
             throw SwiftlyError(message: "\(tmpFile) doesn't exist")
         }
 
-        if !(try await fs.exists(atPath: self.swiftlyToolchainsDir(ctx))) {
+        if try await !(fs.exists(atPath: self.swiftlyToolchainsDir(ctx))) {
             try await fs.mkdir(atPath: self.swiftlyToolchainsDir(ctx))
         }
 
@@ -387,7 +385,7 @@ public struct FreeBSD: Platform {
 
             let config = Configuration(
                 executable: .path(tmpDir / "swiftly"),
-                arguments: ["init"]
+                arguments: ["init"],
             )
 
             let result = try await run(config, output: .standardOutput, error: .standardError)
@@ -405,7 +403,7 @@ public struct FreeBSD: Platform {
     public func getExecutableName() -> String {
         let arch = cpuArch
 
-        return "swiftly-\(arch)-unknown-linux-gnu"
+        return "swiftly-\(arch)-unknown-freebsd"
     }
 
     public func getTempFilePath() -> FilePath {
@@ -413,7 +411,7 @@ public struct FreeBSD: Platform {
     }
 
     public func verifyToolchainSignature(
-        _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: FilePath, verbose: Bool
+        _ ctx: SwiftlyCoreContext, toolchainFile: ToolchainFile, archive: FilePath, verbose: Bool,
     ) async throws {
         // Ensure GPG keys are imported before attempting signature verification
         try await self.importGpgKeys(ctx)
@@ -455,7 +453,7 @@ public struct FreeBSD: Platform {
     }
 
     public func verifySwiftlySignature(
-        _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: FilePath, verbose: Bool
+        _ ctx: SwiftlyCoreContext, archiveDownloadURL: URL, archive: FilePath, verbose: Bool,
     ) async throws {
         // Ensure GPG keys are imported before attempting signature verification
         try await self.importGpgKeys(ctx)
@@ -468,7 +466,7 @@ public struct FreeBSD: Platform {
         try await fs.create(file: sigFile, contents: nil)
         try await fs.withTemporary(files: sigFile) {
             try await ctx.httpClient.getSwiftlyReleaseSignature(
-                url: archiveDownloadURL.appendingPathExtension("sig")
+                url: archiveDownloadURL.appendingPathExtension("sig"),
             ).download(to: sigFile)
 
             await ctx.message("Verifying swiftly signature...")
@@ -485,7 +483,7 @@ public struct FreeBSD: Platform {
     }
 
     public func detectPlatform(
-        _ ctx: SwiftlyCoreContext, disableConfirmation _: Bool, platform: String?
+        _: SwiftlyCoreContext, disableConfirmation _: Bool, platform: String?,
     ) async throws -> PlatformDefinition {
         // Swift.org does not currently publish FreeBSD toolchains, so there is a single
         // supported platform definition. A platform hint, if provided, must match it.
@@ -493,7 +491,7 @@ public struct FreeBSD: Platform {
             guard let pd = self.freebsdPlatforms.first(where: { $0.nameFull == platform }) else {
                 throw SwiftlyError(
                     message:
-                        "Unrecognized platform \(platform). Supported values: \(self.freebsdPlatforms.map(\.nameFull).joined(separator: ", "))."
+                    "Unrecognized platform \(platform). Supported values: \(self.freebsdPlatforms.map(\.nameFull).joined(separator: ", ")).",
                 )
             }
             return pd
@@ -511,8 +509,7 @@ public struct FreeBSD: Platform {
         return "/bin/bash"
     }
 
-    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> FilePath
-    {
+    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> FilePath {
         self.swiftlyToolchainsDir(ctx) / "\(toolchain.name)"
     }
 

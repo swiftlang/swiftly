@@ -95,6 +95,18 @@ jobs:
               sed -i '' 's/Glibc\.stdout!/Glibc.stdout/g; s/Glibc\.stderr!/Glibc.stderr/g' "$LOGGING" && \
               echo "Patched $LOGGING"
           fi
+          # swift-subprocess Thread.swift: MutexType/ConditionType need optional on FreeBSD
+          SUBTHREAD=$(find .build/checkouts -path "*/swift-subprocess*/Thread.swift" 2>/dev/null | head -1)
+          if [ -n "$SUBTHREAD" ]; then
+            grep -qF "pthread_mutex_t?" "$SUBTHREAD" || {
+              awk '/^private typealias MutexType = pthread_mutex_t$/{
+                print "#if os(FreeBSD) || os(OpenBSD)\nprivate typealias MutexType = pthread_mutex_t?\nprivate typealias ConditionType = pthread_cond_t?\n#else\n" $0; next}
+              /^private typealias ConditionType = pthread_cond_t$/{print $0 "\n#endif"; next}1' \
+                "$SUBTHREAD" > /tmp/_th.swift
+              mv /tmp/_th.swift "$SUBTHREAD"
+              echo "Patched $SUBTHREAD"
+            }
+          fi
           swift build 2>&1
           swift test --filter SwiftlyTests 2>&1
           ENDSSH

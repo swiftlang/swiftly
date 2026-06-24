@@ -57,13 +57,13 @@ jobs:
             . freebsd-ci:/home/swift/ci/swiftly/
       - name: Build and Test on FreeBSD aarch64
         run: |
-          ssh -F "$HOME/.ssh/config" freebsd-ci '
-            set -e
-            . ~/swift632-env.sh
-            cd ~/ci/swiftly
-            swift build 2>&1
-            swift test --filter SwiftlyTests 2>&1
-          '
+          ssh -F "$HOME/.ssh/config" freebsd-ci /bin/sh << 'ENDSSH'
+          set -e
+          . "$HOME/swift632-env.sh"
+          cd "$HOME/ci/swiftly"
+          swift build 2>&1
+          swift test --filter SwiftlyTests 2>&1
+          ENDSSH
         timeout-minutes: 60
 
   macos-tests-selfhosted:

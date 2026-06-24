@@ -492,8 +492,7 @@ public struct FreeBSD: Platform {
         if let platform {
             guard let pd = self.freebsdPlatforms.first(where: { $0.nameFull == platform }) else {
                 throw SwiftlyError(
-                    message:
-                        "Unrecognized platform \(platform). Supported values: \(self.freebsdPlatforms.map(\.nameFull).joined(separator: ", "))."
+                    message: "Unrecognized platform \(platform). Supported values: \(self.freebsdPlatforms.map(\.nameFull).joined(separator: ", "))."
                 )
             }
             return pd

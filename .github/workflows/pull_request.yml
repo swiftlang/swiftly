@@ -61,8 +61,16 @@ jobs:
           set -e
           . "$HOME/swift632-env.sh"
           cd "$HOME/ci/swiftly"
-          swift build -Xcc -include -Xcc /usr/include/sys/time.h 2>&1
-          swift test --filter SwiftlyTests -Xcc -include -Xcc /usr/include/sys/time.h 2>&1
+          swift package resolve 2>&1
+          # CNIOBoringSSL's ssl_lib.cc uses gettimeofday without including sys/time.h on FreeBSD
+          SSL_LIB=$(find .build/checkouts -path "*/CNIOBoringSSL*/ssl/ssl_lib.cc" 2>/dev/null | head -1)
+          if [ -n "$SSL_LIB" ]; then
+            grep -q "sys/time.h" "$SSL_LIB" || \
+              sed -i '' 's|#include "ssl_local.h"|#include "sys/time.h"\n#include "ssl_local.h"|' "$SSL_LIB"
+            echo "Patched $SSL_LIB"
+          fi
+          swift build 2>&1
+          swift test --filter SwiftlyTests 2>&1
           ENDSSH
         timeout-minutes: 60
 

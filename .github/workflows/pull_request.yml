@@ -75,6 +75,16 @@ jobs:
               echo "Patched $SSL_LIB"
             }
           fi
+          # CNIOBoringSSL: getentropy in unistd.h is behind __BSD_VISIBLE on FreeBSD.
+          # Forward-declare it directly so no feature macros are needed.
+          GE=$(find .build/checkouts -path "*/CNIOBoringSSL*/crypto/rand/getentropy.cc" 2>/dev/null | head -1)
+          if [ -n "$GE" ]; then
+            grep -qF 'FreeBSD-getentropy-fix' "$GE" || {
+              awk 'NR==1{print "/* FreeBSD-getentropy-fix */\n#if defined(__FreeBSD__)\nextern \"C\" int getentropy(void*, __SIZE_TYPE__);\n#endif"}1' "$GE" > /tmp/_ge.cc
+              mv /tmp/_ge.cc "$GE"
+              echo "Patched $GE"
+            }
+          fi
           # All NIO-style lock files: FreeBSD pthread types are opaque pointers like OpenBSD
           find .build/checkouts \( -name "Locks.swift" -o -name "NIOLock.swift" \) 2>/dev/null | while read LOCKS; do
             grep -qF "pthread" "$LOCKS" || continue

@@ -119,16 +119,23 @@ jobs:
               mv /tmp/_th.swift "$SUBTHREAD"
               echo "Patched $SUBTHREAD (typealiases)"
             }
-            grep -qF 'unsafeBitCast(0 as UInt' "$SUBTHREAD" || {
-              awk '/^    var thread = pthread_t\(\)$/{
-                print "#if os(FreeBSD) || os(OpenBSD)"
-                print "    var thread: pthread_t = unsafeBitCast(0 as UInt, to: pthread_t.self)"
-                print "#else"
-                print $0
-                print "#endif"
-                next}1' "$SUBTHREAD" > /tmp/_th.swift
+            # Remove bad unsafeBitCast patch if it snuck in from a prior run
+            grep -qF 'unsafeBitCast(0 as UInt' "$SUBTHREAD" && {
+              awk '
+/^#if os\(FreeBSD\) \|\| os\(OpenBSD\)$/{ff=1; next}
+ff && /unsafeBitCast/{bad=1; next}
+ff && bad && /^#else$/{next}
+ff && bad && /^    var thread = pthread_t\(\)$/{print; ff=0; bad=0; next}
+ff && bad && /^#endif$/{ff=0; bad=0; next}
+ff{ff=0; print "#if os(FreeBSD) || os(OpenBSD)"}
+1' "$SUBTHREAD" > /tmp/_th.swift
               mv /tmp/_th.swift "$SUBTHREAD"
-              echo "Patched $SUBTHREAD (pthread_t init)"
+            }
+            # pthread_t is also opaque on FreeBSD: exclude from canImport(Glibc)
+            # so FreeBSD falls into #else branch and uses pthread_t? like macOS
+            grep -qF '!os(FreeBSD) && !os(OpenBSD)) || canImport(Bionic)' "$SUBTHREAD" || {
+              sed -i '' 's/#if canImport(Glibc) || canImport(Bionic)/#if (canImport(Glibc) \&\& !os(FreeBSD) \&\& !os(OpenBSD)) || canImport(Bionic)/g' "$SUBTHREAD"
+              echo "Patched $SUBTHREAD (pthread_t? fix)"
             }
           fi
           swift build 2>&1

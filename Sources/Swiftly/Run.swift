@@ -69,7 +69,7 @@ struct Run: SwiftlyCommand {
             throw CleanExit.helpRequest(self)
         }
 
-        // Handle the spcific case where version is requested of the run subcommand
+        // Handle the specific case where version is requested of the run subcommand
         if command == ["--version"] {
             throw CleanExit.message(String(describing: SwiftlyCore.version))
         }

@@ -62,13 +62,14 @@ jobs:
           . "$HOME/swift632-env.sh"
           cd "$HOME/ci/swiftly"
           swift package resolve 2>&1
-          # CNIOBoringSSL: ssl_lib.cc needs <sys/time.h> for gettimeofday on FreeBSD.
-          # Use awk (not sed \n) for reliable newline insertion; angle brackets bypass
-          # BoringSSL's own include tree which shadows "sys/time.h" (relative form).
+          # CNIOBoringSSL: ssl_lib.cc has <sys/time.h> inside #else !OPENSSL_WINDOWS but
+          # that include doesn't expose gettimeofday in the BSSL namespace on FreeBSD.
+          # Inject it unconditionally at line 1 (before any #if blocks).
+          # Guard on the unique marker comment, not the include itself.
           SSL_LIB=$(find .build/checkouts -path "*/CNIOBoringSSL*/ssl/ssl_lib.cc" 2>/dev/null | head -1)
           if [ -n "$SSL_LIB" ]; then
-            grep -qF '<sys/time.h>' "$SSL_LIB" || {
-              awk '/#include "ssl_local.h"/{print "#include <sys/time.h>"}1' "$SSL_LIB" > /tmp/_ssl.cc
+            grep -qF 'FreeBSD-gettimeofday-fix' "$SSL_LIB" || {
+              awk 'NR==1{print "/* FreeBSD-gettimeofday-fix */\n#include <sys/time.h>"}1' "$SSL_LIB" > /tmp/_ssl.cc
               mv /tmp/_ssl.cc "$SSL_LIB"
               echo "Patched $SSL_LIB"
             }

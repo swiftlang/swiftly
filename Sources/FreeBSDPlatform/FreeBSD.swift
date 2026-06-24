@@ -71,186 +71,188 @@ public struct FreeBSD: Platform {
         // TODO: these are hard-coded until we have a place to query for these based on the toolchain version
         // These lists were copied from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
         let packages: [String] =
-            switch platformName {
-            case "ubuntu1804":
-                [
-                    "libatomic1",
-                    "libcurl4-openssl-dev",
-                    "libxml2-dev",
-                    "libedit2",
-                    "libsqlite3-0",
-                    "libc6-dev",
-                    "binutils",
-                    "libgcc-5-dev",
-                    "libstdc++-5-dev",
-                    "zlib1g-dev",
-                    "libpython3.6",
-                    "tzdata",
-                    "git",
-                    "unzip",
-                    "zip",
-                    "pkg-config",
-                ]
-            case "ubuntu2004":
-                [
-                    "binutils",
-                    "git",
-                    "unzip",
-                    "zip",
-                    "gnupg2",
-                    "libc6-dev",
-                    "libcurl4-openssl-dev",
-                    "libedit2",
-                    "libgcc-9-dev",
-                    "libpython3.8",
-                    "libsqlite3-0",
-                    "libstdc++-9-dev",
-                    "libxml2-dev",
-                    "libz3-dev",
-                    "pkg-config",
-                    "tzdata",
-                    "zlib1g-dev",
-                ]
-            case "ubuntu2204":
-                [
-                    "binutils",
-                    "git",
-                    "unzip",
-                    "zip",
-                    "gnupg2",
-                    "libc6-dev",
-                    "libcurl4-openssl-dev",
-                    "libedit2",
-                    "libgcc-11-dev",
-                    "libpython3-dev",
-                    "libsqlite3-0",
-                    "libstdc++-11-dev",
-                    "libxml2-dev",
-                    "libz3-dev",
-                    "pkg-config",
-                    "python3-lldb-13",
-                    "tzdata",
-                    "zlib1g-dev",
-                ]
-            case "ubuntu2404":
-                [
-                    "binutils",
-                    "git",
-                    "unzip",
-                    "zip",
-                    "gnupg2",
-                    "libc6-dev",
-                    "libcurl4-openssl-dev",
-                    "libedit2",
-                    "libgcc-13-dev",
-                    "libpython3-dev",
-                    "libsqlite3-0",
-                    "libstdc++-13-dev",
-                    "libxml2-dev",
-                    "libncurses-dev",
-                    "libz3-dev",
-                    "pkg-config",
-                    "tzdata",
-                    "zlib1g-dev",
-                ]
-            case "amazonlinux2":
-                [
-                    "binutils",
-                    "gcc",
-                    "git",
-                    "unzip",
-                    "zip",
-                    "glibc-static",
-                    "gzip",
-                    "libbsd",
-                    "libcurl-devel",
-                    "libedit",
-                    "libicu",
-                    "libsqlite",
-                    "libstdc++-static",
-                    "libuuid",
-                    "libxml2-devel",
-                    "openssl-devel",
-                    "tar",
-                    "tzdata",
-                    "zlib-devel",
-                ]
-            case "ubi9":
-                [
-                    "git",
-                    "gcc-c++",
-                    "libcurl-devel",
-                    "libedit-devel",
-                    "libuuid-devel",
-                    "libxml2-devel",
-                    "ncurses-devel",
-                    "python3-devel",
-                    "rsync",
-                    "sqlite-devel",
-                    "unzip",
-                    "zip",
-                ]
-            case "fedora39", "fedora41":
-                [
-                    "binutils",
-                    "gcc",
-                    "git",
-                    "unzip",
-                    "zip",
-                    "libcurl-devel",
-                    "libedit-devel",
-                    "libicu-devel",
-                    "sqlite-devel",
-                    "libuuid-devel",
-                    "libxml2-devel",
-                    "python3-devel",
-                    "libstdc++-devel",
-                    "libstdc++-static",
-                ]
-            case "debian12":
-                [
-                    "binutils", // binutils-gold is a virtual package that points to binutils
-                    "libicu-dev",
-                    "libcurl4-openssl-dev",
-                    "libedit-dev",
-                    "libsqlite3-dev",
-                    "libncurses-dev",
-                    "libpython3-dev",
-                    "libxml2-dev",
-                    "pkg-config",
-                    "uuid-dev",
-                    "tzdata",
-                    "git",
-                    "gcc",
-                    "libstdc++-12-dev",
-                    "unzip",
-                    "zip",
-                ]
-            default:
-                []
-            }
+            switch platformName
+        {
+        case "ubuntu1804":
+            [
+                "libatomic1",
+                "libcurl4-openssl-dev",
+                "libxml2-dev",
+                "libedit2",
+                "libsqlite3-0",
+                "libc6-dev",
+                "binutils",
+                "libgcc-5-dev",
+                "libstdc++-5-dev",
+                "zlib1g-dev",
+                "libpython3.6",
+                "tzdata",
+                "git",
+                "unzip",
+                "zip",
+                "pkg-config",
+            ]
+        case "ubuntu2004":
+            [
+                "binutils",
+                "git",
+                "unzip",
+                "zip",
+                "gnupg2",
+                "libc6-dev",
+                "libcurl4-openssl-dev",
+                "libedit2",
+                "libgcc-9-dev",
+                "libpython3.8",
+                "libsqlite3-0",
+                "libstdc++-9-dev",
+                "libxml2-dev",
+                "libz3-dev",
+                "pkg-config",
+                "tzdata",
+                "zlib1g-dev",
+            ]
+        case "ubuntu2204":
+            [
+                "binutils",
+                "git",
+                "unzip",
+                "zip",
+                "gnupg2",
+                "libc6-dev",
+                "libcurl4-openssl-dev",
+                "libedit2",
+                "libgcc-11-dev",
+                "libpython3-dev",
+                "libsqlite3-0",
+                "libstdc++-11-dev",
+                "libxml2-dev",
+                "libz3-dev",
+                "pkg-config",
+                "python3-lldb-13",
+                "tzdata",
+                "zlib1g-dev",
+            ]
+        case "ubuntu2404":
+            [
+                "binutils",
+                "git",
+                "unzip",
+                "zip",
+                "gnupg2",
+                "libc6-dev",
+                "libcurl4-openssl-dev",
+                "libedit2",
+                "libgcc-13-dev",
+                "libpython3-dev",
+                "libsqlite3-0",
+                "libstdc++-13-dev",
+                "libxml2-dev",
+                "libncurses-dev",
+                "libz3-dev",
+                "pkg-config",
+                "tzdata",
+                "zlib1g-dev",
+            ]
+        case "amazonlinux2":
+            [
+                "binutils",
+                "gcc",
+                "git",
+                "unzip",
+                "zip",
+                "glibc-static",
+                "gzip",
+                "libbsd",
+                "libcurl-devel",
+                "libedit",
+                "libicu",
+                "libsqlite",
+                "libstdc++-static",
+                "libuuid",
+                "libxml2-devel",
+                "openssl-devel",
+                "tar",
+                "tzdata",
+                "zlib-devel",
+            ]
+        case "ubi9":
+            [
+                "git",
+                "gcc-c++",
+                "libcurl-devel",
+                "libedit-devel",
+                "libuuid-devel",
+                "libxml2-devel",
+                "ncurses-devel",
+                "python3-devel",
+                "rsync",
+                "sqlite-devel",
+                "unzip",
+                "zip",
+            ]
+        case "fedora39", "fedora41":
+            [
+                "binutils",
+                "gcc",
+                "git",
+                "unzip",
+                "zip",
+                "libcurl-devel",
+                "libedit-devel",
+                "libicu-devel",
+                "sqlite-devel",
+                "libuuid-devel",
+                "libxml2-devel",
+                "python3-devel",
+                "libstdc++-devel",
+                "libstdc++-static",
+            ]
+        case "debian12":
+            [
+                "binutils", // binutils-gold is a virtual package that points to binutils
+                "libicu-dev",
+                "libcurl4-openssl-dev",
+                "libedit-dev",
+                "libsqlite3-dev",
+                "libncurses-dev",
+                "libpython3-dev",
+                "libxml2-dev",
+                "pkg-config",
+                "uuid-dev",
+                "tzdata",
+                "git",
+                "gcc",
+                "libstdc++-12-dev",
+                "unzip",
+                "zip",
+            ]
+        default:
+            []
+        }
 
         let manager: String? =
-            switch platformName {
-            case "ubuntu1804":
-                "apt-get"
-            case "ubuntu2004":
-                "apt-get"
-            case "ubuntu2204":
-                "apt-get"
-            case "ubuntu2404":
-                "apt-get"
-            case "amazonlinux2":
-                "yum"
-            case "ubi9":
-                "dnf"
-            case "fedora39", "fedora41":
-                "dnf"
-            case "debian12":
-                "apt-get"
-            default:
-                nil
-            }
+            switch platformName
+        {
+        case "ubuntu1804":
+            "apt-get"
+        case "ubuntu2004":
+            "apt-get"
+        case "ubuntu2204":
+            "apt-get"
+        case "ubuntu2404":
+            "apt-get"
+        case "amazonlinux2":
+            "yum"
+        case "ubi9":
+            "dnf"
+        case "fedora39", "fedora41":
+            "dnf"
+        case "debian12":
+            "apt-get"
+        default:
+            nil
+        }
 
         if requireSignatureValidation {
             let result = try await run(

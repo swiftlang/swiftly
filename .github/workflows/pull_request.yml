@@ -69,15 +69,15 @@ jobs:
               sed -i '' 's|#include "ssl_local.h"|#include "sys/time.h"\n#include "ssl_local.h"|' "$SSL_LIB"
             echo "Patched $SSL_LIB"
           fi
-          # swift-log Locks.swift: FreeBSD pthread types are opaque pointers like OpenBSD
-          LOCKS=$(find .build/checkouts -path "*/swift-log*/Locks.swift" 2>/dev/null | head -1)
-          if [ -n "$LOCKS" ]; then
+          # All Locks.swift copies: FreeBSD pthread types are opaque pointers like OpenBSD
+          find .build/checkouts -name "Locks.swift" 2>/dev/null | while read LOCKS; do
+            grep -qF "pthread_rwlock_t" "$LOCKS" || continue
             grep -qF "os(OpenBSD) || os(FreeBSD)" "$LOCKS" || \
               sed -i '' 's/os(OpenBSD)/os(OpenBSD) || os(FreeBSD)/g' "$LOCKS"
             grep -qF "pthread_rwlock_t?>" "$LOCKS" || \
               sed -i '' 's/pthread_rwlock_t> =/pthread_rwlock_t?> =/' "$LOCKS"
             echo "Patched $LOCKS"
-          fi
+          done
           swift build 2>&1
           swift test --filter SwiftlyTests 2>&1
           ENDSSH

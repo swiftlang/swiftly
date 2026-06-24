@@ -69,13 +69,15 @@ jobs:
               sed -i '' 's|#include "ssl_local.h"|#include "sys/time.h"\n#include "ssl_local.h"|' "$SSL_LIB"
             echo "Patched $SSL_LIB"
           fi
-          # All Locks.swift copies: FreeBSD pthread types are opaque pointers like OpenBSD
-          find .build/checkouts -name "Locks.swift" 2>/dev/null | while read LOCKS; do
-            grep -qF "pthread_rwlock_t" "$LOCKS" || continue
+          # All NIO-style lock files: FreeBSD pthread types are opaque pointers like OpenBSD
+          find .build/checkouts \( -name "Locks.swift" -o -name "NIOLock.swift" \) 2>/dev/null | while read LOCKS; do
+            grep -qF "pthread" "$LOCKS" || continue
             grep -qF "os(OpenBSD) || os(FreeBSD)" "$LOCKS" || \
               sed -i '' 's/os(OpenBSD)/os(OpenBSD) || os(FreeBSD)/g' "$LOCKS"
             grep -qF "pthread_rwlock_t?>" "$LOCKS" || \
               sed -i '' 's/pthread_rwlock_t> =/pthread_rwlock_t?> =/' "$LOCKS"
+            grep -qF "LockPrimitive = pthread_mutex_t?" "$LOCKS" || \
+              sed -i '' 's/typealias LockPrimitive = pthread_mutex_t$/typealias LockPrimitive = pthread_mutex_t?/' "$LOCKS"
             echo "Patched $LOCKS"
           done
           # swift-log Logging.swift: Glibc.stdout/stderr non-optional on FreeBSD (unlike Linux)

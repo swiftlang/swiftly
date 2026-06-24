@@ -50,6 +50,7 @@ jobs:
           chmod 600 "$HOME/.ssh/config"
       - name: Sync source to board
         run: |
+          ssh -F "$HOME/.ssh/config" freebsd-ci 'mkdir -p /home/swift/ci/swiftly'
           rsync -avz --delete \
             --exclude='.build' --exclude='.git' \
             -e "ssh -F $HOME/.ssh/config" \

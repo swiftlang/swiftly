@@ -65,194 +65,16 @@ public struct FreeBSD: Platform {
     }
 
     public func verifySystemPrerequisitesForInstall(
-        _ ctx: SwiftlyCoreContext, platformName: String, version _: ToolchainVersion,
+        _ ctx: SwiftlyCoreContext, platformName _: String, version _: ToolchainVersion,
         requireSignatureValidation: Bool,
     ) async throws -> String? {
-        // TODO: these are hard-coded until we have a place to query for these based on the toolchain version
-        // These lists were copied from the dockerfile sources here: https://github.com/apple/swift-docker/tree/ea035798755cce4ec41e0c6dbdd320904cef0421/5.10
-        let packages: [String] =
-            switch platformName
-        {
-        case "ubuntu1804":
-            [
-                "libatomic1",
-                "libcurl4-openssl-dev",
-                "libxml2-dev",
-                "libedit2",
-                "libsqlite3-0",
-                "libc6-dev",
-                "binutils",
-                "libgcc-5-dev",
-                "libstdc++-5-dev",
-                "zlib1g-dev",
-                "libpython3.6",
-                "tzdata",
-                "git",
-                "unzip",
-                "zip",
-                "pkg-config",
-            ]
-        case "ubuntu2004":
-            [
-                "binutils",
-                "git",
-                "unzip",
-                "zip",
-                "gnupg2",
-                "libc6-dev",
-                "libcurl4-openssl-dev",
-                "libedit2",
-                "libgcc-9-dev",
-                "libpython3.8",
-                "libsqlite3-0",
-                "libstdc++-9-dev",
-                "libxml2-dev",
-                "libz3-dev",
-                "pkg-config",
-                "tzdata",
-                "zlib1g-dev",
-            ]
-        case "ubuntu2204":
-            [
-                "binutils",
-                "git",
-                "unzip",
-                "zip",
-                "gnupg2",
-                "libc6-dev",
-                "libcurl4-openssl-dev",
-                "libedit2",
-                "libgcc-11-dev",
-                "libpython3-dev",
-                "libsqlite3-0",
-                "libstdc++-11-dev",
-                "libxml2-dev",
-                "libz3-dev",
-                "pkg-config",
-                "python3-lldb-13",
-                "tzdata",
-                "zlib1g-dev",
-            ]
-        case "ubuntu2404":
-            [
-                "binutils",
-                "git",
-                "unzip",
-                "zip",
-                "gnupg2",
-                "libc6-dev",
-                "libcurl4-openssl-dev",
-                "libedit2",
-                "libgcc-13-dev",
-                "libpython3-dev",
-                "libsqlite3-0",
-                "libstdc++-13-dev",
-                "libxml2-dev",
-                "libncurses-dev",
-                "libz3-dev",
-                "pkg-config",
-                "tzdata",
-                "zlib1g-dev",
-            ]
-        case "amazonlinux2":
-            [
-                "binutils",
-                "gcc",
-                "git",
-                "unzip",
-                "zip",
-                "glibc-static",
-                "gzip",
-                "libbsd",
-                "libcurl-devel",
-                "libedit",
-                "libicu",
-                "libsqlite",
-                "libstdc++-static",
-                "libuuid",
-                "libxml2-devel",
-                "openssl-devel",
-                "tar",
-                "tzdata",
-                "zlib-devel",
-            ]
-        case "ubi9":
-            [
-                "git",
-                "gcc-c++",
-                "libcurl-devel",
-                "libedit-devel",
-                "libuuid-devel",
-                "libxml2-devel",
-                "ncurses-devel",
-                "python3-devel",
-                "rsync",
-                "sqlite-devel",
-                "unzip",
-                "zip",
-            ]
-        case "fedora39", "fedora41":
-            [
-                "binutils",
-                "gcc",
-                "git",
-                "unzip",
-                "zip",
-                "libcurl-devel",
-                "libedit-devel",
-                "libicu-devel",
-                "sqlite-devel",
-                "libuuid-devel",
-                "libxml2-devel",
-                "python3-devel",
-                "libstdc++-devel",
-                "libstdc++-static",
-            ]
-        case "debian12":
-            [
-                "binutils", // binutils-gold is a virtual package that points to binutils
-                "libicu-dev",
-                "libcurl4-openssl-dev",
-                "libedit-dev",
-                "libsqlite3-dev",
-                "libncurses-dev",
-                "libpython3-dev",
-                "libxml2-dev",
-                "pkg-config",
-                "uuid-dev",
-                "tzdata",
-                "git",
-                "gcc",
-                "libstdc++-12-dev",
-                "unzip",
-                "zip",
-            ]
-        default:
-            []
-        }
-
-        let manager: String? =
-            switch platformName
-        {
-        case "ubuntu1804":
-            "apt-get"
-        case "ubuntu2004":
-            "apt-get"
-        case "ubuntu2204":
-            "apt-get"
-        case "ubuntu2404":
-            "apt-get"
-        case "amazonlinux2":
-            "yum"
-        case "ubi9":
-            "dnf"
-        case "fedora39", "fedora41":
-            "dnf"
-        case "debian12":
-            "apt-get"
-        default:
-            nil
-        }
+        // FreeBSD runtime dependencies for a Swift toolchain, per
+        // https://github.com/swiftlang/swift-installer-scripts/blob/main/platforms/FreeBSD/makePackage
+        let packages: [String] = [
+            "libuuid",
+            "python311",
+            "sqlite3",
+        ]
 
         if requireSignatureValidation {
             let result = try await run(
@@ -262,31 +84,19 @@ public struct FreeBSD: Platform {
             )
 
             if !result.terminationStatus.isSuccess {
-                var msg = "gpg is not installed. "
-                if let manager {
-                    msg += """
-                    You can install it by running this command as root:
-                        \(manager) -y install gpg
-                    """
-                } else {
-                    msg += "you can install gpg to get signature verifications of the toolchains."
-                }
-                msg += "\n" + Self.skipVerificationMessage
-
+                let msg = "gpg is not installed. " +
+                    "You can install it by running: pkg install gnupg\n" +
+                    Self.skipVerificationMessage
                 throw SwiftlyError(message: msg)
             }
 
             try await self.importGpgKeys(ctx)
         }
 
-        guard let manager else {
-            return nil
-        }
-
         var missingPackages: [String] = []
 
         for pkg in packages {
-            if case let pkgInstalled = await self.isSystemPackageInstalled(manager, pkg), !pkgInstalled {
+            if await !self.isSystemPackageInstalled(pkg) {
                 missingPackages.append(pkg)
             }
         }
@@ -295,40 +105,13 @@ public struct FreeBSD: Platform {
             return nil
         }
 
-        return "\(manager) -y install \(missingPackages.joined(separator: " "))"
+        return "pkg install \(missingPackages.joined(separator: " "))"
     }
 
-    public func isSystemPackageInstalled(_ manager: String?, _ package: String) async -> Bool {
+    public func isSystemPackageInstalled(_ package: String) async -> Bool {
         do {
-            switch manager {
-            case "apt-get":
-                let result = try await run(.name("dpkg"), arguments: ["-l", package], output: .string(limit: 100 * 1024))
-                if !result.terminationStatus.isSuccess {
-                    return false
-                }
-
-                if let pkgList = result.standardOutput {
-                    // The package might be listed but not in an installed non-error state.
-                    //
-                    // Look for something like this:
-                    //
-                    //   Desired=Unknown/Install/Remove/Purge/Hold
-                    //   | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
-                    //   |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
-                    //   ||/
-                    //   ii  pkgfoo         1.0.0ubuntu12        My description goes here....
-                    return pkgList.contains("\nii ")
-                }
-                return false
-            case "dnf":
-                let result = try await run(.name("dnf"), arguments: ["list", "--installed", package], output: .discarded)
-                return result.terminationStatus.isSuccess
-            case "yum":
-                let result = try await run(.name("yum"), arguments: ["list", "installed", package], output: .discarded)
-                return result.terminationStatus.isSuccess
-            default:
-                return true
-            }
+            let result = try await run(.name("pkg"), arguments: ["info", "-e", package], output: .discarded)
+            return result.terminationStatus.isSuccess
         } catch {
             return false
         }
@@ -506,8 +289,8 @@ public struct FreeBSD: Platform {
             if let shell = entry.last { return shell }
         }
 
-        // Fall back on bash
-        return "/bin/bash"
+        // Fall back on sh — bash is not installed by default on FreeBSD
+        return "/bin/sh"
     }
 
     public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) -> FilePath {

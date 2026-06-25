@@ -239,6 +239,53 @@ jobs:
               echo "Patched $SSLCTX"
             }
           fi
+          # swift-subprocess Subprocess+BSD.swift: fix kqueue race on FreeBSD 15.1.
+          # EVFILT_PROC NOTE_EXIT is missed when the process exits between the WNOHANG
+          # check and kqueue registration, causing monitorProcessTermination to hang.
+          # Replace with a polling loop that is race-free for process termination.
+          SUBPROC_BSD=$(find .build/checkouts -path "*/swift-subprocess*/Platforms/Subprocess+BSD.swift" 2>/dev/null | head -1)
+          if [ -n "$SUBPROC_BSD" ]; then
+            grep -qF 'FreeBSD-kqueue-race-fix' "$SUBPROC_BSD" || {
+              cat > "$SUBPROC_BSD" << 'ENDBSD'
+          // FreeBSD-kqueue-race-fix: polling replacement for Subprocess+BSD.swift
+          // DispatchSource makeProcessSource (kqueue EVFILT_PROC NOTE_EXIT) misses
+          // events on FreeBSD 15.1 when process exits before kevent registration.
+          #if os(macOS) || os(FreeBSD) || os(OpenBSD)
+          #if canImport(Darwin)
+          import Darwin
+          #elseif canImport(Glibc)
+          import Glibc
+          #endif
+          internal import Dispatch
+          @Sendable
+          internal func monitorProcessTermination(
+              for processIdentifier: ProcessIdentifier
+          ) async throws -> TerminationStatus {
+              return try await withCheckedThrowingContinuation { continuation in
+                  let queue = DispatchQueue.global()
+                  func checkOnce() {
+                      switch Result(catching: { () throws(SubprocessError.UnderlyingError) -> TerminationStatus? in
+                          try processIdentifier.reap()
+                      }) {
+                      case let .success(status?):
+                          continuation.resume(returning: status)
+                      case .success(nil):
+                          queue.asyncAfter(deadline: .now() + 0.01) { checkOnce() }
+                      case let .failure(error):
+                          continuation.resume(throwing: SubprocessError(
+                              code: .init(.failedToMonitorProcess),
+                              underlyingError: error
+                          ))
+                      }
+                  }
+                  queue.async { checkOnce() }
+              }
+          }
+          #endif
+          ENDBSD
+              echo "Patched $SUBPROC_BSD (FreeBSD-kqueue-race-fix)"
+            }
+          fi
           swift build 2>&1
           swift test --filter SwiftlyTests 2>&1
           ENDSSH
@@ -421,6 +468,50 @@ jobs:
               awk '/^        #elseif os\(Android\)$/ && !done{print "        #elseif os(FreeBSD)"; print "        guard let caFile = rootCAFilePath else { return }"; print "        let result = caFile.withCString { fp in"; print "            CNIOBoringSSL_SSL_CTX_load_verify_locations(context, fp, nil)"; print "        }"; print "        if result == 0 {"; print "            let errorStack = BoringSSLError.buildErrorStack()"; print "            throw BoringSSLError.unknownError(errorStack)"; print "        }"; done=1}{print}' "$SSLCTX" > /tmp/_ctx.swift
               mv /tmp/_ctx.swift "$SSLCTX"
               echo "Patched $SSLCTX"
+            }
+          fi
+          # swift-subprocess Subprocess+BSD.swift: fix kqueue race on FreeBSD 15.1.
+          SUBPROC_BSD=$(find .build/checkouts -path "*/swift-subprocess*/Platforms/Subprocess+BSD.swift" 2>/dev/null | head -1)
+          if [ -n "$SUBPROC_BSD" ]; then
+            grep -qF 'FreeBSD-kqueue-race-fix' "$SUBPROC_BSD" || {
+              cat > "$SUBPROC_BSD" << 'ENDBSD'
+          // FreeBSD-kqueue-race-fix: polling replacement for Subprocess+BSD.swift
+          // DispatchSource makeProcessSource (kqueue EVFILT_PROC NOTE_EXIT) misses
+          // events on FreeBSD 15.1 when process exits before kevent registration.
+          #if os(macOS) || os(FreeBSD) || os(OpenBSD)
+          #if canImport(Darwin)
+          import Darwin
+          #elseif canImport(Glibc)
+          import Glibc
+          #endif
+          internal import Dispatch
+          @Sendable
+          internal func monitorProcessTermination(
+              for processIdentifier: ProcessIdentifier
+          ) async throws -> TerminationStatus {
+              return try await withCheckedThrowingContinuation { continuation in
+                  let queue = DispatchQueue.global()
+                  func checkOnce() {
+                      switch Result(catching: { () throws(SubprocessError.UnderlyingError) -> TerminationStatus? in
+                          try processIdentifier.reap()
+                      }) {
+                      case let .success(status?):
+                          continuation.resume(returning: status)
+                      case .success(nil):
+                          queue.asyncAfter(deadline: .now() + 0.01) { checkOnce() }
+                      case let .failure(error):
+                          continuation.resume(throwing: SubprocessError(
+                              code: .init(.failedToMonitorProcess),
+                              underlyingError: error
+                          ))
+                      }
+                  }
+                  queue.async { checkOnce() }
+              }
+          }
+          #endif
+          ENDBSD
+              echo "Patched $SUBPROC_BSD (FreeBSD-kqueue-race-fix)"
             }
           fi
           swift build 2>&1

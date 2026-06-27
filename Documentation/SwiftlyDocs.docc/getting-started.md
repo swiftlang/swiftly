@@ -5,21 +5,6 @@ Start using swiftly and Swift.
 To get started with swiftly you can download it from [swift.org](https://swift.org/download), and extract the package.
 
 @TabNavigator {
-    @Tab("Linux") {
-        If you are using Linux then you can download the binary:
-
-        ```
-        curl -L https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz > swiftly.tar.gz
-        tar zxf swiftly.tar.gz
-        ```
-
-        Now run swiftly init to finish the installation:
-
-        ```
-        ./swiftly init
-        ```
-    }
-
     @Tab("macOS") {
         On macOS you can either run the pkg installer from the command-line like this or run the package by double-clicking on it (not recommended):
 
@@ -32,6 +17,21 @@ To get started with swiftly you can download it from [swift.org](https://swift.o
 
         ```
         ~/.swiftly/bin/swiftly init
+        ```
+    }
+
+    @Tab("Linux") {
+        If you are using Linux then you can download the binary:
+
+        ```
+        curl -L https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz > swiftly.tar.gz
+        tar zxf swiftly.tar.gz
+        ```
+
+        Now run swiftly init to finish the installation:
+
+        ```
+        ./swiftly init
         ```
     }
 }

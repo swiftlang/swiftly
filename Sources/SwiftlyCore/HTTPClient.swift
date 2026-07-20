@@ -402,9 +402,17 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
             PlatformDefinition(
                 name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"
             )
+        case "Ubuntu 26.04":
+            PlatformDefinition(
+                name: "ubuntu2604", nameFull: "ubuntu26.04", namePretty: "Ubuntu 26.04"
+            )
         case "Debian 12":
             PlatformDefinition(
                 name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"
+            )
+        case "Debian 13":
+            PlatformDefinition(
+                name: "debian13", nameFull: "debian13", namePretty: "Debian GNU/Linux 13"
             )
         case "Fedora 39":
             PlatformDefinition(
@@ -554,7 +562,8 @@ public struct SwiftlyHTTPClient: Sendable {
             switch platform.name
         {
         // These are new platforms that aren't yet in the list of known platforms in the OpenAPI schema
-        case PlatformDefinition.ubuntu2404.name, PlatformDefinition.debian12.name,
+        case PlatformDefinition.ubuntu2404.name, PlatformDefinition.ubuntu2604.name,
+             PlatformDefinition.debian12.name, PlatformDefinition.debian13.name,
              PlatformDefinition.fedora39.name, PlatformDefinition.fedora41.name:
             .init(platform.name)
 

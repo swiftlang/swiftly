@@ -644,8 +644,12 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             "Red Hat Universal Base Image 9"
         case PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"):
             "Ubuntu 24.04"
+        case PlatformDefinition(name: "ubuntu2604", nameFull: "ubuntu26.04", namePretty: "Ubuntu 26.04"):
+            "Ubuntu 26.04"
         case PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"):
             "Debian 12"
+        case PlatformDefinition(name: "debian13", nameFull: "debian13", namePretty: "Debian GNU/Linux 13"):
+            "Debian 13"
         case PlatformDefinition(name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39"):
             "Fedora 39"
         case PlatformDefinition(name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"):

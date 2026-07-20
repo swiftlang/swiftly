@@ -25,6 +25,9 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
 
     public static let macOS = PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS")
 
+    public static let ubuntu2604 = PlatformDefinition(
+        name: "ubuntu2604", nameFull: "ubuntu26.04", namePretty: "Ubuntu 26.04"
+    )
     public static let ubuntu2404 = PlatformDefinition(
         name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"
     )
@@ -49,6 +52,9 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
     )
     public static let debian12 = PlatformDefinition(
         name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"
+    )
+    public static let debian13 = PlatformDefinition(
+        name: "debian13", nameFull: "debian13", namePretty: "Debian GNU/Linux 13"
     )
 }
 

@@ -146,6 +146,7 @@ import Testing
         }
 
         static let macOS = ToolchainSpecifier(platform: .macOS)
+        static let ubuntu2604 = ToolchainSpecifier(platform: .ubuntu2604, branches: [.main])
         static let ubuntu2404 = ToolchainSpecifier(platform: .ubuntu2404)
         static let ubuntu2404_6_4_x = ToolchainSpecifier(
             platform: .ubuntu2404,
@@ -160,12 +161,14 @@ import Testing
         )
         static let amazonlinux2 = ToolchainSpecifier(platform: .amazonlinux2)
         static let debian12 = ToolchainSpecifier(platform: .debian12)
+        static let debian13 = ToolchainSpecifier(platform: .debian13, branches: [.main])
     }
 
     @Test(
         .tags(.large),
         arguments: [
             ToolchainSpecifier.macOS,
+            .ubuntu2604,
             .ubuntu2404,
             .ubuntu2404_6_4_x,
             .ubuntu2204,
@@ -174,6 +177,7 @@ import Testing
             .fedora41,
             .amazonlinux2,
             .debian12,
+            .debian13,
         ]
     ) func getToolchainMetadataFromSwiftOrg(_ toolchainData: ToolchainSpecifier) async throws {
         guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {

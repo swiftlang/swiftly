@@ -168,7 +168,6 @@ import Testing
         .tags(.large),
         arguments: [
             ToolchainSpecifier.macOS,
-            .ubuntu2604,
             .ubuntu2404,
             .ubuntu2404_6_4_x,
             .ubuntu2204,
@@ -177,9 +176,8 @@ import Testing
             .fedora41,
             .amazonlinux2,
             .debian12,
-            .debian13,
         ]
-    ) func getToolchainMetadataFromSwiftOrg(_ toolchainData: ToolchainSpecifier) async throws {
+    ) func getReleaseToolchainMetadataFromSwiftOrg(_ toolchainData: ToolchainSpecifier) async throws {
         guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {
             return
         }
@@ -192,7 +190,34 @@ import Testing
             let releases = try await httpClient.getReleaseToolchains(platform: toolchainData.platform, arch: arch, limit: 5)
             // THEN: we get at least 1 release
             #expect(1 <= releases.count, "No releases found for \(toolchainData.platform.name): \(arch.value2)")
+        }
+    }
 
+    @Test(
+        .tags(.large),
+        arguments: [
+            ToolchainSpecifier.macOS,
+            .ubuntu2604,
+            .ubuntu2404,
+            .ubuntu2404_6_4_x,
+            .ubuntu2204,
+            .rhel9,
+            .fedora39,
+            .fedora41,
+            .amazonlinux2,
+            .debian12,
+            .debian13,
+        ]
+    ) func getSnapshotToolchainMetadataFromSwiftOrg(_ toolchainData: ToolchainSpecifier) async throws {
+        guard case let pd = try await Swiftly.currentPlatform.detectPlatform(SwiftlyTests.ctx, disableConfirmation: true, platform: nil), pd != PlatformDefinition.rhel9 && pd != PlatformDefinition.ubuntu2004 else {
+            return
+        }
+
+        let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
+
+        // GIVEN: we have a swiftly http client with swift.org metadata capability
+        // WHEN: we ask for the first five releases of a supported platform in a supported arch
+        for arch in toolchainData.architectures {
             for branch in toolchainData.branches {
                 // GIVEN: we have a swiftly http client with swift.org metadata capability
                 // WHEN: we ask for the first five snapshots on a branch for a supported platform and arch

@@ -263,7 +263,8 @@ public struct Linux: Platform {
             ]
         case "debian13":
             [
-                "binutils", // binutils-gold is a virtual package that points to binutils
+                "binutils",
+                "binutils-gold",
                 "libicu-dev",
                 "libcurl4-openssl-dev",
                 "libedit-dev",

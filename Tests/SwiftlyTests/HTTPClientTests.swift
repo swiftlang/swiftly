@@ -134,26 +134,19 @@ import Testing
         let platform: PlatformDefinition
         let architectures: [SwiftlyWebsiteAPI.Components.Schemas.Architecture]
         let branches: [ToolchainVersion.Snapshot.Branch]
-        let isReleased: Bool
 
         init(
             platform: PlatformDefinition,
             architectures: [SwiftlyWebsiteAPI.Components.Schemas.Architecture] = [.x8664, .aarch64],
-            branches: [ToolchainVersion.Snapshot.Branch] = [.main, .release(major: 6, minor: 1)],
-            isReleased: Bool = true
+            branches: [ToolchainVersion.Snapshot.Branch] = [.main, .release(major: 6, minor: 1)]
         ) {
             self.platform = platform
             self.architectures = architectures
             self.branches = branches
-            self.isReleased = isReleased
         }
 
         static let macOS = ToolchainSpecifier(platform: .macOS)
-        static let ubuntu2604 = ToolchainSpecifier(
-            platform: .ubuntu2604,
-            branches: [.main],
-            isReleased: false
-        )
+        static let ubuntu2604 = ToolchainSpecifier(platform: .ubuntu2604, branches: [.main])
         static let ubuntu2404 = ToolchainSpecifier(platform: .ubuntu2404)
         static let ubuntu2404_6_4_x = ToolchainSpecifier(
             platform: .ubuntu2404,
@@ -168,11 +161,7 @@ import Testing
         )
         static let amazonlinux2 = ToolchainSpecifier(platform: .amazonlinux2)
         static let debian12 = ToolchainSpecifier(platform: .debian12)
-        static let debian13 = ToolchainSpecifier(
-            platform: .debian13,
-            branches: [.main],
-            isReleased: false
-        )
+        static let debian13 = ToolchainSpecifier(platform: .debian13, branches: [.main])
     }
 
     @Test(
@@ -202,11 +191,7 @@ import Testing
         for arch in toolchainData.architectures {
             let releases = try await httpClient.getReleaseToolchains(platform: toolchainData.platform, arch: arch, limit: 5)
             // THEN: we get at least 1 release
-            withKnownIssue("This platform has no released toolchains yet") {
-                #expect(1 <= releases.count, "No releases found for \(toolchainData.platform.name): \(arch.value2)")
-            } when: {
-                !toolchainData.isReleased
-            }
+            #expect(1 <= releases.count, "No releases found for \(toolchainData.platform.name): \(arch.value2)")
 
             for branch in toolchainData.branches {
                 // GIVEN: we have a swiftly http client with swift.org metadata capability

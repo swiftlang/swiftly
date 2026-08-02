@@ -96,45 +96,37 @@ public struct MacOS: Platform {
             try await fs.mkdir(.parents, atPath: self.swiftlyToolchainsDir(ctx))
         }
 
-        if toolchainsDir == self.defaultToolchainsDirectory {
-            // If the toolchains go into the default user location then we use the installer to install them
-            await ctx.message("Installing package in user home directory...")
+        await ctx.message("Expanding pkg...")
+        let tmpDir = fs.mktemp()
+        let toolchainDir = toolchainsDir / "\(version.identifier).xctoolchain"
 
-            try await sys.installer(.verbose, .pkg(tmpFile), .target("CurrentUserHomeDirectory")).run()
-        } else {
-            // Otherwise, we extract the pkg into the requested toolchains directory.
-            await ctx.message("Expanding pkg...")
-            let tmpDir = fs.mktemp()
-            let toolchainDir = toolchainsDir / "\(version.identifier).xctoolchain"
-
-            if !(try await fs.exists(atPath: toolchainDir)) {
-                try await fs.mkdir(atPath: toolchainDir)
-            }
-
-            await ctx.message("Checking package signature...")
-            do {
-                try await sys.pkgutil().checksignature(pkg_path: tmpFile).run(quiet: !verbose)
-            } catch {
-                // If this is not a test that uses mocked toolchains then we must throw this error and abort installation
-                guard ctx.mockedHomeDir != nil else {
-                    throw error
-                }
-
-                // We permit the signature verification to fail during testing
-                await ctx.message("Signature verification failed, which is allowable during testing with mocked toolchains")
-            }
-            try await sys.pkgutil(.verbose).expand(pkg_path: tmpFile, dir_path: tmpDir).run(quiet: !verbose)
-
-            // There's a slight difference in the location of the special Payload file between official swift packages
-            // and the ones that are mocked here in the test framework.
-            var payload = tmpDir / "Payload"
-            if !(try await fs.exists(atPath: payload)) {
-                payload = tmpDir / "\(version.identifier)-osx-package.pkg/Payload"
-            }
-
-            await ctx.message("Untarring pkg Payload...")
-            try await sys.tar(.directory(toolchainDir)).extract(.verbose, .archive(payload)).run(quiet: !verbose)
+        if !(try await fs.exists(atPath: toolchainDir)) {
+            try await fs.mkdir(atPath: toolchainDir)
         }
+
+        await ctx.message("Checking package signature...")
+        do {
+            try await sys.pkgutil().checksignature(pkg_path: tmpFile).run(quiet: !verbose)
+        } catch {
+            // If this is not a test that uses mocked toolchains then we must throw this error and abort installation
+            guard ctx.mockedHomeDir != nil else {
+                throw error
+            }
+
+            // We permit the signature verification to fail during testing
+            await ctx.message("Signature verification failed, which is allowable during testing with mocked toolchains")
+        }
+        try await sys.pkgutil(.verbose).expand(pkg_path: tmpFile, dir_path: tmpDir).run(quiet: !verbose)
+
+        // There's a slight difference in the location of the special Payload file between official swift packages
+        // and the ones that are mocked here in the test framework.
+        var payload = tmpDir / "Payload"
+        if !(try await fs.exists(atPath: payload)) {
+            payload = tmpDir / "\(version.identifier)-osx-package.pkg/Payload"
+        }
+
+        await ctx.message("Untarring pkg Payload...")
+        try await sys.tar(.directory(toolchainDir)).extract(.verbose, .archive(payload)).run(quiet: !verbose)
     }
 
     public func extractSwiftlyAndInstall(_ ctx: SwiftlyCoreContext, from archive: FilePath) async throws {
@@ -144,32 +136,21 @@ public struct MacOS: Platform {
 
         let userHomeDir = ctx.mockedHomeDir ?? fs.home
 
-        if ctx.mockedHomeDir == nil {
-            await ctx.message("Extracting the swiftly package...")
-            try await sys.installer(
-                .pkg(archive),
-                .target("CurrentUserHomeDirectory")
-            ).run()
-            try? await sys.pkgutil(.volume(userHomeDir)).forget(pkg_id: "org.swift.swiftly").run()
-        } else {
-            let installDir = userHomeDir / ".swiftly"
-            try await fs.mkdir(.parents, atPath: installDir)
+        let installDir = userHomeDir / ".swiftly"
+        try await fs.mkdir(.parents, atPath: installDir)
 
-            // In the case of a mock for testing purposes we won't use the installer, perferring a manual process because
-            //  the installer will not install to an arbitrary path, only a volume or user home directory.
-            let tmpDir = fs.mktemp()
-            try await sys.pkgutil().expand(pkg_path: archive, dir_path: tmpDir).run()
+        let tmpDir = fs.mktemp()
+        try await sys.pkgutil().expand(pkg_path: archive, dir_path: tmpDir).run()
 
-            // There's a slight difference in the location of the special Payload file between official swift packages
-            // and the ones that are mocked here in the test framework.
-            let payload = tmpDir / "Payload"
-            guard try await fs.exists(atPath: payload) else {
-                throw SwiftlyError(message: "Payload file could not be found at \(tmpDir).")
-            }
-
-            await ctx.message("Extracting the swiftly package into \(installDir)...")
-            try await sys.tar(.directory(installDir)).extract(.verbose, .archive(payload)).run(quiet: false)
+        // There's a slight difference in the location of the special Payload file between official swift packages
+        // and the ones that are mocked here in the test framework.
+        let payload = tmpDir / "Payload"
+        guard try await fs.exists(atPath: payload) else {
+            throw SwiftlyError(message: "Payload file could not be found at \(tmpDir).")
         }
+
+        await ctx.message("Extracting the swiftly package into \(installDir)...")
+        try await sys.tar(.directory(installDir)).extract(.verbose, .archive(payload)).run(quiet: false)
 
         let config = Configuration(
             .path(FilePath((userHomeDir / ".swiftly/bin/swiftly").string)), arguments: ["init"]

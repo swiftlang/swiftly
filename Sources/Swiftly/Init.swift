@@ -46,11 +46,16 @@ struct Init: SwiftlyCommand {
     var skipInstall: Bool = false
     @Flag(help: "Quiet shell follow up commands")
     var quietShellFollowup: Bool = false
+    @Flag(
+        inversion: .prefixedNo,
+        help: "Verify (or not) the PGP signature of the toolchain that is installed during initialization."
+    )
+    var verify = true
 
     @OptionGroup var root: GlobalOptions
 
     private enum CodingKeys: String, CodingKey {
-        case noModifyProfile, overwrite, platform, skipInstall, root, quietShellFollowup
+        case noModifyProfile, overwrite, platform, skipInstall, root, quietShellFollowup, verify
     }
 
     public mutating func validate() throws {}
@@ -60,11 +65,11 @@ struct Init: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext = Swiftly.createDefaultContext()) async throws {
-        try await Self.execute(ctx, assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, quietShellFollowup: self.quietShellFollowup)
+        try await Self.execute(ctx, assumeYes: self.root.assumeYes, noModifyProfile: self.noModifyProfile, overwrite: self.overwrite, platform: self.platform, verbose: self.root.verbose, skipInstall: self.skipInstall, quietShellFollowup: self.quietShellFollowup, verifySignature: self.verify)
     }
 
     /// Initialize the installation of swiftly.
-    static func execute(_ ctx: SwiftlyCoreContext, assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool) async throws {
+    static func execute(_ ctx: SwiftlyCoreContext, assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool, verifySignature: Bool = true) async throws {
         try await Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
 
         var config = try? await Config.load(ctx)
@@ -197,11 +202,15 @@ struct Init: SwiftlyCommand {
                 suppressed with the '--skip-install' option.
                 """
 #if os(Linux)
-                msg += """
-                 In the process, swiftly will add swift.org
-                GnuPG keys into your keychain to verify the integrity of the downloads.
+                if verifySignature {
+                    msg += """
+                     In the process, swiftly will add swift.org
+                    GnuPG keys into your keychain to verify the integrity of the downloads.
 
-                """
+                    """
+                } else {
+                    msg += "\n"
+                }
 #else
                 msg += "\n"
 #endif
@@ -346,7 +355,7 @@ struct Init: SwiftlyCommand {
 
         if !skipInstall {
             let latestVersion = try await Install.resolve(ctx, config: config, selector: ToolchainSelector.latest)
-            (postInstall, pathChanged) = try await Install.execute(ctx, version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
+            (postInstall, pathChanged) = try await Install.execute(ctx, version: latestVersion, &config, useInstalledToolchain: true, verifySignature: verifySignature, verbose: verbose, assumeYes: assumeYes)
         }
 
         if !quietShellFollowup {

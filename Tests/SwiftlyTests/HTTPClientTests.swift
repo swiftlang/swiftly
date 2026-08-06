@@ -142,10 +142,13 @@ import Testing
 
         let httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
 
-        let branches: [ToolchainVersion.Snapshot.Branch] = [
+        var branches: [ToolchainVersion.Snapshot.Branch] = [
             .main,
             .release(major: 6, minor: 1), // This is available in swift.org API
         ]
+        if platform == .ubuntu2404 {
+            branches.append(.release(major: 6, minor: 4, patch: "x"))
+        }
 
         // GIVEN: we have a swiftly http client with swift.org metadata capability
         // WHEN: we ask for the first five releases of a supported platform in a supported arch

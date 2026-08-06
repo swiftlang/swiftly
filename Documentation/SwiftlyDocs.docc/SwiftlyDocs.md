@@ -3,7 +3,8 @@
 Install and manage your Swift programming language toolchains.
 
 @Metadata {
-    @DisplayName("Swiftly")
+    @DisplayName("Installer (Swiftly)")
+    @TitleHeading("Tool")
 }
 
 Swiftly helps you to easily install different Swift toolchains locally on your account.

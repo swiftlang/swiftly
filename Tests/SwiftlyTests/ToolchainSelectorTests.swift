@@ -48,7 +48,19 @@ import Testing
             "swift-5.7-SNAPSHOT",
             "swift-5.7-DEVELOPMENT-SNAPSHOT",
         ]
-        try runTest(.snapshot(branch: .release(major: 5, minor: 7), date: nil), parses)
+        try runTest(.snapshot(branch: .release(major: 5, minor: 7, patch: nil), date: nil), parses)
+    }
+
+    @Test func parseReleaseSnapshotWithPatch() throws {
+        let parses = [
+            "5.7.x-snapshot",
+            "5.7.x-SNAPSHOT",
+            "5.7.x-DEVELOPMENT-SNAPSHOT",
+            "swift-5.7.x-snapshot",
+            "swift-5.7.x-SNAPSHOT",
+            "swift-5.7.x-DEVELOPMENT-SNAPSHOT",
+        ]
+        try runTest(.snapshot(branch: .release(major: 5, minor: 7, patch: "x"), date: nil), parses)
     }
 
     @Test func parseReleaseSnapshotWithDate() throws {
@@ -62,6 +74,20 @@ import Testing
             "swift-5.7-DEVELOPMENT-SNAPSHOT-2023-06-05",
             "swift-5.7-DEVELOPMENT-SNAPSHOT-2023-06-05-a",
         ]
-        try runTest(.snapshot(branch: .release(major: 5, minor: 7), date: "2023-06-05"), parses)
+        try runTest(.snapshot(branch: .release(major: 5, minor: 7, patch: nil), date: "2023-06-05"), parses)
+    }
+
+    @Test func parseReleaseSnapshotWithPatchAndDate() throws {
+        let parses = [
+            "5.7.x-snapshot-2023-06-05",
+            "5.7.x-SNAPSHOT-2023-06-05",
+            "5.7.x-DEVELOPMENT-SNAPSHOT-2023-06-05",
+            "5.7.x-DEVELOPMENT-SNAPSHOT-2023-06-05-a",
+            "swift-5.7.x-snapshot-2023-06-05",
+            "swift-5.7.x-SNAPSHOT-2023-06-05",
+            "swift-5.7.x-DEVELOPMENT-SNAPSHOT-2023-06-05",
+            "swift-5.7.x-DEVELOPMENT-SNAPSHOT-2023-06-05-a",
+        ]
+        try runTest(.snapshot(branch: .release(major: 5, minor: 7, patch: "x"), date: "2023-06-05"), parses)
     }
 }

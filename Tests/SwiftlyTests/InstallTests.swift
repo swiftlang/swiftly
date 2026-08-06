@@ -140,7 +140,7 @@ import Testing
 
         let installedToolchain = config.installedToolchains.first!
 
-        guard case let .snapshot(snapshot) = installedToolchain, snapshot.branch == .release(major: 6, minor: 0) else {
+        guard case let .snapshot(snapshot) = installedToolchain, snapshot.branch == .release(major: 6, minor: 0, patch: nil) else {
             Issue.record("expected swiftly install 6.0-snapshot to install snapshot toolchain but got \(installedToolchain)")
             return
         }

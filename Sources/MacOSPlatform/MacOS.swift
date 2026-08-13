@@ -100,7 +100,7 @@ public struct MacOS: Platform {
             // If the toolchains go into the default user location then we use the installer to install them
             await ctx.message("Installing package in user home directory...")
 
-            try await sys.installer(.verbose, .pkg(tmpFile), .target("CurrentUserHomeDirectory")).run()
+            try await sys.installer(.verbose, .pkg(tmpFile), .target("CurrentUserHomeDirectory")).run(quiet: !verbose)
         } else {
             // Otherwise, we extract the pkg into the requested toolchains directory.
             await ctx.message("Expanding pkg...")

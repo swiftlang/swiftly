@@ -184,12 +184,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.?\\d*) ")
 
         let swiftVersionCmd = Configuration(
-            .name("swift"),
+            executable: .name("swift"),
             arguments: ["--version"]
         )
         print("\(swiftVersionCmd.executable) \(swiftVersionCmd.arguments)")
 
-        let swiftVerOutput = (try await Subprocess.run(swiftVersionCmd, output: .string(limit: 1024))).standardOutput ?? ""
+        let swiftVerOutput = (try await Subprocess.run(swiftVersionCmd, output: .string(limit: 1024))).standardOutput
         guard let swiftVerMatch = try swiftVerRegex.firstMatch(in: swiftVerOutput) else {
             throw Error(message: "Unable to detect swift version")
         }
@@ -243,7 +243,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         ])
 
         let configCmd = Configuration(
-            .path(FilePath("./configure")),
+            executable: .path(FilePath("./configure")),
             arguments: [
                 "--prefix=\(pkgConfigPath)",
                 "--enable-shared=no",
@@ -269,8 +269,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         let result = try await Subprocess.run(
             configCmd,
-            output: .standardOutput,
-            error: .standardError,
+            output: .currentStandardOutput,
+            error: .currentStandardError,
         )
 
         if !result.terminationStatus.isSuccess {

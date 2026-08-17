@@ -170,10 +170,10 @@ public struct FreeBSD: Platform {
 
             let config = Configuration(
                 executable: .path(tmpDir / "swiftly"),
-                arguments: ["init"],
+                arguments: ["init"]
             )
 
-            let result = try await run(config, output: .standardOutput, error: .standardError)
+            let result = try await run(config, output: .currentStandardOutput, error: .currentStandardError)
             if !result.terminationStatus.isSuccess {
                 throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
             }

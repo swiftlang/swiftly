@@ -16,7 +16,7 @@ extension Runnable {
         input: Input = .none,
         output: Output,
         error: Error = .discarded
-    ) async throws -> CollectedResult<Output, Error> {
+    ) async throws -> ExecutionResult<Void, Output, Error> {
         var c = self.config()
 
         // TODO: someday the configuration might have its own environment from the modeled commands. That will require this to be able to merge the environment from the commands with the provided environment.
@@ -40,7 +40,7 @@ extension Runnable {
         c.environment = environment
 
         if !quiet {
-            let result = try await Subprocess.run(c, input: .standardInput, output: .standardOutput, error: .standardError)
+            let result = try await Subprocess.run(c, input: .currentStandardInput, output: .currentStandardOutput, error: .currentStandardError)
             if !result.terminationStatus.isSuccess {
                 throw RunProgramError(terminationStatus: result.terminationStatus, config: c)
             }
@@ -70,7 +70,7 @@ extension Output {
             let result = try await Subprocess.run(
                 self.config(),
                 output: .string(limit: limit),
-                error: .standardError
+                error: .currentStandardError
             )
 
             if !result.terminationStatus.isSuccess {
@@ -97,7 +97,7 @@ extension Output {
         environment: Environment = .inherit,
         limit _: Int,
         quiet: Bool = false,
-        body: (AsyncBufferSequence) -> Void
+        body: (SubprocessOutputSequence) -> Void
     ) async throws {
         var c = self.config()
 
@@ -107,9 +107,11 @@ extension Output {
         if !quiet {
             let result = try await Subprocess.run(
                 self.config(),
-                error: .standardError
-            ) { _, sequence in
-                body(sequence)
+                input: .none,
+                output: .sequence,
+                error: .currentStandardError
+            ) { execution in
+                body(execution.standardOutput)
             }
 
             if !result.terminationStatus.isSuccess {
@@ -118,9 +120,11 @@ extension Output {
         } else {
             let result = try await Subprocess.run(
                 self.config(),
+                input: .none,
+                output: .sequence,
                 error: .discarded
-            ) { _, sequence in
-                body(sequence)
+            ) { execution in
+                body(execution.standardOutput)
             }
 
             if !result.terminationStatus.isSuccess {

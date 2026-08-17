@@ -74,9 +74,9 @@ public struct MacOS: Platform {
             await ctx.message(msg)
         }
 
-        let sdkPath = result.standardOutput?.replacingOccurrences(of: "\n", with: "")
+        let sdkPath = result.standardOutput.replacingOccurrences(of: "\n", with: "")
 
-        if sdkPath == nil {
+        if sdkPath.isEmpty {
             await ctx.message("WARNING: Could not read output of '/usr/bin/xcrun --show-sdk-path --sdk macosx'. Ensure your macOS SDK is installed properly for the swift toolchain to work.")
         }
 
@@ -100,7 +100,7 @@ public struct MacOS: Platform {
             // If the toolchains go into the default user location then we use the installer to install them
             await ctx.message("Installing package in user home directory...")
 
-            try await sys.installer(.verbose, .pkg(tmpFile), .target("CurrentUserHomeDirectory")).run()
+            try await sys.installer(.verbose, .pkg(tmpFile), .target("CurrentUserHomeDirectory")).run(quiet: !verbose)
         } else {
             // Otherwise, we extract the pkg into the requested toolchains directory.
             await ctx.message("Expanding pkg...")
@@ -172,9 +172,9 @@ public struct MacOS: Platform {
         }
 
         let config = Configuration(
-            .path(FilePath((userHomeDir / ".swiftly/bin/swiftly").string)), arguments: ["init"]
+            executable: .path(FilePath((userHomeDir / ".swiftly/bin/swiftly").string)), arguments: ["init"]
         )
-        let result = try await run(config, input: .standardInput, output: .standardOutput, error: .standardError)
+        let result = try await run(config, input: .currentStandardInput, output: .currentStandardOutput, error: .currentStandardError)
         if !result.terminationStatus.isSuccess {
             throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
         }
@@ -274,7 +274,7 @@ public struct MacOS: Platform {
                     .path(SystemPackage.FilePath("/usr/bin/xcrun")),
                     arguments: ["--show-sdk-path"],
                     output: .string(limit: 1024 * 10)
-                ).standardOutput?.replacingOccurrences(of: "\n", with: ""),
+                ).standardOutput.replacingOccurrences(of: "\n", with: ""),
             ])
         }
 

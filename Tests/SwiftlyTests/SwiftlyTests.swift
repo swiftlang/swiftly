@@ -530,7 +530,9 @@ public struct SwiftExecutable {
             arguments: ["--version"],
             environment: .inherit.updating(["PATH": "\(self.path.removingLastComponent()):\(binPath)"])
         )
-        guard let outputString = try await Subprocess.run(config, output: .string(limit: 4096)).standardOutput?.trimmingCharacters(in: .newlines) else {
+        let outputString = try await Subprocess.run(config, output: .string(limit: 4096))
+            .standardOutput.trimmingCharacters(in: .newlines)
+        guard !outputString.isEmpty else {
             throw SwiftlyTestError(message: "got no output from swift binary at path \(self.path)")
         }
 

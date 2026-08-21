@@ -45,6 +45,18 @@ public struct MacOS: Platform {
         "pkg"
     }
 
+    public func getSystemPrerequisites(platformName: String) -> [String] {
+        return []
+    }
+
+    public func isSystemPackageInstalled(_ manager: String?, _ package: String) async -> Bool {
+        return false
+    }
+
+    public func getSystemPackageManager(platformName: String) -> String? {
+        return nil
+    }
+
     public func verifySwiftlySystemPrerequisites() throws {
         // All system prerequisites are there for swiftly on macOS
     }

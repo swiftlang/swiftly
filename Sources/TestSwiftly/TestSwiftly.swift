@@ -8,12 +8,16 @@ import SystemPackage
 import LinuxPlatform
 #elseif os(macOS)
 import MacOSPlatform
+#elseif os(FreeBSD)
+import FreeBSDPlatform
 #endif
 
 #if os(Linux)
 let currentPlatform: Platform = Linux.currentPlatform
 #elseif os(macOS)
 let currentPlatform: Platform = MacOS.currentPlatform
+#elseif os(FreeBSD)
+let currentPlatform: Platform = FreeBSD.currentPlatform
 #else
 #error("Unsupported platform")
 #endif
@@ -96,13 +100,13 @@ struct TestSwiftly: AsyncParsableCommand {
         let swiftlyArchiveFile = FilePath(swiftlyArchive)
 
         print("Extracting swiftly release")
-#if os(Linux)
+#if os(Linux) || os(FreeBSD)
         try await sys.tar().extract(.verbose, .compressed, .archive(swiftlyArchiveFile)).run()
 #elseif os(macOS)
         try await sys.installer(.verbose, .pkg(swiftlyArchiveFile), .target("CurrentUserHomeDirectory")).run()
 #endif
 
-#if os(Linux)
+#if os(Linux) || os(FreeBSD)
         let extractedSwiftly = FilePath("./swiftly")
 #elseif os(macOS)
         let extractedSwiftly = FilePath((fs.home / ".swiftly/bin/swiftly").string)

@@ -15,7 +15,7 @@ extension Subprocess.Executable {
 }
 
 extension Platform {
-#if os(macOS) || os(Linux)
+#if os(macOS) || os(Linux) || os(FreeBSD)
     public func proxyEnvironment(_ ctx: SwiftlyCoreContext, env: Environment, toolchain: ToolchainVersion) async throws -> Environment {
         var environment = env
 

@@ -418,7 +418,7 @@ public enum SwiftlyTests {
             let actualVersion = try await executable.version()
             #expect(actualVersion == toolchain)
         }
-#elseif os(Linux)
+#elseif os(Linux) || os(FreeBSD)
         // Verify that the toolchains on disk correspond to those in the config.
         for toolchain in toolchains {
             let toolchainDir = Swiftly.currentPlatform.swiftlyHomeDir(Self.ctx) / "toolchains/\(toolchain.name)"
@@ -524,24 +524,17 @@ public struct SwiftExecutable {
     /// Gets the version of this executable by parsing the `swift --version` output, potentially looking
     /// up the commit hash via the GitHub API.
     public func version() async throws -> ToolchainVersion {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: self.path.string)
-        process.arguments = ["--version"]
-
         let binPath = ProcessInfo.processInfo.environment["PATH"]!
-        process.environment = ["PATH": "\(self.path.removingLastComponent()):\(binPath)"]
-
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        guard let outputData = try outputPipe.fileHandleForReading.readToEnd() else {
+        let config = Configuration(
+            executable: .path(self.path),
+            arguments: ["--version"],
+            environment: .inherit.updating(["PATH": "\(self.path.removingLastComponent()):\(binPath)"])
+        )
+        let outputString = try await Subprocess.run(config, output: .string(limit: 4096))
+            .standardOutput.trimmingCharacters(in: .newlines)
+        guard !outputString.isEmpty else {
             throw SwiftlyTestError(message: "got no output from swift binary at path \(self.path)")
         }
-
-        let outputString = String(decoding: outputData, as: UTF8.self).trimmingCharacters(in: .newlines)
 
         if let match = try Self.stableRegex().firstMatch(in: outputString) {
             let versions = match.output.1.split(separator: ".")
@@ -578,7 +571,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
     }
 
     private let executables: [String]
-#if os(Linux)
+#if os(Linux) || os(FreeBSD)
     private var signatures: [String: Data]
 #endif
 
@@ -610,7 +603,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         ]
     ) {
         self.executables = executables ?? ["swift"]
-#if os(Linux)
+#if os(Linux) || os(FreeBSD)
         self.signatures = [:]
 #endif
         self.latestSwiftlyVersion = latestSwiftlyVersion
@@ -654,6 +647,8 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             "Fedora 39"
         case PlatformDefinition(name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"):
             "Fedora 41"
+        case PlatformDefinition.freebsd:
+            "FreeBSD"
         case PlatformDefinition.macOS:
             "Xcode" // NOTE: this is not actually a platform that gets added in the swift.org API for macos/xcode
         default:
@@ -772,7 +767,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         HTTPBody(Array(Data(PackageResources.mock_signing_key_private_pgp)))
     }
 
-#if os(Linux)
+#if os(Linux) || os(FreeBSD)
     public func makeMockedSwiftly(from url: URL) async throws -> Data {
         // Check our cache if this is a signature request
         if url.path.hasSuffix(".sig") {
@@ -809,46 +804,38 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
 
         let archive = tmp / "swiftly.tar.gz"
 
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        task.arguments = ["bash", "-c", "tar -C \(swiftlyDir) -czf \(archive) swiftly"]
-
-        try task.run()
-        task.waitUntilExit()
+        let tarResult = try await Subprocess.run(
+            .name("tar"),
+            arguments: ["-C", swiftlyDir.string, "-czf", archive.string, "swiftly"],
+            output: .discarded, error: .discarded
+        )
+        guard tarResult.terminationStatus.isSuccess else {
+            throw SwiftlyTestError(message: "tar failed creating swiftly archive")
+        }
 
         // Extra step involves generating a gpg signature and putting that in a cache for a later request. We will
         // use a local key for this to avoid running into entropy problems in CI.
         try Data(PackageResources.mock_signing_key_private_pgp).write(to: gpgKeyFile)
 
-        let importKey = Process()
-        importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        importKey.arguments = ["bash", "-c", """
-        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
-        gpg --batch --import \(gpgKeyFile) >/dev/null 2>&1 || echo -n
-        """]
-        try importKey.run()
-        importKey.waitUntilExit()
-        if importKey.terminationStatus != 0 {
+        let gnupgHomeSwiftly = "\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
+        let importSwiftlyResult = try await Subprocess.run(
+            .name("gpg"),
+            arguments: ["--batch", "--import", gpgKeyFile.string],
+            environment: .inherit.updating(["GNUPGHOME": gnupgHomeSwiftly]),
+            output: .discarded, error: .discarded
+        )
+        if !importSwiftlyResult.terminationStatus.isSuccess {
             throw SwiftlyTestError(message: "unable to import test gpg signing key")
         }
 
-        let detachSign = Process()
-        detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        detachSign.arguments = ["bash", "-c", """
-        export GPG_TTY=$(tty)
-        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
-        gpg --version | grep '2.0.' > /dev/null
-        if [ "$?" == "0" ]; then
-            gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive)"
-        else
-            gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive)"
-        fi
-        """]
-        try detachSign.run()
-        detachSign.waitUntilExit()
-
-        if detachSign.terminationStatus != 0 {
-            throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
+        let signSwiftlyResult = try await Subprocess.run(
+            .name("gpg"),
+            arguments: ["--pinentry-mode", "loopback", "--default-key", "A2A645E5249D25845C43954E7D210032D2F670B7", "--detach-sign", archive.string],
+            environment: .inherit.updating(["GNUPGHOME": gnupgHomeSwiftly]),
+            output: .discarded, error: .discarded
+        )
+        if !signSwiftlyResult.terminationStatus.isSuccess {
+            throw SwiftlyTestError(message: "unable to sign swiftly archive using the test user's gpg key")
         }
 
         var signature = archive
@@ -901,45 +888,37 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
 
         let archive = tmp / "toolchain.tar.gz"
 
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        task.arguments = ["bash", "-c", "tar -C \(tmp) -czf \(archive) \(toolchainDir.lastComponent!.string)"]
-
-        try task.run()
-        task.waitUntilExit()
+        let tarToolchainResult = try await Subprocess.run(
+            .name("tar"),
+            arguments: ["-C", tmp.string, "-czf", archive.string, toolchainDir.lastComponent!.string],
+            output: .discarded, error: .discarded
+        )
+        guard tarToolchainResult.terminationStatus.isSuccess else {
+            throw SwiftlyTestError(message: "tar failed creating toolchain archive")
+        }
 
         // Extra step involves generating a gpg signature and putting that in a cache for a later request. We will
         // use a local key for this to avoid running into entropy problems in CI.
         try Data(PackageResources.mock_signing_key_private_pgp).write(to: gpgKeyFile)
 
-        let importKey = Process()
-        importKey.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        importKey.arguments = ["bash", "-c", """
-        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
-        gpg --batch --import \(gpgKeyFile) >/dev/null 2>&1 || echo -n
-        """]
-        try importKey.run()
-        importKey.waitUntilExit()
-        if importKey.terminationStatus != 0 {
+        let gnupgHome = "\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
+        let importKeyResult = try await Subprocess.run(
+            .name("gpg"),
+            arguments: ["--batch", "--import", gpgKeyFile.string],
+            environment: .inherit.updating(["GNUPGHOME": gnupgHome]),
+            output: .discarded, error: .discarded
+        )
+        if !importKeyResult.terminationStatus.isSuccess {
             throw SwiftlyTestError(message: "unable to import test gpg signing key")
         }
 
-        let detachSign = Process()
-        detachSign.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        detachSign.arguments = ["bash", "-c", """
-        export GPG_TTY=$(tty)
-        export GNUPGHOME="\(SwiftlyTests.ctx.mockedHomeDir!)/.gnupg"
-        gpg --version | grep '2.0.' > /dev/null
-        if [ "$?" == "0" ]; then
-            gpg --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive)"
-        else
-            gpg --pinentry-mode loopback --default-key "A2A645E5249D25845C43954E7D210032D2F670B7" --detach-sign "\(archive)"
-        fi
-        """]
-        try detachSign.run()
-        detachSign.waitUntilExit()
-
-        if detachSign.terminationStatus != 0 {
+        let signResult = try await Subprocess.run(
+            .name("gpg"),
+            arguments: ["--pinentry-mode", "loopback", "--default-key", "A2A645E5249D25845C43954E7D210032D2F670B7", "--detach-sign", archive.string],
+            environment: .inherit.updating(["GNUPGHOME": gnupgHome]),
+            output: .discarded, error: .discarded
+        )
+        if !signResult.terminationStatus.isSuccess {
             throw SwiftlyTestError(message: "unable to sign archive using the test user's gpg key")
         }
 

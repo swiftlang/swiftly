@@ -11,6 +11,7 @@ import Testing
         #expect(!migrations.filter { $0.matches(SwiftlyCore.version) }.isEmpty)
     }
 
+    // TODO: add nu and murex binaries to test runner
     @Test(.testHome(), arguments: ["/bin/bash", "/bin/zsh", "/bin/fish"]) func initFresh(_ shell: String) async throws {
         // GIVEN: a fresh user account without swiftly installed
         try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
@@ -20,14 +21,16 @@ import Testing
         ctx.mockedShell = shell
 
         try await SwiftlyTests.$ctx.withValue(ctx) {
-            let envScript: FilePath?
-            if shell.hasSuffix("bash") || shell.hasSuffix("zsh") {
-                envScript = Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.sh"
-            } else if shell.hasSuffix("fish") {
-                envScript = Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.fish"
-            } else {
-                envScript = nil
-            }
+            let envScript: FilePath? =
+                if shell.hasSuffix("bash") || shell.hasSuffix("zsh") {
+                    Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.sh"
+                } else if shell.hasSuffix("fish") {
+                    Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.fish"
+                } else if shell.hasSuffix("nu") {
+                    Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.nu"
+                } else if shell.hasSuffix("murex") {
+                    Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.mx"
+                }
 
             if let envScript {
                 #expect(!(try await fs.exists(atPath: envScript)))
@@ -54,7 +57,7 @@ import Testing
             // AND: it sources the script from the user profile
             if let envScript {
                 var foundSourceLine = false
-                for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"] {
+                for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".murex_profile", ".config/fish/conf.d/swiftly.fish", ".config/nushell/autoload/swiftly.nu", "Library/Application Support/nushell/autoload/swiftly.nu"] {
                     let profile = SwiftlyTests.ctx.mockedHomeDir! / p
                     if try await fs.exists(atPath: profile) {
                         if let profileContents = try? String(contentsOf: profile), profileContents.contains(envScript.string) {

@@ -123,4 +123,55 @@ import Testing
         #expect(try await fs.exists(atPath: Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "foo.txt"))
         #expect(try await fs.exists(atPath: Swiftly.currentPlatform.swiftlyToolchainsDir(SwiftlyTests.ctx) / "foo.txt"))
     }
+
+    @Test(.testHome()) func initNoReleaseFallsBackToMainSnapshot() async throws {
+        // GIVEN: a fresh account on a distribution with no release toolchain available
+        try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
+
+        var ctx = SwiftlyTests.ctx
+        // ctx.mockedShell = "/bin/bash"
+        ctx.httpClient = SwiftlyHTTPClient(
+            httpRequestExecutor: MockToolchainDownloader(executables: [], releaseToolchains: []))
+
+        try await SwiftlyTests.$ctx.withValue(ctx) {
+            // WHEN: init runs without --skip-install and auto-confirms
+            _ = try await SwiftlyTests.runWithMockedIO(Init.self, ["init", "--assume-yes"])
+
+            // THEN: init completes and falls back to installing a main snapshot
+            let config = try await Config.load()
+            #expect(SwiftlyCore.version == config.version)
+            #expect(!config.installedToolchains.isEmpty)
+            let installed = config.installedToolchains.first
+            guard let installed,
+                  case let .snapshot(snapshot) = installed,
+                  snapshot.branch == .main
+            else {
+                Issue.record("expected a main snapshot to be installed, got \(String(describing: installed))")
+                return
+            }
+            // AND: the only installed toolchain becomes the global default
+            #expect(config.inUse == installed)
+        }
+    }
+
+    @Test(.testHome()) func initNoReleaseDeclineSnapshot() async throws {
+        // GIVEN: a fresh account on a distribution with no release toolchain available
+        try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
+
+        var ctx = SwiftlyTests.ctx
+        ctx.httpClient = SwiftlyHTTPClient(
+            httpRequestExecutor: MockToolchainDownloader(executables: [], releaseToolchains: []))
+
+        try await SwiftlyTests.$ctx.withValue(ctx) {
+            // WHEN: init runs interactively, confirming the welcome prompt ("y") but
+            // declining the main-snapshot fallback prompt ("n")
+            _ = try await SwiftlyTests.runWithMockedIO(Init.self, ["init"], input: ["y", "n"])
+
+            // THEN: swiftly is still initialized, but no toolchain was installed
+            let config = try await Config.load()
+            #expect(SwiftlyCore.version == config.version)
+            #expect(config.installedToolchains.isEmpty)
+            #expect(config.inUse == nil)
+        }
+    }
 }

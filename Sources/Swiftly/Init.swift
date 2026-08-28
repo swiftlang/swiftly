@@ -345,8 +345,35 @@ struct Init: SwiftlyCommand {
         var pathChanged = false
 
         if !skipInstall {
-            let latestVersion = try await Install.resolve(ctx, config: config, selector: ToolchainSelector.latest)
-            (postInstall, pathChanged) = try await Install.execute(ctx, version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
+            let installVersion: ToolchainVersion?
+            do {
+                installVersion = try await Install.resolve(ctx, config: config, selector: ToolchainSelector.latest)
+            } catch let error as ResolveError {
+                guard error.reason == .noRelease else { throw error }
+
+                await ctx.printError("Warning: no release toolchain available for this distribution.")
+                let installMainSnapshot: Bool
+                if assumeYes {
+                    installMainSnapshot = true
+                } else {
+                    await ctx.printError("Install main-snapshot toolchain?")
+                    installMainSnapshot = await ctx.promptForConfirmation(defaultBehavior: true)
+                }
+
+                if installMainSnapshot {
+                    installVersion = try await Install.resolve(
+                        ctx,
+                        config: config,
+                        selector: ToolchainSelector.snapshot(branch: .main, date: nil)
+                    )
+                } else {
+                    installVersion = nil
+                }
+            }
+
+            if let installVersion {
+                (postInstall, pathChanged) = try await Install.execute(ctx, version: installVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
+            }
         }
 
         if !quietShellFollowup {

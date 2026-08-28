@@ -67,6 +67,14 @@ struct Init: SwiftlyCommand {
     static func execute(_ ctx: SwiftlyCoreContext, assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool) async throws {
         try await Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
 
+        let homeDirRaw = Swiftly.currentPlatform.swiftlyHomeDir(ctx)
+        let binDirRaw = Swiftly.currentPlatform.swiftlyBinDir(ctx)
+        let toolchainsDirRaw = Swiftly.currentPlatform.swiftlyToolchainsDir(ctx)
+
+        let homeDir = Swiftly.currentPlatform.escapePathForShell(homeDirRaw)
+        let binDir = Swiftly.currentPlatform.escapePathForShell(binDirRaw)
+        let toolchainsDir = Swiftly.currentPlatform.escapePathForShell(toolchainsDirRaw)
+
         var config = try? await Config.load(ctx)
 
         func oldEnvSh(_ ctx: SwiftlyCoreContext) -> String {
@@ -95,9 +103,9 @@ struct Init: SwiftlyCommand {
 
         func envSh(_ ctx: SwiftlyCoreContext) -> String {
             """
-            export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-            export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-            export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            export SWIFTLY_HOME_DIR=\(homeDir)
+            export SWIFTLY_BIN_DIR=\(binDir)
+            export SWIFTLY_TOOLCHAINS_DIR=\(toolchainsDir)
 
             # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
             PATH="${PATH//:$SWIFTLY_BIN_DIR/}"
@@ -109,9 +117,9 @@ struct Init: SwiftlyCommand {
 
         func envFish(_ ctx: SwiftlyCoreContext) -> String {
             """
-            set -x SWIFTLY_HOME_DIR "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-            set -x SWIFTLY_BIN_DIR "\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-            set -x SWIFTLY_TOOLCHAINS_DIR "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            set -x SWIFTLY_HOME_DIR \(homeDir)
+            set -x SWIFTLY_BIN_DIR \(binDir)
+            set -x SWIFTLY_TOOLCHAINS_DIR \(toolchainsDir)
 
             # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
             while set -l index (contains -i "$SWIFTLY_BIN_DIR" $PATH)

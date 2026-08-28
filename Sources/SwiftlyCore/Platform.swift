@@ -84,6 +84,9 @@ public protocol Platform: Sendable {
     /// The "toolchains" subdirectory that contains the Swift toolchains managed by swiftly.
     func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath
 
+    /// Convert a FilePath object to a shell-escaped string
+    func escapePathForShell(_ path: FilePath) -> String
+
     /// The file extension of the downloaded toolchain for this platform.
     /// e.g. for Linux systems this is "tar.gz" and on macOS it's "pkg".
     var toolchainFileExtension: String { get }

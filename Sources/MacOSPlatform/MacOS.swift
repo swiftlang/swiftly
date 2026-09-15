@@ -41,6 +41,11 @@ public struct MacOS: Platform {
             ?? self.defaultToolchainsDirectory
     }
 
+    public func escapePathForShell(_ path: FilePath) -> String {
+        let escaped = String(decoding: path).replacingOccurrences(of: "'", with: "'\\''")
+        return "'\(escaped)'"
+    }
+
     public var toolchainFileExtension: String {
         "pkg"
     }

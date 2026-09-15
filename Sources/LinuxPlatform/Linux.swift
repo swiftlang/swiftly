@@ -46,6 +46,11 @@ public struct Linux: Platform {
             ?? fs.home / ".local/share/swiftly/toolchains"
     }
 
+    public func escapePathForShell(_ path: FilePath) -> String {
+        let escaped = String(decoding: path).replacingOccurrences(of: "'", with: "'\\''")
+        return "'\(escaped)'"
+    }
+
     public var toolchainFileExtension: String {
         "tar.gz"
     }

@@ -292,7 +292,9 @@ struct Install: SwiftlyCommand {
                 // Building URL path that looks like:
                 // swift-5.6.2-release/ubuntu2004/swift-5.6.2-RELEASE/swift-5.6.2-RELEASE-ubuntu20.04.tar.gz
                 var versionString = "\(stableVersion.major).\(stableVersion.minor)"
-                if stableVersion.patch != 0 {
+                if stableVersion.patch != 0
+                    || stableVersion >= ToolchainVersion.firstReleaseWithExplicitPatch
+                {
                     versionString += ".\(stableVersion.patch)"
                 }
 

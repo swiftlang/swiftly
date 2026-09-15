@@ -112,6 +112,11 @@ public enum ToolchainVersion: Sendable {
 
     public static let xcodeVersion: ToolchainVersion = .xcode
 
+    /// Starting with this release, swift.org publishes release artifacts with an explicit patch
+    /// component in the name (e.g. "swift-6.4.0-RELEASE") instead of dropping it for the first
+    /// release of a minor version series (e.g. "swift-6.3-RELEASE").
+    public static let firstReleaseWithExplicitPatch = StableRelease(major: 6, minor: 4, patch: 0)
+
     static func stableRegex() -> Regex<(Substring, Substring, Substring, Substring)> {
         try! Regex("^(?:Swift )?(\\d+)\\.(\\d+)\\.(\\d+)$")
     }
@@ -200,6 +205,8 @@ public enum ToolchainVersion: Sendable {
 
     public var identifier: String {
         switch self {
+        case let .stable(release) where release >= ToolchainVersion.firstReleaseWithExplicitPatch:
+            return "swift-\(release.major).\(release.minor).\(release.patch)-RELEASE"
         case let .stable(release) where release.patch == 0:
             return "swift-\(release.major).\(release.minor)-RELEASE"
         case let .stable(release) where release.minor == 0 && release.patch == 0:

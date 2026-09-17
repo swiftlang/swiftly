@@ -1,3 +1,4 @@
+import ArgumentParser
 import Foundation
 @testable import Swiftly
 @testable import SwiftlyCore
@@ -66,6 +67,19 @@ import Testing
                 #expect(foundSourceLine)
             }
         }
+    }
+
+    @Test func initAcceptsNoVerify() throws {
+        // GIVEN: the gpg prerequisite check tells users to pass --no-verify
+        // WHEN: swiftly init is parsed with that flag
+        let noVerify = try Init.parse(["--no-verify"])
+
+        // THEN: it is accepted and signature verification is turned off
+        #expect(!noVerify.verify)
+
+        // AND: verification stays on by default
+        #expect(try Init.parse([]).verify)
+        #expect(try Init.parse(["--verify"]).verify)
     }
 
     @Test(.testHome()) func initOverwrite() async throws {

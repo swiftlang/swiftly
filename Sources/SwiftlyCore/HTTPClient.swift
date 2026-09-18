@@ -205,6 +205,9 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
     ) async throws -> SwiftlyWebsiteAPI.Components.Schemas.DevToolchains {
         let response = try await self.websiteClient().listDevToolchains(
             .init(path: .init(branch: branch, platform: platform)))
+        guard response != .notFound else {
+            throw ToolchainsNotFoundError()
+        }
         return try response.ok.body.json
     }
 
@@ -307,6 +310,10 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
         return try response.ok.body.binary
     }
 }
+
+/// Thrown when the requested toolchain isn't found on swift.org
+/// Caught and translated to a SnapshotBranchNotFoundError by caller
+struct ToolchainsNotFoundError: Error {}
 
 extension SwiftlyWebsiteAPI.Components.Schemas.Release {
     var stableName: String {
@@ -591,9 +598,14 @@ public struct SwiftlyHTTPClient: Sendable {
             .init("\(major).\(minor)\(patch.map { ".\($0)" } ?? "")")
         }
 
-        let devToolchains = try await self.httpRequestExecutor.getSnapshotToolchains(
-            branch: sourceBranch, platform: platformId
-        )
+        let devToolchains: SwiftlyWebsiteAPI.Components.Schemas.DevToolchains
+        do {
+            devToolchains = try await self.httpRequestExecutor.getSnapshotToolchains(
+                branch: sourceBranch, platform: platformId
+            )
+        } catch is ToolchainsNotFoundError {
+            throw SnapshotBranchNotFoundError(branch: branch)
+        }
 
         let arch = a ?? cpuArch.value2
 

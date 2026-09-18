@@ -422,6 +422,8 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
             PlatformDefinition(
                 name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"
             )
+        case "FreeBSD":
+            PlatformDefinition.freebsd
         default:
             nil
         }
@@ -564,7 +566,8 @@ public struct SwiftlyHTTPClient: Sendable {
         // These are new platforms that aren't yet in the list of known platforms in the OpenAPI schema
         case PlatformDefinition.ubuntu2404.name, PlatformDefinition.ubuntu2604.name,
              PlatformDefinition.debian12.name, PlatformDefinition.debian13.name,
-             PlatformDefinition.fedora39.name, PlatformDefinition.fedora41.name:
+             PlatformDefinition.fedora39.name, PlatformDefinition.fedora41.name,
+             PlatformDefinition.freebsd.name:
             .init(platform.name)
 
         case PlatformDefinition.ubuntu2204.name:

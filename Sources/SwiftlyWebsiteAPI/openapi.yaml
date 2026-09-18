@@ -55,6 +55,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DevToolchains'
+        '404':
+          description: Failed to look up snapshot.
   /install/dev/{branch}/static-sdk.json:
     parameters:
       - name: branch

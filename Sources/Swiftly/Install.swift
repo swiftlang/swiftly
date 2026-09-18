@@ -543,7 +543,7 @@ struct ResolveError: LocalizedError, CustomStringConvertible {
             case let .stable:
                 return "Need to provide at least major and minor version when installing a release toolchain."
             case let .snapshot(branch, _):
-                return "You have requested to install a snapshot toolchain from \(branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try againt with a different branch."
+                return "You have requested to install a snapshot toolchain from \(branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try again with a different branch."
             case .xcode:
                 fatalError("Unhandled Xcode selector resolution error")
             }

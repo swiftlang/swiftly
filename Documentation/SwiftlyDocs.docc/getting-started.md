@@ -89,9 +89,9 @@ $ swiftly install main-snapshot
 
 ## See Also:
 
-- [Add shell autocompletions](shell-autocompletion)
-- [Install Toolchains](install-toolchains)
-- [Using Toolchains](use-toolchains)
-- [Uninstall Toolchains](uninstall-toolchains)
-- [Swiftly CLI Reference](swiftly-cli-reference)
+- <doc:shell-autocompletion>
+- <doc:install-toolchains>
+- <doc:use-toolchains>
+- <doc:uninstall-toolchains>
+- <doc:swiftly-cli-reference>
 

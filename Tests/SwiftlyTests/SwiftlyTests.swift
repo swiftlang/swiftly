@@ -28,7 +28,7 @@ extension Tag {
 
 extension Subprocess.Executable {
     public func exists() async throws -> Bool {
-        (try? self.resolveExecutablePath(in: .inherit)) != nil
+        (try? await self.resolveExecutablePath(in: .inherit)) != nil
     }
 }
 
@@ -574,7 +574,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
     }
 
     private static func snapshotURLRegex() -> Regex<Substring> {
-        try! Regex("swift(?:-[0-9]+\\.[0-9]+)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
+        try! Regex("swift(?:-[0-9]+\\.[0-9]+(?:\\.[a-zA-Z0-9]+)?)?-DEVELOPMENT-SNAPSHOT-[0-9]{4}-[0-9]{2}-[0-9]{2}")
     }
 
     private let executables: [String]
@@ -644,10 +644,16 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             "Red Hat Universal Base Image 9"
         case PlatformDefinition(name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"):
             "Ubuntu 24.04"
+        case PlatformDefinition(name: "ubuntu2604", nameFull: "ubuntu26.04", namePretty: "Ubuntu 26.04"):
+            "Ubuntu 26.04"
         case PlatformDefinition(name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"):
             "Debian 12"
+        case PlatformDefinition(name: "debian13", nameFull: "debian13", namePretty: "Debian GNU/Linux 13"):
+            "Debian 13"
         case PlatformDefinition(name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39"):
             "Fedora 39"
+        case PlatformDefinition(name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"):
+            "Fedora 41"
         case PlatformDefinition.macOS:
             "Xcode" // NOTE: this is not actually a platform that gets added in the swift.org API for macos/xcode
         default:
@@ -681,8 +687,8 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
             switch snapshotVersion.branch {
             case .main:
                 branch.value1 == .main || branch.value1?.rawValue == "main"
-            case let .release(major, minor):
-                branch.value2 == "\(major).\(minor)" || branch.value1?.rawValue == "\(major).\(minor)"
+            case let .release(major, minor, patch):
+                branch.value2 == "\(major).\(minor)\(patch.map { ".\($0)" } ?? "")" || branch.value1?.rawValue == "\(major).\(minor)\(patch.map { ".\($0)" } ?? "")"
             }
         }
 
@@ -692,7 +698,7 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
                 date: "",
                 dir: branch.value1 == .main || branch.value2 == "main" ?
                     "swift-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)" :
-                    "swift-6.0-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)",
+                    "swift-\(branchSnapshot.branch.name)-DEVELOPMENT-SNAPSHOT-\(branchSnapshot.date)",
                 download: "",
                 downloadSignature: nil,
                 debugInfo: nil

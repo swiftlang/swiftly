@@ -11,14 +11,17 @@ typealias fs = SwiftlyCore.FileSystem
 /// TODO: replace dummy implementations
 public struct Linux: Platform {
     let linuxPlatforms: [PlatformDefinition] = [
+        .ubuntu2604,
         .ubuntu2404,
         .ubuntu2204,
         .ubuntu2004,
         .ubuntu1804,
         .fedora39,
+        .fedora41,
         .rhel9,
         .amazonlinux2,
         .debian12,
+        .debian13,
     ]
 
     public init() {}
@@ -41,6 +44,11 @@ public struct Linux: Platform {
         ctx.mockedHomeDir.map { $0 / "toolchains" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { FilePath($0) }
             ?? fs.home / ".local/share/swiftly/toolchains"
+    }
+
+    public func escapePathForShell(_ path: FilePath) -> String {
+        let escaped = String(decoding: path).replacingOccurrences(of: "'", with: "'\\''")
+        return "'\(escaped)'"
     }
 
     public var toolchainFileExtension: String {
@@ -163,6 +171,28 @@ public struct Linux: Platform {
                 "tzdata",
                 "zlib1g-dev",
             ]
+        case "ubuntu2604":
+            [
+                "binutils",
+                "binutils-gold",
+                "git",
+                "unzip",
+                "zip",
+                "gnupg2",
+                "libc6-dev",
+                "libcurl4-openssl-dev",
+                "libedit2",
+                "libgcc-15-dev",
+                "libpython3-dev",
+                "libsqlite3-0",
+                "libstdc++-15-dev",
+                "libxml2-dev",
+                "libncurses-dev",
+                "libz3-dev",
+                "pkg-config",
+                "tzdata",
+                "zlib1g-dev",
+            ]
         case "amazonlinux2":
             [
                 "binutils",
@@ -200,7 +230,7 @@ public struct Linux: Platform {
                 "unzip",
                 "zip",
             ]
-        case "fedora39":
+        case "fedora39", "fedora41":
             [
                 "binutils",
                 "gcc",
@@ -236,6 +266,26 @@ public struct Linux: Platform {
                 "unzip",
                 "zip",
             ]
+        case "debian13":
+            [
+                "binutils",
+                "binutils-gold",
+                "libicu-dev",
+                "libcurl4-openssl-dev",
+                "libedit-dev",
+                "libsqlite3-dev",
+                "libncurses-dev",
+                "libpython3-dev",
+                "libxml2-dev",
+                "pkg-config",
+                "uuid-dev",
+                "tzdata",
+                "git",
+                "gcc",
+                "libstdc++-14-dev",
+                "unzip",
+                "zip",
+            ]
         default:
             []
         }
@@ -251,13 +301,15 @@ public struct Linux: Platform {
             "apt-get"
         case "ubuntu2404":
             "apt-get"
+        case "ubuntu2604":
+            "apt-get"
         case "amazonlinux2":
             "yum"
         case "ubi9":
-            "yum"
-        case "fedora39":
-            "yum"
-        case "debian12":
+            "dnf"
+        case "fedora39", "fedora41":
+            "dnf"
+        case "debian12", "debian13":
             "apt-get"
         default:
             nil
@@ -316,19 +368,23 @@ public struct Linux: Platform {
                     return false
                 }
 
-                if let pkgList = result.standardOutput {
-                    // The package might be listed but not in an installed non-error state.
-                    //
-                    // Look for something like this:
-                    //
-                    //   Desired=Unknown/Install/Remove/Purge/Hold
-                    //   | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
-                    //   |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
-                    //   ||/
-                    //   ii  pkgfoo         1.0.0ubuntu12        My description goes here....
-                    return pkgList.contains("\nii ")
+                let pkgList = result.standardOutput
+                guard !pkgList.isEmpty else {
+                    return false
                 }
-                return false
+                // The package might be listed but not in an installed non-error state.
+                //
+                // Look for something like this:
+                //
+                //   Desired=Unknown/Install/Remove/Purge/Hold
+                //   | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+                //   |/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+                //   ||/
+                //   ii  pkgfoo         1.0.0ubuntu12        My description goes here....
+                return pkgList.contains("\nii ")
+            case "dnf":
+                let result = try await run(.name("dnf"), arguments: ["list", "--installed", package], output: .discarded)
+                return result.terminationStatus.isSuccess
             case "yum":
                 let result = try await run(.name("yum"), arguments: ["list", "installed", package], output: .discarded)
                 return result.terminationStatus.isSuccess
@@ -396,7 +452,7 @@ public struct Linux: Platform {
                 arguments: ["init"]
             )
 
-            let result = try await run(config, output: .standardOutput, error: .standardError)
+            let result = try await run(config, output: .currentStandardOutput, error: .currentStandardError)
             if !result.terminationStatus.isSuccess {
                 throw RunProgramError(terminationStatus: result.terminationStatus, config: config)
             }
@@ -620,7 +676,15 @@ public struct Linux: Platform {
 
             return .rhel9
         } else if let pd = [
-            PlatformDefinition.ubuntu1804, .ubuntu2004, .ubuntu2204, .ubuntu2404, .debian12, .fedora39,
+            PlatformDefinition.ubuntu1804,
+            .ubuntu2004,
+            .ubuntu2204,
+            .ubuntu2404,
+            .ubuntu2604,
+            .debian12,
+            .debian13,
+            .fedora39,
+            .fedora41,
         ].first(where: { $0.name == id + versionID }) {
             return pd
         }

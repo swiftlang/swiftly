@@ -94,7 +94,7 @@ import Testing
         // Test --help is handled correctly
         do {
             try await SwiftlyTests.runCommand(Run.self, ["run", "--help"])
-            #expect(false)
+            #expect(Bool(false))
         } catch {
             #expect(error is CleanExit)
         }
@@ -102,7 +102,7 @@ import Testing
         // Test -h is handled correctly
         do {
             try await SwiftlyTests.runCommand(Run.self, ["run", "-h"])
-            #expect(false)
+            #expect(Bool(false))
         } catch {
             #expect(error is CleanExit)
         }
@@ -113,7 +113,7 @@ import Testing
         // Test --version is handled correctly
         do {
             try await SwiftlyTests.runCommand(Run.self, ["run", "--version"])
-            #expect(false)
+            #expect(Bool(false))
         } catch {
             #expect(error is CleanExit)
         }

@@ -402,13 +402,25 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
             PlatformDefinition(
                 name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"
             )
+        case "Ubuntu 26.04":
+            PlatformDefinition(
+                name: "ubuntu2604", nameFull: "ubuntu26.04", namePretty: "Ubuntu 26.04"
+            )
         case "Debian 12":
             PlatformDefinition(
                 name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"
             )
+        case "Debian 13":
+            PlatformDefinition(
+                name: "debian13", nameFull: "debian13", namePretty: "Debian GNU/Linux 13"
+            )
         case "Fedora 39":
             PlatformDefinition(
                 name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39"
+            )
+        case "Fedora 41":
+            PlatformDefinition(
+                name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"
             )
         default:
             nil
@@ -425,8 +437,8 @@ extension SwiftlyWebsiteAPI.Components.Schemas.Platform {
 }
 
 extension SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch {
-    private static func snapshotRegex() -> Regex<(Substring, Substring?, Substring?, Substring)> {
-        try! Regex("swift(?:-(\\d+)\\.(\\d+))?-DEVELOPMENT-SNAPSHOT-(\\d{4}-\\d{2}-\\d{2})")
+    private static func snapshotRegex() -> Regex<(Substring, Substring?, Substring?, Substring?, Substring)> {
+        try! Regex("swift(?:-(\\d+)\\.(\\d+)(?:\\.([a-zA-Z0-9]+))?)?-DEVELOPMENT-SNAPSHOT-(\\d{4}-\\d{2}-\\d{2})")
     }
 
     func parseSnapshot() throws -> ToolchainVersion.Snapshot? {
@@ -440,12 +452,13 @@ extension SwiftlyWebsiteAPI.Components.Schemas.DevToolchainForArch {
                 throw SwiftlyError(
                     message: "malformatted release branch: \"\(majorString).\(minorString)\"")
             }
-            branch = .release(major: major, minor: minor)
+            let patch = match.output.3.map(String.init)
+            branch = .releaseNormalized(major: major, minor: minor, patch: patch)
         } else {
             branch = .main
         }
 
-        return ToolchainVersion.Snapshot(branch: branch, date: String(match.output.3))
+        return ToolchainVersion.Snapshot(branch: branch, date: String(match.output.4))
     }
 }
 
@@ -549,8 +562,9 @@ public struct SwiftlyHTTPClient: Sendable {
             switch platform.name
         {
         // These are new platforms that aren't yet in the list of known platforms in the OpenAPI schema
-        case PlatformDefinition.ubuntu2404.name, PlatformDefinition.debian12.name,
-             PlatformDefinition.fedora39.name:
+        case PlatformDefinition.ubuntu2404.name, PlatformDefinition.ubuntu2604.name,
+             PlatformDefinition.debian12.name, PlatformDefinition.debian13.name,
+             PlatformDefinition.fedora39.name, PlatformDefinition.fedora41.name:
             .init(platform.name)
 
         case PlatformDefinition.ubuntu2204.name:
@@ -573,8 +587,8 @@ public struct SwiftlyHTTPClient: Sendable {
         {
         case .main:
             .init(.main)
-        case let .release(major, minor):
-            .init("\(major).\(minor)")
+        case let .release(major, minor, patch):
+            .init("\(major).\(minor)\(patch.map { ".\($0)" } ?? "")")
         }
 
         let devToolchains = try await self.httpRequestExecutor.getSnapshotToolchains(

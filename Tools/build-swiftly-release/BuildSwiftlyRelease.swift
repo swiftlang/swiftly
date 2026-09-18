@@ -154,7 +154,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let libarchiveRequest = HTTPClientRequest(url: "https://github.com/libarchive/libarchive/releases/download/v\(libArchiveVersion)/libarchive-\(libArchiveVersion).tar.gz")
         let libarchiveResponse = try await httpExecutor.httpClient.execute(libarchiveRequest, timeout: .seconds(60))
         guard libarchiveResponse.status == .ok else {
-            throw Error(message: "Download failed with status: \(libarchiveResponse.status)")
+            throw Error(message: "Download failed with status: \(libarchiveResponse.status) \(libarchiveRequest.url)")
         }
 
         try await NIOFileSystem.FileSystem.shared.withFileHandle(forWritingAt: buildCheckoutsDir / "libarchive-\(libArchiveVersion).tar.gz", options: .newFile(replaceExisting: true)) { fileHandle in
@@ -178,12 +178,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         let swiftVerRegex: Regex<(Substring, Substring)> = try! Regex("Swift version (\\d+\\.\\d+\\.?\\d*) ")
 
         let swiftVersionCmd = Configuration(
-            .name("swift"),
+            executable: .name("swift"),
             arguments: ["--version"]
         )
         print("\(swiftVersionCmd.executable) \(swiftVersionCmd.arguments)")
 
-        let swiftVerOutput = (try await Subprocess.run(swiftVersionCmd, output: .string(limit: 1024))).standardOutput ?? ""
+        let swiftVerOutput = (try await Subprocess.run(swiftVersionCmd, output: .string(limit: 1024))).standardOutput
         guard let swiftVerMatch = try swiftVerRegex.firstMatch(in: swiftVerOutput) else {
             throw Error(message: "Unable to detect swift version")
         }
@@ -193,7 +193,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             throw Error(message: "Unable to find swift release using swift.org API: \(swiftVersion)")
         }
 
-        let sdkName = "swift-\(swiftVersion)-RELEASE_static-linux-0.0.1"
+        let sdkName = "swift-\(swiftVersion)-RELEASE_static-linux-0.1.0"
 
 #if arch(arm64)
         let arch = "aarch64"
@@ -206,10 +206,10 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         }
 
         // Download and extract SDK into the build checkouts directory
-        let sdkRequest = HTTPClientRequest(url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.0.1.artifactbundle.tar.gz")
+        let sdkRequest = HTTPClientRequest(url: "https://download.swift.org/swift-\(swiftVersion)-release/static-sdk/swift-\(swiftVersion)-RELEASE/swift-\(swiftVersion)-RELEASE_static-linux-0.1.0.artifactbundle.tar.gz")
         let sdkResponse = try await httpExecutor.httpClient.execute(sdkRequest, timeout: .seconds(60))
         guard sdkResponse.status == .ok else {
-            throw Error(message: "Download failed with status: \(sdkResponse.status)")
+            throw Error(message: "Download failed with status: \(sdkResponse.status) \(sdkRequest.url)")
         }
 
         try await NIOFileSystem.FileSystem.shared.withFileHandle(forWritingAt: buildCheckoutsDir / "static-linux-sdk.tar.gz", options: .newFile(replaceExisting: true)) { fileHandle in
@@ -237,7 +237,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         ])
 
         let configCmd = Configuration(
-            .path(FilePath("./configure")),
+            executable: .path(FilePath("./configure")),
             arguments: [
                 "--prefix=\(pkgConfigPath)",
                 "--enable-shared=no",
@@ -263,8 +263,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         let result = try await Subprocess.run(
             configCmd,
-            output: .standardOutput,
-            error: .standardError,
+            output: .currentStandardOutput,
+            error: .currentStandardError,
         )
 
         if !result.terminationStatus.isSuccess {

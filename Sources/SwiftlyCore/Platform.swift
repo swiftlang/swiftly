@@ -25,6 +25,9 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
 
     public static let macOS = PlatformDefinition(name: "xcode", nameFull: "osx", namePretty: "macOS")
 
+    public static let ubuntu2604 = PlatformDefinition(
+        name: "ubuntu2604", nameFull: "ubuntu26.04", namePretty: "Ubuntu 26.04"
+    )
     public static let ubuntu2404 = PlatformDefinition(
         name: "ubuntu2404", nameFull: "ubuntu24.04", namePretty: "Ubuntu 24.04"
     )
@@ -41,11 +44,17 @@ public struct PlatformDefinition: Codable, Equatable, Sendable {
     public static let fedora39 = PlatformDefinition(
         name: "fedora39", nameFull: "fedora39", namePretty: "Fedora Linux 39"
     )
+    public static let fedora41 = PlatformDefinition(
+        name: "fedora41", nameFull: "fedora41", namePretty: "Fedora Linux 41"
+    )
     public static let amazonlinux2 = PlatformDefinition(
         name: "amazonlinux2", nameFull: "amazonlinux2", namePretty: "Amazon Linux 2"
     )
     public static let debian12 = PlatformDefinition(
         name: "debian12", nameFull: "debian12", namePretty: "Debian GNU/Linux 12"
+    )
+    public static let debian13 = PlatformDefinition(
+        name: "debian13", nameFull: "debian13", namePretty: "Debian GNU/Linux 13"
     )
 }
 
@@ -74,6 +83,9 @@ public protocol Platform: Sendable {
 
     /// The "toolchains" subdirectory that contains the Swift toolchains managed by swiftly.
     func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath
+
+    /// Convert a FilePath object to a shell-escaped string
+    func escapePathForShell(_ path: FilePath) -> String
 
     /// The file extension of the downloaded toolchain for this platform.
     /// e.g. for Linux systems this is "tar.gz" and on macOS it's "pkg".
@@ -269,6 +281,12 @@ extension Platform {
         if try await fs.isSymLink(atPath: path) {
             return true
         }
+#if os(Linux)
+        if path.string.contains(".linuxbrew/Cellar/") {
+            // Linuxbrew installation like /home/linuxbrew/.linuxbrew/Cellar/swiftly/1.1.1/bin/swiftly
+            return true
+        }
+#endif
         if path.starts(with: fs.home) {
             // In user's home directory, so not system managed.
             return false

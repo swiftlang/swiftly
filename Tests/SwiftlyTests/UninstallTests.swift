@@ -140,7 +140,7 @@ import Testing
             )
 
             let releaseSnapshots = installed.filter { toolchain in
-                guard case .release(major: 5, minor: 8) = toolchain.asSnapshot?.branch else {
+                guard case .release(major: 5, minor: 8, patch: _) = toolchain.asSnapshot?.branch else {
                     return false
                 }
                 return true

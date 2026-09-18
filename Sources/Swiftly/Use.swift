@@ -89,6 +89,7 @@ struct Use: SwiftlyCommand {
 
             guard let selectedVersion else {
                 // Return with nothing if there's no toolchain that is selected
+                try await ctx.output(EmptyObject())
                 return
             }
 
@@ -257,7 +258,16 @@ public func selectToolchain(_ ctx: SwiftlyCoreContext, config: inout Config, glo
                 }
 
                 guard let selectedToolchain = config.listInstalledToolchains(selector: selector).max() else {
-                    return (nil, .swiftVersionFile(svFile, selector, SwiftlyError(message: "The swift version file `\(svFile)` uses toolchain version \(selector), but it doesn't match any of the installed toolchains. You can install the toolchain with `swiftly install`.")))
+                    let useSuggestion: String
+                    if case let .stable(major, minor?, _) = selector,
+                       let compatible = config.listInstalledToolchains(selector: ToolchainSelector(major: major, minor: minor)).max(),
+                       case let .stable(release) = compatible
+                    {
+                        useSuggestion = "`swiftly use \(release.major).\(release.minor).\(release.patch)`"
+                    } else {
+                        useSuggestion = "`swiftly use <version>`"
+                    }
+                    return (nil, .swiftVersionFile(svFile, selector, SwiftlyError(message: "The swift version file `\(svFile)` requires toolchain version \(selector), which is not installed. You can install it with `swiftly install`, or switch to a different installed toolchain with \(useSuggestion).")))
                 }
 
                 return (selectedToolchain, .swiftVersionFile(svFile, selector, nil))

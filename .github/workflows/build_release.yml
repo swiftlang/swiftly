@@ -26,13 +26,16 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: "redhat/ubi9"
+    env:
+      SKIP: ${{ inputs.skip }}
+      VERSION: ${{ inputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build Release Artifact
-        run: swift run build-swiftly-release --use-rhel-ubi9 ${{ inputs.skip }} ${{ inputs.version }}
+        run: swift run build-swiftly-release --use-rhel-ubi9 "${SKIP}" "${VERSION}"
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -51,13 +54,16 @@ jobs:
   buildrelease-macos:
     name: Build Release / macOS
     runs-on: [self-hosted, macos, tahoe, ARM64]
+    env:
+      SKIP: ${{ inputs.skip }}
+      VERSION: ${{ inputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build Release Artifact
-        run: swift run build-swiftly-release ${{ inputs.skip }} ${{ inputs.version }}
+        run: swift run build-swiftly-release "${SKIP}" "${VERSION}"
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:

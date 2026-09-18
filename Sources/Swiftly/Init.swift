@@ -24,6 +24,7 @@ public var migrations: [SwiftlyVersionMigration] {
         .minor(.init(major: 1, minor: 0, patch: 0)),
         .minor(.init(major: 1, minor: 1, patch: 0)),
         .minor(.init(major: 1, minor: 2, patch: 0)),
+        .minor(.init(major: 1, minor: 3, patch: 0)),
     ]
 }
 
@@ -66,13 +67,21 @@ struct Init: SwiftlyCommand {
     static func execute(_ ctx: SwiftlyCoreContext, assumeYes: Bool, noModifyProfile: Bool, overwrite: Bool, platform: String?, verbose: Bool, skipInstall: Bool, quietShellFollowup: Bool) async throws {
         try await Swiftly.currentPlatform.verifySwiftlySystemPrerequisites()
 
+        let homeDirRaw = Swiftly.currentPlatform.swiftlyHomeDir(ctx)
+        let binDirRaw = Swiftly.currentPlatform.swiftlyBinDir(ctx)
+        let toolchainsDirRaw = Swiftly.currentPlatform.swiftlyToolchainsDir(ctx)
+
+        let homeDir = Swiftly.currentPlatform.escapePathForShell(homeDirRaw)
+        let binDir = Swiftly.currentPlatform.escapePathForShell(binDirRaw)
+        let toolchainsDir = Swiftly.currentPlatform.escapePathForShell(toolchainsDirRaw)
+
         var config = try? await Config.load(ctx)
 
-        func oldEnvSh(_ ctx: SwiftlyCoreContext) -> String {
+        func oldEnvSh2(_: SwiftlyCoreContext) -> String {
             """
-            export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-            export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-            export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            export SWIFTLY_HOME_DIR="\(homeDirRaw)"
+            export SWIFTLY_BIN_DIR="\(binDirRaw)"
+            export SWIFTLY_TOOLCHAINS_DIR="\(toolchainsDirRaw)"
             if [[ ":$PATH:" != *":$SWIFTLY_BIN_DIR:"* ]]; then
                 export PATH="$SWIFTLY_BIN_DIR:$PATH"
             fi
@@ -80,11 +89,11 @@ struct Init: SwiftlyCommand {
             """
         }
 
-        func oldEnvFish(_ ctx: SwiftlyCoreContext) -> String {
+        func oldEnvFish2(_: SwiftlyCoreContext) -> String {
             """
-            set -x SWIFTLY_HOME_DIR "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-            set -x SWIFTLY_BIN_DIR "\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-            set -x SWIFTLY_TOOLCHAINS_DIR "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            set -x SWIFTLY_HOME_DIR "\(homeDirRaw)"
+            set -x SWIFTLY_BIN_DIR "\(binDirRaw)"
+            set -x SWIFTLY_TOOLCHAINS_DIR "\(toolchainsDirRaw)"
             if not contains "$SWIFTLY_BIN_DIR" $PATH
                 set -x PATH "$SWIFTLY_BIN_DIR" $PATH
             end
@@ -92,11 +101,11 @@ struct Init: SwiftlyCommand {
             """
         }
 
-        func envSh(_ ctx: SwiftlyCoreContext) -> String {
+        func oldEnvSh(_: SwiftlyCoreContext) -> String {
             """
-            export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-            export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-            export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            export SWIFTLY_HOME_DIR="\(homeDirRaw)"
+            export SWIFTLY_BIN_DIR="\(binDirRaw)"
+            export SWIFTLY_TOOLCHAINS_DIR="\(toolchainsDirRaw)"
 
             # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
             PATH="${PATH//:$SWIFTLY_BIN_DIR/}"
@@ -106,11 +115,40 @@ struct Init: SwiftlyCommand {
             """
         }
 
-        func envFish(_ ctx: SwiftlyCoreContext) -> String {
+        func oldEnvFish(_: SwiftlyCoreContext) -> String {
             """
-            set -x SWIFTLY_HOME_DIR "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-            set -x SWIFTLY_BIN_DIR "\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-            set -x SWIFTLY_TOOLCHAINS_DIR "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            set -x SWIFTLY_HOME_DIR "\(homeDirRaw)"
+            set -x SWIFTLY_BIN_DIR "\(binDirRaw)"
+            set -x SWIFTLY_TOOLCHAINS_DIR "\(toolchainsDirRaw)"
+
+            # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
+            while set -l index (contains -i "$SWIFTLY_BIN_DIR" $PATH)
+                set -e PATH[$index]
+            end
+            set -x PATH "$SWIFTLY_BIN_DIR" $PATH
+
+            """
+        }
+
+        func envSh(_: SwiftlyCoreContext) -> String {
+            """
+            export SWIFTLY_HOME_DIR=\(homeDir)
+            export SWIFTLY_BIN_DIR=\(binDir)
+            export SWIFTLY_TOOLCHAINS_DIR=\(toolchainsDir)
+
+            # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
+            PATH="${PATH//:$SWIFTLY_BIN_DIR/}"
+            PATH="${PATH/#$SWIFTLY_BIN_DIR:/}"
+            export PATH="$SWIFTLY_BIN_DIR:$PATH"
+
+            """
+        }
+
+        func envFish(_: SwiftlyCoreContext) -> String {
+            """
+            set -x SWIFTLY_HOME_DIR \(homeDir)
+            set -x SWIFTLY_BIN_DIR \(binDir)
+            set -x SWIFTLY_TOOLCHAINS_DIR \(toolchainsDir)
 
             # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
             while set -l index (contains -i "$SWIFTLY_BIN_DIR" $PATH)
@@ -123,9 +161,9 @@ struct Init: SwiftlyCommand {
 
         func envNu(_ ctx: SwiftlyCoreContext) -> String {
             """
-            $env.SWIFTLY_HOME_DIR = "\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-            $env.SWIFTLY_BIN_DIR = "\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-            $env.SWIFTLY_TOOLCHAINS_DIR = "\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            $env.SWIFTLY_HOME_DIR = \(homeDir)
+            $env.SWIFTLY_BIN_DIR = \(binDir)
+            $env.SWIFTLY_TOOLCHAINS_DIR = \(toolchainsDir)
 
             # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
             $env.PATH = $env.PATH | where ($it | path expand) != $env.SWIFTLY_BIN_DIR | prepend $env.SWIFTLY_BIN_DIR
@@ -134,25 +172,15 @@ struct Init: SwiftlyCommand {
 
         func envMurex(_ ctx: SwiftlyCoreContext) -> String {
             """
-            export SWIFTLY_HOME_DIR="\(Swiftly.currentPlatform.swiftlyHomeDir(ctx))"
-            export SWIFTLY_BIN_DIR="\(Swiftly.currentPlatform.swiftlyBinDir(ctx))"
-            export SWIFTLY_TOOLCHAINS_DIR="\(Swiftly.currentPlatform.swiftlyToolchainsDir(ctx))"
+            export SWIFTLY_HOME_DIR=\(homeDir)
+            export SWIFTLY_BIN_DIR=\(binDir)
+            export SWIFTLY_TOOLCHAINS_DIR=\(toolchainsDir)
             
             # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
             $PATH | !match $SWIFTLY_BIN_DIR | prepend $SWIFTLY_BIN_DIR | export PATH
             """
         }
 
-        let shell = if let mockedShell = ctx.mockedShell {
-            mockedShell
-        } else {
-            if let s = ProcessInfo.processInfo.environment["SHELL"] {
-                s
-            } else {
-                try await Swiftly.currentPlatform.getShell()
-            }
-        }
-        
         if var config, !overwrite && !migrations.filter({ $0.matches(config.version) }).isEmpty {
             // This is a simple upgrade from the 0.4.0 pre-releases, or 1.x
 
@@ -163,7 +191,7 @@ struct Init: SwiftlyCommand {
             if case let envFile = (Swiftly.currentPlatform.swiftlyHomeDir(ctx)) / "env.sh",
                (try? await fs.exists(atPath: envFile)) ?? false,
                let contents = String(data: (try? await fs.cat(atPath: envFile)) ?? Data(), encoding: .utf8),
-               contents == oldEnvSh(ctx)
+               contents == oldEnvSh(ctx) || contents == oldEnvSh2(ctx)
             {
                 await ctx.print("Updating shell environment \(envFile)")
                 try Data(envSh(ctx).utf8).write(to: envFile, options: .atomic)
@@ -173,7 +201,7 @@ struct Init: SwiftlyCommand {
             if case let envFile = (Swiftly.currentPlatform.swiftlyHomeDir(ctx)) / "env.fish",
                (try? await fs.exists(atPath: envFile)) ?? false,
                let contents = String(data: (try? await fs.cat(atPath: envFile)) ?? Data(), encoding: .utf8),
-               contents == oldEnvFish(ctx)
+               contents == oldEnvFish(ctx) || contents == oldEnvFish2(ctx)
             {
                 await ctx.print("Updating fish shell environment \(envFile)")
                 try Data(envFish(ctx).utf8).write(to: envFile, options: .atomic)
@@ -184,9 +212,7 @@ struct Init: SwiftlyCommand {
 
             try config.save(ctx)
 
-            if !shell.hasSuffix("nu") && !shell.hasSuffix("murex") {
-                return
-            }
+            return
         }
 
         if let config, !overwrite && config.version != SwiftlyCore.version {
@@ -255,7 +281,17 @@ struct Init: SwiftlyCommand {
                 throw SwiftlyError(message: "swiftly installation has been cancelled")
             }
         }
-        
+
+        let shell = if let mockedShell = ctx.mockedShell {
+            mockedShell
+        } else {
+            if let s = ProcessInfo.processInfo.environment["SHELL"] {
+                s
+            } else {
+                try await Swiftly.currentPlatform.getShell()
+            }
+        }
+
         let envFile: FilePath =
             if shell.hasSuffix("fish") {
                 Swiftly.currentPlatform.swiftlyHomeDir(ctx) / "env.fish"
@@ -274,13 +310,13 @@ struct Init: SwiftlyCommand {
                 """
 
                 # Added by swiftly
-                . "\(envFile)"
+                . \(Swiftly.currentPlatform.escapePathForShell(envFile))
                 """
             } else {
                 """
 
                 # Added by swiftly
-                source "\(envFile)"
+                source \(Swiftly.currentPlatform.escapePathForShell(envFile))
                 """
             }
 
@@ -398,8 +434,35 @@ struct Init: SwiftlyCommand {
         var pathChanged = false
 
         if !skipInstall {
-            let latestVersion = try await Install.resolve(ctx, config: config, selector: ToolchainSelector.latest)
-            (postInstall, pathChanged) = try await Install.execute(ctx, version: latestVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
+            let installVersion: ToolchainVersion?
+            do {
+                installVersion = try await Install.resolve(ctx, config: config, selector: ToolchainSelector.latest)
+            } catch let error as ResolveError {
+                guard error.reason == .noRelease else { throw error }
+
+                await ctx.printError("Warning: no release toolchain available for this distribution.")
+                let installMainSnapshot: Bool
+                if assumeYes {
+                    installMainSnapshot = true
+                } else {
+                    await ctx.printError("Install main-snapshot toolchain?")
+                    installMainSnapshot = await ctx.promptForConfirmation(defaultBehavior: true)
+                }
+
+                if installMainSnapshot {
+                    installVersion = try await Install.resolve(
+                        ctx,
+                        config: config,
+                        selector: ToolchainSelector.snapshot(branch: .main, date: nil)
+                    )
+                } else {
+                    installVersion = nil
+                }
+            }
+
+            if let installVersion {
+                (postInstall, pathChanged) = try await Install.execute(ctx, version: installVersion, &config, useInstalledToolchain: true, verifySignature: true, verbose: verbose, assumeYes: assumeYes)
+            }
         }
 
         if !quietShellFollowup {

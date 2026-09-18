@@ -174,17 +174,18 @@ import Testing
         )
         // Switch to the latest snapshot for the given release.
         guard
-            case let .release(major, minor) = ToolchainVersion.newReleaseSnapshot.asSnapshot!.branch
+            case let .release(major, minor, patch) = ToolchainVersion.newReleaseSnapshot.asSnapshot!.branch
         else {
             fatalError("expected release in snapshot release version")
         }
+        let patchPart = patch.map { ".\($0)" } ?? ""
         try await self.useAndValidate(
-            argument: "\(major).\(minor)-snapshot",
+            argument: "\(major).\(minor)\(patchPart)-snapshot",
             expectedVersion: .newReleaseSnapshot
         )
         // Switch to it again, assert no errors or changes were made.
         try await self.useAndValidate(
-            argument: "\(major).\(minor)-snapshot",
+            argument: "\(major).\(minor)\(patchPart)-snapshot",
             expectedVersion: .newReleaseSnapshot
         )
         // Switch to it again, this time by name. Assert no errors or changes were made.
@@ -349,6 +350,20 @@ import Testing
                 versionFileContents = try String(contentsOf: versionFile)
                 #expect(ToolchainVersion.newStable.name == versionFileContents)
             }
+    }
+
+    /// Tests that `swiftly use --format=json` emits a valid empty JSON object when no toolchain is selected.
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(toolchains: []))
+    func printInUseJsonFormatNoSelection() async throws {
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Use.self, ["use", "--format", "json"], format: .json
+        )
+
+        let joined = output.joined(separator: "\n")
+        let data = try #require(joined.data(using: .utf8))
+        let json = try JSONSerialization.jsonObject(with: data)
+        let object = try #require(json as? [String: Any])
+        #expect(object.isEmpty)
     }
 
     /// Tests that running a use command without an argument prints the currently in-use toolchain.

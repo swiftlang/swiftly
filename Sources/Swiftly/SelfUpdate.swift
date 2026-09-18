@@ -29,7 +29,7 @@ struct SelfUpdate: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        try await validateSwiftly(ctx)
+        try await validateSwiftly(ctx, checkForUpdates: false)
 
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx) / "swiftly"
         guard try await fs.exists(atPath: swiftlyBin) else {

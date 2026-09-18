@@ -21,7 +21,7 @@ struct SelfUninstall: SwiftlyCommand {
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {
-        _ = try await validateSwiftly(ctx)
+        _ = try await validateSwiftly(ctx, checkForUpdates: false)
         let swiftlyBin = Swiftly.currentPlatform.swiftlyBinDir(ctx)
 
         guard try await fs.exists(atPath: swiftlyBin) else {

@@ -63,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ["swiftlang/swift:nightly-6.3-fedora41"]
+        container: ["swiftlang/swift:nightly-6.3-fedora41", "swiftlang/swift:nightly-6.3-resolute", "swiftlang/swift:nightly-6.3-trixie"]
     container:
       image: ${{ matrix.container }}
     steps:

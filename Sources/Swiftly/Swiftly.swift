@@ -27,6 +27,9 @@ public struct GlobalOptions: ParsableArguments {
     @Flag(help: "Enable verbose reporting from swiftly")
     var verbose: Bool = false
 
+    @Flag(help: "Skip checking for updates to swiftly when running a command")
+    var skipUpdatesCheck: Bool = false
+
     public init() {}
 }
 
@@ -52,8 +55,11 @@ public struct Swiftly: SwiftlyCommand {
         ]
     )
 
-    public static func createDefaultContext(format: SwiftlyCore.OutputFormat = .text) -> SwiftlyCoreContext {
-        SwiftlyCoreContext(format: format)
+    public static func createDefaultContext(
+        format: SwiftlyCore.OutputFormat = .text,
+        options: GlobalOptions
+    ) -> SwiftlyCoreContext {
+        SwiftlyCoreContext(format: format, skipUpdatesCheck: options.skipUpdatesCheck)
     }
 
     /// The list of directories that swiftly needs to exist in order to execute.
@@ -107,6 +113,10 @@ extension SwiftlyCommand {
                 }
                 continue
             }
+        }
+
+        if ctx.skipUpdatesCheck {
+            return {}
         }
 
         // Verify that the configuration exists and can be loaded

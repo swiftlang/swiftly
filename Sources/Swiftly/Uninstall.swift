@@ -61,7 +61,7 @@ struct Uninstall: SwiftlyCommand {
     @OptionGroup var root: GlobalOptions
 
     mutating func run() async throws {
-        try await self.run(Swiftly.createDefaultContext())
+        try await self.run(Swiftly.createDefaultContext(options: self.root))
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {

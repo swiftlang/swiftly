@@ -65,7 +65,7 @@ struct Use: SwiftlyCommand {
     var toolchain: String?
 
     mutating func run() async throws {
-        try await self.run(Swiftly.createDefaultContext(format: self.format))
+        try await self.run(Swiftly.createDefaultContext(format: self.format, options: self.root))
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {

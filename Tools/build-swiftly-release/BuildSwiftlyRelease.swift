@@ -314,19 +314,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         try await sys.swift().package().clean().runEcho()
 
-        for arch in ["x86_64", "arm64"] {
-            try await sys.swift().build(.product("swiftly"), .configuration("release"), .arch("\(arch)")).runEcho()
-            try await sys.strip(name: FilePath(".build") / "\(arch)-apple-macosx/release/swiftly").runEcho()
-        }
+        // Build a universal binary
+        try await sys.swift().build(.product("swiftly"), .configuration("release"), .arch("x86_64"), .arch("arm64")).runEcho()
+        try await sys.strip(name: FilePath(".build/out/Products/Release/swiftly")).runEcho()
 
         let swiftlyBinDir = fs.cwd / ".build/release/.swiftly/bin"
         try? await fs.mkdir(.parents, atPath: swiftlyBinDir)
-
-        try await sys.lipo(
-            input_file: ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly"
-        )
-        .create(.output(swiftlyBinDir / "swiftly"))
-        .runEcho()
 
         let swiftlyLicenseDir = fs.cwd / ".build/release/.swiftly/license"
         try? await fs.mkdir(.parents, atPath: swiftlyLicenseDir)

@@ -372,20 +372,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         print(pkgFile)
 
         if self.test {
-            for arch in ["x86_64", "arm64"] {
-                try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("\(arch)")).runEcho()
-                try await sys.strip(name: ".build" / "\(arch)-apple-macosx/release/swiftly").runEcho()
-            }
-
+            try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("x86_64"), .arch("arm64")).runEcho()
             let testArchive = releaseDir / "test-swiftly-macos.tar.gz"
-
-            try await sys.lipo(
-                input_file: ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly"
-            )
-            .create(.output(swiftlyBinDir / "swiftly"))
-            .runEcho()
-
-            try await sys.tar(.directory(".build/x86_64-apple-macosx/debug")).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).runEcho()
+            try await sys.tar(.directory("..build/out/Products/Debug")).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).runEcho()
 
             print(testArchive)
         }

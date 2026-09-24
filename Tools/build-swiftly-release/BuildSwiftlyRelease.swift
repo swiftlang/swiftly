@@ -189,7 +189,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         }
 
         var swiftVersion = swiftVerMatch.output.1
-        if swiftVersion .filter { $0 == "." }.count < 2 {
+        if swiftVersion.filter { $0 == "." }.count < 2 {
             swiftVersion = "\(swiftVersion).0"
         }
         guard let swiftRelease = (try await httpExecutor.getReleaseToolchains()).first(where: { $0.name == swiftVersion }) else {

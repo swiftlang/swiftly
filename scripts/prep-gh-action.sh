@@ -7,7 +7,7 @@
 if [[ "$(uname -s)" == "Linux" ]]; then
     # Install the basic utilities depending on the type of Linux distribution
     apt-get --help && apt-get update && TZ=Etc/UTC apt-get -y install curl make gpg tzdata
-    yum --help && (curl --help && yum -y install curl) && yum install make gpg
+    yum --help && (curl --help && yum -y install curl) && yum -y install make gpg
 fi
 
 set -e
@@ -42,6 +42,8 @@ if [ "$installSwiftly" == true ]; then
         curl -O https://download.swift.org/swiftly/darwin/swiftly.pkg && pkgutil --check-signature swiftly.pkg && pkgutil --verbose --expand swiftly.pkg "${SWIFTLY_HOME_DIR}" && tar -C "${SWIFTLY_HOME_DIR}" -xvf "${SWIFTLY_HOME_DIR}"/swiftly-*/Payload && "$SWIFTLY_HOME_DIR/bin/swiftly" init -y --skip-install
 
         . "$SWIFTLY_HOME_DIR/env.sh"
+
+        "$(dirname "$0")/fix-simulated-clt-bitcode-strip.sh" "$SWIFTLY_HOME_DIR"
     fi
 
     hash -r

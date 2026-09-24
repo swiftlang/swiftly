@@ -307,7 +307,8 @@ public struct MacOS: Platform {
         {
             // Simulate a custom CommandLineTools within the swiftly home directory that satisfies xcrun and allows it to find
             //  the selected toolchain on the PATH with the selected toolchain in front. This command-line tools will only have
-            //  the expected libxcrun.dylib in it and no other tools in its usr/bin directory so that none are picked up there by xcrun.
+            //  the expected libxcrun.dylib and bitcode_strip in its usr/bin directory (the latter is needed by SwiftPM's
+            //  CopySwiftLibs build step) and no other tools so that none are picked up there by xcrun.
 
             // We need a macOS CLT to be installed for this to work
             let realCltDir = FilePath("/Library/Developer/CommandLineTools")
@@ -333,6 +334,18 @@ public struct MacOS: Platform {
             let sdksDir = commandLineToolsDir / "SDKs"
             if !(try await fs.exists(atPath: sdksDir)) {
                 try await fs.symlink(atPath: sdksDir, linkPath: realCltDir / "SDKs")
+            }
+
+            // SwiftPM's CopySwiftLibs build step looks for a bitcode_strip tool in the toolchains it's given
+            //  whenever it needs to pass --strip-bitcode to swift-stdlib-tool, so it must be made available here.
+            let usrBinDir = commandLineToolsDir / "usr" / "bin"
+            if !(try await fs.exists(atPath: usrBinDir)) {
+                try await fs.mkdir(.parents, atPath: usrBinDir)
+            }
+
+            let bitcodeStripLink = usrBinDir / "bitcode_strip"
+            if !(try await fs.exists(atPath: bitcodeStripLink)) {
+                try await fs.symlink(atPath: bitcodeStripLink, linkPath: realCltDir / "usr/bin/bitcode_strip")
             }
 
             let developerDir: FilePath = commandLineToolsDir

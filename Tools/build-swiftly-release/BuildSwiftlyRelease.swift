@@ -188,7 +188,10 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             throw Error(message: "Unable to detect swift version")
         }
 
-        let swiftVersion = swiftVerMatch.output.1
+        var swiftVersion = swiftVerMatch.output.1
+        if swiftVersion .filter { $0 == "." }.count < 2 {
+            swiftVersion = "\(swiftVersion).0"
+        }
         guard let swiftRelease = (try await httpExecutor.getReleaseToolchains()).first(where: { $0.name == swiftVersion }) else {
             throw Error(message: "Unable to find swift release using swift.org API: \(swiftVersion)")
         }

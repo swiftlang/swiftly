@@ -68,6 +68,9 @@ if [ "$installSwiftly" == true ]; then
         runSelector=("+latest")
     fi
 
+    echo "Displaying swiftly version"
+    swiftly --version
+
     swiftly install --post-install-file=post-install.sh "${selector[@]}"
 
     if [ -f post-install.sh ]; then

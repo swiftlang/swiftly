@@ -4,6 +4,11 @@ import Subprocess
 @testable import SwiftlyCore
 import SystemPackage
 import Testing
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 @Suite struct PlatformTests {
     func mockToolchainDownload(version: String) async throws -> (FilePath, ToolchainVersion, FilePath) {
@@ -116,6 +121,10 @@ import Testing
             "",
         ]
     ) func proxyEnv(_ path: String) async throws {
+        // Prevent platform environment variable from affecting the tests
+        unsetenv("TOOLCHAINS")
+        unsetenv("DEVELOPER_DIR")
+
         // GIVEN: a PATH that may contain the swiftly bin directory
         let env: Environment = .custom(["PATH": path.replacing("SWIFTLY_BIN_DIR", with: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string)])
 

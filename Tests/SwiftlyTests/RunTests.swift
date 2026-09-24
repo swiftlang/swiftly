@@ -4,12 +4,21 @@ import Foundation
 @testable import SwiftlyCore
 import SystemPackage
 import Testing
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 @Suite struct RunTests {
     static let homeName = "runTests"
 
     /// Tests that the `run` command can switch between installed toolchains.
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func runSelection() async throws {
+        // Prevent platform environment variable from affecting the tests
+        unsetenv("TOOLCHAINS")
+        unsetenv("DEVELOPER_DIR")
+
         // GIVEN: a set of installed toolchains
         // WHEN: invoking the run command with a selector argument for that toolchain
         var output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", "swift", "--version", "+\(ToolchainVersion.newStable.name)"])
@@ -37,6 +46,10 @@ import Testing
 
     /// Tests the `run` command verifying that the environment is as expected
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func runEnvironment() async throws {
+        // Prevent platform environment variable from affecting the tests
+        unsetenv("TOOLCHAINS")
+        unsetenv("DEVELOPER_DIR")
+
         // The toolchains directory should be the fist entry on the path
         let output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $PATH"])
         guard output.count == 1 else {

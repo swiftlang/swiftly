@@ -374,7 +374,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         if self.test {
             try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("x86_64"), .arch("arm64")).runEcho()
             let testArchive = releaseDir / "test-swiftly-macos.tar.gz"
-            try await sys.tar(.directory("..build/out/Products/Debug")).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).runEcho()
+            try await sys.tar(.directory(".build/out/Products/Debug")).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).runEcho()
 
             print(testArchive)
         }

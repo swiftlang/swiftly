@@ -119,11 +119,11 @@ import Darwin
             "",
         ]
     ) func proxyEnv(_ path: String) async throws {
-        #if os(macOS)
+#if os(macOS)
         // Prevent platform environment variable from affecting the tests
         unsetenv("TOOLCHAINS")
         unsetenv("DEVELOPER_DIR")
-        #endif
+#endif
 
         // GIVEN: a PATH that may contain the swiftly bin directory
         let env: Environment = .custom(["PATH": path.replacing("SWIFTLY_BIN_DIR", with: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string)])

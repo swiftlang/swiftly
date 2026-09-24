@@ -13,11 +13,11 @@ import Darwin
 
     /// Tests that the `run` command can switch between installed toolchains.
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func runSelection() async throws {
-        #if os(macOS)
+#if os(macOS)
         // Prevent platform environment variable from affecting the tests
         unsetenv("TOOLCHAINS")
         unsetenv("DEVELOPER_DIR")
-        #endif
+#endif
 
         // GIVEN: a set of installed toolchains
         // WHEN: invoking the run command with a selector argument for that toolchain
@@ -46,11 +46,11 @@ import Darwin
 
     /// Tests the `run` command verifying that the environment is as expected
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func runEnvironment() async throws {
-        #if os(macOS)
+#if os(macOS)
         // Prevent platform environment variable from affecting the tests
         unsetenv("TOOLCHAINS")
         unsetenv("DEVELOPER_DIR")
-        #endif
+#endif
 
         // The toolchains directory should be the fist entry on the path
         let output = try await SwiftlyTests.runWithMockedIO(Run.self, ["run", try await Swiftly.currentPlatform.getShell(), "-c", "echo $PATH"])

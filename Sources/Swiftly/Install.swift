@@ -292,7 +292,9 @@ struct Install: SwiftlyCommand {
                 // Building URL path that looks like:
                 // swift-5.6.2-release/ubuntu2004/swift-5.6.2-RELEASE/swift-5.6.2-RELEASE-ubuntu20.04.tar.gz
                 var versionString = "\(stableVersion.major).\(stableVersion.minor)"
-                if stableVersion.patch != 0 {
+                if stableVersion.patch != 0
+                    || stableVersion >= ToolchainVersion.firstReleaseWithExplicitPatch
+                {
                     versionString += ".\(stableVersion.patch)"
                 }
 
@@ -451,16 +453,13 @@ struct Install: SwiftlyCommand {
                     platform: config.platform, limit: 1
                 ).first
             else {
-                throw SwiftlyError(message: "couldn't get latest releases")
+                throw ResolveError(reason: .noRelease, selector: selector)
             }
             return .stable(release)
 
         case let .stable(major, minor, patch):
             guard let minor else {
-                throw SwiftlyError(
-                    message:
-                    "Need to provide at least major and minor versions when installing a release toolchain."
-                )
+                throw ResolveError(reason: .badSelector, selector: selector)
             }
 
             if let patch {
@@ -478,7 +477,7 @@ struct Install: SwiftlyCommand {
             }.first
 
             guard let toolchain else {
-                throw SwiftlyError(message: "No release toolchain found matching \(major).\(minor)")
+                throw ResolveError(reason: .noRelease, selector: selector)
             }
 
             return .stable(toolchain)
@@ -499,11 +498,8 @@ struct Install: SwiftlyCommand {
                 ) { snapshot in
                     snapshot.branch == branch
                 }
-            } catch let branchNotFoundErr as SwiftlyHTTPClient.SnapshotBranchNotFoundError {
-                throw SwiftlyError(
-                    message:
-                    "You have requested to install a snapshot toolchain from branch \(branchNotFoundErr.branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try again with a different branch."
-                )
+            } catch is SwiftlyHTTPClient.SnapshotBranchNotFoundError {
+                throw ResolveError(reason: .badSelector, selector: selector)
             } catch {
                 throw error
             }
@@ -511,12 +507,60 @@ struct Install: SwiftlyCommand {
             let firstSnapshot = snapshots.first
 
             guard let firstSnapshot else {
-                throw SwiftlyError(message: "No snapshot toolchain found for branch \(branch)")
+                throw ResolveError(reason: .noRelease, selector: selector)
             }
 
             return .snapshot(firstSnapshot)
         case .xcode:
             return .xcode
+        }
+    }
+}
+
+struct ResolveError: LocalizedError, CustomStringConvertible {
+    enum Reason {
+        case badSelector
+        case noRelease
+    }
+
+    init(reason: Reason, selector: ToolchainSelector) {
+        self.reason = reason
+        self.requestedSelector = selector
+    }
+
+    let reason: Reason
+    let requestedSelector: ToolchainSelector
+
+    public var errorDescription: String { self.message }
+    public var description: String { self.message }
+
+    public var message: String {
+        switch self.reason {
+        case .badSelector:
+            switch self.requestedSelector {
+            case .latest:
+                fatalError("Unhandled 'latest' selector resolution error")
+            case .stable:
+                return "Need to provide at least major and minor version when installing a release toolchain."
+            case let .snapshot(branch, _):
+                return "You have requested to install a snapshot toolchain from \(branch). It cannot be found on swift.org. Note that snapshots are only available from the current `main` release and the latest x.y (major.minor) release. Try againt with a different branch."
+            case .xcode:
+                fatalError("Unhandled Xcode selector resolution error")
+            }
+        case .noRelease:
+            switch self.requestedSelector {
+            case .latest:
+                return "couldn't get latest releases"
+            case let .stable(major, minor, _):
+                // Force unwrap on `minor` is safe because minor versions are
+                // required for a valid selector. If no minor is set on a stable
+                // release, we will take the `.badSelector` path.
+                return "No release toolchain found matching \(major).\(minor!)"
+            case let .snapshot(branch, _):
+                return "No snapshot toolchain found for branch \(branch)"
+            case .xcode:
+                fatalError("Unhandled no release xcode toolchain error")
+            }
         }
     }
 }

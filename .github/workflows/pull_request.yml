@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ["ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39"]
+        container: ["ubuntu:22.04", "ubuntu:24.04", "redhat/ubi9", "debian:12", "fedora:39", "fedora:41", "ubuntu:26.04", "debian:13"]
     container:
       image: ${{ matrix.container }}
     steps:
@@ -63,7 +63,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ["swiftlang/swift:nightly-6.3-fedora41", "swiftlang/swift:nightly-6.3-resolute", "swiftlang/swift:nightly-6.3-trixie"]
+        #container: ["swiftlang/swift:nightly-6.3-trixie"]
+        container: []
     container:
       image: ${{ matrix.container }}
     steps:

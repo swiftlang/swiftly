@@ -316,7 +316,7 @@ public struct Linux: Platform {
         }
 
         if requireSignatureValidation {
-            var gpgIsMissing = false
+            let gpgIsMissing: Bool
             do {
                 let result = try await run(
                     .name("gpg"),

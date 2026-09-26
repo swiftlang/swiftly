@@ -316,13 +316,19 @@ public struct Linux: Platform {
         }
 
         if requireSignatureValidation {
-            let result = try await run(
-                .name("gpg"),
-                arguments: ["--version"],
-                output: .discarded
-            )
+            let gpgIsMissing: Bool
+            do {
+                let result = try await run(
+                    .name("gpg"),
+                    arguments: ["--version"],
+                    output: .discarded
+                )
+                gpgIsMissing = !result.terminationStatus.isSuccess
+            } catch let error as SubprocessError where error.code == .executableNotFound {
+                gpgIsMissing = true
+            }
 
-            if !result.terminationStatus.isSuccess {
+            if gpgIsMissing {
                 var msg = "gpg is not installed. "
                 if let manager {
                     msg += """

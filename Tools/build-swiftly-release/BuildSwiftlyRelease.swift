@@ -188,7 +188,10 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
             throw Error(message: "Unable to detect swift version")
         }
 
-        let swiftVersion = swiftVerMatch.output.1
+        var swiftVersion = swiftVerMatch.output.1
+        if swiftVersion.filter { $0 == "." }.count < 2 {
+            swiftVersion = "\(swiftVersion).0"
+        }
         guard let swiftRelease = (try await httpExecutor.getReleaseToolchains()).first(where: { $0.name == swiftVersion }) else {
             throw Error(message: "Unable to find swift release using swift.org API: \(swiftVersion)")
         }
@@ -311,19 +314,12 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         try await sys.swift().package().clean().runEcho()
 
-        for arch in ["x86_64", "arm64"] {
-            try await sys.swift().build(.product("swiftly"), .configuration("release"), .arch("\(arch)")).runEcho()
-            try await sys.strip(name: FilePath(".build") / "\(arch)-apple-macosx/release/swiftly").runEcho()
-        }
+        // Build a universal binary
+        try await sys.swift().build(.product("swiftly"), .configuration("release"), .arch("x86_64"), .arch("arm64")).runEcho()
+        try await sys.strip(name: FilePath(".build/out/Products/Release/swiftly")).runEcho()
 
         let swiftlyBinDir = fs.cwd / ".build/release/.swiftly/bin"
         try? await fs.mkdir(.parents, atPath: swiftlyBinDir)
-
-        try await sys.lipo(
-            input_file: ".build/x86_64-apple-macosx/release/swiftly", ".build/arm64-apple-macosx/release/swiftly"
-        )
-        .create(.output(swiftlyBinDir / "swiftly"))
-        .runEcho()
 
         let swiftlyLicenseDir = fs.cwd / ".build/release/.swiftly/license"
         try? await fs.mkdir(.parents, atPath: swiftlyLicenseDir)
@@ -376,20 +372,9 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         print(pkgFile)
 
         if self.test {
-            for arch in ["x86_64", "arm64"] {
-                try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("\(arch)")).runEcho()
-                try await sys.strip(name: ".build" / "\(arch)-apple-macosx/release/swiftly").runEcho()
-            }
-
+            try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("x86_64"), .arch("arm64")).runEcho()
             let testArchive = releaseDir / "test-swiftly-macos.tar.gz"
-
-            try await sys.lipo(
-                input_file: ".build/x86_64-apple-macosx/debug/test-swiftly", ".build/arm64-apple-macosx/debug/test-swiftly"
-            )
-            .create(.output(swiftlyBinDir / "swiftly"))
-            .runEcho()
-
-            try await sys.tar(.directory(".build/x86_64-apple-macosx/debug")).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).runEcho()
+            try await sys.tar(.directory(".build/out/Products/Debug")).create(.compressed, .archive(testArchive), files: ["test-swiftly"]).runEcho()
 
             print(testArchive)
         }

@@ -159,6 +159,12 @@ struct Install: SwiftlyCommand {
             let swiftlyBinDirContents =
                 (try? await fs.ls(atPath: swiftlyBinDir)) ?? [String]()
             let toolchainBinDir = try await Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
+            guard try await fs.exists(atPath: toolchainBinDir) else {
+                throw SwiftlyError(
+                    message:
+                    "Toolchain \(version) could not be located in \(toolchainBinDir). You can try `swiftly install \(version.name)` to install it again."
+                )
+            }
             let toolchainBinDirContents = try await fs.ls(atPath: toolchainBinDir)
 
             var existingProxies: [String] = []
@@ -250,18 +256,24 @@ struct Install: SwiftlyCommand {
         assumeYes: Bool,
         progressFile: FilePath? = nil
     ) async throws -> (postInstall: String?, pathChanged: Bool) {
-        guard !config.installedToolchains.contains(version) else {
-            let installInfo = InstallInfo(
-                version: version, alreadyInstalled: true
-            )
-            let pathChanged = if useInstalledToolchain {
-                try await Use.execute(ctx, version, globalDefault: false, verbose: verbose, &config)
-            } else {
-                false
+        if config.installedToolchains.contains(version) {
+            let toolchainBinDir = try await Swiftly.currentPlatform.findToolchainBinDir(ctx, version)
+
+            if try await fs.exists(atPath: toolchainBinDir) {
+                let installInfo = InstallInfo(
+                    version: version, alreadyInstalled: true
+                )
+                let pathChanged = if useInstalledToolchain {
+                    try await Use.execute(ctx, version, globalDefault: false, verbose: verbose, &config)
+                } else {
+                    false
+                }
+
+                try await ctx.output(installInfo)
+                return (nil, pathChanged)
             }
 
-            try await ctx.output(installInfo)
-            return (nil, pathChanged)
+            await ctx.message("Toolchain \(version) could not be located in \(toolchainBinDir).")
         }
 
         // Ensure the system is set up correctly before downloading it. Problems that prevent installation

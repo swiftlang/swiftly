@@ -20,42 +20,42 @@ struct Update: SwiftlyCommand {
         patch version for that major.minor version. If the currently in-use toolchain is a \
         snapshot, then it will be updated to the latest snapshot for that development branch.
 
-            $ swiftly update
+            swiftly update
 
         The string "latest" can be provided to update the installed stable release toolchain \
         with the newest version to the latest available stable release. This may update the \
         toolchain to later major, minor, or patch versions.
 
-            $ swiftly update latest
+            swiftly update latest
 
         A specific stable release can be updated to the latest patch version for that release by \
         specifying the entire version:
 
-            $ swiftly update 5.6.0
+            swiftly update 5.6.0
 
         Omitting the patch in the specified version will update the latest installed toolchain for \
         the provided minor version to the latest available release for that minor version. For \
         example, the following will update the latest installed Swift 5.4 release toolchain to \
         the latest available Swift 5.4 release:
 
-            $ swiftly update 5.4
+            swiftly update 5.4
 
         Similarly, omitting the minor in the specified version will update the latest installed \
         toolchain for the provided major version to the latest available release for that major \
         version. Note that this may update the toolchain to a later minor version.
 
-            $ swiftly update 5
+            swiftly update 5
 
         The latest snapshot toolchain for a given development branch can be updated to \
         the latest available snapshot for that branch by specifying just the branch:
 
-            $ swiftly update 5.7-snapshot
-            $ swiftly update main-snapshot
+            swiftly update 5.7-snapshot
+            swiftly update main-snapshot
 
         A specific snapshot toolchain can be updated by including the date:
 
-            $ swiftly update 5.9-snapshot-2023-09-20
-            $ swiftly update main-snapshot-2023-09-20
+            swiftly update 5.9-snapshot-2023-09-20
+            swiftly update main-snapshot-2023-09-20
         """
     ))
     var toolchain: String?

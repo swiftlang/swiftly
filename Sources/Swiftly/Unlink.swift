@@ -14,7 +14,7 @@ struct Unlink: SwiftlyCommand {
 
         Unlinks swiftly until swiftly is linked again with:
 
-            $ swiftly link
+            swiftly link
         """
     ))
     var toolchainSelector: String?

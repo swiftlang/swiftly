@@ -22,14 +22,14 @@ import Testing
 
         try await SwiftlyTests.$ctx.withValue(ctx) {
             let envScript: FilePath? =
-                if shell.hasSuffix("bash") || shell.hasSuffix("zsh") {
-                    Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.sh"
-                } else if shell.hasSuffix("fish") {
+                if shell.hasSuffix("fish") {
                     Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.fish"
                 } else if shell.hasSuffix("nu") {
                     Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.nu"
                 } else if shell.hasSuffix("murex") {
                     Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.mx"
+                } else {
+                    Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.sh"
                 }
 
             if let envScript {

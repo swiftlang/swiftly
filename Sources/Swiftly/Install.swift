@@ -273,7 +273,9 @@ struct Install: SwiftlyCommand {
                 return (nil, pathChanged)
             }
 
-            await ctx.message("Toolchain \(version) could not be located in \(toolchainBinDir).")
+            await ctx.message(
+                "Toolchain \(version) can no longer be located in \(toolchainBinDir). You can try `swiftly uninstall \(version.name); swiftly install \(version.name)` to reinstall it."
+            )
         }
 
         // Ensure the system is set up correctly before downloading it. Problems that prevent installation

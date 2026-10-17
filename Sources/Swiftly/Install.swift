@@ -162,7 +162,7 @@ struct Install: SwiftlyCommand {
             guard try await fs.exists(atPath: toolchainBinDir) else {
                 throw SwiftlyError(
                     message:
-                    "Toolchain \(version) could not be located in \(toolchainBinDir). You can try `swiftly install \(version.name)` to install it again."
+                    "Toolchain \(version) could not be located in \(toolchainBinDir). You can try `swiftly uninstall \(version)` to uninstall it and then `swiftly install \(version)` to install it again."
                 )
             }
             let toolchainBinDirContents = try await fs.ls(atPath: toolchainBinDir)

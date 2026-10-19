@@ -244,6 +244,16 @@ import Testing
         )
     }
 
+    /// Tests that the `use` command reports a toolchain that is installed according to the config, but missing from disk.
+    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(toolchains: [.newStable])) func useToolchainMissingFromDisk() async throws {
+        try "swiftly binary".write(to: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx) / "swiftly", atomically: true)
+        try await fs.remove(atPath: Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable))
+
+        await #expect(throws: SwiftlyError.self) {
+            try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.newStable.name])
+        }
+    }
+
     /// Tests that the `use` command works with all the installed toolchains in this test harness.
     @Test(.mockedSwiftlyVersion(), .mockHomeToolchains()) func useAll() async throws {
         let config = try await Config.load()

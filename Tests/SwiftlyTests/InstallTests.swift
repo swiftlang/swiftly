@@ -239,6 +239,26 @@ import Testing
         #expect(before == after)
     }
 
+    /// Tests that a toolchain that is installed according to the config, but missing from disk, is installed again.
+    @Test(.testHomeMockedToolchain()) func installToolchainMissingFromDisk() async throws {
+        try await SwiftlyTests.runCommand(Install.self, ["install", ToolchainVersion.newStable.name, "--post-install-file=\(fs.mktemp())"])
+
+        try await fs.remove(atPath: Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable))
+
+        let output = try await SwiftlyTests.runWithMockedIO(
+            Install.self, ["install", ToolchainVersion.newStable.name, "--post-install-file=\(fs.mktemp())", "--format", "json"], format: .json
+        )
+
+        let installInfo = try JSONDecoder().decode(
+            InstallInfo.self,
+            from: output[0].data(using: .utf8)!
+        )
+
+        #expect(installInfo.alreadyInstalled == false)
+
+        try await SwiftlyTests.validateInstalledToolchains([.newStable], description: "install a toolchain missing from disk")
+    }
+
     /// Verify that the installed toolchain will be used if no toolchains currently are installed.
     @Test(.testHomeMockedToolchain()) func installUsesFirstToolchain() async throws {
         let config = try await Config.load()

@@ -39,6 +39,7 @@ public struct Swiftly: SwiftlyCommand {
         subcommands: [
             Install.self,
             ListAvailable.self,
+            ListDependencies.self,
             Use.self,
             Uninstall.self,
             List.self,

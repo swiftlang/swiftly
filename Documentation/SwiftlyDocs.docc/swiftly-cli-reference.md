@@ -456,7 +456,7 @@ written to this file as commands that can be run after the installation.
 Perform swiftly initialization into your user account.
 
 ```
-swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip-install] [--quiet-shell-followup] [--assume-yes] [--verbose] [--version] [--help]
+swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip-install] [--quiet-shell-followup] [--verify] [--no-verify] [--assume-yes] [--verbose] [--version] [--help]
 ```
 
 **--no-modify-profile:**
@@ -482,6 +482,16 @@ swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip
 **--quiet-shell-followup:**
 
 *Quiet shell follow up commands*
+
+
+**--verify:**
+
+*Verify (or not) the PGP signature of the toolchain that is installed during initialization.*
+
+
+**--no-verify:**
+
+*Verify (or not) the PGP signature of the toolchain that is installed during initialization.*
 
 
 **--assume-yes:**

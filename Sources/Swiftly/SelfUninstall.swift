@@ -55,8 +55,17 @@ struct SelfUninstall: SwiftlyCommand {
         let commentLine = """
         # Added by swiftly
         """
+
         let fishSourceLine = """
         source "\(swiftlyHome / "env.fish")"
+        """
+        
+        let nuSourceLine = """
+        source "\(swiftlyHome / "env.nu")"
+        """
+
+        let murexSourceLine = """
+        source "\(swiftlyHome / "env.mx")"
         """
 
         let shSourceLine = """
@@ -68,13 +77,17 @@ struct SelfUninstall: SwiftlyCommand {
             userHome / ".bash_profile",
             userHome / ".bash_login",
             userHome / ".profile",
+            userHome / ".murex_profile",
         ]
 
-        // Add fish shell config path
+        // Add fish and nushell config paths
         if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"] {
             profilePaths.append(FilePath(xdgConfigHome) / "fish/conf.d/swiftly.fish")
+            profilePaths.append(FilePath(xdgConfigHome) / "nushell/autoload/swiftly.nu")
         } else {
             profilePaths.append(userHome / ".config/fish/conf.d/swiftly.fish")
+            profilePaths.append(userHome / ".config/nushell/autoload/swiftly.nu")
+            profilePaths.append(userHome / "Library/Application Support/nushell/autoload/swiftly.nu")
         }
 
         await ctx.print("Cleaning up shell profile files...")
@@ -84,16 +97,28 @@ struct SelfUninstall: SwiftlyCommand {
             if verbose {
                 await ctx.print("Checking \(path)...")
             }
-            let isFish = path.extension == "fish"
-            let sourceLine = isFish ? fishSourceLine : shSourceLine
+            let sourceLine = switch path.lastComponent {
+                case "swiftly.fish":   fishSourceLine
+                case "swiftly.nu":     nuSourceLine
+                case ".murex_profile": murexSourceLine 
+                default:               shSourceLine
+            }
             let contents = try String(contentsOf: path, encoding: .utf8)
             let linesToRemove = [sourceLine, commentLine]
             var updatedContents = contents
             for line in linesToRemove where contents.contains(line) {
                 updatedContents = updatedContents.replacingOccurrences(of: line, with: "")
-                try Data(updatedContents.utf8).write(to: path, options: [.atomic])
-                if verbose {
-                    await ctx.print("\(path) was updated to remove swiftly line: \(line)")
+                if (updatedContents.allSatisfy({ $0.isWhitespace })) {
+                    if verbose {
+                        await ctx.print("\(path) is now empty, removing it...")
+                    }
+                    try await fs.remove(atPath: path)
+                    break
+                } else {
+                    try Data(updatedContents.utf8).write(to: path, options: [.atomic])
+                    if verbose {
+                        await ctx.print("\(path) was updated to remove swiftly line: \(line)")
+                    }
                 }
             }
         }
@@ -147,7 +172,7 @@ struct SelfUninstall: SwiftlyCommand {
             }
             try await fs.remove(atPath: swiftlyHome / "config.json")
         }
-        // look for env.sh and env.fish
+        // look for env.sh, env.fish, env.nu and env.mx
         if let homeFiles = homeFiles, homeFiles.contains("env.sh") {
             if verbose {
                 await ctx.print("Removing swiftly env.sh file at \(swiftlyHome / "env.sh")...")
@@ -159,6 +184,18 @@ struct SelfUninstall: SwiftlyCommand {
                 await ctx.print("Removing swiftly env.fish file at \(swiftlyHome / "env.fish")...")
             }
             try await fs.remove(atPath: swiftlyHome / "env.fish")
+        }
+        if let homeFiles = homeFiles, homeFiles.contains("env.nu") {
+            if verbose {
+                await ctx.print("Removing swiftly env.nu file at \(swiftlyHome / "env.nu")...")
+            }
+            try await fs.remove(atPath: swiftlyHome / "env.nu")
+        }
+        if let homeFiles = homeFiles, homeFiles.contains("env.mx") {
+            if verbose {
+                await ctx.print("Removing swiftly env.mx file at \(swiftlyHome / "env.mx")...")
+            }
+            try await fs.remove(atPath: swiftlyHome / "env.mx")
         }
 
         // we should also check for share/doc/swiftly/license/LICENSE.txt

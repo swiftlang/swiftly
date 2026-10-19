@@ -14,7 +14,7 @@ struct Unlink: SwiftlyCommand {
 
         Unlinks swiftly until swiftly is linked again with:
 
-            $ swiftly link
+            swiftly link
         """
     ))
     var toolchainSelector: String?
@@ -45,7 +45,24 @@ struct Unlink: SwiftlyCommand {
 
         if pathChanged {
             await ctx.message(Messages.unlinkSuccess)
-            await ctx.message(Messages.refreshShell)
+
+            let shell =
+                if let s = ProcessInfo.processInfo.environment["SHELL"] {
+                    s
+                } else {
+                    try await Swiftly.currentPlatform.getShell()
+                }
+
+            // Fish and Nushell don't cache executable paths, so the refresh instruction is not applicable.
+            if !shell.hasSuffix("nu") && !shell.hasSuffix("fish") {
+                let refreshCommand =
+                    if shell.hasSuffix("murex") {
+                        "murex-update-exe-list"
+                    } else {
+                        "hash -r"
+                    }
+                await ctx.message(Messages.refreshShell(refreshCommand))
+            }
         }
     }
 

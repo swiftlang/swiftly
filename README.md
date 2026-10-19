@@ -49,7 +49,7 @@ For more detailed usage guides there is [documentation](https://swiftpackageinde
 
 ## Platform support
 
-swiftly is supported on Linux and macOS. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
+swiftly is supported on Linux and macOS, and can automatically configure shell profiles for Bash, Z shell, Fish, Murex, and Nushell. For more detailed information about swiftly's intended features and implementation, check out the [design document](DESIGN.md).
 
 ## Updating swiftly
 
@@ -70,9 +70,9 @@ NOTE: This will not uninstall any toolchains you have installed unless you do so
 
 1. (Optional) Remove all installed toolchains with `swiftly uninstall all`.
 
-2. Remove the swiftly home and bin directories. The default location might be `~/.swiftpm` or `.local/share/swiftly`. You can refer to the environment variables `SWIFTLY_HOME_DIR` and `SWIFTLY_BIN_DIR` in your associated profile file (`.zprofile`, `.bash_profile`, `.profile`, or `fish/conf.d`).
+2. Remove the swiftly home and bin directories. The default location might be `~/.swiftpm` or `.local/share/swiftly`. You can refer to the environment variables `SWIFTLY_HOME_DIR` and `SWIFTLY_BIN_DIR` in your associated profile file (`.zprofile`, `.bash_profile`, `.murex_profile`, `.profile`, `fish/conf.d` or `nushell/autoload`).
 
-3. Remove any sections added by swiftly in your `.zprofile`, `.bash_profile`, `.profile`, or `fish/conf.d` files. These sections might look like this:
+3. Remove any sections swiftly added to your aforementioned profile file. These sections might look like this:
 
    ```sh
    # Added by swiftly
@@ -100,9 +100,9 @@ Swiftly prior to verion 1.0.0 had a different installation and delivery mechanis
 1. Uninstall older swiftly
 2. Install the newest swiftly using the instructions above
 
-To uninstall the old swiftly, first locate the swiftly home directory, which is often in `~/.local/share/swiftly` and remove it. Then check your shell profile files (`~/.profile`, `~/.zprofile`, `~/.bash_profile`, or `~/.config/fish/conf.d`) and remove any entries that attempt to source the `env.sh` or `env.fish` file in the swiftly home directory. Finally, remove the symbolic links that swiftly placed in your `~/.local/bin` to toolchain binaries (e.g. swift, clang, lldb, etc.). These will likely be symbolic links to toolchain directories in the swiftly home directory. Remove them so that there aren't any orphaned path entries.
+To uninstall the old swiftly, first locate the swiftly home directory, which is often in `~/.local/share/swiftly` and remove it. Then check your shell profile files (`~/.profile`, `~/.zprofile`, `~/.bash_profile`, or `~/.config/fish/conf.d`) and remove any entries that attempt to source the `env.sh` or `env.fish` file in the swiftly home directory. Finally, remove the symbolic links that swiftly placed in your `~/.local/bin` to toolchain binaries (e.g. `swift`, `clang`, `lldb`, etc.). These will likely be symbolic links to toolchain directories in the swiftly home directory. Remove them so that there aren't any orphaned path entries.
 
-Restart your shell and/or terminal to get a fresh environment. You should be ready to installing the new swiftly.
+Restart your shell and/or terminal to get a fresh environment. You should be ready to install the new swiftly.
 
 ## FAQ
 

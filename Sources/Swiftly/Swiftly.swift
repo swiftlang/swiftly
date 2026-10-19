@@ -137,25 +137,21 @@ extension SwiftlyCommand {
 
     public static func handlePathChange(_ ctx: SwiftlyCoreContext) async throws {
         let shell =
-            if let s = ProcessInfo.processInfo.environment["SHELL"]
-        {
-            s
-        } else {
-            try await Swiftly.currentPlatform.getShell()
-        }
+            if let s = ProcessInfo.processInfo.environment["SHELL"] {
+                s
+            } else {
+                try await Swiftly.currentPlatform.getShell()
+            }
 
-        // Fish doesn't cache its path, so this instruction is not necessary.
-        if !shell.hasSuffix("fish") {
-            await ctx.message(
-                """
-                NOTE: Swiftly has updated some elements in your path and your shell may not yet be
-                aware of the changes. You can update your shell's environment by running
-
-                hash -r
-
-                or restarting your shell.
-
-                """)
+        // Fish and Nushell don't cache executable paths, so this instruction is not necessary.
+        if !shell.hasSuffix("fish") && !shell.hasSuffix("nu") {
+            let refreshCommand =
+                if shell.hasSuffix("murex") {
+                    "murex-update-exe-list"
+                } else {
+                    "hash -r"
+                }
+            await ctx.message(Messages.refreshShell(refreshCommand))
         }
     }
 }

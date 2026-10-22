@@ -455,7 +455,7 @@ public struct Linux: Platform {
 
             let config = Configuration(
                 executable: .path(tmpDir / "swiftly"),
-                arguments: ["init"]
+                arguments: ["init", "--skip-install", "--no-modify-profile"]
             )
 
             let result = try await run(config, output: .currentStandardOutput, error: .currentStandardError)

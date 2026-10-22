@@ -177,7 +177,8 @@ public struct MacOS: Platform {
         }
 
         let config = Configuration(
-            executable: .path(FilePath((userHomeDir / ".swiftly/bin/swiftly").string)), arguments: ["init"]
+            executable: .path(FilePath((userHomeDir / ".swiftly/bin/swiftly").string)),
+            arguments: ["init", "--skip-install", "--no-modify-profile"]
         )
         let result = try await run(config, input: .currentStandardInput, output: .currentStandardOutput, error: .currentStandardError)
         if !result.terminationStatus.isSuccess {

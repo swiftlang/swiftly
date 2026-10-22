@@ -39,8 +39,10 @@ struct ListAvailable: SwiftlyCommand {
     @Option(name: .long, help: "Output format (text, json)")
     var format: SwiftlyCore.OutputFormat = .text
 
+    @OptionGroup var root: GlobalOptions
+
     mutating func run() async throws {
-        try await self.run(Swiftly.createDefaultContext(format: self.format))
+        try await self.run(Swiftly.createDefaultContext(format: self.format, options: self.root))
     }
 
     mutating func run(_ ctx: SwiftlyCoreContext) async throws {

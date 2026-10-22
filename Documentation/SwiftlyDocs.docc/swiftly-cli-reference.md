@@ -23,7 +23,7 @@ swiftly [--version] [--help]
 Install a new toolchain.
 
 ```
-swiftly install [<version>] [--use] [--verify] [--no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--format=<format>] [--assume-yes] [--verbose] [--version] [--help]
+swiftly install [<version>] [--use] [--verify] [--no-verify] [--post-install-file=<post-install-file>] [--progress-file=<progress-file>] [--format=<format>] [--assume-yes] [--verbose] [--skip-updates-check] [--version] [--help]
 ```
 
 **version:**
@@ -109,6 +109,11 @@ The file must be writable, else an error will be thrown.
 *Enable verbose reporting from swiftly*
 
 
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
+
+
 **--version:**
 
 *Show the version.*
@@ -126,7 +131,7 @@ The file must be writable, else an error will be thrown.
 List toolchains available for install.
 
 ```
-swiftly list-available [<toolchain-selector>] [--format=<format>] [--version] [--help]
+swiftly list-available [<toolchain-selector>] [--format=<format>] [--assume-yes] [--verbose] [--skip-updates-check] [--version] [--help]
 ```
 
 **toolchain-selector:**
@@ -159,6 +164,21 @@ Note that listing available snapshots before the latest release (major and minor
 *Output format (text, json)*
 
 
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
+
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
+
+
 **--version:**
 
 *Show the version.*
@@ -176,7 +196,7 @@ Note that listing available snapshots before the latest release (major and minor
 Set the in-use or default toolchain. If no toolchain is provided, print the currently in-use toolchain, if any.
 
 ```
-swiftly use [--print-location] [--global-default] [--format=<format>] [--assume-yes] [--verbose] [<toolchain>] [--version] [--help]
+swiftly use [--print-location] [--global-default] [--format=<format>] [--assume-yes] [--verbose] [--skip-updates-check] [<toolchain>] [--version] [--help]
 ```
 
 **--print-location:**
@@ -202,6 +222,11 @@ swiftly use [--print-location] [--global-default] [--format=<format>] [--assume-
 **--verbose:**
 
 *Enable verbose reporting from swiftly*
+
+
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
 
 
 **toolchain:**
@@ -257,7 +282,7 @@ macOS ONLY: There is a special selector for swiftly to use your Xcode toolchain.
 Remove an installed toolchain.
 
 ```
-swiftly uninstall <toolchains>... [--assume-yes] [--verbose] [--version] [--help]
+swiftly uninstall <toolchains>... [--assume-yes] [--verbose] [--skip-updates-check] [--version] [--help]
 ```
 
 **toolchains:**
@@ -305,6 +330,11 @@ Finally, all installed toolchains can be uninstalled by specifying 'all':
 *Enable verbose reporting from swiftly*
 
 
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
+
+
 **--version:**
 
 *Show the version.*
@@ -322,7 +352,7 @@ Finally, all installed toolchains can be uninstalled by specifying 'all':
 List installed toolchains.
 
 ```
-swiftly list [<toolchain-selector>] [--format=<format>] [--version] [--help]
+swiftly list [<toolchain-selector>] [--format=<format>] [--assume-yes] [--verbose] [--skip-updates-check] [--version] [--help]
 ```
 
 **toolchain-selector:**
@@ -353,6 +383,21 @@ The installed snapshots for a given development branch can be listed by specifyi
 *Output format (text, json)*
 
 
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
+
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
+
+
 **--version:**
 
 *Show the version.*
@@ -370,7 +415,7 @@ The installed snapshots for a given development branch can be listed by specifyi
 Update an installed toolchain to a newer version.
 
 ```
-swiftly update [<toolchain>] [--assume-yes] [--verbose] [--verify] [--no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
+swiftly update [<toolchain>] [--assume-yes] [--verbose] [--skip-updates-check] [--verify] [--no-verify] [--post-install-file=<post-install-file>] [--version] [--help]
 ```
 
 **toolchain:**
@@ -421,6 +466,11 @@ A specific snapshot toolchain can be updated by including the date:
 *Enable verbose reporting from swiftly*
 
 
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
+
+
 **--verify:**
 
 *Verify (or not) the toolchain's PGP signature before proceeding with installation.*
@@ -456,7 +506,7 @@ written to this file as commands that can be run after the installation.
 Perform swiftly initialization into your user account.
 
 ```
-swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip-install] [--quiet-shell-followup] [--assume-yes] [--verbose] [--version] [--help]
+swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip-install] [--quiet-shell-followup] [--assume-yes] [--verbose] [--skip-updates-check] [--version] [--help]
 ```
 
 **--no-modify-profile:**
@@ -494,6 +544,11 @@ swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip
 *Enable verbose reporting from swiftly*
 
 
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
+
+
 **--version:**
 
 *Show the version.*
@@ -511,7 +566,7 @@ swiftly init [--no-modify-profile] [--overwrite] [--platform=<platform>] [--skip
 Update the version of swiftly itself.
 
 ```
-swiftly self-update [--assume-yes] [--verbose]  [--version] [--help]
+swiftly self-update [--assume-yes] [--verbose] [--skip-updates-check]  [--version] [--help]
 ```
 
 **--assume-yes:**
@@ -522,6 +577,11 @@ swiftly self-update [--assume-yes] [--verbose]  [--version] [--help]
 **--verbose:**
 
 *Enable verbose reporting from swiftly*
+
+
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
 
 
 **--version:**
@@ -541,8 +601,23 @@ swiftly self-update [--assume-yes] [--verbose]  [--version] [--help]
 Run a command while proxying to the selected toolchain commands.
 
 ```
-swiftly run <command>... [--version] [--help]
+swiftly run [--assume-yes] [--verbose] [--skip-updates-check] <command>... [--version] [--help]
 ```
+
+**--assume-yes:**
+
+*Disable confirmation prompts by assuming 'yes'*
+
+
+**--verbose:**
+
+*Enable verbose reporting from swiftly*
+
+
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
+
 
 **command:**
 
@@ -597,7 +672,7 @@ The script will receive the argument '+abcde' followed by '+xyz'.
 Uninstall swiftly itself.
 
 ```
-swiftly self-uninstall [--assume-yes] [--verbose] [--version] [--help]
+swiftly self-uninstall [--assume-yes] [--verbose] [--skip-updates-check] [--version] [--help]
 ```
 
 **--assume-yes:**
@@ -608,6 +683,11 @@ swiftly self-uninstall [--assume-yes] [--verbose] [--version] [--help]
 **--verbose:**
 
 *Enable verbose reporting from swiftly*
+
+
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
 
 
 **--version:**
@@ -627,7 +707,7 @@ swiftly self-uninstall [--assume-yes] [--verbose] [--version] [--help]
 Link swiftly so it resumes management of the active toolchain.
 
 ```
-swiftly link [<toolchain-selector>] [--assume-yes] [--verbose] [--version] [--help]
+swiftly link [<toolchain-selector>] [--assume-yes] [--verbose] [--skip-updates-check] [--version] [--help]
 ```
 
 **toolchain-selector:**
@@ -648,6 +728,11 @@ Links swiftly if it has been disabled.
 *Enable verbose reporting from swiftly*
 
 
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
+
+
 **--version:**
 
 *Show the version.*
@@ -665,7 +750,7 @@ Links swiftly if it has been disabled.
 Unlinks swiftly so it no longer manages the active toolchain.
 
 ```
-swiftly unlink [<toolchain-selector>] [--assume-yes] [--verbose] [--version] [--help]
+swiftly unlink [<toolchain-selector>] [--assume-yes] [--verbose] [--skip-updates-check] [--version] [--help]
 ```
 
 **toolchain-selector:**
@@ -686,6 +771,11 @@ Unlinks swiftly until swiftly is linked again with:
 **--verbose:**
 
 *Enable verbose reporting from swiftly*
+
+
+**--skip-updates-check:**
+
+*Skip checking for updates to swiftly when running a command*
 
 
 **--version:**

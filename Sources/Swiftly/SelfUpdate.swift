@@ -53,11 +53,16 @@ struct SelfUpdate: SwiftlyCommand {
         if let version {
 #if os(macOS)
             downloadURL = URL(string: "https://download.swift.org/swiftly/darwin/swiftly-\(version).pkg")
-#elseif os(Linux)
+#elseif os(Linux) || os(FreeBSD)
+#if os(FreeBSD)
+            let swiftlyOSName = "freebsd"
+#else
+            let swiftlyOSName = "linux"
+#endif
 #if arch(x86_64)
-            downloadURL = URL(string: "https://download.swift.org/swiftly/linux/swiftly-\(version)-x86_64.tar.gz")
+            downloadURL = URL(string: "https://download.swift.org/swiftly/\(swiftlyOSName)/swiftly-\(version)-x86_64.tar.gz")
 #elseif arch(arm64)
-            downloadURL = URL(string: "https://download.swift.org/swiftly/linux/swiftly-\(version)-aarch64.tar.gz")
+            downloadURL = URL(string: "https://download.swift.org/swiftly/\(swiftlyOSName)/swiftly-\(version)-aarch64.tar.gz")
 #else
             fatalError("Unsupported architecture")
 #endif
@@ -86,7 +91,10 @@ struct SelfUpdate: SwiftlyCommand {
                 guard platform.isDarwin else {
                     continue
                 }
-#elseif os(Linux)
+#elseif os(Linux) || os(FreeBSD)
+                // The swift.org website API has no FreeBSD platform yet; FreeBSD
+                // toolchains/artifacts are tarball-based like Linux, so match the
+                // Linux artifact until a dedicated FreeBSD one is published.
                 guard platform.isLinux else {
                     continue
                 }

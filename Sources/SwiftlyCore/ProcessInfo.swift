@@ -22,7 +22,7 @@ public func isProcessRunning(pidString: String) throws -> Bool {
 }
 
 public func isProcessRunning(pid: Int32) throws -> Bool {
-#if os(macOS) || os(Linux)
+#if os(macOS) || os(Linux) || os(FreeBSD)
     let result = kill(pid, 0)
     if result == 0 {
         return true

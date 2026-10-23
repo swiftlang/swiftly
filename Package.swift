@@ -43,6 +43,7 @@ let package = Package(
                 .target(name: "SwiftlyCore"),
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
+                .target(name: "FreeBSDPlatform", condition: .when(platforms: [.custom("freebsd")])),
                 .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
                 .product(name: "SystemPackage", package: "swift-system"),
             ],
@@ -55,6 +56,7 @@ let package = Package(
                 .target(name: "SwiftlyCore"),
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
+                .target(name: "FreeBSDPlatform", condition: .when(platforms: [.custom("freebsd")])),
             ],
             swiftSettings: swiftSettings
         ),
@@ -138,6 +140,7 @@ let package = Package(
                 .target(name: "SwiftlyCore"),
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
+                .target(name: "FreeBSDPlatform", condition: .when(platforms: [.custom("freebsd")])),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "_NIOFileSystem", package: "swift-nio"),
             ],
@@ -163,6 +166,18 @@ let package = Package(
                 .product(name: "SystemPackage", package: "swift-system"),
             ],
             swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "FreeBSDPlatform",
+            dependencies: [
+                "SwiftlyCore",
+                "CLibArchive",
+                .product(name: "SystemPackage", package: "swift-system"),
+            ],
+            swiftSettings: swiftSettings,
+            linkerSettings: [
+                .linkedLibrary("z"),
+            ]
         ),
         .systemLibrary(
             name: "CLibArchive",

@@ -97,7 +97,7 @@ extension Data {
 
 extension SwiftlyCommand {
     @discardableResult
-    public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext) async throws -> () -> Void {
+    public mutating func validateSwiftly(_ ctx: SwiftlyCoreContext, checkForUpdates: Bool = true) async throws -> () -> Void {
         for requiredDir in Swiftly.requiredDirectories(ctx) {
             guard try await fs.exists(atPath: requiredDir) else {
                 do {
@@ -113,7 +113,7 @@ extension SwiftlyCommand {
         _ = try await Config.load(ctx)
 
         let shouldUpdateSwiftly: Bool
-        if let swiftlyRelease = try? await ctx.httpClient.getCurrentSwiftlyRelease() {
+        if checkForUpdates, let swiftlyRelease = try? await ctx.httpClient.getCurrentSwiftlyRelease() {
             shouldUpdateSwiftly = try swiftlyRelease.swiftlyVersion > SwiftlyCore.version
         } else {
             shouldUpdateSwiftly = false

@@ -123,7 +123,14 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
                    let host = url.host,
                    let port = url.port
                 {
-                    return .server(host: host, port: port)
+                    let authorization: HTTPClient.Authorization? =
+                        if let user = url.user(percentEncoded: false) {
+                            .basic(
+                                username: user,
+                                password: url.password(percentEncoded: false) ?? ""
+                            )
+                        } else { nil }
+                    return .server(host: host, port: port, authorization: authorization)
                 }
             }
             return nil

@@ -6,6 +6,25 @@ let swiftSettings = [
     SwiftSetting.enableUpcomingFeature("MemberImportVisibility"),
 ]
 
+// The OpenAPI clients talk to the network through WinHTTP on Windows and AsyncHTTPClient elsewhere.
+// swift-nio-ssl (pulled in by AsyncHTTPClient) doesn't build on Windows, and openapi-winhttp-transport
+// needs tools 6.4, so each one is only declared on the platforms that use it.
+#if os(Windows)
+let httpTransportPackages: [Package.Dependency] = [
+    .package(url: "https://github.com/compnerd/openapi-winhttp-transport", from: "1.0.0"),
+]
+let httpTransportDependencies: [Target.Dependency] = [
+    .product(name: "OpenAPIWinHTTPTransport", package: "openapi-winhttp-transport"),
+]
+#else
+let httpTransportPackages: [Package.Dependency] = []
+let httpTransportDependencies: [Target.Dependency] = [
+    .product(name: "AsyncHTTPClient", package: "async-http-client"),
+    .product(name: "NIOFoundationCompat", package: "swift-nio"),
+    .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
+]
+#endif
+
 let package = Package(
     name: "swiftly",
     platforms: [
@@ -34,7 +53,7 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-subprocess", exact: "1.0.0", traits: []),
         // This dependency provides the correct version of the formatter so that you can run `swift run swiftformat Package.swift Plugins/ Sources/ Tests/`
         .package(url: "https://github.com/nicklockwood/SwiftFormat", exact: "0.49.18"),
-    ],
+    ] + httpTransportPackages,
     targets: [
         .executableTarget(
             name: "Swiftly",
@@ -63,13 +82,10 @@ let package = Package(
             dependencies: [
                 "SwiftlyDownloadAPI",
                 "SwiftlyWebsiteAPI",
-                .product(name: "AsyncHTTPClient", package: "async-http-client"),
-                .product(name: "NIOFoundationCompat", package: "swift-nio"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
-                .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
                 .product(name: "SystemPackage", package: "swift-system"),
                 .product(name: "Subprocess", package: "swift-subprocess"),
-            ],
+            ] + httpTransportDependencies,
             swiftSettings: swiftSettings,
             plugins: ["GenerateCommandModels"]
         ),

@@ -295,5 +295,16 @@ extension Platform {
         return ["/usr", "/opt", "/bin"].contains { path.starts(with: $0) }
     }
 
+#elseif os(Windows)
+
+    // On Windows, swiftly's own installer puts swiftly.exe in place, so there's nothing to move.
+    public func installSwiftlyBin(_: SwiftlyCoreContext) async throws {}
+
+    // Proxies on Windows are stub executables rather than links to swiftly, so there's no
+    // swiftly binary for them to point at yet.
+    public func findSwiftlyBin(_: SwiftlyCoreContext) async throws -> FilePath? {
+        nil
+    }
+
 #endif
 }

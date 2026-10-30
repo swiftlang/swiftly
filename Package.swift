@@ -62,6 +62,7 @@ let package = Package(
                 .target(name: "SwiftlyCore"),
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
+                .target(name: "WindowsPlatform", condition: .when(platforms: [.windows])),
                 .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core"),
                 .product(name: "SystemPackage", package: "swift-system"),
             ],
@@ -176,6 +177,15 @@ let package = Package(
             name: "MacOSPlatform",
             dependencies: [
                 "SwiftlyCore",
+                .product(name: "SystemPackage", package: "swift-system"),
+            ],
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "WindowsPlatform",
+            dependencies: [
+                "SwiftlyCore",
+                .product(name: "Subprocess", package: "swift-subprocess"),
                 .product(name: "SystemPackage", package: "swift-system"),
             ],
             swiftSettings: swiftSettings

@@ -243,6 +243,8 @@ struct Init: SwiftlyCommand {
                 msg += "\n"
 #endif
             }
+#if !os(Windows)
+            // Windows has no shell profile; swiftly's installer adds the bin directory to the user's Path.
             if !noModifyProfile {
                 msg += """
 
@@ -252,6 +254,7 @@ struct Init: SwiftlyCommand {
 
                 """
             }
+#endif
 
             await ctx.message(msg)
 
@@ -332,6 +335,7 @@ struct Init: SwiftlyCommand {
             try Data(env.utf8).write(to: envFile, options: .atomic)
         }
 
+#if !os(Windows)
         if !noModifyProfile {
             await ctx.message("Updating profile...")
 
@@ -377,6 +381,7 @@ struct Init: SwiftlyCommand {
                 try Data(sourceLine.utf8).append(to: profileHome)
             }
         }
+#endif
 
         var postInstall: String?
         var pathChanged = false
@@ -413,6 +418,7 @@ struct Init: SwiftlyCommand {
             }
         }
 
+#if !os(Windows)
         if !quietShellFollowup {
             await ctx.message("""
             To begin using installed swiftly from your current shell, first run the following command:
@@ -420,6 +426,7 @@ struct Init: SwiftlyCommand {
 
             """)
         }
+#endif
 
         if pathChanged && !quietShellFollowup {
             try await Self.handlePathChange(ctx)

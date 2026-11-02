@@ -53,7 +53,7 @@ swiftly is supported on Linux and macOS. For more detailed information about swi
 
 ## Updating swiftly
 
-This command checks to see if there are new versions of swiftly itself and upgrades to them if possible.
+This command checks to see if there are new versions of swiftly itself and upgrades to them if possible. Swiftly periodically checks for available updates during normal use.
 
 `swiftly self-update`
 

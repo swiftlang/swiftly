@@ -161,6 +161,14 @@ struct SelfUninstall: SwiftlyCommand {
             try await fs.remove(atPath: swiftlyHome / "env.fish")
         }
 
+        if let homeFiles = homeFiles, homeFiles.contains(UpdateChecker.timestampFileName) {
+            let path = swiftlyHome / UpdateChecker.timestampFileName
+            if verbose {
+                await ctx.print("Removing swiftly update check timestamp at \(path)...")
+            }
+            try await fs.remove(atPath: path)
+        }
+
         // we should also check for share/doc/swiftly/license/LICENSE.txt
         let licensePath = swiftlyHome / "share/doc/swiftly/license/LICENSE.txt"
         if

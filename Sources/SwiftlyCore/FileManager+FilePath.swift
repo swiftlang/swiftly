@@ -52,6 +52,14 @@ public enum FileSystem {
         return data
     }
 
+    public static func mtime(atPath: FilePath) async throws -> Date {
+        let attrs = try FileManager.default.attributes(atPath: atPath)
+        guard let mtime = attrs[.modificationDate] as? Date else {
+            throw SwiftlyError(message: "Could not get modification time for file at path \(atPath)")
+        }
+        return mtime
+    }
+
     public static func mktemp(ext: String? = nil) -> FilePath {
         FileManager.default.temporaryDir.appending("swiftly-\(UUID())\(ext ?? "")")
     }
@@ -142,6 +150,10 @@ extension FileManager {
 
     public func copyItem(atPath: FilePath, toPath: FilePath) throws {
         try Self.default.copyItem(atPath: atPath.string, toPath: toPath.string)
+    }
+
+    public func attributes(atPath: FilePath) throws -> [FileAttributeKey: Any] {
+        try Self.default.attributesOfItem(atPath: atPath.string)
     }
 
     public func deleteIfExists(atPath path: FilePath) throws {

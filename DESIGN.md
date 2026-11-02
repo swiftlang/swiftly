@@ -49,6 +49,8 @@ The swiftly binary itself is moved (or copied as a fallback) into the SWIFTLY_BI
 
 As part of swiftly's regular operations it can detect that the current configuration is out of date and error out. The `config.json` file contains a version at the moment it was created or last upgraded. In the case of an older version it will direct the user to run init to perform the upgrade. If a downgrade situation is detected then swiflty will fail with an error.
 
+Swiftly automatically checks if the current version is out of date once per hour by default. You can configure this frequency by setting the `updateCheck` key in `config.json`.
+
 There is also a self-update mechanism that will automate the delivery of the new swiftly binary, verifies it and runs the init subcommand to initiate the upgrade procedure. Note that the self-update will error out without performing any operations if swiftly is installed in the system, outside of the SWIFTLY_BIN_DIR (or platform default) and the user's home directory. In any case the self-update will exit successfully right away if it determines that the current swiftly is the latest version and report to the user that it is up-to-date.
 
 ## Linux
@@ -562,6 +564,7 @@ It also updates `config.json` to include this version as the currently selected 
   "installedToolchains": [
      <toolchain name>,
      <toolchain name>
-  ]
+  ],
+  "updateCheck": <one of: "never", "always", "default" (hourly) or "{"every": <seconds (int)>}">
 }
 ```

@@ -6,16 +6,75 @@ import SwiftlyCore
 ///
 /// TODO: implement cache
 public struct Config: Codable, Equatable, Sendable {
+    /// Describes how frequently `swiftly` should check for updates.
+    public enum UpdateCheckFrequency: Codable, Equatable, Sendable {
+        // By default, only check once per hour.
+        static let `default` = Self.timeBased(.seconds(60 * 60))
+
+        case never
+        case timeBased(Duration)
+        case always
+
+        private struct TimeBasedEntry: Codable {
+            var every: Int
+        }
+
+        public init(from decoder: any Decoder) throws {
+            if let value = try? decoder.singleValueContainer().decode(String.self) {
+                switch value {
+                case "never": self = .never
+                case "always": self = .always
+                case "default": self = .default
+                default: throw SwiftlyError(message: "Unrecognized update check frequency: \(value)")
+                }
+                return
+            }
+
+            let entry = try TimeBasedEntry(from: decoder)
+            guard entry.every > 0 else {
+                throw SwiftlyError(message: "Update check interval must be a positive, non-zero number of seconds")
+            }
+            self = .timeBased(.seconds(entry.every))
+        }
+
+        public func encode(to encoder: any Encoder) throws {
+            if self == .default {
+                var container = encoder.singleValueContainer()
+                try container.encode("default")
+                return
+            }
+
+            switch self {
+            case .never:
+                var container = encoder.singleValueContainer()
+                try container.encode("never")
+            case .always:
+                var container = encoder.singleValueContainer()
+                try container.encode("always")
+            case .timeBased(let duration):
+                try TimeBasedEntry(every: Int(duration.components.seconds)).encode(to: encoder)
+            }
+        }
+    }
+
     public var inUse: ToolchainVersion?
     public var installedToolchains: Set<ToolchainVersion>
     public var platform: PlatformDefinition
     public var version: SwiftlyVersion
+    public var updateCheck: UpdateCheckFrequency?
 
-    init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition, version: SwiftlyVersion) {
+    init(
+        inUse: ToolchainVersion?,
+        installedToolchains: Set<ToolchainVersion>,
+        platform: PlatformDefinition,
+        version: SwiftlyVersion,
+        updateCheck: UpdateCheckFrequency
+    ) {
         self.inUse = inUse
         self.installedToolchains = installedToolchains
         self.platform = platform
         self.version = version
+        self.updateCheck = updateCheck
     }
 
     private static func makeEncoder() -> JSONEncoder {

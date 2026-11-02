@@ -307,7 +307,13 @@ struct Init: SwiftlyCommand {
         // Force the configuration to be present. Generate it if it doesn't already exist or overwrite is set
         if overwrite || config == nil {
             let pd = try await Swiftly.currentPlatform.detectPlatform(ctx, disableConfirmation: assumeYes, platform: platform)
-            let c = Config(inUse: nil, installedToolchains: [], platform: pd, version: SwiftlyCore.version)
+            let c = Config(
+                inUse: nil,
+                installedToolchains: [],
+                platform: pd,
+                version: SwiftlyCore.version,
+                updateCheck: .default
+            )
 
             try c.save(ctx)
             config = c

@@ -228,7 +228,8 @@ public enum SwiftlyTests {
             inUse: nil,
             installedToolchains: [],
             platform: pd,
-            version: SwiftlyCore.version
+            version: SwiftlyCore.version,
+            updateCheck: .default
         )
     }
 

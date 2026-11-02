@@ -272,3 +272,50 @@ enum UpdateParameters {
         }
     }
 }
+
+struct UpdateChecker {
+    static let timestampFileName = ".lastUpdateCheckTimestamp"
+    var config: Config
+    var ctx: SwiftlyCoreContext
+
+    func shouldUpdate() async -> Bool {
+        switch config.updateCheck ?? .default {
+        case .never:
+            return false
+        case .always:
+            return (try? await checkForUpdate()) ?? false
+        case .timeBased(let duration):
+            guard await shouldCheck(interval: duration) else {
+                return false
+            }
+            let result = (try? await checkForUpdate()) ?? false
+
+            // `create` overwrites the file if it already exists.
+            try? await fs.create(file: timestampPath)
+            return result
+        }
+    }
+
+    private var timestampPath: FilePath {
+        Swiftly.currentPlatform.swiftlyHomeDir(ctx)
+            .appending(Self.timestampFileName)
+    }
+
+    private func shouldCheck(interval: Duration) async -> Bool {
+        guard let mtime = try? await fs.mtime(atPath: timestampPath) else {
+            return true
+        }
+        return mtime.distance(to: .now) > TimeInterval(interval)
+    }
+
+    private func checkForUpdate() async throws -> Bool {
+        let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
+        return try swiftlyRelease.swiftlyVersion > SwiftlyCore.version
+    }
+}
+
+extension TimeInterval {
+    init(_ duration: Duration) {
+        self = TimeInterval(duration.components.seconds) + (TimeInterval(duration.components.attoseconds) / 1E18)
+    }
+}

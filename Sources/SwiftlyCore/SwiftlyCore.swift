@@ -49,6 +49,9 @@ public struct SwiftlyCoreContext: Sendable {
     /// The format
     public var format: OutputFormat = .text
 
+    /// Current time
+    public var now: @Sendable () -> Date = { Date() }
+
     public init(format: SwiftlyCore.OutputFormat = .text) {
         self.httpClient = SwiftlyHTTPClient(httpRequestExecutor: HTTPRequestExecutorImpl())
         self.currentDirectory = fs.cwd

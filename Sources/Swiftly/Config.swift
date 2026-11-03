@@ -10,18 +10,35 @@ public struct Config: Codable, Equatable, Sendable {
     public var installedToolchains: Set<ToolchainVersion>
     public var platform: PlatformDefinition
     public var version: SwiftlyVersion
+    public var latestSwiftlyVersion: SwiftlyVersion?
+    public var lastSwiftlyVersionCheck: Date?
 
-    init(inUse: ToolchainVersion?, installedToolchains: Set<ToolchainVersion>, platform: PlatformDefinition, version: SwiftlyVersion) {
+    init(
+        inUse: ToolchainVersion?,
+        installedToolchains: Set<ToolchainVersion>,
+        platform: PlatformDefinition,
+        version: SwiftlyVersion,
+        latestSwiftlyVersion: SwiftlyVersion? = nil
+    ) {
         self.inUse = inUse
         self.installedToolchains = installedToolchains
         self.platform = platform
         self.version = version
+        self.latestSwiftlyVersion = latestSwiftlyVersion
+        self.lastSwiftlyVersionCheck = nil
     }
 
     private static func makeEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted]
+        encoder.dateEncodingStrategy = .iso8601
         return encoder
+    }
+
+    private static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
     }
 
     /// Read the config file from disk.
@@ -29,8 +46,7 @@ public struct Config: Codable, Equatable, Sendable {
         do {
             let configFile = Swiftly.currentPlatform.swiftlyConfigFile(ctx)
             let data = try await fs.cat(atPath: configFile)
-            let config = try JSONDecoder().decode(Config.self, from: data)
-
+            let config = try Self.makeDecoder().decode(Config.self, from: data)
             return config
         } catch {
             let msg = """
@@ -79,6 +95,28 @@ public struct Config: Codable, Equatable, Sendable {
         try f(&config)
         // only save the updates if the prior closure invocation succeeded
         try config.save(ctx)
+    }
+}
+
+extension Config {
+    // Deadline until next update check (1 day)
+    static let updateCheckInterval: TimeInterval = 24 * 60 * 60
+
+    /// Returns true when the Swiftly check is due
+    func isUpdateCheckDue(now: Date) -> Bool {
+        guard let lastCheck = self.lastSwiftlyVersionCheck else { return true }
+        return lastCheck.advanced(by: Self.updateCheckInterval) <= now
+    }
+
+    /// Update the newest recorded Swiftly version and check datetime
+    func updateSwiftlyVersionConfig(
+        _ ctx: SwiftlyCoreContext,
+        to latest: SwiftlyVersion,
+    ) async throws {
+        try await Config.update(ctx) { config in
+            config.lastSwiftlyVersionCheck = ctx.now()
+            config.latestSwiftlyVersion = latest
+        }
     }
 }
 

@@ -77,6 +77,8 @@ struct SelfUpdate: SwiftlyCommand {
         if downloadURL == nil {
             let swiftlyRelease = try await ctx.httpClient.getCurrentSwiftlyRelease()
 
+            try await Config.load(ctx).updateSwiftlyVersionConfig(ctx, to: swiftlyRelease.swiftlyVersion)
+
             guard try swiftlyRelease.swiftlyVersion > SwiftlyCore.version else {
                 await ctx.print("Already up to date.")
                 return SwiftlyCore.version

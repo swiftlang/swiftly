@@ -215,11 +215,46 @@ import Testing
         }
     }
 
+    @Test(.testHome()) func initEnvShIsPOSIXCompatible() async throws {
+        // GIVEN: a fresh account using the bash shell
+        try? await fs.remove(atPath: Swiftly.currentPlatform.swiftlyConfigFile(SwiftlyTests.ctx))
+        var ctx = SwiftlyTests.ctx
+        ctx.mockedShell = "/bin/bash"
+
+        try await SwiftlyTests.$ctx.withValue(ctx) {
+            // WHEN: swiftly init generates env.sh
+            try await SwiftlyTests.runCommand(Init.self, ["init", "--assume-yes", "--skip-install"])
+
+            let envScript = Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.sh"
+            let binDir = Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string
+
+            // AND: a POSIX shell sources it, as login shells do with ~/.profile
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/sh")
+            process.arguments = ["-c", ". \"$1\" && printf '%s' \"$PATH\"", "sh", envScript.string]
+            process.environment = ["PATH": "\(binDir):/usr/bin:\(binDir)2:\(binDir):/bin"]
+
+            let outputPipe = Pipe()
+            process.standardOutput = outputPipe
+            process.standardError = Pipe()
+
+            try process.run()
+            process.waitUntilExit()
+
+            let output = String(decoding: try outputPipe.fileHandleForReading.readToEnd() ?? Data(), as: UTF8.self)
+
+            // THEN: the script succeeds and moves the bin directory to the front of the PATH exactly once
+            #expect(process.terminationStatus == 0)
+            #expect(output == "\(binDir):/usr/bin:\(binDir)2:/bin")
+        }
+    }
+
     @Test(
         .testHome(),
         arguments: [
             ("bash", 0),
             ("bash", 1),
+            ("bash", 2),
             ("fish", 0),
             ("fish", 1),
         ]
@@ -277,6 +312,17 @@ import Testing
                 export PATH="$SWIFTLY_BIN_DIR:$PATH"
 
                 """,
+                """
+                export SWIFTLY_HOME_DIR=\(self.posixSingleQuoted(homeDirRaw))
+                export SWIFTLY_BIN_DIR=\(self.posixSingleQuoted(binDirRaw))
+                export SWIFTLY_TOOLCHAINS_DIR=\(self.posixSingleQuoted(toolchainsDirRaw))
+
+                # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
+                PATH="${PATH//:$SWIFTLY_BIN_DIR/}"
+                PATH="${PATH/#$SWIFTLY_BIN_DIR:/}"
+                export PATH="$SWIFTLY_BIN_DIR:$PATH"
+
+                """,
             ],
         ]
 
@@ -317,9 +363,15 @@ import Testing
             export SWIFTLY_TOOLCHAINS_DIR=\(self.posixSingleQuoted(toolchainsDirRaw))
 
             # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
-            PATH="${PATH//:$SWIFTLY_BIN_DIR/}"
-            PATH="${PATH/#$SWIFTLY_BIN_DIR:/}"
-            export PATH="$SWIFTLY_BIN_DIR:$PATH"
+            # This file can be sourced by any POSIX shell (e.g. from ~/.profile), so avoid shell-specific syntax
+            _swiftly_path=":$PATH:"
+            while case "$_swiftly_path" in *":$SWIFTLY_BIN_DIR:"*) true ;; *) false ;; esac; do
+                _swiftly_path="${_swiftly_path%%":$SWIFTLY_BIN_DIR:"*}:${_swiftly_path#*":$SWIFTLY_BIN_DIR:"}"
+            done
+            _swiftly_path="${_swiftly_path#:}"
+            _swiftly_path="${_swiftly_path%:}"
+            export PATH="$SWIFTLY_BIN_DIR${_swiftly_path:+:$_swiftly_path}"
+            unset _swiftly_path
 
             """
         }

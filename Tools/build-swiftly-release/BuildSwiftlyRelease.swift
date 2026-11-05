@@ -10,12 +10,16 @@ import SystemPackage
 import MacOSPlatform
 #elseif os(Linux)
 import LinuxPlatform
+#elseif os(FreeBSD)
+import FreeBSDPlatform
 #endif
 
 #if os(macOS)
 let currentPlatform = MacOS()
 #elseif os(Linux)
 let currentPlatform = Linux()
+#elseif os(FreeBSD)
+let currentPlatform = FreeBSD()
 #endif
 
 typealias fs = SwiftlyCore.FileSystem
@@ -76,6 +80,8 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try await self.buildLinuxRelease()
 #elseif os(macOS)
         try await self.buildMacOSRelease(cert: self.cert, identifier: self.identifier)
+#elseif os(FreeBSD)
+        throw Error(message: "Building swiftly releases is not yet supported on FreeBSD")
 #else
         #error("Unsupported OS")
 #endif

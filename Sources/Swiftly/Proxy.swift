@@ -95,10 +95,10 @@ public enum Proxy {
                 exit(1)
             }
         } catch let error as SwiftlyError {
-            await ctx.message(error.message)
+            await ctx.printError(error.message)
             exit(1)
         } catch {
-            await ctx.message("\(error)")
+            await ctx.printError("\(error)")
             exit(1)
         }
     }

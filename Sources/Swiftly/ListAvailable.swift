@@ -14,22 +14,22 @@ struct ListAvailable: SwiftlyCommand {
         The toolchain selector determines which toolchains to list. If no selector \
         is provided, all available release toolchains will be listed:
 
-            $ swiftly list-available
+            swiftly list-available
 
         The available toolchains associated with a given major version can be listed by \
         specifying the major version as the selector: 
 
-            $ swiftly list-available 5
+            swiftly list-available 5
 
         Likewise, the available toolchains associated with a given minor version can be listed \
         by specifying the minor version as the selector:
 
-            $ swiftly list-available 5.2
+            swiftly list-available 5.2
 
         The installed snapshots for a given development branch can be listed by specifying the branch as the selector:
 
-            $ swiftly list-available main-snapshot
-            $ swiftly list-available x.y-snapshot
+            swiftly list-available main-snapshot
+            swiftly list-available x.y-snapshot
 
         Note that listing available snapshots before the latest release (major and minor number) is unsupported.
         """

@@ -178,6 +178,7 @@ struct Use: SwiftlyCommand {
     }
 
     static func findNewVersionFile(_ ctx: SwiftlyCoreContext) async throws -> FilePath? {
+        let projectMarkers = [".git", "Package.swift"]
         var cwd = ctx.currentDirectory
 
         while !cwd.isEmpty && !cwd.removingRoot().isEmpty {
@@ -185,10 +186,10 @@ struct Use: SwiftlyCommand {
                 break
             }
 
-            let gitDir = cwd / ".git"
-
-            if try await fs.exists(atPath: gitDir) {
-                return cwd / ".swift-version"
+            for marker in projectMarkers {
+                if try await fs.exists(atPath: cwd / marker) {
+                    return cwd / ".swift-version"
+                }
             }
 
             cwd = cwd.removingLastComponent()

@@ -85,8 +85,33 @@ public struct Windows: Platform {
         ProcessInfo.processInfo.environment["ComSpec"] ?? "cmd.exe"
     }
 
-    public func findToolchainLocation(_: SwiftlyCoreContext, _: ToolchainVersion) async throws -> FilePath {
-        throw Self.notSupportedYet("Finding installed toolchains")
+    public func discoverInstalledToolchains(_ ctx: SwiftlyCoreContext) async throws -> Set<ToolchainVersion>? {
+        // Tests keep mocked toolchains in a mocked home and mustn't see what this machine has installed.
+        guard ctx.mockedHomeDir == nil else {
+            return nil
+        }
+        return Set(self.installedToolchains().map(\.version))
+    }
+
+    public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath {
+        guard ctx.mockedHomeDir == nil else {
+            return self.swiftlyToolchainsDir(ctx) / toolchain.identifier
+        }
+        guard let installed = self.installedToolchains().first(where: { $0.version == toolchain }) else {
+            throw SwiftlyError(message: "Toolchain \(toolchain) isn't installed.")
+        }
+        return installed.root
+    }
+
+    /// The Swift versions Windows Installer has a toolchain registered for, with each toolchain's root.
+    /// Versions that don't parse as a `ToolchainVersion` are left out.
+    private func installedToolchains() -> [(version: ToolchainVersion, root: FilePath)] {
+        MsiEnumeration.installed.compactMap { swift in
+            guard let root = swift.toolchain, let version = try? ToolchainVersion(parsing: swift.version) else {
+                return nil
+            }
+            return (version, root)
+        }
     }
 
     public func findToolchainBinDir(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath {

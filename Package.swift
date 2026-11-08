@@ -182,9 +182,16 @@ let package = Package(
             swiftSettings: swiftSettings
         ),
         .target(
+            name: "CMsi",
+            linkerSettings: [
+                .linkedLibrary("msi", .when(platforms: [.windows])),
+            ]
+        ),
+        .target(
             name: "WindowsPlatform",
             dependencies: [
                 "SwiftlyCore",
+                .target(name: "CMsi", condition: .when(platforms: [.windows])),
                 .product(name: "Subprocess", package: "swift-subprocess"),
                 .product(name: "SystemPackage", package: "swift-system"),
             ],

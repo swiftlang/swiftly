@@ -44,5 +44,10 @@ extension Platform {
         return environment
     }
 
+#elseif os(Windows)
+    public func proxyEnvironment(_: SwiftlyCoreContext, env _: Environment, toolchain _: ToolchainVersion) async throws -> Environment {
+        throw SwiftlyError(message: "Running toolchains isn't supported on Windows yet.")
+    }
+
 #endif
 }

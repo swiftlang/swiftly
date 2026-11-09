@@ -4,6 +4,8 @@ import Foundation
 import LinuxPlatform
 #elseif os(macOS)
 import MacOSPlatform
+#elseif os(Windows)
+import WindowsPlatform
 #endif
 import SwiftlyCore
 import SystemPackage
@@ -74,6 +76,8 @@ public struct Swiftly: SwiftlyCommand {
     static let currentPlatform = Linux.currentPlatform
 #elseif os(macOS)
     static let currentPlatform = MacOS.currentPlatform
+#elseif os(Windows)
+    static let currentPlatform = Windows.currentPlatform
 #endif
 }
 

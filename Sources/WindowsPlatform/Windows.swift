@@ -10,19 +10,23 @@ public struct Windows: Platform {
     public init() {}
 
     public var defaultSwiftlyHomeDir: FilePath {
-        fs.home / ".swiftly"
+        // Foundation's application support directory on Windows is the Local AppData folder,
+        // the one %LOCALAPPDATA% normally points to.
+        let localAppData = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first.map { FilePath($0.path) } ?? fs.home / "AppData" / "Local"
+        return localAppData / "swiftly"
     }
 
     public func swiftlyBinDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "bin" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_BIN_DIR"].map { FilePath($0) }
-            ?? fs.home / ".swiftly" / "bin"
+            ?? self.defaultSwiftlyHomeDir / "bin"
     }
 
     public func swiftlyToolchainsDir(_ ctx: SwiftlyCoreContext) -> FilePath {
         ctx.mockedHomeDir.map { $0 / "toolchains" }
             ?? ProcessInfo.processInfo.environment["SWIFTLY_TOOLCHAINS_DIR"].map { FilePath($0) }
-            ?? fs.home / ".swiftly" / "toolchains"
+            ?? self.defaultSwiftlyHomeDir / "toolchains"
     }
 
     public func escapePathForShell(_ path: FilePath) -> String {

@@ -1,40 +1,6 @@
-#pragma once
-
-typedef unsigned short MsiChar; // WCHAR
-
-// MSIINSTALLCONTEXT
-#define MSI_CONTEXT_NONE 0
-#define MSI_CONTEXT_USERMANAGED 1
-#define MSI_CONTEXT_USERUNMANAGED 2
-#define MSI_CONTEXT_MACHINE 4
-#define MSI_CONTEXT_ALL 7
-
-// INSTALLSTATE
-#define MSI_INSTALLSTATE_MOREDATA (-3)
-#define MSI_INSTALLSTATE_LOCAL 3
-
-unsigned int __stdcall MsiEnumProductsExW(
-    const MsiChar *szProductCode, const MsiChar *szUserSid,
-    unsigned long dwContext, unsigned long dwIndex,
-    MsiChar *szInstalledProductCode, int *pdwInstalledContext,
-    MsiChar *szSid, unsigned long *pcchSid);
-
-unsigned int __stdcall MsiGetProductInfoExW(
-    const MsiChar *szProductCode, const MsiChar *szUserSid, int dwContext,
-    const MsiChar *szProperty, MsiChar *szValue, unsigned long *pcchValue);
-
-unsigned int __stdcall MsiEnumComponentsExW(
-    const MsiChar *szUserSid, unsigned long dwContext, unsigned long dwIndex,
-    MsiChar *szInstalledComponentCode, int *pdwInstalledContext,
-    MsiChar *szSid, unsigned long *pcchSid);
-
-unsigned int __stdcall MsiEnumClientsExW(
-    const MsiChar *szComponent, const MsiChar *szUserSid,
-    unsigned long dwContext, unsigned long dwProductIndex,
-    MsiChar *szProductBuf, int *pdwInstalledContext,
-    MsiChar *szSid, unsigned long *pcchSid);
-
-int __stdcall MsiGetComponentPathExW(
-    const MsiChar *szProductCode, const MsiChar *szComponentCode,
-    const MsiChar *szUserSid, int dwContext,
-    MsiChar *lpOutPathBuffer, unsigned long *pcchOutPathBuffer);
+// The WinSDK module doesn't cover Windows Installer, so this target brings in the SDK's msi.h.
+// Include WinSock2.h before it, not windows.h. HWND comes from windef.h, which no WinSDK submodule
+// lists, so it ends up in WinSock2, the first submodule (WinSock2.h includes windows.h). Including
+// windows.h here doesn't help: clang skips windef.h because the WinSDK module already holds it.
+#include <WinSock2.h>
+#include <Msi.h>

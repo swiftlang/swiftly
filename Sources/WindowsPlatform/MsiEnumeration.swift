@@ -1,5 +1,6 @@
 import CMsi
 import SystemPackage
+import WinSDK
 
 /// A Swift version the official Windows installer registered, with where each of its pieces lives.
 struct InstalledSwift: Equatable {
@@ -85,11 +86,9 @@ enum MsiEnumeration {
 
     // MARK: - Windows Installer calls
 
-    private static let errorMoreData: UInt32 = 234
-
     private struct Product {
         let code: String
-        let context: Int32
+        let context: MSIINSTALLCONTEXT
         let sid: String?
 
         func info(_ property: String) -> String? {
@@ -111,7 +110,7 @@ enum MsiEnumeration {
         func componentPath(_ componentCode: String) -> String? {
             var capacity: UInt32 = 512
             while true {
-                var buffer = [MsiChar](repeating: 0, count: Int(capacity))
+                var buffer = [WCHAR](repeating: 0, count: Int(capacity))
                 var length = capacity
                 let state = withWide(self.code) { code in
                     withWide(componentCode) { component in
@@ -120,11 +119,11 @@ enum MsiEnumeration {
                         }
                     }
                 }
-                if state == MSI_INSTALLSTATE_MOREDATA {
+                if state == INSTALLSTATE_MOREDATA {
                     capacity = length + 1
                     continue
                 }
-                return state == MSI_INSTALLSTATE_LOCAL ? string(from: buffer) : nil
+                return state == INSTALLSTATE_LOCAL ? string(from: buffer) : nil
             }
         }
     }
@@ -132,7 +131,7 @@ enum MsiEnumeration {
     /// Every product visible to the current user: their per-user installs plus per-machine ones.
     private static func installedProducts() -> [Product] {
         Self.enumerate { index, code, context, sid, sidLength in
-            MsiEnumProductsExW(nil, nil, UInt32(MSI_CONTEXT_ALL), index, code, context, sid, sidLength)
+            MsiEnumProductsExW(nil, nil, UInt32(MSIINSTALLCONTEXT_ALL.rawValue), index, code, context, sid, sidLength)
         }.map { Product(code: $0.code, context: $0.context, sid: $0.sid) }
     }
 
@@ -140,7 +139,7 @@ enum MsiEnumeration {
     /// walking only the install contexts those products live in.
     private static func installedPaths(of products: [String: Product]) -> [String: [String]] {
         var paths: [String: [String]] = [:]
-        let contexts = products.values.reduce(UInt32(0)) { $0 | UInt32($1.context) }
+        let contexts = products.values.reduce(UInt32(0)) { $0 | UInt32($1.context.rawValue) }
         guard contexts != 0 else {
             return paths
         }
@@ -151,7 +150,7 @@ enum MsiEnumeration {
         for component in components {
             let clients = withWide(component.code) { componentCode in
                 Self.enumerate { index, code, context, sid, sidLength in
-                    MsiEnumClientsExW(componentCode, nil, UInt32(MSI_CONTEXT_ALL), index, code, context, sid, sidLength)
+                    MsiEnumClientsExW(componentCode, nil, UInt32(MSIINSTALLCONTEXT_ALL.rawValue), index, code, context, sid, sidLength)
                 }
             }
             for client in clients {
@@ -166,35 +165,35 @@ enum MsiEnumeration {
 
     /// Calls an MSI "fill this buffer" function, growing the buffer on ERROR_MORE_DATA.
     fileprivate static func readString(
-        _ call: (UnsafeMutablePointer<MsiChar>, UnsafeMutablePointer<UInt32>) -> UInt32
+        _ call: (UnsafeMutablePointer<WCHAR>, UnsafeMutablePointer<UInt32>) -> UInt32
     ) -> String? {
         var capacity: UInt32 = 256
         while true {
-            var buffer = [MsiChar](repeating: 0, count: Int(capacity))
+            var buffer = [WCHAR](repeating: 0, count: Int(capacity))
             var length = capacity
             let result = call(&buffer, &length)
-            if result == Self.errorMoreData {
+            if result == ERROR_MORE_DATA {
                 capacity = length + 1
                 continue
             }
-            return result == 0 ? string(from: buffer) : nil
+            return result == ERROR_SUCCESS ? string(from: buffer) : nil
         }
     }
 
     /// Drives one of the MsiEnum*ExW functions, which each return a GUID, a context and a SID per index.
     /// Stops at the first error, which leaves the items found so far.
     private static func enumerate(
-        _ call: (UInt32, UnsafeMutablePointer<MsiChar>, UnsafeMutablePointer<Int32>, UnsafeMutablePointer<MsiChar>, UnsafeMutablePointer<UInt32>) -> UInt32
-    ) -> [(code: String, context: Int32, sid: String?)] {
-        var items: [(code: String, context: Int32, sid: String?)] = []
+        _ call: (UInt32, UnsafeMutablePointer<WCHAR>, UnsafeMutablePointer<MSIINSTALLCONTEXT>, UnsafeMutablePointer<WCHAR>, UnsafeMutablePointer<UInt32>) -> UInt32
+    ) -> [(code: String, context: MSIINSTALLCONTEXT, sid: String?)] {
+        var items: [(code: String, context: MSIINSTALLCONTEXT, sid: String?)] = []
         var index: UInt32 = 0
         while true {
-            var code = [MsiChar](repeating: 0, count: 39)
-            var context = Int32(MSI_CONTEXT_NONE)
-            var sid = [MsiChar](repeating: 0, count: 256)
+            var code = [WCHAR](repeating: 0, count: 39)
+            var context = MSIINSTALLCONTEXT_NONE
+            var sid = [WCHAR](repeating: 0, count: 256)
             var sidLength: UInt32 = 256
             let result = call(index, &code, &context, &sid, &sidLength)
-            if result != 0 {
+            if result != ERROR_SUCCESS {
                 break
             }
             let sidString = string(from: sid)
@@ -205,13 +204,13 @@ enum MsiEnumeration {
     }
 }
 
-private func withWide<R>(_ s: String?, _ body: (UnsafePointer<MsiChar>?) -> R) -> R {
+private func withWide<R>(_ s: String?, _ body: (UnsafePointer<WCHAR>?) -> R) -> R {
     guard let s else {
         return body(nil)
     }
     return s.withCString(encodedAs: UTF16.self) { body($0) }
 }
 
-private func string(from buffer: [MsiChar]) -> String {
+private func string(from buffer: [WCHAR]) -> String {
     String(decoding: buffer.prefix { $0 != 0 }, as: UTF16.self)
 }

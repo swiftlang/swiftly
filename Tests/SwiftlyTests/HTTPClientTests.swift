@@ -1,4 +1,6 @@
+#if !os(Windows)
 import AsyncHTTPClient
+#endif
 import Foundation
 import Subprocess
 @testable import Swiftly

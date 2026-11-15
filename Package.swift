@@ -156,7 +156,7 @@ let package = Package(
                 .target(name: "LinuxPlatform", condition: .when(platforms: [.linux])),
                 .target(name: "MacOSPlatform", condition: .when(platforms: [.macOS])),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "_NIOFileSystem", package: "swift-nio"),
+                .product(name: "_NIOFileSystem", package: "swift-nio", condition: .when(platforms: [.linux, .macOS])),
             ],
             path: "Tools/build-swiftly-release",
             exclude: ["musl-clang"],

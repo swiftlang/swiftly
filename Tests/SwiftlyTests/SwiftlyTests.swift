@@ -12,8 +12,10 @@ import Testing
 import MacOSPlatform
 #endif
 
+#if !os(Windows)
 import AsyncHTTPClient
 import NIO
+#endif
 
 import SystemPackage
 
@@ -1043,6 +1045,17 @@ public final actor MockToolchainDownloader: HTTPRequestExecutor {
         try await fs.remove(atPath: tmp)
 
         return pkgData
+    }
+
+#elseif os(Windows)
+    // Windows toolchains and swiftly releases are installers that go through Windows Installer,
+    // and nothing mocks that yet, so tests that need one fail here instead of at build time.
+    public func makeMockedSwiftly(from _: URL) async throws -> Data {
+        throw SwiftlyTestError(message: "Mocked swiftly releases aren't supported on Windows yet.")
+    }
+
+    public func makeMockedToolchain(toolchain _: ToolchainVersion, name _: String) async throws -> Data {
+        throw SwiftlyTestError(message: "Mocked toolchains aren't supported on Windows yet.")
     }
 
 #endif

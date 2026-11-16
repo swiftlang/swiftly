@@ -24,7 +24,7 @@ jobs:
 
   macos-tests-selfhosted:
     name: Test (Self Hosted) / macOS Tahoe ARM64
-    runs-on: [self-hosted, macos, tahoe, ARM64]
+    runs-on: [self-hosted, macos, goldengate, ARM64]
     if: ${{ github.repository == 'swiftlang/swiftly' }}
     strategy:
       fail-fast: false
@@ -103,7 +103,7 @@ jobs:
 
   releasebuildcheckmacos:
     name: Release Build Check / macOS
-    runs-on: [self-hosted, macos, tahoe, ARM64]
+    runs-on: [self-hosted, macos, goldengate, ARM64]
     if: ${{ github.repository == 'swiftlang/swiftly' }}
     steps:
       - name: Checkout repository

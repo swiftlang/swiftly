@@ -123,9 +123,9 @@ public struct Windows: Platform {
     }
 
     public func updateEnvironmentWithToolchain(
-        _: SwiftlyCoreContext, _: Environment, _: ToolchainVersion, path _: String
+        _: SwiftlyCoreContext, _ environment: Environment, _: ToolchainVersion, path _: String
     ) async throws -> Environment {
-        throw Self.notSupportedYet("Running toolchains")
+        environment
     }
 
     private static func notSupportedYet(_ operation: String) -> SwiftlyError {

@@ -19,7 +19,7 @@ extension Platform {
     public func proxyEnvironment(_ ctx: SwiftlyCoreContext, env: Environment, toolchain: ToolchainVersion) async throws -> Environment {
         var environment = env
 
-        let tcPath = try await self.findToolchainBinDir(ctx, toolchain)
+        let tcPath = try await self.findToolchainLocation(ctx, toolchain) / "usr/bin"
         guard try await fs.exists(atPath: tcPath) else {
             throw SwiftlyError(
                 message:
@@ -45,8 +45,38 @@ extension Platform {
     }
 
 #elseif os(Windows)
-    public func proxyEnvironment(_: SwiftlyCoreContext, env _: Environment, toolchain _: ToolchainVersion) async throws -> Environment {
-        throw SwiftlyError(message: "Running toolchains isn't supported on Windows yet.")
+    public func proxyEnvironment(_ ctx: SwiftlyCoreContext, env: Environment, toolchain: ToolchainVersion) async throws -> Environment {
+        var environment = env
+
+        let tcPath = try await self.findToolchainBinDir(ctx, toolchain)
+        guard try await fs.exists(atPath: tcPath) else {
+            throw SwiftlyError(
+                message:
+                "Toolchain \(toolchain) could not be located in \(tcPath). You can try `swiftly uninstall \(toolchain)` to uninstall it and then `swiftly install \(toolchain)` to install it again."
+            )
+        }
+
+        // TODO: Handle Git Bash and other shells, which pass the variable as PATH rather than Path.
+        let path = ProcessInfo.processInfo.environment["Path"] ?? ""
+        var pathComponents = path.split(separator: ";").map { String($0) }
+
+        // The toolchain goes to the beginning of the Path. Entries compare as FilePath, which treats
+        // forward and backward slashes alike and drops a trailing one.
+        pathComponents.removeAll(where: { FilePath($0) == tcPath })
+        // TODO: add runtimes path too after toolchain path. Can compute or maybe add it from other places later
+        pathComponents = [tcPath.string] + pathComponents
+
+        // Remove swiftly bin directory from the Path entirely
+        let swiftlyBinDir = self.swiftlyBinDir(ctx)
+        pathComponents.removeAll(where: { FilePath($0) == swiftlyBinDir })
+
+        environment = environment.updating(["Path": String(pathComponents.joined(separator: ";"))])
+        // TEMP: show the Path the toolchain command gets
+        await ctx.printError("swiftly: Path=\(pathComponents.joined(separator: ";"))")
+
+        environment = try await self.updateEnvironmentWithToolchain(ctx, environment, toolchain, path: String(pathComponents.joined(separator: ";")))
+
+        return environment
     }
 
 #endif
@@ -59,7 +89,7 @@ public let executableSuffix = ".exe"
 public let executableSuffix = ""
 #endif
 
-public func executablePath(named name: String, in directory: FilePath, suffix: String = executableSuffix) -> FilePath {
+public func executablePath(named name: String, in directory: SystemPackage.FilePath, suffix: String = executableSuffix) -> SystemPackage.FilePath {
     if suffix.isEmpty || name.lowercased().hasSuffix(suffix.lowercased()) {
         return directory / name
     }

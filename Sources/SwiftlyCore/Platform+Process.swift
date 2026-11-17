@@ -19,7 +19,7 @@ extension Platform {
     public func proxyEnvironment(_ ctx: SwiftlyCoreContext, env: Environment, toolchain: ToolchainVersion) async throws -> Environment {
         var environment = env
 
-        let tcPath = try await self.findToolchainLocation(ctx, toolchain) / "usr/bin"
+        let tcPath = try await self.findToolchainBinDir(ctx, toolchain)
         guard try await fs.exists(atPath: tcPath) else {
             throw SwiftlyError(
                 message:

@@ -45,6 +45,9 @@ struct SelfUpdate: SwiftlyCommand {
     public static func execute(_ ctx: SwiftlyCoreContext, verbose: Bool, version swiftlyVersion: SwiftlyVersion?) async throws
         -> SwiftlyVersion
     {
+#if os(Windows)
+        throw SwiftlyError(message: "Self-update isn't supported on Windows yet.")
+#else
         var downloadURL: Foundation.URL?
         var version: SwiftlyVersion? = swiftlyVersion
 
@@ -151,5 +154,6 @@ struct SelfUpdate: SwiftlyCommand {
             await ctx.message("Successfully updated swiftly to \(version) (was \(SwiftlyCore.version))")
             return version
         }
+#endif
     }
 }

@@ -43,11 +43,11 @@ public struct Config: Codable, Equatable, Sendable {
 
     /// Read the config file from disk.
     public static func load(_ ctx: SwiftlyCoreContext) async throws -> Config {
+        var config: Config
         do {
             let configFile = Swiftly.currentPlatform.swiftlyConfigFile(ctx)
             let data = try await fs.cat(atPath: configFile)
-            let config = try Self.makeDecoder().decode(Config.self, from: data)
-            return config
+            config = try Self.makeDecoder().decode(Config.self, from: data)
         } catch {
             let msg = """
             Could not load swiftly's configuration file at \(Swiftly.currentPlatform.swiftlyConfigFile(ctx)).
@@ -56,6 +56,11 @@ public struct Config: Codable, Equatable, Sendable {
             """
             throw SwiftlyError(message: msg)
         }
+
+        if let discovered = try await Swiftly.currentPlatform.discoverInstalledToolchains(ctx) {
+            config.installedToolchains = discovered
+        }
+        return config
     }
 
     /// Write the contents of this `Config` struct to disk.

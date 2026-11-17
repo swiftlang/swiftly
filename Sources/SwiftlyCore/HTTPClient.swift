@@ -1,11 +1,17 @@
 import _StringProcessing
+#if !os(Windows)
 import AsyncHTTPClient
+#endif
 import Foundation
 import HTTPTypes
+#if os(Windows)
+import OpenAPIWinHTTPTransport
+#else
 import NIO
 import NIOFoundationCompat
 import NIOHTTP1
 import OpenAPIAsyncHTTPClient
+#endif
 import OpenAPIRuntime
 import SwiftlyDownloadAPI
 import SwiftlyWebsiteAPI
@@ -109,7 +115,11 @@ struct SwiftlyUserAgentMiddleware: ClientMiddleware {
 }
 
 /// An `HTTPRequestExecutor` backed by a shared `HTTPClient`. This makes actual network requests.
+/// On Windows the requests go through WinHTTP, which uses the system proxy settings.
 public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
+#if os(Windows)
+    public init() {}
+#else
     public let httpClient: HTTPClient
 
     public init() {
@@ -151,15 +161,20 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
             try? httpClient.syncShutdown()
         }
     }
+#endif
 
     private func websiteClient() throws -> SwiftlyWebsiteAPI.Client {
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
         let transport: ClientTransport
 
+#if os(Windows)
+        transport = WinHttpTransport()
+#else
         let config = AsyncHTTPClientTransport.Configuration(
             client: self.httpClient, timeout: .seconds(30)
         )
         transport = AsyncHTTPClientTransport(configuration: config)
+#endif
 
         return Client(
             serverURL: try SwiftlyWebsiteAPI.Servers.productionURL(),
@@ -172,10 +187,14 @@ public final class HTTPRequestExecutorImpl: HTTPRequestExecutor {
         let swiftlyUserAgent = SwiftlyUserAgentMiddleware()
         let transport: ClientTransport
 
+#if os(Windows)
+        transport = WinHttpTransport()
+#else
         let config = AsyncHTTPClientTransport.Configuration(
             client: self.httpClient, timeout: .seconds(30)
         )
         transport = AsyncHTTPClientTransport(configuration: config)
+#endif
 
         return SwiftlyDownloadAPI.Client(
             serverURL: baseURL,

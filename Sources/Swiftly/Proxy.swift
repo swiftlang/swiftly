@@ -64,17 +64,25 @@ public enum Proxy {
                 throw SwiftlyError(message: "No installed swift toolchain is selected from either from a .swift-version file, or the default. You can try using one that's already installed with `swiftly use <toolchain version>` or install a new toolchain to use with `swiftly install --use <toolchain version>`.")
             }
 
-            // Prevent circularities with a memento environment variable
-            guard ProcessInfo.processInfo.environment["SWIFTLY_PROXY_IN_PROGRESS"] == nil else {
-                throw SwiftlyError(message: "Circular swiftly proxy invocation")
+            var proxyPath = ProcessInfo
+                .processInfo.environment["SWIFTLY_PROXY_IN_PROGRESS"]?
+                .split(separator: ":").map(String.init) ?? []
+
+            guard proxyPath.isEmpty else {
+                proxyPath.append(binName)
+                throw SwiftlyError(message: "Circular swiftly proxy invocation: Cycle list: \(proxyPath.joined(separator: "->"))")
             }
+            proxyPath.append(binName)
 
             let env = try await Swiftly.currentPlatform.proxyEnvironment(ctx, env: .inherit, toolchain: toolchain)
 
             let cmdConfig = Configuration(
                 executable: .name(binName),
                 arguments: Arguments(Array(CommandLine.arguments[1...])),
-                environment: env.updating(["SWIFTLY_PROXY_IN_PROGRESS": "1"])
+                environment: env.updating([
+                    "SWIFTLY_PROXY_IN_PROGRESS":
+                        proxyPath.joined(separator: ":"),
+                ])
             )
 
             let cmdResult = try await Subprocess.run(

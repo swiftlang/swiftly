@@ -53,7 +53,7 @@ jobs:
 
   buildrelease-macos:
     name: Build Release / macOS
-    runs-on: [self-hosted, macos, tahoe, ARM64]
+    runs-on: [self-hosted, macos, goldengate, ARM64]
     env:
       SKIP: ${{ inputs.skip }}
       VERSION: ${{ inputs.version }}

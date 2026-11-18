@@ -108,6 +108,19 @@ import Darwin
 #endif
 
 #if os(macOS) || os(Linux)
+    /// Tests that missing toolchain errors suggest commands using valid version selectors.
+    @Test(.testHome(), arguments: [ToolchainVersion.newStable, .newMainSnapshot, .newReleaseSnapshot])
+    func proxyEnvironmentToolchainMissingFromDisk(_ toolchain: ToolchainVersion) async throws {
+        do {
+            _ = try await Swiftly.currentPlatform.proxyEnvironment(SwiftlyTests.ctx, env: .inherit, toolchain: toolchain)
+            Issue.record("Expected an error for a toolchain missing from disk")
+        } catch let error as SwiftlyError {
+            #expect(error.message.hasPrefix("Toolchain \(toolchain) could not be located in "))
+            #expect(error.message.contains("`swiftly uninstall \(toolchain.name)`"))
+            #expect(error.message.contains("`swiftly install \(toolchain.name)`"))
+        }
+    }
+
     @Test(
         .mockedSwiftlyVersion(),
         .mockHomeToolchains(),

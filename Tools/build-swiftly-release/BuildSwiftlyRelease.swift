@@ -280,7 +280,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         _ = FileManager.default.changeCurrentDirectoryPath(cwd.string)
 
-        try await sys.swift().build(.swift_sdks_path(sdkDir.string), .swift_sdk("\(arch)-swift-linux-musl"), .arch(arch), .product("swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .configuration("release")).runEcho()
+        try await sys.swift().build(.swift_sdks_path(sdkDir.string), .swift_sdk("\(arch)-swift-linux-musl"), .arch(arch), .product("swiftly"), .pkg_config_path(pkgConfigPath / "lib/pkgconfig"), .configuration("release"), .Xcc("-DOPENSSL_NO_ASM")).runEcho()
 
         let releaseDir = cwd / ".build/release"
 

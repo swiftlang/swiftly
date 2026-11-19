@@ -245,12 +245,20 @@ import Testing
     }
 
     /// Tests that the `use` command reports a toolchain that is installed according to the config, but missing from disk.
-    @Test(.mockedSwiftlyVersion(), .mockHomeToolchains(toolchains: [.newStable])) func useToolchainMissingFromDisk() async throws {
-        try "swiftly binary".write(to: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx) / "swiftly", atomically: true)
-        try await fs.remove(atPath: Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable))
+    @Test(.mockedSwiftlyVersion(), arguments: [ToolchainVersion.newStable, .newMainSnapshot, .newReleaseSnapshot])
+    func useToolchainMissingFromDisk(_ toolchain: ToolchainVersion) async throws {
+        try await SwiftlyTests.withMockedHome(homeName: Self.homeName, toolchains: [toolchain], inUse: toolchain) {
+            try "swiftly binary".write(to: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx) / "swiftly", atomically: true)
+            try await fs.remove(atPath: Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, toolchain))
 
-        await #expect(throws: SwiftlyError.self) {
-            try await SwiftlyTests.runCommand(Use.self, ["use", ToolchainVersion.newStable.name])
+            do {
+                try await SwiftlyTests.runCommand(Use.self, ["use", toolchain.name])
+                Issue.record("Expected an error for a toolchain missing from disk")
+            } catch let error as SwiftlyError {
+                #expect(error.message.hasPrefix("Toolchain \(toolchain) could not be located in "))
+                #expect(error.message.contains("`swiftly uninstall \(toolchain.name)`"))
+                #expect(error.message.contains("`swiftly install \(toolchain.name)`"))
+            }
         }
     }
 

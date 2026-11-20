@@ -130,7 +130,7 @@ struct Init: SwiftlyCommand {
             """
         }
 
-        func envSh(_: SwiftlyCoreContext) -> String {
+        func oldEnvSh3(_: SwiftlyCoreContext) -> String {
             """
             export SWIFTLY_HOME_DIR=\(homeDir)
             export SWIFTLY_BIN_DIR=\(binDir)
@@ -140,6 +140,26 @@ struct Init: SwiftlyCommand {
             PATH="${PATH//:$SWIFTLY_BIN_DIR/}"
             PATH="${PATH/#$SWIFTLY_BIN_DIR:/}"
             export PATH="$SWIFTLY_BIN_DIR:$PATH"
+
+            """
+        }
+
+        func envSh(_: SwiftlyCoreContext) -> String {
+            """
+            export SWIFTLY_HOME_DIR=\(homeDir)
+            export SWIFTLY_BIN_DIR=\(binDir)
+            export SWIFTLY_TOOLCHAINS_DIR=\(toolchainsDir)
+
+            # Remove SWIFTLY_BIN_DIR from PATH if present, then prepend it
+            # This file can be sourced by any POSIX shell (e.g. from ~/.profile), so avoid shell-specific syntax
+            _swiftly_path=":$PATH:"
+            while case "$_swiftly_path" in *":$SWIFTLY_BIN_DIR:"*) true ;; *) false ;; esac; do
+                _swiftly_path="${_swiftly_path%%":$SWIFTLY_BIN_DIR:"*}:${_swiftly_path#*":$SWIFTLY_BIN_DIR:"}"
+            done
+            _swiftly_path="${_swiftly_path#:}"
+            _swiftly_path="${_swiftly_path%:}"
+            export PATH="$SWIFTLY_BIN_DIR${_swiftly_path:+:$_swiftly_path}"
+            unset _swiftly_path
 
             """
         }
@@ -169,7 +189,7 @@ struct Init: SwiftlyCommand {
             if case let envFile = (Swiftly.currentPlatform.swiftlyHomeDir(ctx)) / "env.sh",
                (try? await fs.exists(atPath: envFile)) ?? false,
                let contents = String(data: (try? await fs.cat(atPath: envFile)) ?? Data(), encoding: .utf8),
-               contents == oldEnvSh(ctx) || contents == oldEnvSh2(ctx)
+               contents == oldEnvSh(ctx) || contents == oldEnvSh2(ctx) || contents == oldEnvSh3(ctx)
             {
                 await ctx.print("Updating shell environment \(envFile)")
                 try Data(envSh(ctx).utf8).write(to: envFile, options: .atomic)

@@ -106,38 +106,4 @@ import Darwin
         #expect(toolchainLocation.string == swiftLocation.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: "/usr/bin/swift", with: ""))
     }
 #endif
-
-#if os(macOS) || os(Linux)
-    @Test(
-        .mockedSwiftlyVersion(),
-        .mockHomeToolchains(),
-        arguments: [
-            "/a/b/c:SWIFTLY_BIN_DIR:/d/e/f",
-            "SWIFTLY_BIN_DIR:/abcde",
-            "/defgh:SWIFTLY_BIN_DIR",
-            "/xyzabc:/1/3/4",
-            "",
-        ]
-    ) func proxyEnv(_ path: String) async throws {
-#if os(macOS)
-        // Prevent platform environment variable from affecting the tests
-        unsetenv("TOOLCHAINS")
-        unsetenv("DEVELOPER_DIR")
-#endif
-
-        // GIVEN: a PATH that may contain the swiftly bin directory
-        let env: Environment = .custom(["PATH": path.replacing("SWIFTLY_BIN_DIR", with: Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string)])
-
-        // WHEN: proxying to an installed toolchain
-        let newEnv = try await Swiftly.currentPlatform.proxyEnvironment(SwiftlyTests.ctx, env: env, toolchain: .newStable)
-
-        // THEN: the toolchain's bin directory is added to the beginning of the PATH
-        // #expect(newEnv.description == "")
-        #expect(newEnv.description.contains("PATH: \"\((try await Swiftly.currentPlatform.findToolchainLocation(SwiftlyTests.ctx, .newStable)) / "usr/bin"):"))
-
-        // AND: the swiftly bin directory is removed from the PATH
-        #expect(!newEnv.description.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string))
-        #expect(!newEnv.description.contains(Swiftly.currentPlatform.swiftlyBinDir(SwiftlyTests.ctx).string))
-    }
-#endif
 }

@@ -287,6 +287,15 @@ public struct MacOS: Platform {
             return newEnv
         }
 
+        // CI systems frequently need to set the `DEVELOPER_DIR` to ensure that
+        // other tools (tapi/linker) are compatible with the SDK across several
+        // Xcode installations without updating the global Xcode or exposing
+        // `sudo` to the CI environment.
+        let SKIP_ENV_CHECK: Environment.Key = "_SWIFTLY_SKIP_ENVIRONMENT_CHECK"
+        if let skipEnvCheck = ProcessInfo.processInfo.environment[SKIP_ENV_CHECK.rawValue], skipEnvCheck == "1" {
+            return newEnv
+        }
+
         // If someday the two tools in the toolchain that require xcrun were to remove their dependency on it then
         // we can determine the maximum toolchain version where these environment variables are needed and abort early
         // here.

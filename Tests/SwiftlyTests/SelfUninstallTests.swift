@@ -40,6 +40,8 @@ import Testing
         }
     }
 
+    // TODO: add nu and murex binaries to test runner
+    
     @Test(.mockedSwiftlyVersion(), .withShell("/bin/bash")) func removesEntryFromShellProfile_bash() async throws {
         try await self.shellProfileRemovalTest()
     }
@@ -51,7 +53,7 @@ import Testing
     @Test(.mockedSwiftlyVersion(), .withShell("/bin/fish")) func removesEntryFromShellProfile_fish() async throws {
         try await self.shellProfileRemovalTest()
     }
-
+        
     func shellProfileRemovalTest() async throws {
         try await SwiftlyTests.withTestHome {
             // Fresh user without swiftly installed
@@ -64,6 +66,18 @@ import Testing
             source "\(Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.fish")"
             """
 
+            let nuSourceLine = """
+            # Added by swiftly
+
+            source "\(Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.nu")"
+            """
+
+            let murexSourceLine = """
+            # Added by swiftly
+
+            source "\(Swiftly.currentPlatform.swiftlyHomeDir(SwiftlyTests.ctx) / "env.mx")"
+            """
+
             let shSourceLine = """
             # Added by swiftly
 
@@ -71,7 +85,7 @@ import Testing
             """
 
             // add a few random lines to the profile file(s), both before and after the source line
-            for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"] {
+            for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".murex_profile", ".config/fish/conf.d/swiftly.fish", ".config/nushell/autoload/swiftly.nu", "Library/Application Support/nushell/autoload/swiftly.nu"] {
                 let profile = SwiftlyTests.ctx.mockedHomeDir! / p
                 if try await fs.exists(atPath: profile) {
                     if let profileContents = try? String(contentsOf: profile) {
@@ -85,13 +99,17 @@ import Testing
 
             try await SwiftlyTests.runCommand(SelfUninstall.self, ["self-uninstall", "--assume-yes"])
 
-            for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".config/fish/conf.d/swiftly.fish"] {
+            for p in [".profile", ".zprofile", ".bash_profile", ".bash_login", ".murex_profile", ".config/fish/conf.d/swiftly.fish", ".config/nushell/autoload/swiftly.nu", "Library/Application Support/nushell/autoload/swiftly.nu"] {
                 let profile = SwiftlyTests.ctx.mockedHomeDir! / p
                 if try await fs.exists(atPath: profile) {
                     if let profileContents = try? String(contentsOf: profile) {
                         // check that the source line is removed
-                        let isFishProfile = profile.extension == "fish"
-                        let sourceLine = isFishProfile ? fishSourceLine : shSourceLine
+                        let sourceLine = switch profile.lastComponent {
+                            case "swiftly.fish":   fishSourceLine
+                            case "swiftly.nu":     nuSourceLine
+                            case ".murex_profile": murexSourceLine
+                            default:               shSourceLine
+                        }
                         #expect(
                             !profileContents.contains(sourceLine),
                             "swiftly source line should be removed from \(profile.string)"

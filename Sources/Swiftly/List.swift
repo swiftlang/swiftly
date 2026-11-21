@@ -14,22 +14,22 @@ struct List: SwiftlyCommand {
         The toolchain selector determines which toolchains to list. If no selector \
         is provided, all installed toolchains will be listed:
 
-            $ swiftly list
+            swiftly list
 
         The installed toolchains associated with a given major version can be listed by \
         specifying the major version as the selector: 
 
-            $ swiftly list 5
+            swiftly list 5
 
         Likewise, the installed toolchains associated with a given minor version can be listed \
         by specifying the minor version as the selector:
 
-            $ swiftly list 5.2
+            swiftly list 5.2
 
         The installed snapshots for a given development branch can be listed by specifying the branch as the selector:
 
-            $ swiftly list main-snapshot
-            $ swiftly list 5.7-snapshot
+            swiftly list main-snapshot
+            swiftly list 5.7-snapshot
         """
     ))
     var toolchainSelector: String?

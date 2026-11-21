@@ -17,36 +17,36 @@ struct Install: SwiftlyCommand {
 
             The string "latest" can be provided to install the most recent stable version release:
 
-                $ swiftly install latest
+                swiftly install latest
 
             A specific toolchain can be installed by providing a full toolchain name, for example \
             a stable release version with patch (e.g. a.b.c):
 
-                $ swiftly install 5.4.2
+                swiftly install 5.4.2
 
             Or a snapshot with date:
 
-                $ swiftly install 5.7-snapshot-2022-06-20
-                $ swiftly install main-snapshot-2022-06-20
+                swiftly install 5.7-snapshot-2022-06-20
+                swiftly install main-snapshot-2022-06-20
 
             The latest patch release of a specific minor version can be installed by omitting the \
             patch version:
 
-                $ swiftly install 5.6
+                swiftly install 5.6
 
             Likewise, the latest snapshot associated with a given development branch can be \
             installed by omitting the date:
 
-                $ swiftly install 5.7-snapshot
-                $ swiftly install main-snapshot
+                swiftly install 5.7-snapshot
+                swiftly install main-snapshot
 
             Install whatever toolchain is currently selected, such as the the one in the .swift-version file:
 
-                $ swiftly install
+                swiftly install
 
             NOTE: Swiftly downloads toolchains to a temporary file that it later cleans during its installation process. If these files are too big for your system temporary directory, set another location by setting the `TMPDIR` environment variable.
 
-                $ TMPDIR=/large/file/tmp/storage swiftly install latest
+                TMPDIR=/large/file/tmp/storage swiftly install latest
             """
         ))
     var version: String?

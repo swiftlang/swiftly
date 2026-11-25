@@ -60,6 +60,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Select Swift 6.4
+        run: echo 6.4 > .swift-version
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build Release Artifact

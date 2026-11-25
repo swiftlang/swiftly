@@ -312,7 +312,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         try await sys.swift().package().clean().runEcho()
 
         for arch in ["x86_64", "arm64"] {
-            try await sys.swift().build(.product("swiftly"), .configuration("release"), .arch("\(arch)")).runEcho()
+            try await sys.swift().build(.product("swiftly"), .configuration("release"), .arch("\(arch)"), .build_system("native")).runEcho()
             try await sys.strip(name: FilePath(".build") / "\(arch)-apple-macosx/release/swiftly").runEcho()
         }
 
@@ -377,7 +377,7 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
 
         if self.test {
             for arch in ["x86_64", "arm64"] {
-                try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("\(arch)")).runEcho()
+                try await sys.swift().build(.product("test-swiftly"), .configuration("debug"), .arch("\(arch)"), .build_system("native")).runEcho()
                 try await sys.strip(name: ".build" / "\(arch)-apple-macosx/release/swiftly").runEcho()
             }
 

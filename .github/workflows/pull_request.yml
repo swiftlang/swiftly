@@ -31,10 +31,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Select Swift 6.4
+        run: echo 6.4 > .swift-version
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build and Test
-        run: swift test
+        run: swift test --build-system native
         timeout-minutes: 60
 
   tests-selfhosted:
@@ -108,6 +110,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Select Swift 6.4
+        run: echo 6.4 > .swift-version
       - name: Prepare the action
         run: ./scripts/prep-gh-action.sh --install-swiftly
       - name: Build Artifact

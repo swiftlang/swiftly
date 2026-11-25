@@ -94,14 +94,14 @@ public struct Windows: Platform {
         guard ctx.mockedHomeDir == nil else {
             return nil
         }
-        return Set(self.installedToolchains().map(\.version))
+        return Set(self.installedToolchains(ctx).map(\.version))
     }
 
     public func findToolchainLocation(_ ctx: SwiftlyCoreContext, _ toolchain: ToolchainVersion) async throws -> FilePath {
         guard ctx.mockedHomeDir == nil else {
             return self.swiftlyToolchainsDir(ctx) / toolchain.identifier
         }
-        guard let installed = self.installedToolchains().first(where: { $0.version == toolchain }) else {
+        guard let installed = self.installedToolchains(ctx).first(where: { $0.version == toolchain }) else {
             throw SwiftlyError(message: "Toolchain \(toolchain) isn't installed.")
         }
         return installed.root
@@ -109,8 +109,8 @@ public struct Windows: Platform {
 
     /// The Swift versions Windows Installer has a toolchain registered for, with each toolchain's root.
     /// Versions that don't parse as a `ToolchainVersion` are left out.
-    private func installedToolchains() -> [(version: ToolchainVersion, root: FilePath)] {
-        MsiEnumeration.installed.compactMap { swift in
+    private func installedToolchains(_ ctx: SwiftlyCoreContext) -> [(version: ToolchainVersion, root: FilePath)] {
+        MsiEnumeration.installed(cacheFile: self.swiftlyHomeDir(ctx) / "msi-cache.json").compactMap { swift in
             guard let root = swift.toolchain, let version = try? ToolchainVersion(parsing: swift.version) else {
                 return nil
             }

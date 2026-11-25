@@ -1,4 +1,5 @@
 import CMsi
+import Foundation
 import SystemPackage
 import WinSDK
 
@@ -15,20 +16,47 @@ struct InstalledSwift: Equatable {
 }
 
 /// Finds installed Swift toolchains, SDKs and runtimes using only what Windows Installer has
-/// registered: no cached .msi files, no hard-coded component GUIDs, and nothing is written.
+/// registered: no cached .msi files and no hard-coded component GUIDs.
 ///
 /// Windows Installer has no "components of this product" call, so this lists the swift.org
 /// products, walks the components registered in the install contexts those products use, and
 /// asks which products use each one. The key file of a component identifies the piece.
+///
+/// The walk takes seconds, so its result is saved to a file and reused while the set of swift.org
+/// products stays the same. A product code always installs the same thing, so installing,
+/// upgrading or removing Swift changes the set and leads to a new walk.
 enum MsiEnumeration {
-    static let installed: [InstalledSwift] = Self.findInstalledSwift()
+    /// The installed Swift versions, read from `cacheFile` when it was saved for the swift.org
+    /// products installed now, or found by walking Windows Installer and then saved there.
+    static func installed(cacheFile: FilePath) -> [InstalledSwift] {
+        var complete = true
+        let products = Self.swiftProducts(complete: &complete)
+        let codes = products.keys.sorted()
+        if complete, let cache = Cache.read(from: cacheFile), cache.products == codes, cache.pathsExist {
+            return cache.installed
+        }
 
-    static func findInstalledSwift() -> [InstalledSwift] {
-        let products = Dictionary(
-            Self.installedProducts().filter { $0.publisher == "swift.org" }.map { ($0.code, $0) },
+        let installed = Self.findInstalledSwift(products, complete: &complete)
+        // A walk cut short by an error would otherwise leave toolchains out until Swift is next
+        // installed or removed.
+        if complete {
+            Cache(products: codes, installed: installed).write(to: cacheFile)
+        }
+        return installed
+    }
+
+    /// The swift.org products visible to the current user, by product code.
+    private static func swiftProducts(complete: inout Bool) -> [String: Product] {
+        Dictionary(
+            Self.installedProducts(complete: &complete).filter { $0.publisher == "swift.org" }.map { ($0.code, $0) },
             uniquingKeysWith: { first, _ in first }
         )
-        let paths = Self.installedPaths(of: products)
+    }
+
+    /// Walks the components of `products`. Sets `complete` to false if a Windows Installer call
+    /// failed partway, and returns what was found before that.
+    private static func findInstalledSwift(_ products: [String: Product], complete: inout Bool) -> [InstalledSwift] {
+        let paths = Self.installedPaths(of: products, complete: &complete)
 
         var byVersion: [String: InstalledSwift] = [:]
         for product in products.values {
@@ -58,6 +86,64 @@ enum MsiEnumeration {
                 return e
             }
             .sorted { $0.version < $1.version }
+    }
+
+    /// A walk's result, with the swift.org product codes it was found for.
+    private struct Cache: Codable {
+        struct Entry: Codable {
+            var version: String
+            var toolchain: String?
+            var sdks: [String]
+            var runtime: String?
+        }
+
+        var products: [String]
+        var entries: [Entry]
+
+        init(products: [String], installed: [InstalledSwift]) {
+            self.products = products
+            self.entries = installed.map {
+                Entry(version: $0.version, toolchain: $0.toolchain?.string, sdks: $0.sdks.map(\.string), runtime: $0.runtime?.string)
+            }
+        }
+
+        var installed: [InstalledSwift] {
+            self.entries.map {
+                InstalledSwift(
+                    version: $0.version,
+                    toolchain: $0.toolchain.map { FilePath($0) },
+                    sdks: $0.sdks.map { FilePath($0) },
+                    runtime: $0.runtime.map { FilePath($0) }
+                )
+            }
+        }
+
+        /// Whether every folder is still there. Deleting one outside Windows Installer leaves the
+        /// product codes as they were.
+        var pathsExist: Bool {
+            self.entries.allSatisfy { entry in
+                ([entry.toolchain, entry.runtime].compactMap { $0 } + entry.sdks).allSatisfy {
+                    FileManager.default.fileExists(atPath: $0)
+                }
+            }
+        }
+
+        static func read(from file: FilePath) -> Cache? {
+            guard let data = FileManager.default.contents(atPath: file.string) else {
+                return nil
+            }
+            return try? JSONDecoder().decode(Cache.self, from: data)
+        }
+
+        /// Best effort: if the file can't be written, the next run walks again.
+        func write(to file: FilePath) {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            guard let data = try? encoder.encode(self) else {
+                return
+            }
+            try? data.write(to: URL(fileURLWithPath: file.string), options: .atomic)
+        }
     }
 
     enum Piece: Equatable {
@@ -129,27 +215,27 @@ enum MsiEnumeration {
     }
 
     /// Every product visible to the current user: their per-user installs plus per-machine ones.
-    private static func installedProducts() -> [Product] {
-        Self.enumerate { index, code, context, sid, sidLength in
+    private static func installedProducts(complete: inout Bool) -> [Product] {
+        Self.enumerate(complete: &complete) { index, code, context, sid, sidLength in
             MsiEnumProductsExW(nil, nil, UInt32(MSIINSTALLCONTEXT_ALL.rawValue), index, code, context, sid, sidLength)
         }.map { Product(code: $0.code, context: $0.context, sid: $0.sid) }
     }
 
     /// Key-file paths of every locally installed component that belongs to one of `products`,
     /// walking only the install contexts those products live in.
-    private static func installedPaths(of products: [String: Product]) -> [String: [String]] {
+    private static func installedPaths(of products: [String: Product], complete: inout Bool) -> [String: [String]] {
         var paths: [String: [String]] = [:]
         let contexts = products.values.reduce(UInt32(0)) { $0 | UInt32($1.context.rawValue) }
         guard contexts != 0 else {
             return paths
         }
 
-        let components = Self.enumerate { index, code, context, sid, sidLength in
+        let components = Self.enumerate(complete: &complete) { index, code, context, sid, sidLength in
             MsiEnumComponentsExW(nil, contexts, index, code, context, sid, sidLength)
         }
         for component in components {
             let clients = withWide(component.code) { componentCode in
-                Self.enumerate { index, code, context, sid, sidLength in
+                Self.enumerate(complete: &complete) { index, code, context, sid, sidLength in
                     MsiEnumClientsExW(componentCode, nil, UInt32(MSIINSTALLCONTEXT_ALL.rawValue), index, code, context, sid, sidLength)
                 }
             }
@@ -181,8 +267,10 @@ enum MsiEnumeration {
     }
 
     /// Drives one of the MsiEnum*ExW functions, which each return a GUID, a context and a SID per index.
-    /// Stops at the first error, which leaves the items found so far.
+    /// Stops at the first error, which leaves the items found so far. An error other than the end of
+    /// the list sets `complete` to false.
     private static func enumerate(
+        complete: inout Bool,
         _ call: (UInt32, UnsafeMutablePointer<WCHAR>, UnsafeMutablePointer<MSIINSTALLCONTEXT>, UnsafeMutablePointer<WCHAR>, UnsafeMutablePointer<UInt32>) -> UInt32
     ) -> [(code: String, context: MSIINSTALLCONTEXT, sid: String?)] {
         var items: [(code: String, context: MSIINSTALLCONTEXT, sid: String?)] = []
@@ -194,6 +282,9 @@ enum MsiEnumeration {
             var sidLength: UInt32 = 256
             let result = call(index, &code, &context, &sid, &sidLength)
             if result != ERROR_SUCCESS {
+                if result != UInt32(ERROR_NO_MORE_ITEMS) {
+                    complete = false
+                }
                 break
             }
             let sidString = string(from: sid)

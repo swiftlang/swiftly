@@ -94,6 +94,8 @@ public struct Windows: Platform {
         guard ctx.mockedHomeDir == nil else {
             return nil
         }
+        // TODO: Config.load calls this for every command, so even `swiftly --version` asks Windows
+        // Installer. Commands that don't use toolchains shouldn't.
         return Set(self.installedToolchains(ctx).map(\.version))
     }
 

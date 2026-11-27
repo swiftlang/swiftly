@@ -11,12 +11,14 @@ public enum Proxy {
         do {
             let zero = CommandLine.arguments[0]
 #if os(Windows)
-            // argv[0] can use either slash and usually ends in .exe.
-            guard var binName = zero.split(whereSeparator: { $0 == "/" || $0 == "\\" }).last.map(String.init) else {
-                fatalError("Could not determine the binary name for proxying")
+            // argv[0] usually ends in .exe.
+            var binURL = URL(fileURLWithPath: zero, isDirectory: false)
+            if binURL.pathExtension.lowercased() == "exe" {
+                binURL.deletePathExtension()
             }
-            if binName.lowercased().hasSuffix(".exe") {
-                binName.removeLast(4)
+            let binName = binURL.lastPathComponent
+            guard !binName.isEmpty else {
+                fatalError("Could not determine the binary name for proxying")
             }
 #else
             guard let binName = zero.components(separatedBy: "/").last else {

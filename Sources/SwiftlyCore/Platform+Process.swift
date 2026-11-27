@@ -85,17 +85,3 @@ extension Platform {
 
 #endif
 }
-
-/// The suffix executables have on this platform: ".exe" on Windows, nothing elsewhere.
-#if os(Windows)
-public let executableSuffix = ".exe"
-#else
-public let executableSuffix = ""
-#endif
-
-public func executablePath(named name: String, in directory: SystemPackage.FilePath, suffix: String = executableSuffix) -> SystemPackage.FilePath {
-    if suffix.isEmpty || name.lowercased().hasSuffix(suffix.lowercased()) {
-        return directory / name
-    }
-    return directory / (name + suffix)
-}

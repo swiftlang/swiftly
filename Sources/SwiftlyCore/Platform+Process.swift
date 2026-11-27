@@ -5,6 +5,9 @@ import System
 #endif
 
 import SystemPackage
+#if os(Windows)
+import TSCBasic
+#endif
 
 extension Subprocess.Executable {
 #if os(macOS)
@@ -56,8 +59,9 @@ extension Platform {
             )
         }
 
-        // TODO: Handle Git Bash and other shells, which pass the variable as PATH rather than Path.
-        let path = ProcessInfo.processInfo.environment["Path"] ?? ""
+        // ProcessEnv's keys ignore case on Windows, so this finds the variable whether the parent
+        // passed it as Path or, like Git Bash, as PATH.
+        let path = ProcessEnv.block["Path"] ?? ""
         var pathComponents = path.split(separator: ";").map { String($0) }
 
         // The toolchain goes to the beginning of the Path. Entries compare as FilePath, which treats

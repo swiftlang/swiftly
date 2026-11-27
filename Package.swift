@@ -86,6 +86,7 @@ let package = Package(
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "SystemPackage", package: "swift-system"),
                 .product(name: "Subprocess", package: "swift-subprocess"),
+                .product(name: "TSCBasic", package: "swift-tools-support-core", condition: .when(platforms: [.windows])),
             ] + httpTransportDependencies,
             swiftSettings: swiftSettings,
             plugins: ["GenerateCommandModels"]

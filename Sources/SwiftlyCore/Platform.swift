@@ -153,6 +153,9 @@ public protocol Platform: Sendable {
 
     /// Update the process environment used when proxying based on the selected toolchain.
     func updateEnvironmentWithToolchain(_ ctx: SwiftlyCoreContext, _ environment: Environment, _ toolchain: ToolchainVersion, path: String) async throws -> Environment
+
+    /// The toolchains the system itself reports as installed, including any installed outside of swiftly.
+    func discoverInstalledToolchains(_ ctx: SwiftlyCoreContext) async throws -> Set<ToolchainVersion>?
 }
 
 extension Platform {
@@ -178,6 +181,10 @@ extension Platform {
     /// The path of the configuration file in swiftly's home directory.
     public func swiftlyConfigFile(_ ctx: SwiftlyCoreContext) -> FilePath {
         self.swiftlyHomeDir(ctx) / "config.json"
+    }
+
+    public func discoverInstalledToolchains(_: SwiftlyCoreContext) async throws -> Set<ToolchainVersion>? {
+        nil
     }
 
 #if os(macOS) || os(Linux)
@@ -293,6 +300,17 @@ extension Platform {
         }
         // With a system prefix?
         return ["/usr", "/opt", "/bin"].contains { path.starts(with: $0) }
+    }
+
+#elseif os(Windows)
+
+    // On Windows, swiftly's own installer puts swiftly.exe in place, so there's nothing to move.
+    public func installSwiftlyBin(_: SwiftlyCoreContext) async throws {}
+
+    // Proxies on Windows are stub executables rather than links to swiftly, so there's no
+    // swiftly binary for them to point at yet.
+    public func findSwiftlyBin(_: SwiftlyCoreContext) async throws -> FilePath? {
+        nil
     }
 
 #endif

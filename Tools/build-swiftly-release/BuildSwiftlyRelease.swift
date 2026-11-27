@@ -1,3 +1,4 @@
+#if !os(Windows)
 import ArgumentParser
 import AsyncHTTPClient
 import Foundation
@@ -380,3 +381,15 @@ struct BuildSwiftlyRelease: AsyncParsableCommand {
         }
     }
 }
+#else
+import Foundation
+
+// Release builds use musl and pkgbuild, and on Windows swiftly will ship as an MSI; neither exists here yet.
+@main
+enum BuildSwiftlyRelease {
+    static func main() {
+        print("Building swiftly releases isn't supported on Windows yet.")
+        exit(1)
+    }
+}
+#endif

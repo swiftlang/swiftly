@@ -1,6 +1,10 @@
+#if !os(Windows)
 import AsyncHTTPClient
+#endif
 import Foundation
+#if !os(Windows)
 import NIO
+#endif
 @testable import Swiftly
 @testable import SwiftlyCore
 import Testing

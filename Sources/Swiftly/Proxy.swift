@@ -10,9 +10,21 @@ public enum Proxy {
 
         do {
             let zero = CommandLine.arguments[0]
+#if os(Windows)
+            // argv[0] usually ends in .exe.
+            var binURL = URL(fileURLWithPath: zero, isDirectory: false)
+            if binURL.pathExtension.lowercased() == "exe" {
+                binURL.deletePathExtension()
+            }
+            let binName = binURL.lastPathComponent
+            guard !binName.isEmpty else {
+                fatalError("Could not determine the binary name for proxying")
+            }
+#else
             guard let binName = zero.components(separatedBy: "/").last else {
                 fatalError("Could not determine the binary name for proxying")
             }
+#endif
 
             guard binName != "swiftly" else {
                 // Treat this as a swiftly invocation, but first check that we are installed, bootstrapping
@@ -90,9 +102,16 @@ public enum Proxy {
         } catch let terminated as RunProgramError {
             switch terminated.terminationStatus {
             case let .exited(code):
+#if os(Windows)
+                // Windows exit codes are DWORDs; keep the bits so NTSTATUS codes survive.
+                exit(Int32(bitPattern: code))
+#else
                 exit(code)
+#endif
+#if !os(Windows)
             case .signaled:
                 exit(1)
+#endif
             }
         } catch let error as SwiftlyError {
             await ctx.message(error.message)

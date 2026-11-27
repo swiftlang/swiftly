@@ -109,8 +109,17 @@ struct Run: SwiftlyCommand {
         } else {
             // Search the toolchain ourselves to find the correct executable path. Subprocess's default search
             // paths will interfere with preferring the selected toolchain over system toolchains.
-            let tcBinPath = try await Swiftly.currentPlatform.findToolchainLocation(ctx, toolchain) / "usr/bin"
+            let tcBinPath = try await Swiftly.currentPlatform.findToolchainBinDir(ctx, toolchain)
+#if os(Windows)
+            // `swiftly run swift` means swift.exe.
+            var toolURL = URL(fileURLWithPath: tcBinPath.string, isDirectory: true).appendingPathComponent(command[0], isDirectory: false)
+            if toolURL.pathExtension.caseInsensitiveCompare("exe") != .orderedSame {
+                toolURL.appendPathExtension("exe")
+            }
+            let toolPath = FilePath(toolURL.path)
+#else
             let toolPath = tcBinPath / command[0]
+#endif
             if try await fs.exists(atPath: toolPath) && toolPath.isLexicallyNormal {
                 executable = .path(toolPath)
             } else {

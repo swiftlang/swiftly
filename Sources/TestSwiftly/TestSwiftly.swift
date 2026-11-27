@@ -14,7 +14,7 @@ import MacOSPlatform
 let currentPlatform: Platform = Linux.currentPlatform
 #elseif os(macOS)
 let currentPlatform: Platform = MacOS.currentPlatform
-#else
+#elseif !os(Windows)
 #error("Unsupported platform")
 #endif
 
@@ -83,6 +83,10 @@ struct TestSwiftly: AsyncParsableCommand {
     @Argument var swiftlyArchive: String? = nil
 
     mutating func run() async throws {
+#if os(Windows)
+        // This test installs a swiftly release on the machine, which on Windows needs swiftly's own installer.
+        throw SwiftlyError(message: "The end-to-end swiftly test isn't supported on Windows yet.")
+#else
         if !self.assumeYes {
             print("WARNING: This test will mutate your system to test the swiftly installation end-to-end. Please run this on a fresh system and try again with '--assume-yes'.")
             Foundation.exit(2)
@@ -182,6 +186,7 @@ struct TestSwiftly: AsyncParsableCommand {
         // Test self-uninstall functionality
         print("Testing self-uninstall functionality")
         try await self.testSelfUninstall(customLoc: customLoc, shell: shell, env: env)
+#endif
     }
 
     private func testSelfUninstall(customLoc: FilePath?, shell: FilePath, env: Environment) async throws {
